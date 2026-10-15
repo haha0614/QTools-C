@@ -1,0 +1,29 @@
+/**
+ * variables.scss —— 主题变量
+ * 用途：页面样式只允许使用这些 CSS 变量，禁止硬编码颜色。
+ * 亮色定义在 :root，暗色覆盖在 html.dark（Element Plus 官方暗色方案）。
+ */
+
+:root {
+  --qt-bg-page: #f5f7fa;
+  --qt-bg-card: #ffffff;
+  --qt-bg-hover: #f2f6fc;
+  --qt-text-primary: #303133;
+  --qt-text-secondary: #909399;
+  --qt-border: #e4e7ed;
+  --qt-primary: #409eff;
+  --qt-shadow: rgba(0, 0, 0, 0.08);
+  --qt-danger: #f56c6c;
+}
+
+html.dark {
+  --qt-bg-page: #141414;
+  --qt-bg-card: #1d1e1f;
+  --qt-bg-hover: #262727;
+  --qt-text-primary: #e5eaf3;
+  --qt-text-secondary: #a3a6ad;
+  --qt-border: #414243;
+  --qt-primary: #409eff;
+  --qt-shadow: rgba(0, 0, 0, 0.5);
+  --qt-danger: #f78989;
+}

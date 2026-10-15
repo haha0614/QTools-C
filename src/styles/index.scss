@@ -1,0 +1,78 @@
+/**
+ * index.scss —— 全局样式
+ * 用途：基础 reset、应用根容器布局、通用容器类、工具页两栏响应式规则。
+ */
+@use './variables.scss';
+
+/* ---------- 基础 reset ---------- */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  background-color: var(--qt-bg-page);
+  color: var(--qt-text-primary);
+  transition: background-color 0.2s, color 0.2s;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--qt-primary);
+  text-decoration: none;
+}
+
+/* ---------- 应用根容器：最小高度铺满视口，纵向布局 ---------- */
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- 通用容器：最大宽 1200px 居中 ---------- */
+.qt-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* ---------- 工具页两栏布局 ---------- */
+.qt-tool-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.qt-tool-layout > .qt-tool-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.qt-tool-layout > .qt-tool-side {
+  flex: 0 0 280px;
+  width: 280px;
+}
+
+/* 窄屏下两栏改为上下堆叠 */
+@media (max-width: 768px) {
+  .qt-tool-layout {
+    flex-direction: column;
+  }
+
+  .qt-tool-layout > .qt-tool-side {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+}
