@@ -200,5 +200,5 @@ Content-Type: application/json
 
 ## 许可与致谢
 
-- **许可**：本仓库当前**无 `LICENSE` 文件**（已在整个仓库范围内查找，未发现 `LICENSE` / `LICENCE` / `COPYING`；`package.json` 中也没有 `license` 字段），因此默认保留所有权利。如需以开源许可分发，请先补充 `LICENSE` 文件。
+- **许可**：本项目以 **MIT License** 分发，见仓库根目录 `LICENSE`（Copyright © 2026 haha0614）。
 - **致谢**：感谢 [Vue](https://github.com/vuejs/core)、[Vite](https://github.com/vitejs/vite)、[Element Plus](https://github.com/element-plus/element-plus) 与[若依 RuoYi](https://github.com/yangzongzhuan/RuoYi-Vue) 提供的框架与组件生态。
