@@ -1,0 +1,177 @@
+/**
+ * auth-card.scss —— 账号页（登录 / 注册 / 我的账号）共用的卡片样式
+ * 用途：三个页面结构相近，公共部分集中在这里；页面只写差异部分。
+ * 约定：颜色全部取自全局主题变量（--qt-*），暗色模式自动跟随，禁止硬编码颜色。
+ */
+
+/* 页面主体：撑满剩余高度并让卡片水平居中；窄屏（390px）下左右各留 16px 不横向溢出 */
+.qt-auth-page {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  padding: 32px 16px 48px;
+  box-sizing: border-box;
+}
+
+/* 卡片：与首页 .tool-card 同款圆角 + 边框 + 阴影，最大宽 420px */
+.qt-auth-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 24px;
+  box-sizing: border-box;
+  border: 1px solid var(--qt-border);
+  border-radius: 10px;
+  background-color: var(--qt-bg-card);
+  box-shadow: 0 6px 18px var(--qt-shadow);
+}
+
+/* 我的账号页信息较多，用更宽的卡片 */
+.qt-auth-card--wide {
+  max-width: 640px;
+}
+
+.qt-auth-title {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--qt-text-primary);
+}
+
+.qt-auth-subtitle {
+  margin: 0 0 20px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--qt-text-secondary);
+}
+
+/* 行内错误提示（登录失败、注册失败）：不使用全局弹窗，只在表单顶部占一行 */
+.qt-auth-error {
+  margin: 0 0 16px;
+  padding: 8px 12px;
+  border: 1px solid var(--qt-danger);
+  border-radius: 6px;
+  background-color: rgba(245, 108, 108, 0.08);
+  color: var(--qt-danger);
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+/* 行内操作结果提示（认领成功 / 已属于其他账号等） */
+.qt-auth-tip {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  border: 1px solid var(--qt-border);
+  color: var(--qt-text-secondary);
+  background-color: var(--qt-bg-hover);
+  word-break: break-all;
+
+  &--success {
+    border-color: var(--qt-primary);
+    color: var(--qt-primary);
+  }
+
+  &--error {
+    border-color: var(--qt-danger);
+    color: var(--qt-danger);
+  }
+}
+
+/* 提交按钮：占满卡片宽度 */
+.qt-auth-submit {
+  width: 100%;
+}
+
+/* 未开放能力的标签 */
+.qt-auth-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  font-size: 11px;
+  line-height: 18px;
+  border: 1px solid var(--qt-border);
+  border-radius: 9px;
+  color: var(--qt-text-secondary);
+  vertical-align: middle;
+}
+
+/* 未开放入口分组：置灰区，与主表单以虚线分隔 */
+.qt-auth-locked {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--qt-border);
+}
+
+.qt-auth-locked__title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--qt-text-secondary);
+}
+
+.qt-auth-locked__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 已开放 / 未开放状态文字 */
+.qt-auth-muted {
+  font-size: 12px;
+  color: var(--qt-text-secondary);
+}
+
+/* 表单下方「去注册 / 去登录」切换 */
+.qt-auth-switch {
+  margin: 16px 0 0;
+  font-size: 13px;
+  text-align: center;
+  color: var(--qt-text-secondary);
+}
+
+/* 我的账号页：信息分区 */
+.qt-auth-section {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--qt-border);
+}
+
+.qt-auth-section__title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--qt-text-primary);
+}
+
+/* 我的账号页：一行「标签 — 值」，窄屏不换行挤压 */
+.qt-auth-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--qt-border);
+  font-size: 14px;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.qt-auth-row__label {
+  flex: 0 0 auto;
+  color: var(--qt-text-secondary);
+}
+
+.qt-auth-row__value {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: right;
+  color: var(--qt-text-primary);
+  word-break: break-all;
+}

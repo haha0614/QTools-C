@@ -44,6 +44,21 @@ const FALLBACK_TOOLS = [
   }
 ]
 
+// ========== 本地静态卡片 ==========
+// 与后端 toolInfo 无关的本地入口（不依赖 DB）。媒体站是 public/media 下的独立静态页，
+// 不由 Vue Router 管理，因此 route 写绝对地址、标签上标 external，点击时整页跳转。
+const LOCAL_TOOLS = [
+  {
+    id: 'local-media',
+    tool_name: '媒体站',
+    tool_desc: '视频与图片库：卡片墙、相册分组、收藏与断点续播',
+    tool_route: '/media/index.html',
+    icon: 'VideoCamera',
+    sort: 100,
+    external: true
+  }
+]
+
 // ========== 响应式状态 ==========
 const router = useRouter()
 const toolList = ref([]) // 归一化后的卡片列表：{ id, name, desc, route, icon, sort }
@@ -58,8 +73,16 @@ const normalizeTool = (item) => ({
   desc: item.tool_desc,
   route: item.tool_route,
   icon: item.icon,
-  sort: item.sort
+  sort: item.sort,
+  external: !!item.external
 })
+
+// 合并「来源列表 + 本地静态卡片」并按 sort 升序：DB 数据怎么变，媒体站卡片都不会丢
+const mergeWithLocal = (list) =>
+  list
+    .map(normalizeTool)
+    .concat(LOCAL_TOOLS.map(normalizeTool))
+    .sort((a, b) => (a.sort || 0) - (b.sort || 0))
 
 // ========== 图标解析 ==========
 // 同名图标组件存在时才返回组件对象，否则返回 null（模板中配合 v-if 使用，避免渲染出空白占位）
@@ -74,13 +97,13 @@ const fetchTools = async () => {
     // 兼容若依 AjaxResult 包装体（{ code, msg, data: [...] }）与后端直接返回裸数组两种形态
     const data = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.data) ? raw.data : null)
     if (!data) throw new Error('接口返回格式不是数组')
-    // 按 sort 升序排列（sort 缺失时按 0 处理）
-    toolList.value = data.map(normalizeTool).sort((a, b) => (a.sort || 0) - (b.sort || 0))
+    // 按 sort 升序排列（sort 缺失时按 0 处理），并始终带上本地静态卡片
+    toolList.value = mergeWithLocal(data)
   } catch (err) {
     // 失败路径：记录错误 → 展示 el-alert → 回退内置兜底数据
     console.error('[Home] 工具列表加载失败：', err)
     loadError.value = true
-    toolList.value = FALLBACK_TOOLS.map(normalizeTool).sort((a, b) => (a.sort || 0) - (b.sort || 0))
+    toolList.value = mergeWithLocal(FALLBACK_TOOLS)
   } finally {
     loading.value = false
   }
@@ -89,7 +112,10 @@ const fetchTools = async () => {
 // ========== 交互 ==========
 // 点击卡片跳转到工具页；路由缺失时不做跳转，避免跳到空地址
 const goTool = (tool) => {
-  if (tool.route) router.push(tool.route)
+  if (!tool.route) return
+  // external 是 Vue Router 之外的真实静态页，必须整页跳转
+  if (tool.external) window.location.href = tool.route
+  else router.push(tool.route)
 }
 
 // 首次挂载时拉取工具列表
