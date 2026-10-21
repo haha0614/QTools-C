@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>视频库 · 媒体站</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="profile.css">
+</head>
+<body>
+
+<aside id="sidebar" class="sidebar" aria-label="筛选">
+  <div class="brand"><span class="brand-dot"></span><span>视频库</span><a class="brand-link" href="photos.html">图片站 ›</a></div>
+  <div class="side-scroll">
+    <section class="fgroup fgroup-cat">
+      <div class="fgroup-head"><h2>分类</h2><em id="catTotal"></em></div>
+      <div id="catChips" class="chips"></div>
+    </section>
+    <div id="quickHead" class="fgroup-head quick-head" hidden><h2>快捷筛选</h2></div>
+    <div id="facetGroups" class="facet-groups"></div>
+  </div>
+  <div class="side-foot"><button id="clearSide" class="btn-ghost" type="button">清空全部筛选</button></div>
+</aside>
+<div id="backdrop" class="backdrop" hidden></div>
+
+<div class="app">
+  <header class="toolbar">
+    <div class="tb-row tb-top">
+      <button id="drawerBtn" class="icon-btn drawer-toggle" type="button" aria-label="打开筛选">☰</button>
+      <input id="search" class="search" type="search" placeholder="搜索标题 / 标签 / 演员…" autocomplete="off" spellcheck="false">
+      <span id="count" class="count">—</span>
+      <select id="sort" class="select" aria-label="排序"></select>
+      <button id="clearAll" class="btn-ghost" type="button">清空</button>
+      <div id="profileSlot"></div>
+      <button id="filterToggle" class="icon-btn filter-toggle" type="button" aria-expanded="false" aria-controls="filterPanel">筛选<span class="ft-caret" aria-hidden="true">▾</span><b id="filterCount" hidden>0</b></button>
+      <button id="colsBtn" class="icon-btn cols-btn" type="button" aria-pressed="false" title="切换 2 / 3 列">▦</button>
+    </div>
+    <div id="filterPanel" class="tb-row tb-filters">
+      <div id="durChips" class="chips chips-sm"></div>
+      <div id="resChips" class="chips chips-sm"></div>
+      <div id="sizeChips" class="chips chips-sm"></div>
+      <button id="unsafeChip" class="chip chip-warn" type="button" aria-pressed="false">⚠ 可能无法播放</button>
+    </div>
+    <div id="activeChips" class="chips chips-sm active-chips" hidden></div>
+  </header>
+
+  <main class="main">
+    <section id="recentSec" class="recent" hidden>
+      <div class="recent-head">
+        <h2>最近观看</h2>
+        <button id="recentClose" class="icon-btn" type="button" aria-label="关闭最近观看">×</button>
+      </div>
+      <div id="recentStrip" class="recent-strip"></div>
+    </section>
+    <div id="grid" class="grid"></div>
+    <div id="empty" class="empty" hidden>没有符合条件的视频</div>
+  </main>
+</div>
+
+<div id="player" class="player" hidden>
+  <div class="p-head">
+    <div class="p-info">
+      <h2 id="pTitle" class="p-title"></h2>
+      <div id="pMeta" class="p-meta"></div>
+    </div>
+    <div class="p-actions">
+      <button id="pFav" class="btn p-fav" type="button" aria-pressed="false">☆ 收藏</button>
+      <button id="pPrev" class="btn" type="button">上一部</button>
+      <button id="pNext" class="btn" type="button">下一部</button>
+      <button id="pClose" class="btn btn-primary" type="button">关闭 (Esc)</button>
+    </div>
+  </div>
+  <div class="p-qbar">
+    <label class="p-q-lab" for="pQ">画质</label>
+    <select id="pQ" class="p-q">
+      <option value="orig">原画（直连）</option>
+      <option value="720">720p</option>
+      <option value="480">480p</option>
+      <option value="360">360p</option>
+    </select>
+    <span id="pQNow" class="p-q-now">原画</span>
+    <span id="pQHint" class="p-q-hint" hidden>转码中…</span>
+  </div>
+  <div id="pSeekBar" class="p-seekbar" hidden>
+    <input id="pSeek" class="p-seek" type="range" min="0" max="100" step="1" value="0" aria-label="播放位置">
+    <span id="pSeekNow" class="p-seek-now">--:--</span>
+  </div>
+  <div id="pWarn" class="p-warn" hidden>该片为 HEVC/异常编码，浏览器可能无法播放</div>
+  <div id="pStage" class="p-stage">
+    <video id="video" controls autoplay playsinline preload="metadata"></video>
+    <button id="pTap" class="p-tap" type="button" hidden>▶ 点击播放</button>
+    <button id="pRestart" class="p-restart" type="button" hidden>从头播放</button>
+  </div>
+  <div id="pTags" class="p-tags"></div>
+</div>
+
+<nav class="tabbar" aria-label="站点切换"><a class="tab on" href="index.html">视频</a><a class="tab" href="photos.html">图片</a><a class="tab" href="me.html">我的</a></nav>
+
+<script src="profile.js" defer></script>
+<script src="app.js" defer></script>
+<script>
+// 移动端：把快捷筛选行收进「筛选」按钮，并在按钮上显示已启用条数
+(function () {
+  var btn = document.getElementById('filterToggle');
+  var panel = document.getElementById('filterPanel');
+  var badge = document.getElementById('filterCount');
+  if (!btn || !panel || !badge) return;
+
+  function activeCount() {
+    var n = panel.querySelectorAll('.chip.on').length;
+    var w = document.getElementById('unsafeChip');
+    if (w && w.getAttribute('aria-pressed') === 'true' && !w.classList.contains('on')) n++;
+    return n;
+  }
+  function sync() {
+    var n = activeCount();
+    badge.textContent = n;
+    badge.hidden = n === 0;
+  }
+  btn.addEventListener('click', function () {
+    var open = panel.classList.toggle('open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  new MutationObserver(sync).observe(panel, { subtree: true, attributes: true, attributeFilter: ['class', 'aria-pressed'], childList: true });
+  sync();
+})();
+</script>
+</body>
+</html>
