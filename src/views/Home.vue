@@ -384,11 +384,28 @@ onMounted(() => {
 
 <style scoped lang="scss">
 /* 页面容器：左右留白由 AppShell 的 --qt-shell-pad 提供（不要再用 .qt-container，否则留白叠加成 44px） */
+/* 布局：整页做纵向 flex，页脚用 margin-top:auto 顶到内容区底部；内容超一屏时 min-height 被自然撑高，页脚回到内容末尾 */
 .home-page {
+  display: flex;
+  flex-direction: column;
+  /* 内容不足一屏时撑满内容区：视口高 − 移动端 sticky 顶栏（--qt-topbar-h，桌面未定义即 0）− 外壳上内边距。
+     外壳下内边距不在 min-height 里扣，由下面的负 margin-bottom 抵消（否则会重复扣一次，底部多出 16px）。
+     注意：--qt-shell-pad 由 variables.scss（桌面 28px）与 AppShell 移动端（16px）下发，本页只读不写死；
+     若另一侧把外壳内边距再改一档，这里会自动跟随，不需要同步改本文件。 */
+  min-height: calc(100vh - var(--qt-topbar-h, 0px) - var(--qt-shell-pad, 16px));
+  /* 抵消 AppShell .qt-shell__main 的 padding-bottom: var(--qt-space-4)，让末行文字贴住页面底边 */
+  margin-bottom: calc(-1 * var(--qt-space-4, 16px));
   padding-top: 24px;
-  /* 底部留白交给 AppShell 的 --qt-shell-pad（桌面 28px / 移动 16px），本页不再叠加 */
+  /* 本页不再叠加底部内边距，贴边留给上面的负 margin 处理 */
   padding-bottom: 0;
   color: var(--qt-text-primary);
+}
+
+/* 三块内容区固定自身高度、不参与 flex 分配，剩余空间全部由页脚的 margin-top:auto 吃掉 */
+.hero,
+.guide,
+.tools {
+  flex: 0 0 auto;
 }
 
 /* 区块标题统一阶梯 */
@@ -518,6 +535,8 @@ onMounted(() => {
 /* ---------- 3. 工具索引 ---------- */
 .tools {
   margin-top: 30px;
+  /* 与页脚的最小呼吸间距：页脚 margin-top:auto 在内容超一屏时归零，靠这条保证不贴死卡片 */
+  margin-bottom: var(--qt-space-4, 16px);
   /* 退路：锚点 / scrollIntoView 场景下同样让开移动端 sticky 顶栏（--qt-topbar-h 由 AppShell 下发，桌面未定义即 0） */
   scroll-margin-top: calc(var(--qt-topbar-h, 0px) + 16px);
 
@@ -733,10 +752,12 @@ onMounted(() => {
 }
 
 /* ---------- 4. 页内页脚 ---------- */
-/* 距卡片网格 20px + 8px 内边距 = 28px；下方留白全交给 AppShell 的内容区 padding */
+/* 定位：margin-top:auto 把页脚推到内容区底部（内容不足一屏时贴视口底；内容超一屏时自动为 0，回到内容末尾）。
+   上间距 = .tools 的 margin-bottom(16px) + 本块 padding-top(12px) = 28px，与改动前视觉一致。
+   下间距 = 0：外壳的 16px 底部内边距已由 .home-page 的负 margin-bottom 抵消。 */
 .home-foot {
-  margin-top: 20px;
-  padding-top: 8px;
+  margin-top: auto;
+  padding-top: var(--qt-space-3, 12px);
   border-top: 1px solid var(--qt-border);
   text-align: center;
 

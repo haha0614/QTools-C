@@ -69,11 +69,16 @@ function resolveTheme() {
   return systemPrefersDark() ? 'dark' : 'light'
 }
 
-// 应用主题：同步 ref 状态与 <html> 类名
+// 应用主题：同步 ref 状态、<html> 类名与原生控件配色
 function applyTheme(theme) {
   isDark.value = theme === 'dark'
   if (typeof document !== 'undefined') {
-    document.documentElement.classList.toggle(DARK_CLASS, isDark.value)
+    const root = document.documentElement
+    root.classList.toggle(DARK_CLASS, isDark.value)
+    // 同时声明 color-scheme：滚动条、原生表单控件、日期面板等才会跟着切。
+    // 只切类名而不声明时，移动端（系统深色 + 浏览器自动深色）会自行反色，
+    // 表现正是「跟随系统的暗色发灰、手动切换的暗色正常」。
+    root.style.colorScheme = isDark.value ? 'dark' : 'light'
   }
 }
 

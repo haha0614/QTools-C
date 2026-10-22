@@ -16,6 +16,19 @@ body {
   padding: 0;
 }
 
+/* 滚动条槽位常驻保留：媒体页/抽屉打开时 body.overflow = hidden 会让滚动条消失，
+   内容区随之变宽，网格挤多一列、卡片变窄。stable 让槽位始终占位，锁滚动时不重排。 */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* 不支持 scrollbar-gutter 的浏览器退回「滚动条常显」（Classic 版本同效果，无需 JS 补偿） */
+@supports not (scrollbar-gutter: stable) {
+  html {
+    overflow-y: scroll;
+  }
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
     'Microsoft YaHei', Arial, sans-serif;

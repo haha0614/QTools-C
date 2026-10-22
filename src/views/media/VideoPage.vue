@@ -1046,6 +1046,9 @@ function drawerFocusables() {
 
 function openDrawer() {
   if (drawerOpen.value) return
+  // 播放器浮层（fixed inset:0、z-index 100）独占视口：此时不打开抽屉，
+  // 避免抽屉遮罩(200)压在全屏播放器之上、把播放器内部交互挡死
+  if (curVideo.value) return
   drawerOpen.value = true
   nextTick(() => {
     const list = drawerFocusables()
@@ -1651,7 +1654,9 @@ watch(
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
-  z-index: 50;
+  /* 必须高于 AppShell 左栏(桌面 60 / 移动 80)、移动顶栏(50) 与移动导航遮罩(70)；
+     仍远低于 Element Plus 的 message/modal 层（1000+），不会压过全局提示 */
+  z-index: 200;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.22s ease;
@@ -1670,7 +1675,10 @@ watch(
   top: 0;
   right: 0;
   bottom: 0;
-  z-index: 51;
+  /* 与遮罩同一层叠上下文里高一级；必须高于 AppShell 左栏(60/80)与顶栏(50)。
+     播放器浮层是 fixed inset:0 的 z-index:100 全屏不透明层，会盖住筛选按钮，
+     且 openDrawer() 在播放器打开时直接返回，故两者不会同时出现，无需比较层级 */
+  z-index: 201;
   display: flex;
   flex-direction: column;
   width: 320px;

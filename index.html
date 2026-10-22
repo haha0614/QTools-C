@@ -3,6 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!--
+      声明页面同时支持浅色与深色。不写这一行时，Android Chrome 等浏览器在系统深色下会启用
+      「自动深色 / 强制反色」，把手动切换时正常的配色反成发灰的一团；声明后观感完全由我们的
+      html.dark 一套变量决定，系统跟随与手动切换表现一致。
+    -->
+    <meta name="color-scheme" content="light dark" />
     <!-- 站点标题仅作首屏兜底：应用启动后由 src/utils/constants.js 的 APP_INFO.name 覆盖 -->
     <title>青兔在线工具箱</title>
     <link rel="icon" href="data:,">

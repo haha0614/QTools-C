@@ -6,9 +6,9 @@
             页面主题变量仍由各页面自己负责（媒体页根节点的 .media-scope 未变）。
 
   折叠手柄（复刻 30aitool 的交互）：
-    1) 左栏右边缘有一条 12px 宽的竖直透明热区（.qt-rail__hotzone），手柄是它的子元素（骑在边缘上，
-       指针从热区移向手柄时不会触发 mouseleave）；指针进入热区才浮现 28px 圆形按钮（‹ 收起 / › 展开），
-       在左栏其它位置移动不触发；
+    1) 分割线两侧有一条 22px 宽的竖直透明热区（.qt-rail__hotzone：栏内 12px + 栏外 10px，跨在分割线上），
+       手柄是它的子元素（圆心骑在分割线上，指针从热区移向手柄时不会触发 mouseleave）；
+       指针进入热区才浮现 28px 圆形按钮（‹ 收起 / › 展开），在左栏其它位置移动不触发；
     2) 按钮纵向位置跟随指针 Y，translateY(clamp(y - railTop - 14, 40, railHeight - 40))，mousemove 用 rAF 节流；
     3) 指针离开热区立即置为隐藏（无延时），视觉上只由 opacity 过渡做平滑；
     4) 点击切换折叠，状态写入 localStorage['qtools-rail-collapsed']（'1' 收起 / '0' 展开），刷新后保持。
@@ -60,7 +60,7 @@ function toggleRail() {
 }
 
 /* ================================================================ 折叠手柄（跟随鼠标 Y） */
-// 手柄归属一条热区（.qt-rail__hotzone：左栏右边缘 12px 竖直窄条），而不是整个左栏。
+// 手柄归属一条热区（.qt-rail__hotzone：跨在分割线上的 22px 竖直窄条），而不是整个左栏。
 // 手柄是该热区的子元素，指针从热区滑到手柄上不会触发 mouseleave，因此不会「移向手柄时消失」。
 const railRef = ref(null)
 const handleVisible = ref(false)
@@ -202,6 +202,8 @@ const avatarText = computed(() => {
 
 // 移动端紧凑条中间的当前页标题：取最深匹配路由的 meta.title
 const pageTitle = computed(() => route.meta.title || APP_INFO.name)
+// 首页的 meta.title 恰好等于站点名，直接渲染会让顶栏出现「xx xx」重复，故与站点名相同时不显示
+const showPageTitle = computed(() => Boolean(pageTitle.value) && pageTitle.value !== APP_INFO.name)
 
 /* ================================================================ 内容区 */
 // 媒体页需要贴边全宽：由路由 meta.bleed 取消内容区左右留白
@@ -246,8 +248,12 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <!-- is-collapsed：桌面折叠态；is-drawer-open：移动端抽屉展开态。两者都只影响样式 -->
-  <div class="qt-shell" :class="{ 'is-collapsed': railCollapsed, 'is-drawer-open': drawerOpen }">
+  <!-- is-collapsed：桌面折叠态；is-drawer-open：移动端抽屉展开态；is-bleed-page：贴边页（热区退回栏内）。
+       三者都只影响样式 -->
+  <div
+    class="qt-shell"
+    :class="{ 'is-collapsed': railCollapsed, 'is-drawer-open': drawerOpen, 'is-bleed-page': isBleed }"
+  >
     <!-- 移动端紧凑条（桌面 display: none）：☰ + 站点名 + 当前页标题 + 登录/我的 -->
     <header class="qt-topbar">
       <button
@@ -261,7 +267,7 @@ onBeforeUnmount(() => {
         <el-icon :size="18"><Menu /></el-icon>
       </button>
       <span class="qt-topbar__brand">{{ APP_INFO.name }}</span>
-      <span class="qt-topbar__title">{{ pageTitle }}</span>
+      <span v-if="showPageTitle" class="qt-topbar__title">{{ pageTitle }}</span>
       <!-- 右侧只放账号入口：移动端不放主题切换（主题跟随系统） -->
       <RouterLink v-if="state.user" class="qt-topbar__account" to="/me" aria-label="个人中心">
         <span class="qt-topbar__avatar" aria-hidden="true">{{ avatarText }}</span>
@@ -324,14 +330,14 @@ onBeforeUnmount(() => {
         </RouterLink>
       </div>
 
-      <!-- 折叠手柄热区：左栏右边缘 12px 竖直窄条，只有指针进入这里手柄才出现 -->
+      <!-- 折叠手柄热区：跨在分割线上的 22px 竖直窄条（栏内 12 + 栏外 10），指针进入这里手柄才出现 -->
       <div
         class="qt-rail__hotzone"
         @mouseenter="onHotzoneEnter"
         @mousemove="onHotzoneMove"
         @mouseleave="onHotzoneLeave"
       >
-        <!-- 手柄是热区的子元素：骑在边缘上（right: -14px），移向手柄不会触发热区 mouseleave -->
+        <!-- 手柄是热区的子元素：圆心骑在分割线上，移向手柄不会触发热区 mouseleave -->
         <button
           class="qt-rail__handle"
           :class="{ 'is-visible': handleVisible }"
@@ -519,14 +525,19 @@ onBeforeUnmount(() => {
 }
 
 /* ---------------------------------------------------------------- 折叠手柄热区 */
-/* 只有指针落在这条 12px 窄条（左栏右边缘、整栏高）里，手柄才出现；
-   z-index 高于左栏内容，保证热区始终在最上层；宽度很窄，不会挡住导航项的点击。 */
+/* 热区跨在分割线上：栏内 12px + 栏外 10px（right: -10px + width: 22px），
+   指针在分割线两侧各 10px 内都能唤出手柄，不必精确压线。
+   z-index 3 只是「左栏内最高」——左栏自身 z-index 60 才是形成层叠上下文的那个，
+   热区永远不会盖过内容区里的浮层（媒体页抽屉 200+）。
+   栏外那 10px 会覆盖内容区最左 10px：非 bleed 页那里是 .qt-shell__main 的 28px 左右留白，
+   媒体页那里是本页自己的 --ms-gutter（桌面 16px）留白——两者都是纯空白，
+   碰不到任何可点元素，所以所有页面统一使用同一条跨线热区，不做例外。 */
 .qt-rail__hotzone {
   position: absolute;
   top: 0;
-  right: 0;
+  right: -10px;
   z-index: 3;
-  width: 12px;
+  width: 22px;
   height: 100%;
   background-color: transparent;
   pointer-events: auto;
@@ -535,8 +546,8 @@ onBeforeUnmount(() => {
 .qt-rail__handle {
   position: absolute;
   top: 0;
-  /* 相对热区右边缘外移 14px：28px 圆的一半骑在栏边外、一半压住热区 */
-  right: -14px;
+  /* 圆心落在分割线上：热区右缘 = 栏边 +10px，再外移 4px → 手柄右缘 = 栏边 +14px，28px 圆左右各出 14px */
+  right: -4px;
   z-index: 2;
   display: flex;
   align-items: center;
@@ -578,9 +589,8 @@ onBeforeUnmount(() => {
 /* ---------------------------------------------------------------- 内容区 */
 .qt-shell__main {
   margin-left: var(--qt-rail-w);
-  padding: var(--qt-shell-pad);
-  /* 底部留白收紧到 16px：非 bleed 页面末行下面不再顶一大片空白 */
-  padding-bottom: var(--qt-space-4, 16px);
+  /* 上 16px（原 28px 太浪费首屏）、左右各 28px 视觉留白、下 16px（末行下不顶大片空白） */
+  padding: 16px var(--qt-shell-pad) var(--qt-space-4, 16px);
   transition: margin-left 0.18s ease;
 }
 
@@ -781,6 +791,8 @@ onBeforeUnmount(() => {
   /* 移动端内容区不吃左侧偏移 */
   .qt-shell__main {
     margin-left: 0;
+    /* 上留白再收一档（左右仍走 --qt-shell-pad = 16px） */
+    padding-top: 12px;
     /* 媒体页 sticky 工具条让开顶部紧凑条（媒体页用 var(--media-sticky-top, 0px)） */
     --media-sticky-top: var(--qt-topbar-h);
   }
