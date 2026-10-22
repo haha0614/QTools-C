@@ -7,7 +7,6 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import AppHeader from '@/components/AppHeader.vue'
 import { useAppAuth } from '@/composables/useAppAuth'
 
 const route = useRoute()
@@ -66,8 +65,6 @@ const onSubmit = async () => {
 </script>
 
 <template>
-  <AppHeader />
-
   <main class="qt-auth-page">
     <div class="qt-auth-card">
       <h1 class="qt-auth-title">登录</h1>

@@ -113,18 +113,18 @@ function resBadge(w) {
   flex-direction: column;
   background: var(--bg-2);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius, 10px);
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.12s, border-color 0.12s, box-shadow 0.12s;
+  transition: transform 0.12s, border-color 0.12s;
   outline: none;
 }
 
+/* hover 只做 1px 上浮 + 描边加深，不加阴影（与相册卡保持同一套交互语言） */
 .card:hover,
 .card:focus-visible {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   border-color: var(--line-2);
-  box-shadow: 0 6px 18px var(--qt-shadow);
 }
 
 /* 绝对定位：img 不参与在流高度计算，竖屏封面撑不高卡片（app.css:285-287） */
@@ -156,6 +156,8 @@ function resBadge(w) {
   color: var(--fg-dim);
 }
 
+/* 角标压在封面图上，需要固定深色蒙层才在亮/暗两套主题下都可读：
+   这里保留半透明黑（非主题色），文字用 --accent-on（恒为白）维持对比度 */
 .badge {
   position: absolute;
   padding: 1px 5px;
@@ -163,7 +165,7 @@ function resBadge(w) {
   font-size: 11px;
   line-height: 1.5;
   background: rgba(0, 0, 0, 0.74);
-  color: #fff;
+  color: var(--accent-on);
 }
 
 .badge-dur {
@@ -182,7 +184,8 @@ function resBadge(w) {
 .badge-warn {
   left: 6px;
   top: 6px;
-  background: rgba(255, 93, 93, 0.88);
+  background: var(--danger);
+  color: var(--accent-on);
 }
 
 .card-body {
@@ -194,15 +197,16 @@ function resBadge(w) {
 
 .card-body h3 {
   margin: 0;
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 500;
+  line-height: 1.35;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .card-sub {
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--fg-dim);
   white-space: nowrap;
   overflow: hidden;
@@ -236,7 +240,7 @@ function resBadge(w) {
   border: 0;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.52);
-  color: #cfd6e3;
+  color: var(--accent-on);
   font-size: 14px;
   line-height: 24px;
   cursor: pointer;
@@ -248,11 +252,11 @@ function resBadge(w) {
 .card-fav:hover {
   opacity: 1;
   background: rgba(0, 0, 0, 0.74);
-  color: #fff;
+  color: var(--accent-on);
 }
 
 .card-fav.on {
-  color: #ffc977;
+  color: var(--warn);
   opacity: 1;
 }
 
@@ -262,7 +266,7 @@ function resBadge(w) {
   }
 
   .card-body h3 {
-    font-size: 12.5px;
+    font-size: 14px;
   }
 
   .card-sub {

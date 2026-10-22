@@ -7,22 +7,29 @@
     不会上传服务器。
 
   依赖契约（签名由并行搭建的其他子代理固定，本页只做消费，不修改）：
-    @/components/ToolHeader.vue  props: { title: String } —— 左侧面包屑 + 右侧主题切换
-    @/components/AppFooter.vue   无 props —— 页脚
+    @/layouts/ToolLayout.vue     统一工具页骨架：标题 / 面包屑 / 隐私徽标 / 操作条 / 使用说明
     @/api/tool.js                reportToolVisit(toolRoute)：内部自行完成 toolId 反查与埋点
                                  上报，且内部已 try/catch，不会抛错
   全局环境：
     Element Plus 已 app.use 全量注册；@element-plus/icons-vue 图标组件已全部全局注册。
+    全站导航与内容区留白由外层 AppShell 承担，本页只负责内容。
     全局样式变量 --qt-*（bg-page / bg-card / bg-hover / text-primary / text-secondary /
-    border / primary / shadow / danger）与全局类 .qt-container 由全局样式提供，
+    border / primary / shadow / danger）由全局样式提供，
     本页一律使用变量取色，禁止硬编码颜色。
 -->
 <template>
-  <div class="pwd-gen">
-    <!-- 顶部：左侧面包屑「首页 > 随机密码生成器」 + 右侧主题切换 -->
-    <ToolHeader title="随机密码生成器" />
+  <!-- 阅读型页面：默认 880px 最大宽度 -->
+  <ToolLayout
+    title="随机密码生成"
+    desc="自定义长度与字符集，使用浏览器加密随机源生成"
+    :breadcrumb="[{ label: '工具', to: '/' }, { label: '随机密码生成' }]"
+  >
+    <!-- 主操作：生成入口 -->
+    <template #toolbar>
+      <el-button type="primary" :icon="Refresh" @click="generate">生成密码</el-button>
+    </template>
 
-    <main class="qt-container pwd-gen__main">
+    <div class="pwd-gen">
       <!-- ===================== 配置区域 ===================== -->
       <section class="pwd-gen__card">
         <h2 class="pwd-gen__card-title">生成配置</h2>
@@ -46,9 +53,6 @@
             <el-checkbox v-model="useSymbol">包含特殊符号</el-checkbox>
           </div>
         </div>
-
-        <!-- 生成入口 -->
-        <el-button type="primary" :icon="Refresh" @click="generate">生成密码</el-button>
       </section>
 
       <!-- ===================== 结果展示区域 ===================== -->
@@ -67,10 +71,18 @@
         <!-- 安全提示（次文字色） -->
         <p class="pwd-gen__hint">本密码在本地浏览器生成，不会上传服务器</p>
       </section>
-    </main>
+    </div>
 
-    <AppFooter />
-  </div>
+    <template #help>
+      <ul>
+        <li>拖动滑块或直接输入数字设定密码长度（4–64 位，滑块与输入框双向联动）。</li>
+        <li>勾选需要的字符类型；一种都不勾选时点「生成密码」会提示并中止。</li>
+        <li>密码由浏览器 Web Crypto 的加密随机源逐位生成，并采用拒绝采样消除取模偏差。</li>
+        <li>「复制密码」优先使用剪贴板 API，不可用时自动回退到兼容方案。</li>
+        <li>密码只在本地浏览器内存中生成与展示，不会上传到服务器。</li>
+      </ul>
+    </template>
+  </ToolLayout>
 </template>
 
 <script setup>
@@ -78,8 +90,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Refresh, CopyDocument } from '@element-plus/icons-vue'
-import ToolHeader from '@/components/ToolHeader.vue'
-import AppFooter from '@/components/AppFooter.vue'
+import ToolLayout from '@/layouts/ToolLayout.vue'
 import { reportToolVisit } from '@/api/tool.js'
 
 /** 当前路由：仅用于 onMounted 中把路由路径交给埋点函数 */
@@ -223,20 +234,12 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+/* 外层页面壳、标题、面包屑、操作条样式均由 ToolLayout + AppShell 提供，
+   这里只保留「配置卡片 + 结果卡片」的纵向业务布局 */
 .pwd-gen {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  background: var(--qt-bg-page);
-  color: var(--qt-text-primary);
-}
-
-.pwd-gen__main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
   gap: 16px;
-  padding: 24px 0 48px;
 }
 
 .pwd-gen__card {

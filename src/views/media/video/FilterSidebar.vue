@@ -1,16 +1,12 @@
 <!--
-  FilterSidebar.vue —— 左侧筛选栏（分类 chips + 快捷筛选插槽 + facet 折叠组）
+  FilterSidebar.vue —— 筛选抽屉的内容体（分类 chips + 快捷筛选插槽 + facet 折叠组）
   来源：index.html:14-25 的 DOM + app.js renderCats (662-670) / renderFacetGroups (672-692) /
         syncFacetUI (695-715) / facetGroups 的 change+input 监听 (1361-1388)。
   与原页的差异：原页只同步勾选态不重建 DOM 以保住折叠与搜索框状态；Vue 用局部状态（openMap / searchMap）
         达到同样效果——勾选变化不重置折叠与组内搜索词。
 -->
 <template>
-  <aside class="sidebar" :class="{ open: open }" aria-label="筛选">
-    <div class="brand">
-      <span class="brand-dot"></span><span>视频库</span>
-    </div>
-
+  <div class="fs-scope">
     <div ref="scrollEl" class="side-scroll">
       <section class="fgroup fgroup-cat">
         <div class="fgroup-head">
@@ -77,11 +73,7 @@
         </details>
       </div>
     </div>
-
-    <div class="side-foot">
-      <button class="btn-ghost" type="button" @click="emit('clear')">清空全部筛选</button>
-    </div>
-  </aside>
+  </div>
 </template>
 
 <script setup>
@@ -95,12 +87,10 @@ const props = defineProps({
   /** facet → [[值, 计数], …] */
   groups: { type: Object, required: true },
   selectedCats: { type: Array, required: true },
-  selectedFacets: { type: Object, required: true },
-  /** 移动端抽屉是否展开 */
-  open: { type: Boolean, default: false }
+  selectedFacets: { type: Object, required: true }
 })
 
-const emit = defineEmits(['toggle-cat', 'toggle-facet', 'clear'])
+const emit = defineEmits(['toggle-cat', 'toggle-facet'])
 
 const scrollEl = ref(null)
 
@@ -171,50 +161,23 @@ defineExpose({ scrollToQuick })
 </script>
 
 <style lang="scss" scoped>
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: var(--sidebar-w);
+/* 抽屉内容体：自身不定宽、不定位——宽度与滑入由 VideoPage.vue 的 .filter-drawer 决定，
+   这里只做「头/尾固定、中段滚动」的弹性列：.fs-scope 撑满抽屉剩余高度，.side-scroll 在内部滚动。 */
+.fs-scope {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  background: var(--bg-2);
-  border-right: 1px solid var(--line);
-  z-index: 40;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 15px 14px 13px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--fg);
-  border-bottom: 1px solid var(--line);
-}
-
-.brand-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 10px var(--accent);
+  min-height: 0;
 }
 
 /* scrollbar-gutter: 展开分组时滚动条出现不再挤窄内容、导致 chips 重新折行 */
 .side-scroll {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 10px 10px 14px;
+  padding: 12px 14px 16px;
   scrollbar-width: thin;
   scrollbar-gutter: stable;
-}
-
-.side-foot {
-  padding: 8px 10px 12px;
-  border-top: 1px solid var(--line);
 }
 
 .fgroup {
@@ -290,7 +253,7 @@ defineExpose({ scrollToQuick })
 
 details.fg {
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius, 10px);
   background: var(--bg);
   overflow: hidden;
 }
@@ -407,32 +370,10 @@ details.fg[open] .fg-caret {
   color: var(--fg-dim);
 }
 
-.btn-ghost {
-  width: 100%;
-  padding: 7px 11px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--fg-dim);
-  cursor: pointer;
-}
-
-.btn-ghost:hover {
-  background: var(--bg-3);
-  border-color: var(--line-2);
-  color: var(--fg);
-}
-
+/* 抽屉在 ≤768px 占满全宽，内容体自身不再需要任何宽度/位移规则，只有组内留白略收紧 */
 @media (max-width: 768px) {
-  .sidebar {
-    transform: translateX(-100%);
-    transition: transform 0.2s ease;
-    box-shadow: 10px 0 28px var(--qt-shadow);
-    width: 268px;
-  }
-
-  .sidebar.open {
-    transform: none;
+  .side-scroll {
+    padding: 10px 12px 14px;
   }
 }
 </style>

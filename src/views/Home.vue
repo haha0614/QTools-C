@@ -1,26 +1,48 @@
 <!--
-  Home.vue —— 首页「在线实用工具箱」导航页
-  用途：展示站点标题、分类标题与工具卡片网格，点击卡片跳转到对应工具页。
-  数据：onMounted 调用 @/api/tool.js 的 getToolList() 动态获取；按 sort 升序排列。
-        媒体站等静态页入口也来自这张表（tool_info），可在管理端「工具管理」里上下架与排序。
-  容错：接口异常时给出 el-alert 错误提示，并回退渲染内置的 4 条兜底数据，保证首页始终可用。
-  主题：所有颜色均取自全局 CSS 变量（--qt-*），暗色模式由全局 <html class="dark"> 自动生效，本页不含主题逻辑。
+  Home.vue —— 首页（工具索引 + 媒体站入口）
+  结构：Hero 营销位 → 三步使用指引 → 工具索引（搜索 / 分类 / 最近使用 / 卡片网格）→ 页内页脚说明
+  外壳：全站导航与页头由 AppShell 承载，本页不再引入 AppHeader / AppFooter，也不放全站导航。
+  数据：onMounted 调用 @/api/tool.js 的 getToolList()（GET /toolInfo/list）；失败时提示并回退 FALLBACK_TOOLS。
+  主题：颜色一律取自全局 CSS 变量（--qt-*），暗色模式由 html.dark 覆盖变量自动生效，本页无主题判断逻辑。
 -->
 <script setup>
 // ========== 依赖引入 ==========
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import AppHeader from '@/components/AppHeader.vue' // 顶部导航（Logo + 主题切换 + 关于本站弹窗），无 props
-import AppFooter from '@/components/AppFooter.vue' // 页脚，无 props
 import { getToolList } from '@/api/tool.js' // GET /toolInfo/list，返回工具数组
-import { APP_INFO } from '@/utils/constants' // 站点信息常量（名称、副标题等）
-import * as ElementPlusIcons from '@element-plus/icons-vue' // 全局已注册图标，这里按名字动态取组件
+import { APP_INFO } from '@/utils/constants' // 站点信息常量（名称、版权等）
+import * as ElementPlusIcons from '@element-plus/icons-vue' // 按名字动态取图标组件
 
-// ========== 内置兜底数据 ==========
-// 接口不可用时使用；顺序与 sort 一致，字段与后台返回保持一致（toolName / toolDesc / toolRoute / icon / sort）
+// ========== 常量 ==========
+// 最近使用的持久化键与上限
+const RECENT_KEY = 'qtools:recent-tools'
+const RECENT_MAX = 6
+
+// 分类 chips：key 与 normalizeTool 计算出的 category 对应
+const CATEGORIES = [
+  { key: 'all', label: '全部' },
+  { key: 'text', label: '文本' },
+  { key: 'encode', label: '编码' },
+  { key: 'generate', label: '生成' },
+  { key: 'security', label: '安全' },
+  { key: 'media', label: '媒体' }
+]
+
+// 三步使用指引（纯展示数据）
+const GUIDE_STEPS = [
+  { title: '选工具', desc: '从下面的索引里挑一个，或直接搜索名称与用途' },
+  { title: '粘贴 / 上传内容', desc: '文本、图片、文件都只在浏览器内存里处理' },
+  { title: '直接拿结果', desc: '结果即时生成，全程不经过服务器' }
+]
+
+// 后端 tool_info 暂无分类字段，先按工具 id 硬编码映射（1/2 → 文本、3 → 安全、4 → 媒体）；
+// 后续后端补上 category 字段后改为直接读 item.category，删除这张映射表即可。
+const CATEGORY_BY_ID = { 1: 'text', 2: 'text', 3: 'security', 4: 'media' }
+
+// 内置兜底数据：接口不可用时使用，id 与后端 tool_info 对齐以便沿用 id → 分类映射
 const FALLBACK_TOOLS = [
   {
-    id: 'fallback-1',
+    id: 1,
     toolName: 'JSON格式化工具',
     toolDesc: 'JSON格式化、压缩、语法校验',
     toolRoute: '/tool/json',
@@ -28,7 +50,7 @@ const FALLBACK_TOOLS = [
     sort: 1
   },
   {
-    id: 'fallback-2',
+    id: 2,
     toolName: '文本字数统计',
     toolDesc: '统计汉字、字符、行数，可清除空格',
     toolRoute: '/tool/text-count',
@@ -36,7 +58,7 @@ const FALLBACK_TOOLS = [
     sort: 2
   },
   {
-    id: 'fallback-3',
+    id: 3,
     toolName: '随机密码生成',
     toolDesc: '自定义长度，支持大小写、数字、符号',
     toolRoute: '/tool/pwd-gen',
@@ -44,8 +66,8 @@ const FALLBACK_TOOLS = [
     sort: 3
   },
   {
-    // 媒体站是 public/media 下的独立静态页，不经 Vue Router，标记 external 后整页跳转
-    id: 'fallback-4',
+    // 媒体站是 /media 下的独立页面（静态页与 SPA 都可直达），标记 external 后整页跳转
+    id: 4,
     toolName: '媒体站',
     toolDesc: '视频与图片库：卡片墙、相册分组、收藏与断点续播',
     toolRoute: '/media',
@@ -55,18 +77,28 @@ const FALLBACK_TOOLS = [
   }
 ]
 
-// 说明：媒体站等静态页入口不再硬编码合并，而是作为 tool_info 的一条记录由后台下发，
-// 这样可在「工具管理」里上下架与排序；上面 FALLBACK_TOOLS 里的同名项只在接口不可用时生效。
-
 // ========== 响应式状态 ==========
 const router = useRouter()
-const toolList = ref([]) // 归一化后的卡片列表：{ id, name, desc, route, icon, sort }
-const loading = ref(true) // 加载中：渲染 el-skeleton 占位
-const loadError = ref(false) // 加载失败：渲染 el-alert 错误提示
+const toolList = ref([]) // 归一化后的卡片列表：{ id, name, desc, route, icon, sort, external, category }
+const loading = ref(true) // 加载中：渲染骨架占位
+const loadError = ref(false) // 加载失败：渲染提示条
+const keyword = ref('') // 搜索关键词
+const category = ref('all') // 当前分类
+const recentTools = ref([]) // 最近使用：{ id, name, route }
+const toolsSection = ref(null) // 工具索引区，供 Hero 主按钮平滑滚动
 
 // ========== 字段映射 ==========
 // 非 Vue Router 管理的地址（外站 URL 或 *.html 静态页，如 /media/index.html）需要整页跳转
 const isStaticRoute = (route) => !!route && (/^https?:\/\//i.test(route) || /\.html?(?:$|[?#])/i.test(route))
+
+// 分类来源：优先用后端字段；否则按 id 映射；媒体站路由再兜底一次，避免后端 id 变动时归错类
+const resolveCategory = (item) => {
+  if (item.category) return item.category
+  const byId = CATEGORY_BY_ID[item.id]
+  if (byId) return byId
+  if (typeof item.toolRoute === 'string' && item.toolRoute.startsWith('/media')) return 'media'
+  return 'other'
+}
 
 // 把后台字段映射成视图字段，模板里不再直接依赖接口字段名
 const normalizeTool = (item) => ({
@@ -76,16 +108,23 @@ const normalizeTool = (item) => ({
   route: item.toolRoute,
   icon: item.icon,
   sort: item.sort,
-  // 后台显式标了 external，或 route 本身就是静态页/外站地址
-  external: !!item.external || isStaticRoute(item.toolRoute)
+  // 后台显式标了 external，或 route 本身就是静态页 / 外站地址
+  external: !!item.external || isStaticRoute(item.toolRoute),
+  category: resolveCategory(item)
 })
 
-// 接口数据即完整列表（按 sort 升序），媒体站等静态页也由后台下发，前端不再额外拼接
+// 接口数据即完整列表（按 sort 升序），媒体站等静态页入口也由后台下发
 const normalizeList = (list) => list.map(normalizeTool).sort((a, b) => (a.sort || 0) - (b.sort || 0))
 
 // ========== 图标解析 ==========
-// 同名图标组件存在时才返回组件对象，否则返回 null（模板中配合 v-if 使用，避免渲染出空白占位）
+// 同名图标组件存在时才返回组件对象，否则返回 null（模板中配合 v-if，避免渲染空白占位）
 const iconComp = (name) => (name && ElementPlusIcons[name]) || null
+
+// 后端也可能下发一段内联 SVG：仅接受以 <svg 开头的字符串，其余一律走文字兜底
+const isSvgIcon = (icon) => typeof icon === 'string' && /^\s*<svg[\s>]/i.test(icon)
+
+// 文字兜底：取工具名首字
+const initialOf = (name) => (typeof name === 'string' && name.trim() ? name.trim().slice(0, 1) : '•')
 
 // ========== 数据加载 ==========
 const fetchTools = async () => {
@@ -94,12 +133,11 @@ const fetchTools = async () => {
   try {
     const raw = await getToolList()
     // 兼容若依 AjaxResult 包装体（{ code, msg, data: [...] }）与后端直接返回裸数组两种形态
-    const data = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.data) ? raw.data : null)
+    const data = Array.isArray(raw) ? raw : raw && Array.isArray(raw.data) ? raw.data : null
     if (!data) throw new Error('接口返回格式不是数组')
-    // 按 sort 升序排列（sort 缺失时按 0 处理）
     toolList.value = normalizeList(data)
   } catch (err) {
-    // 失败路径：记录错误 → 展示 el-alert → 回退内置兜底数据
+    // 失败路径：记录错误 → 展示提示条 → 回退内置兜底数据，首页保持可用
     console.error('[Home] 工具列表加载失败：', err)
     loadError.value = true
     toolList.value = normalizeList(FALLBACK_TOOLS)
@@ -108,190 +146,605 @@ const fetchTools = async () => {
   }
 }
 
+// ========== 过滤 ==========
+// 本地过滤：分类 + 关键词（匹配名称 / 描述 / 路由）
+const filteredTools = computed(() => {
+  const kw = keyword.value.trim().toLowerCase()
+  return toolList.value.filter((tool) => {
+    if (category.value !== 'all' && tool.category !== category.value) return false
+    if (!kw) return true
+    return [tool.name, tool.desc, tool.route].some(
+      (field) => typeof field === 'string' && field.toLowerCase().includes(kw)
+    )
+  })
+})
+
+// ========== 最近使用 ==========
+// 读取：localStorage 里存的是接口风格字段 { id, toolName, toolRoute }，这里转成视图字段
+const readRecent = () => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]')
+    if (!Array.isArray(raw)) return []
+    return raw
+      .filter((item) => item && item.toolRoute)
+      .map((item) => ({ id: item.id, name: item.toolName || item.toolRoute, route: item.toolRoute }))
+      .slice(0, RECENT_MAX)
+  } catch (err) {
+    // 隐私模式 / 脏数据都不应影响首页渲染
+    console.warn('[Home] 最近使用读取失败：', err)
+    return []
+  }
+}
+
+// 写入：按路由去重、最新在前、最多 RECENT_MAX 条
+const saveRecent = (list) => {
+  try {
+    localStorage.setItem(
+      RECENT_KEY,
+      JSON.stringify(list.map((tool) => ({ id: tool.id, toolName: tool.name, toolRoute: tool.route })))
+    )
+  } catch (err) {
+    console.warn('[Home] 最近使用写入失败：', err)
+  }
+}
+
+const rememberTool = (tool) => {
+  const entry = { id: tool.id, name: tool.name, route: tool.route }
+  const next = [entry, ...recentTools.value.filter((item) => item.route !== entry.route)].slice(0, RECENT_MAX)
+  recentTools.value = next
+  saveRecent(next)
+}
+
 // ========== 交互 ==========
-// 点击卡片跳转到工具页；路由缺失时不做跳转，避免跳到空地址
+// 点击卡片 / 最近使用项：external 或静态页整页跳转，其余走 vue-router
 const goTool = (tool) => {
-  if (!tool.route) return
-  // external 是 Vue Router 之外的真实静态页，必须整页跳转
-  if (tool.external) window.location.href = tool.route
+  if (!tool || !tool.route) return
+  rememberTool(tool)
+  if (tool.external || isStaticRoute(tool.route)) window.location.href = tool.route
   else router.push(tool.route)
 }
 
-// 首次挂载时拉取工具列表
-onMounted(fetchTools)
+// Hero 主按钮：平滑滚动到工具索引
+const scrollToTools = () => {
+  const el = toolsSection.value
+  if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+// Hero 次按钮：进入媒体站
+const goMedia = () => router.push('/media')
+
+// 首次挂载：读最近使用 + 拉工具列表
+onMounted(() => {
+  recentTools.value = readRecent()
+  fetchTools()
+})
 </script>
 
 <template>
-  <!-- 纵向 flex 布局：header 贴顶、main 撑开、footer 在内容不足时也贴底 -->
-  <el-container class="home-layout" direction="vertical">
-    <!-- 顶部导航：AppHeader 自带 position: sticky，直接作为 flex 子项即可固定在顶部 -->
-    <AppHeader />
+  <div class="home-page">
+    <!-- ===== 1. Hero 营销位：浅底细线框，纯文字 ===== -->
+    <section class="hero">
+      <h1 class="hero__title">{{ APP_INFO.name }}</h1>
+      <p class="hero__subtitle">在线工具 + 私有媒体库，打开即用，数据只留在你自己的浏览器里</p>
 
-    <el-main class="home-main">
-      <!-- 内层容器：全局 .qt-container 负责居中与最大宽 1200px，这里补上内边距 -->
-      <div class="qt-container home-container">
-        <!-- 页面标题区 -->
-        <div class="home-hero">
-          <h1 class="home-hero__title">在线实用工具箱</h1>
-          <p class="home-hero__subtitle">{{ APP_INFO.slogan }}</p>
-        </div>
+      <ul class="hero__badges">
+        <li class="hero__badge">⚡ 纯本地运算</li>
+        <li class="hero__badge">🔓 免注册即用</li>
+        <li class="hero__badge">🚫 数据不上传</li>
+      </ul>
 
-        <!-- 分类标题 -->
-        <h2 class="home-section-title">文本与编码工具</h2>
-
-        <!-- 接口失败提示（同时下方仍会渲染兜底数据，首页保持可用） -->
-        <el-alert v-if="loadError" class="home-alert" type="error" title="工具加载失败" show-icon />
-
-        <!-- 加载中：骨架屏占位 -->
-        <el-row v-if="loading" :gutter="20">
-          <el-col v-for="n in 4" :key="n" :xs="24" :sm="12" :md="8" :lg="6">
-            <el-skeleton class="home-skeleton" :rows="3" animated />
-          </el-col>
-        </el-row>
-
-        <!-- 工具卡片网格：手机 1 列 / 平板 2 列 / 中等屏 3 列 / 大屏 4 列 -->
-        <el-row v-else :gutter="20">
-          <el-col v-for="item in toolList" :key="item.id" :xs="24" :sm="12" :md="8" :lg="6">
-            <div class="tool-card" @click="goTool(item)">
-              <div class="tool-card__icon">
-                <component :is="iconComp(item.icon)" v-if="iconComp(item.icon)" />
-              </div>
-              <h3 class="tool-card__name">{{ item.name }}</h3>
-              <p class="tool-card__desc">{{ item.desc }}</p>
-            </div>
-          </el-col>
-        </el-row>
+      <div class="hero__actions">
+        <el-button type="primary" class="hero__btn" @click="scrollToTools">开始使用 ↓</el-button>
+        <el-button class="hero__btn" @click="goMedia">媒体站 →</el-button>
       </div>
-    </el-main>
+    </section>
 
-    <!-- 页脚：AppFooter 自带 margin-top: auto，作为 flex 子项在内容不足时也贴底 -->
-    <AppFooter />
-  </el-container>
+    <!-- ===== 2. 使用指引：横向三步，窄屏竖排 ===== -->
+    <section class="guide">
+      <h2 class="section-title">三步拿到结果</h2>
+      <ol class="guide__steps">
+        <li v-for="(step, index) in GUIDE_STEPS" :key="step.title" class="guide__step">
+          <span class="guide__index">{{ index + 1 }}</span>
+          <div class="guide__body">
+            <h3 class="guide__name">{{ step.title }}</h3>
+            <p class="guide__desc">{{ step.desc }}</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ===== 3. 工具索引 ===== -->
+    <section id="tools" ref="toolsSection" class="tools">
+      <div class="tools__head">
+        <h2 class="section-title">工具索引</h2>
+        <span class="tools__count">{{ filteredTools.length }} 个工具</span>
+      </div>
+
+      <!-- 搜索框：pill，本地过滤 -->
+      <div class="search">
+        <input
+          v-model="keyword"
+          class="search__input"
+          type="search"
+          placeholder="搜索工具名称或用途…"
+          aria-label="搜索工具名称或用途"
+        />
+      </div>
+
+      <!-- 分类 chips -->
+      <div class="chips" role="group" aria-label="工具分类">
+        <button
+          v-for="item in CATEGORIES"
+          :key="item.key"
+          type="button"
+          class="chip"
+          :class="{ 'chip--active': category === item.key }"
+          :aria-pressed="category === item.key"
+          @click="category = item.key"
+        >
+          {{ item.label }}
+        </button>
+      </div>
+
+      <!-- 最近使用：无记录时整块隐藏 -->
+      <div v-if="recentTools.length" class="recent">
+        <h3 class="recent__title">最近使用</h3>
+        <div class="recent__list">
+          <button
+            v-for="item in recentTools"
+            :key="item.route"
+            type="button"
+            class="recent__item"
+            @click="goTool(item)"
+          >
+            {{ item.name }}
+          </button>
+        </div>
+      </div>
+
+      <!-- 接口失败提示：下方仍渲染兜底数据 -->
+      <el-alert
+        v-if="loadError"
+        class="tools__alert"
+        type="warning"
+        title="工具加载失败，已展示默认入口"
+        :closable="false"
+        show-icon
+      />
+
+      <!-- 加载中：骨架占位 -->
+      <div v-if="loading" class="tool-grid">
+        <el-skeleton v-for="n in 4" :key="n" class="tool-skeleton" :rows="2" animated />
+      </div>
+
+      <!-- 卡片网格：宽屏 4 列 / <1400 三列 / <900 两列 / <640 单列 -->
+      <div v-else-if="filteredTools.length" class="tool-grid">
+        <a
+          v-for="tool in filteredTools"
+          :key="tool.id"
+          class="tool-card"
+          :href="tool.route || '#'"
+          @click.prevent="goTool(tool)"
+        >
+          <span class="tool-card__icon">
+            <component :is="iconComp(tool.icon)" v-if="iconComp(tool.icon)" />
+            <span v-else-if="isSvgIcon(tool.icon)" class="tool-card__svg" v-html="tool.icon"></span>
+            <span v-else class="tool-card__initial">{{ initialOf(tool.name) }}</span>
+          </span>
+          <span class="tool-card__name">{{ tool.name }}</span>
+          <span class="tool-card__desc">{{ tool.desc || '暂无描述' }}</span>
+          <span class="tool-card__tag">本地运算</span>
+        </a>
+      </div>
+
+      <!-- 无匹配：空态 -->
+      <p v-else class="tools__empty">没有匹配的工具，换个关键词或分类试试</p>
+    </section>
+
+    <!-- ===== 4. 页内页脚说明 ===== -->
+    <footer class="home-foot">
+      <p class="home-foot__line">所有工具在浏览器本地运行，不上传任何数据</p>
+      <p class="home-foot__meta">{{ APP_INFO.copyright }}</p>
+    </footer>
+  </div>
 </template>
 
 <style scoped lang="scss">
-/* 整页纵向布局：最小高度铺满视口，使内容不足时页脚仍贴底 */
-.home-layout {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background-color: var(--qt-bg-page);
+/* 页面容器：左右留白由 AppShell 的 --qt-shell-pad 提供（不要再用 .qt-container，否则留白叠加成 44px） */
+.home-page {
+  padding-top: 24px;
+  padding-bottom: 48px;
+  color: var(--qt-text-primary);
 }
 
-/* 主体撑满剩余空间，内边距交给内部容器 */
-.home-main {
-  flex: 1;
-  padding: 0;
-  background-color: var(--qt-bg-page);
-}
-
-/* 仅补上下内边距：左右 16px 已由全局 .qt-container 提供，避免叠加 */
-.home-container {
-  padding: 24px 0 8px;
-}
-
-/* 标题区：居中 */
-.home-hero {
-  text-align: center;
-  margin-bottom: 32px;
-
-  &__title {
-    margin: 0 0 8px;
-    font-size: 28px;
-    font-weight: 600;
-    color: var(--qt-text-primary);
-  }
-
-  &__subtitle {
-    margin: 0;
-    font-size: 14px;
-    color: var(--qt-text-secondary);
-  }
-}
-
-/* 分类标题 */
-.home-section-title {
-  margin: 0 0 16px;
-  font-size: 18px;
+/* 区块标题统一阶梯 */
+.section-title {
+  margin: 0;
+  font-size: 16px;
   font-weight: 600;
   color: var(--qt-text-primary);
 }
 
-.home-alert {
-  margin-bottom: 16px;
-}
-
-/* 骨架屏：尺寸接近卡片，避免加载完成时布局跳动 */
-.home-skeleton {
-  margin-bottom: 20px;
-  padding: 20px;
+/* ---------- 1. Hero ---------- */
+.hero {
+  padding: 32px 28px;
   border: 1px solid var(--qt-border);
-  border-radius: 8px;
+  border-radius: 12px;
   background-color: var(--qt-bg-card);
-  box-sizing: border-box;
-}
+  text-align: center;
 
-/* 工具卡片 */
-.tool-card {
-  /* 撑满所在栅格列（el-col 在 el-row 里默认 stretch），减去底部间距，
-     保证同一行卡片等高——否则描述行数不同会让卡片高度参差 */
-  height: calc(100% - 20px);
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 20px; /* 配合 el-row 的 gutter 补足纵向间距 */
-  padding: 20px;
-  border: 1px solid var(--qt-border);
-  border-radius: 8px;
-  background-color: var(--qt-bg-card);
-  cursor: pointer;
-  transition: 0.2s;
-  box-sizing: border-box;
-
-  &:hover {
-    background-color: var(--qt-bg-hover);
-    transform: translateY(-4px);
-    box-shadow: 0 6px 18px var(--qt-shadow);
+  &__title {
+    margin: 0 0 10px;
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--qt-text-primary);
   }
 
-  &__icon {
-    margin-bottom: 12px;
-    color: var(--qt-primary);
-    line-height: 1;
+  &__subtitle {
+    max-width: 560px;
+    margin: 0 auto 20px;
+    font-size: 14px;
+    color: var(--qt-text-secondary);
+  }
 
-    :deep(svg) {
-      width: 28px;
-      height: 28px;
+  &__badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 0 0 22px;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__badge {
+    padding: 4px 12px;
+    border: 1px solid var(--qt-border);
+    border-radius: 999px;
+    background-color: var(--qt-bg-page);
+    font-size: 12px;
+    color: var(--qt-text-secondary);
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  &__btn {
+    min-width: 120px;
+    border-radius: 10px;
+
+    /* 间距交给 flex gap，抵消 Element Plus 相邻按钮的左边距 */
+    & + & {
+      margin-left: 0;
     }
+  }
+}
+
+/* ---------- 2. 使用指引 ---------- */
+.guide {
+  margin-top: 28px;
+
+  &__steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: 14px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__step {
+    display: flex;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--qt-border);
+    border-radius: 10px;
+    background-color: var(--qt-bg-card);
+  }
+
+  &__index {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    margin-top: 1px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--qt-primary);
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--qt-primary);
+  }
+
+  &__body {
+    min-width: 0;
   }
 
   &__name {
-    margin: 0 0 8px;
-    font-size: 16px;
+    margin: 0 0 2px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--qt-text-primary);
   }
 
   &__desc {
-    /* 占据剩余高度，使图标/名称在等高卡片里始终贴顶 */
-    flex: 1;
     margin: 0;
     font-size: 13px;
-    line-height: 1.6;
+    line-height: 1.55;
     color: var(--qt-text-secondary);
-    /* 描述最多两行，超出省略，避免个别工具的描述过长把卡片撑高 */
+  }
+}
+
+/* ---------- 3. 工具索引 ---------- */
+.tools {
+  margin-top: 36px;
+  scroll-margin-top: 24px;
+
+  &__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  &__count {
+    font-size: 12px;
+    color: var(--qt-text-secondary);
+  }
+
+  &__alert {
+    margin-top: 16px;
+  }
+
+  &__empty {
+    margin: 24px 0 0;
+    font-size: 13px;
+    color: var(--qt-text-secondary);
+    text-align: center;
+  }
+}
+
+/* 搜索框：圆角 pill */
+.search {
+  margin-top: 14px;
+
+  &__input {
+    width: 100%;
+    height: 40px;
+    padding: 0 16px;
+    border: 1px solid var(--qt-border);
+    border-radius: 999px;
+    background-color: var(--qt-bg-card);
+    font-size: 14px;
+    color: var(--qt-text-primary);
+    outline: none;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: border-color 0.2s;
+
+    &::placeholder {
+      color: var(--qt-text-secondary);
+    }
+
+    &:focus {
+      border-color: var(--qt-primary);
+    }
+  }
+}
+
+/* 分类 chips */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.chip {
+  padding: 6px 14px;
+  border: 1px solid var(--qt-border);
+  border-radius: 999px;
+  background-color: var(--qt-bg-card);
+  font-size: 13px;
+  color: var(--qt-text-secondary);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+
+  &:hover {
+    background-color: var(--qt-bg-hover);
+  }
+
+  &--active {
+    border-color: var(--qt-primary);
+    background-color: var(--qt-bg-hover);
+    color: var(--qt-primary);
+  }
+}
+
+/* 最近使用 */
+.recent {
+  margin-top: 20px;
+
+  &__title {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--qt-text-secondary);
+  }
+
+  &__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  &__item {
+    max-width: 220px;
+    padding: 5px 12px;
+    overflow: hidden;
+    border: 1px solid var(--qt-border);
+    border-radius: 8px;
+    background-color: var(--qt-bg-card);
+    font-size: 13px;
+    color: var(--qt-text-primary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+
+    &:hover {
+      border-color: var(--qt-primary);
+      color: var(--qt-primary);
+    }
+  }
+}
+
+/* 卡片网格：宽屏 4 列，随宽度降级到 3 / 2 / 1 列 */
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+/* 骨架占位：尺寸贴近卡片，避免加载完成时布局跳动 */
+.tool-skeleton {
+  padding: 16px;
+  border: 1px solid var(--qt-border);
+  border-radius: 10px;
+  background-color: var(--qt-bg-card);
+}
+
+/* 工具卡片：整卡可点（<a>），hover 仅抬 1px + 描边加深 */
+.tool-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--qt-border);
+  border-radius: 10px;
+  background-color: var(--qt-bg-card);
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.2s, border-color 0.2s;
+
+  &:hover {
+    border-color: var(--qt-primary);
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--qt-primary);
+    outline-offset: 2px;
+  }
+
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background-color: var(--qt-bg-hover);
+    color: var(--qt-primary);
+    font-size: 15px;
+    line-height: 1;
+  }
+
+  /* 图标由 v-html 注入的 SVG，带不上 scoped 属性，需要 :deep */
+  &__svg :deep(svg) {
+    width: 20px;
+    height: 20px;
+  }
+
+  &__initial {
+    font-weight: 600;
+  }
+
+  &__name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--qt-text-primary);
+  }
+
+  /* 描述固定两行截断 */
+  &__desc {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--qt-text-secondary);
+  }
+
+  &__tag {
+    align-self: flex-start;
+    margin-top: auto;
+    padding: 2px 8px;
+    border: 1px solid var(--qt-border);
+    border-radius: 999px;
+    font-size: 11px;
+    color: var(--qt-text-secondary);
   }
 }
 
-/*
- * 卡片网格断点说明（Element Plus 栅格断点，由 el-row / el-col 响应式属性实现）：
- *   xs  < 768px   手机   → :xs="24" 每行 1 张
- *   sm  >= 768px  平板   → :sm="12" 每行 2 张
- *   md  >= 992px  中等屏 → :md="8"  每行 3 张
- *   lg  >= 1200px 桌面   → :lg="6"  每行 4 张
- */
+/* ---------- 4. 页内页脚 ---------- */
+.home-foot {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--qt-border);
+  text-align: center;
+
+  &__line {
+    margin: 0;
+    font-size: 13px;
+    color: var(--qt-text-secondary);
+  }
+
+  &__meta {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: var(--qt-text-secondary);
+  }
+}
+
+/* ---------- 响应式断点 ---------- */
+@media (max-width: 1399px) {
+  .tool-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 899px) {
+  .tool-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 639px) {
+  .tool-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* 使用指引：三步改竖排 */
+  .guide__steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hero {
+    padding: 26px 18px;
+  }
+
+  .hero__title {
+    font-size: 30px;
+  }
+}
 </style>

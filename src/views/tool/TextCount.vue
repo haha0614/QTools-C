@@ -7,47 +7,53 @@
         颜色一律使用全局 CSS 变量，暗色适配交由 Element Plus 暗色变量 + 页面样式变量处理，本页不写主题切换逻辑。
 -->
 <template>
-  <div class="text-count-page">
-    <!-- 顶部栏：左侧面包屑「首页 > 文本字数统计」+ 右侧主题切换 -->
-    <ToolHeader title="文本字数统计" />
+  <!-- 阅读型页面：默认 880px 最大宽度 -->
+  <ToolLayout
+    title="文本字数统计"
+    desc="统计汉字、字符、行数，可清除空格与空行"
+    :breadcrumb="[{ label: '工具', to: '/' }, { label: '文本字数统计' }]"
+  >
+    <!-- 操作按钮组：清空文本 / 复制文本 / 去除所有空格换行 -->
+    <template #toolbar>
+      <el-button @click="handleClear">清空文本</el-button>
+      <el-button type="primary" @click="handleCopy">复制文本</el-button>
+      <el-button @click="handleRemoveWhitespace">去除所有空格换行</el-button>
+    </template>
 
-    <main class="qt-container text-count-main">
-      <!-- 文本输入区：粘贴即统计 -->
-      <el-input
-        v-model="text"
-        class="text-count-input"
-        type="textarea"
-        :rows="10"
-        placeholder="粘贴文本到这里进行统计"
-      />
+    <!-- 文本输入区：粘贴即统计 -->
+    <el-input
+      v-model="text"
+      class="text-count-input"
+      type="textarea"
+      :rows="10"
+      placeholder="粘贴文本到这里进行统计"
+    />
 
-      <!-- 统计结果卡片区：PC 一行 5 张 / 平板 3 张 / 手机 2 张，由 .stat-grid 的媒体查询控制 -->
-      <div class="stat-grid">
-        <div v-for="item in statCards" :key="item.label" class="stat-card">
-          <span class="stat-value">{{ item.value }}</span>
-          <span class="stat-label">{{ item.label }}</span>
-        </div>
+    <!-- 统计结果卡片区：PC 一行 5 张 / 平板 3 张 / 手机 2 张，由 .stat-grid 的媒体查询控制 -->
+    <div class="stat-grid">
+      <div v-for="item in statCards" :key="item.label" class="stat-card">
+        <span class="stat-value">{{ item.value }}</span>
+        <span class="stat-label">{{ item.label }}</span>
       </div>
+    </div>
 
-      <!-- 操作按钮组 -->
-      <div class="action-bar">
-        <el-button @click="handleClear">清空文本</el-button>
-        <el-button type="primary" @click="handleCopy">复制文本</el-button>
-        <el-button @click="handleRemoveWhitespace">去除所有空格换行</el-button>
-      </div>
-    </main>
-
-    <!-- 页脚 -->
-    <AppFooter />
-  </div>
+    <template #help>
+      <ul>
+        <li>粘贴或直接输入文本，5 项指标随输入实时刷新，无需点击按钮。</li>
+        <li>「总字符数」含空格与换行；「纯文字字符」剔除所有空白字符后计数。</li>
+        <li>「汉字数量」只统计 CJK 统一汉字基本区，「英文单词数」按连续字母切分。</li>
+        <li>「去除所有空格换行」会就地改写输入内容，操作后统计同步更新。</li>
+        <li>全部统计在浏览器本地完成，文本不会上传到服务器。</li>
+      </ul>
+    </template>
+  </ToolLayout>
 </template>
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import ToolHeader from '@/components/ToolHeader.vue'
-import AppFooter from '@/components/AppFooter.vue'
+import ToolLayout from '@/layouts/ToolLayout.vue'
 import { reportToolVisit } from '@/api/tool.js'
 
 const route = useRoute()
@@ -145,18 +151,8 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.text-count-page {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background: var(--qt-bg-page);
-}
-
-.text-count-main {
-  flex: 1;
-  padding-top: 24px;
-  padding-bottom: 40px;
-}
+/* 外层页面壳、标题、面包屑、操作条样式均由 ToolLayout + AppShell 提供，
+   本文件只保留「输入框 + 统计卡片网格」的业务布局 */
 
 .text-count-input {
   margin-bottom: 24px;
@@ -198,18 +194,6 @@ onMounted(() => {
   line-height: 1.4;
   color: var(--qt-text-secondary);
   text-align: center;
-}
-
-.action-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 24px;
-}
-
-/* 统一由 gap 控制间距，抵消 el-button 相邻元素自带的左外边距 */
-.action-bar .el-button + .el-button {
-  margin-left: 0;
 }
 
 @media (max-width: 1024px) {

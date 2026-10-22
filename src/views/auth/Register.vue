@@ -8,7 +8,6 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import AppHeader from '@/components/AppHeader.vue'
 import { useAppAuth } from '@/composables/useAppAuth'
 
 const router = useRouter()
@@ -98,8 +97,6 @@ const onSubmit = async () => {
 </script>
 
 <template>
-  <AppHeader />
-
   <main class="qt-auth-page">
     <div class="qt-auth-card">
       <h1 class="qt-auth-title">注册</h1>

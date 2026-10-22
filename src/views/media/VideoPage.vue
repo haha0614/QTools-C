@@ -2,48 +2,17 @@
   VideoPage.vue —— 媒体站「视频库」页面（Vue 3 重写）
   来源：public/media/index.html + app.js（1731 行）+ app.css 的行为等价实现；路由由 router/index.js 统一接线。
   分层：本文件持有筛选 / 排序 / URL hash / 收藏 / 最近观看 / 埋点与播放器会话边界；
-        播放层在 video/MediaPlayer.vue，侧栏、快捷筛选、卡片、最近观看拆成 video/*.vue 子组件。
+        播放层在 video/MediaPlayer.vue，筛选抽屉内容（分类 + facet 组）、快捷筛选、卡片、最近观看拆成 video/*.vue 子组件。
+  布局：外壳（src/layouts/AppShell.vue）给媒体路由 meta.bleed（取消左右 padding），本页贴边全宽流式；
+        筛选不再占用常驻左栏，改为右侧 320px 抽屉（桌面与移动共用），不再与外壳左导航争位。
   复用：src/composables/useMediaApi.js（接口 + 资源 URL）、useMediaTrack.js（埋点单例）、
         src/views/media/mediaTheme.scss（--bg/--fg/… → --qt-*，亮暗自动跟随）。
 -->
 <template>
   <div class="ms-page">
-    <FilterSidebar
-      ref="sidebarRef"
-      :cat-names="catNames"
-      :cat-counts="catCounts"
-      :groups="facetGroups"
-      :selected-cats="state.cats"
-      :selected-facets="state.facets"
-      :open="drawerOpen"
-      @toggle-cat="onToggleCat"
-      @toggle-facet="onFacetToggle"
-      @clear="clearAll"
-    >
-      <template #quick>
-        <div v-if="isMobile" class="quick-head">
-          <h2>快捷筛选</h2>
-        </div>
-        <div v-if="isMobile" class="quick-body">
-          <QuickFilters
-            :groups="quickGroups"
-            :selected="state"
-            :unsafe="state.unsafe"
-            @toggle="onToggleQuick"
-            @toggle-unsafe="state.unsafe = !state.unsafe"
-          />
-        </div>
-      </template>
-    </FilterSidebar>
-
-    <div v-if="drawerOpen" class="backdrop" @click="drawerOpen = false"></div>
-
     <div class="app">
       <header class="toolbar">
         <div class="tb-row tb-top">
-          <button class="icon-btn drawer-toggle" type="button" aria-label="打开筛选" @click="drawerOpen = true">
-            ☰
-          </button>
           <input
             ref="searchEl"
             class="search"
@@ -63,12 +32,14 @@
           </select>
           <button class="btn-ghost" type="button" @click="clearAll">清空</button>
           <button
+            ref="filterBtnEl"
             class="icon-btn filter-toggle"
             type="button"
+            aria-haspopup="dialog"
             :aria-expanded="drawerOpen ? 'true' : 'false'"
             @click="onFilterToggle"
           >
-            筛选<span class="ft-caret" aria-hidden="true">▾</span><b v-if="quickFilterCount">{{ quickFilterCount }}</b>
+            筛选<span class="ft-caret" aria-hidden="true">▾</span><b v-if="filterBadgeCount">{{ filterBadgeCount }}</b>
           </button>
           <button
             class="icon-btn cols-btn"
@@ -128,6 +99,55 @@
         <div v-if="!view.length" class="empty">{{ emptyText }}</div>
       </main>
     </div>
+
+    <!-- 右侧筛选抽屉：桌面与移动共用一套（≤768px 占满全宽） -->
+    <div class="drawer-backdrop" :class="{ show: drawerOpen }" aria-hidden="true" @click="closeDrawer"></div>
+    <aside
+      ref="drawerEl"
+      class="filter-drawer"
+      :class="{ open: drawerOpen }"
+      role="dialog"
+      aria-modal="true"
+      aria-label="筛选"
+      :aria-hidden="drawerOpen ? 'false' : 'true'"
+      @keydown="onDrawerKeydown"
+    >
+      <header class="drawer-head">
+        <h2>筛选</h2>
+        <button class="drawer-close" type="button" aria-label="关闭筛选" @click="closeDrawer">×</button>
+      </header>
+
+      <FilterSidebar
+        ref="sidebarRef"
+        :cat-names="catNames"
+        :cat-counts="catCounts"
+        :groups="facetGroups"
+        :selected-cats="state.cats"
+        :selected-facets="state.facets"
+        @toggle-cat="onToggleCat"
+        @toggle-facet="onFacetToggle"
+      >
+        <template #quick>
+          <div v-if="isMobile" class="quick-head">
+            <h2>快捷筛选</h2>
+          </div>
+          <div v-if="isMobile" class="quick-body">
+            <QuickFilters
+              :groups="quickGroups"
+              :selected="state"
+              :unsafe="state.unsafe"
+              @toggle="onToggleQuick"
+              @toggle-unsafe="state.unsafe = !state.unsafe"
+            />
+          </div>
+        </template>
+      </FilterSidebar>
+
+      <footer class="drawer-foot">
+        <button class="btn-ghost" type="button" @click="clearAll">清空全部筛选</button>
+        <button class="btn-primary" type="button" @click="closeDrawer">查看 {{ view.length }} 个结果</button>
+      </footer>
+    </aside>
 
     <MediaPlayer
       v-if="curVideo"
@@ -624,6 +644,8 @@ const openSeq = ref(0)
 const startPos = ref(0)
 const playerRef = ref(null)
 const sidebarRef = ref(null)
+const drawerEl = ref(null)
+const filterBtnEl = ref(null)
 const searchEl = ref(null)
 const sentinelEl = ref(null)
 
@@ -646,9 +668,13 @@ let recentMigrated = false
 const mq = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(max-width: 768px)') : null
 const isMobile = ref(mq ? mq.matches : false)
 
-const quickFilterCount = computed(
-  () => state.durs.length + state.ress.length + state.sizes.length + (state.unsafe ? 1 : 0)
-)
+/** 「筛选」按钮角标：抽屉里所有已选项之和（分类 + facet + 快捷 + 异常码），搜索词不算 */
+const filterBadgeCount = computed(() => {
+  let n = state.cats.length + state.durs.length + state.ress.length + state.sizes.length
+  if (state.unsafe) n += 1
+  for (const f of Object.keys(state.facets || {})) n += (state.facets[f] || []).length
+  return n
+})
 
 const countText = computed(() => {
   if (loading.value) return '—'
@@ -970,7 +996,8 @@ function onToggleQuick(field, key) {
 
 function onToggleCat(c) {
   toggleIn(state.cats, c)
-  if (isMobile.value) drawerOpen.value = false
+  // 移动端：选完分类即收起抽屉（与原手写页一致）；桌面端不关，便于继续调其它筛选
+  if (isMobile.value) closeDrawer()
 }
 
 /** facet 勾选：切到「选中」才上报 tag_click（facet:值），取消勾选不上报（app.js:1361-1374） */
@@ -1001,19 +1028,61 @@ function clearAll() {
   Object.assign(state, defaultState())
   state.play = play || ''
   searchInput.value = ''
-  if (isMobile.value) drawerOpen.value = false
+}
+
+/* =========================================================================
+   筛选抽屉（桌面与移动共用）
+   滚动锁由下方 [curVideo, drawerOpen] 的 watch 统一处理；
+   这里只管开关、焦点进出与 Tab 循环。
+   ========================================================================= */
+
+/** 抽屉内可聚焦元素（跳过不可见 / 禁用项） */
+function drawerFocusables() {
+  const box = drawerEl.value
+  if (!box) return []
+  const sel = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  return Array.prototype.filter.call(box.querySelectorAll(sel), (el) => el.offsetParent !== null || el === document.activeElement)
+}
+
+function openDrawer() {
+  if (drawerOpen.value) return
+  drawerOpen.value = true
+  nextTick(() => {
+    const list = drawerFocusables()
+    if (list.length) list[0].focus()
+    else if (drawerEl.value) drawerEl.value.focus()
+    // 移动端：抽屉里才有的「快捷筛选」默认不在视口内，滚动到它
+    if (isMobile.value && sidebarRef.value) sidebarRef.value.scrollToQuick()
+  })
+}
+
+function closeDrawer() {
+  if (!drawerOpen.value) return
+  drawerOpen.value = false
+  // 焦点回到触发按钮（触发按钮可能已不可见，focus 会被浏览器忽略，属预期）
+  if (filterBtnEl.value) filterBtnEl.value.focus()
 }
 
 function onFilterToggle() {
-  if (!isMobile.value) return
-  if (drawerOpen.value) {
-    drawerOpen.value = false
-    return
+  if (drawerOpen.value) closeDrawer()
+  else openDrawer()
+}
+
+/** Tab / Shift+Tab 在抽屉内循环，避免焦点漏到被遮罩的页面上 */
+function onDrawerKeydown(e) {
+  if (e.key !== 'Tab') return
+  const list = drawerFocusables()
+  if (!list.length) return
+  const first = list[0]
+  const last = list[list.length - 1]
+  const active = document.activeElement
+  if (e.shiftKey && (active === first || !drawerEl.value.contains(active))) {
+    e.preventDefault()
+    last.focus()
+  } else if (!e.shiftKey && (active === last || !drawerEl.value.contains(active))) {
+    e.preventDefault()
+    first.focus()
   }
-  drawerOpen.value = true
-  nextTick(() => {
-    if (sidebarRef.value) sidebarRef.value.scrollToQuick()
-  })
 }
 
 function toggleCols() {
@@ -1252,7 +1321,7 @@ function onKey(e) {
       return
     }
     if (drawerOpen.value) {
-      drawerOpen.value = false
+      closeDrawer()
       return
     }
     if (typing && t.blur) t.blur()
@@ -1321,8 +1390,9 @@ function onVisibilityChange() {
 }
 
 function onMqChange() {
+  // 抽屉两端共用同一套：跨断点只切宽度（320px ↔ 100%），不再强制关闭，
+  // 否则用户正在抽屉里勾选时改窗口尺寸会被打断
   isMobile.value = mq ? mq.matches : false
-  if (!isMobile.value) drawerOpen.value = false
 }
 
 /* 首屏同步初始化，顺序与 app.js boot() 一致：hash 已解析 → 随机排序 → 进度表 → 本地最近观看 */
@@ -1377,7 +1447,10 @@ watch(
 </style>
 
 <style lang="scss" scoped>
+/* 页面级横向留白令牌：工具栏 / 最近观看条 / 卡片网格共用同一个值，
+   保证三者在同一左边界上（16px，落在设计要求的 16–24px 区间内） */
 .ms-page {
+  --ms-gutter: 16px;
   min-height: 100vh;
   background: var(--bg);
   color: var(--fg);
@@ -1385,21 +1458,22 @@ watch(
   -webkit-font-smoothing: antialiased;
 }
 
+/* 内容区全宽流式：左右留白由 AppShell（媒体路由 meta.bleed 已取消外壳 padding）与
+   本页 --ms-gutter 自负；不再有 fixed 左栏，也不需要为它让位的 margin-left */
 .app {
-  margin-left: var(--sidebar-w);
   min-height: 100vh;
 }
 
 .toolbar {
   position: sticky;
-  /* 让开 AppHeader + 媒体站二级导航（MediaLayout 在 .media-shell 上提供该量）；
-     手机端二级导航改成固定底部 tabbar，--media-nav-h 归零，本偏移自动只剩 AppHeader */
+  /* 让开外壳顶栏/导航（AppShell 在移动端提供 --media-sticky-top）；
+     桌面端无二级导航，该量为 0，本偏移自动为 0 */
   top: var(--media-sticky-top, 0px);
   z-index: 30;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 10px 16px;
+  padding: 10px var(--ms-gutter);
   background: var(--bg-2);
   border-bottom: 1px solid var(--line);
 }
@@ -1476,12 +1550,9 @@ watch(
   font-size: 15px;
 }
 
-.drawer-toggle {
-  display: none;
-}
-
+/* 「筛选」按钮两端都显示（抽屉是桌面与移动共用的唯一入口），角标显示抽屉内已选总数 */
 .filter-toggle {
-  display: none;
+  display: inline-flex;
   align-items: center;
   gap: 5px;
 }
@@ -1563,7 +1634,7 @@ watch(
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
   gap: 12px;
-  padding: 14px 16px 48px;
+  padding: 14px var(--ms-gutter) 48px;
 }
 
 .grid-sentinel {
@@ -1571,16 +1642,124 @@ watch(
 }
 
 .empty {
-  padding: 48px 16px;
+  padding: 48px var(--ms-gutter);
   text-align: center;
   color: var(--fg-dim);
 }
 
-.backdrop {
+.drawer-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.58);
-  z-index: 35;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+
+.drawer-backdrop.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ---------------------------------------------------------------- 筛选抽屉 */
+/* 右侧固定抽屉：桌面 320px、≤768px 占满全宽；transform 从 100% 滑入 0，
+   关闭时用 visibility 延迟 0.22s 隐身，保证滑出动画看得见且关闭后不进 Tab 序列 */
+.filter-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 51;
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  max-width: 100%;
+  background: var(--bg-2);
+  border-left: 1px solid var(--line);
+  transform: translateX(100%);
+  visibility: hidden;
+  transition: transform 0.22s ease, visibility 0s linear 0.22s;
+  outline: none;
+}
+
+.filter-drawer.open {
+  transform: translateX(0);
+  visibility: visible;
+  transition: transform 0.22s ease, visibility 0s linear 0s;
+}
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.drawer-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.drawer-close {
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius, 10px);
+  background: transparent;
+  color: var(--fg-dim);
+  font-size: 18px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.drawer-close:hover {
+  background: var(--bg-3);
+  border-color: var(--line-2);
+  color: var(--fg);
+}
+
+.drawer-close:focus-visible,
+.btn-primary:focus-visible,
+.icon-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* 底部操作条常驻抽屉底部：左侧清空、右侧「查看 N 个结果」并关闭 */
+.drawer-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--bg-2);
+}
+
+.drawer-foot .btn-ghost {
+  flex: 0 0 auto;
+  border-radius: var(--radius, 10px);
+}
+
+.btn-primary {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--accent-btn);
+  border-radius: var(--radius, 10px);
+  /* 实心按钮：--accent-btn / --accent-on 才有 4.5:1 对比度 */
+  background: var(--accent-btn);
+  color: var(--accent-on);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-primary:hover {
+  border-color: var(--accent);
 }
 
 .quick-head {
@@ -1600,16 +1779,14 @@ watch(
 }
 
 @media (max-width: 768px) {
-  .app {
-    margin-left: 0;
+  /* 移动端：抽屉占满全宽；横向留白收窄到 10px，与 RecentStrip 的移动端内边距保持一致 */
+  .ms-page {
+    --ms-gutter: 10px;
   }
 
-  .drawer-toggle {
-    display: none;
-  }
-
-  .filter-toggle {
-    display: inline-flex;
+  .filter-drawer {
+    width: 100%;
+    border-left: 0;
   }
 
   .cols-btn {
@@ -1617,7 +1794,7 @@ watch(
   }
 
   .toolbar {
-    padding: 5px 10px;
+    padding: 5px var(--ms-gutter);
     gap: 6px;
   }
 
@@ -1686,7 +1863,7 @@ watch(
   .grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
-    padding: 10px 10px calc(12px + env(safe-area-inset-bottom, 0px));
+    padding: 10px var(--ms-gutter) calc(12px + env(safe-area-inset-bottom, 0px));
   }
 
   .grid.cols-3 {

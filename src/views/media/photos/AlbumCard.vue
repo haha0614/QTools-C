@@ -101,14 +101,15 @@ const onOpen = () => emit('open', props.album.id)
   color: var(--fg);
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius, 10px);
   overflow: hidden;
   transition: transform 0.12s ease, border-color 0.12s ease, background-color 0.2s;
 }
 
+/* hover 只做 1px 上浮 + 描边加深，不加阴影（与视频卡保持同一套交互语言） */
 .card:hover {
-  transform: translateY(-2px);
-  border-color: var(--accent);
+  transform: translateY(-1px);
+  border-color: var(--line-2);
 }
 
 /* 3:4 竖版封面 + cover 裁切：任意原图比例下卡片高度一致 */
@@ -162,7 +163,7 @@ const onOpen = () => emit('open', props.album.id)
 
 /* 标题固定 2 行高 → 所有卡片等高 */
 .cardTitle {
-  font-size: 13.5px;
+  font-size: 14.5px;
   line-height: 1.35;
   min-height: 2.7em;
   display: -webkit-box;
@@ -175,7 +176,7 @@ const onOpen = () => emit('open', props.album.id)
 .cardMeta {
   margin-top: 5px;
   color: var(--dim);
-  font-size: 12px;
+  font-size: 12.5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -183,7 +184,7 @@ const onOpen = () => emit('open', props.album.id)
 
 @media (max-width: 768px) {
   .cardTitle {
-    font-size: 12.5px;
+    font-size: 14px;
   }
 
   .cardBody {
@@ -191,7 +192,7 @@ const onOpen = () => emit('open', props.album.id)
   }
 
   .cardMeta {
-    font-size: 11.5px;
+    font-size: 12px;
   }
 }
 </style>

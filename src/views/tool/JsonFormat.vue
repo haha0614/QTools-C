@@ -13,8 +13,10 @@
 import { ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import ToolHeader from '@/components/ToolHeader.vue'
-import AppFooter from '@/components/AppFooter.vue'
+// 统一骨架：页面只提供内容，标题 / 面包屑 / 操作条 / 说明由 ToolLayout 承担
+import ToolLayout from '@/layouts/ToolLayout.vue'
+// 图标显式导入（本项目没有 unplugin-auto-import）
+import { CopyDocument } from '@element-plus/icons-vue'
 // 埋点上报：内部自行完成 toolId 反查，且已 try/catch，不会向调用方抛错
 import { reportToolVisit } from '@/api/tool.js'
 
@@ -160,84 +162,71 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="json-format-page">
-    <!-- 顶部：左侧面包屑「首页 > JSON格式化工具」+ 右侧主题切换 -->
-    <ToolHeader title="JSON格式化工具" />
+  <!-- 分栏型页面：max-width="none"，宽度交给 AppShell 内容区 -->
+  <ToolLayout
+    title="JSON 格式化"
+    desc="美化、压缩与语法校验，全程在浏览器本地完成"
+    :breadcrumb="[{ label: '工具', to: '/' }, { label: 'JSON 格式化' }]"
+    max-width="none"
+  >
+    <!-- 操作按钮组：格式化 / 压缩 / 校验 / 清空 / 复制结果 -->
+    <template #toolbar>
+      <el-button type="primary" @click="handleFormat">格式化</el-button>
+      <el-button type="default" @click="handleMinify">压缩</el-button>
+      <el-button type="default" @click="handleValidate">校验JSON</el-button>
+      <el-button type="default" @click="handleClear">清空</el-button>
+      <el-button type="default" @click="handleCopy">
+        <el-icon><CopyDocument /></el-icon>
+        <span>复制结果</span>
+      </el-button>
+    </template>
 
-    <main class="qt-container json-format-main">
-      <!-- 操作按钮组：格式化 / 压缩 / 校验 / 清空 / 复制结果 -->
-      <div class="toolbar">
-        <el-button type="primary" @click="handleFormat">格式化</el-button>
-        <el-button type="default" @click="handleMinify">压缩</el-button>
-        <el-button type="default" @click="handleValidate">校验JSON</el-button>
-        <el-button type="default" @click="handleClear">清空</el-button>
-        <el-button type="default" @click="handleCopy">
-          <el-icon><CopyDocument /></el-icon>
-          <span>复制结果</span>
-        </el-button>
-      </div>
+    <!-- 主体两栏：大屏左右分栏（lg=12），小屏上下堆叠（xs=24） -->
+    <el-row :gutter="16">
+      <!-- 左栏：输入 -->
+      <el-col :xs="24" :lg="12">
+        <div class="panel">
+          <h3 class="panel-title">输入</h3>
+          <el-input
+            v-model="inputText"
+            type="textarea"
+            placeholder="粘贴你的JSON文本"
+            :rows="18"
+          />
+          <!-- 错误提示：位于输入区下方，红色（--qt-danger），无错误时不渲染 -->
+          <p v-if="errorMsg" class="error-tip">{{ errorMsg }}</p>
+        </div>
+      </el-col>
 
-      <!-- 主体两栏：大屏左右分栏（lg=12），小屏上下堆叠（xs=24） -->
-      <el-row :gutter="16">
-        <!-- 左栏：输入 -->
-        <el-col :xs="24" :lg="12">
-          <div class="panel">
-            <h3 class="panel-title">输入</h3>
-            <el-input
-              v-model="inputText"
-              type="textarea"
-              placeholder="粘贴你的JSON文本"
-              :rows="18"
-            />
-            <!-- 错误提示：位于输入区下方，红色（--qt-danger），无错误时不渲染 -->
-            <p v-if="errorMsg" class="error-tip">{{ errorMsg }}</p>
-          </div>
-        </el-col>
+      <!-- 右栏：输出（只读） -->
+      <el-col :xs="24" :lg="12">
+        <div class="panel">
+          <h3 class="panel-title">输出</h3>
+          <el-input
+            v-model="outputText"
+            type="textarea"
+            :rows="18"
+            :readonly="true"
+          />
+        </div>
+      </el-col>
+    </el-row>
 
-        <!-- 右栏：输出（只读） -->
-        <el-col :xs="24" :lg="12">
-          <div class="panel">
-            <h3 class="panel-title">输出</h3>
-            <el-input
-              v-model="outputText"
-              type="textarea"
-              :rows="18"
-              :readonly="true"
-            />
-          </div>
-        </el-col>
-      </el-row>
-    </main>
-
-    <!-- 底部页脚 -->
-    <AppFooter />
-  </div>
+    <template #help>
+      <ul>
+        <li>粘贴 JSON 文本后点「格式化」按 2 空格缩进美化，点「压缩」输出为单行。</li>
+        <li>「校验JSON」只判断合法性，不修改输入框与输出框的任何内容。</li>
+        <li>解析失败时错误提示出现在输入框下方，输出框保留上一次的结果。</li>
+        <li>「复制结果」优先使用浏览器剪贴板 API，不可用时自动回退到兼容方案。</li>
+        <li>全部处理在浏览器本地完成，文本不会上传到服务器。</li>
+      </ul>
+    </template>
+  </ToolLayout>
 </template>
 
 <style scoped lang="scss">
-/* 页面外壳：撑满视口高度，保证页脚始终位于底部 */
-.json-format-page {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background-color: var(--qt-bg-page);
-  color: var(--qt-text-primary);
-}
-
-/* 主内容区：使用全局 .qt-container 限制最大宽度并居中，此处只补充内边距 */
-.json-format-main {
-  flex: 1;
-  padding: 16px;
-  box-sizing: border-box;
-}
-
-/* 按钮组：允许换行并保持统一间距 */
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
-}
+/* 外层页面壳与标题 / 面包屑 / 操作条样式均由 ToolLayout + AppShell 提供，
+   本文件只保留 JSON 两栏业务区自身的样式 */
 
 /* 栏目标题：跟随主题变量，保证暗色下可读 */
 .panel-title {

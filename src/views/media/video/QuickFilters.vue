@@ -89,7 +89,8 @@ function isOn(field, key) {
 }
 
 .chip-warn.on {
-  background: rgba(255, 181, 71, 0.16);
+  /* 用 --warn 派生的半透明底，两套主题自动跟随（不写死 rgb 值） */
+  background: color-mix(in srgb, var(--warn) 16%, transparent);
   border-color: var(--warn);
   color: var(--warn);
 }

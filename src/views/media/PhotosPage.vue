@@ -14,7 +14,6 @@
 -->
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import AppFooter from '@/components/AppFooter.vue'
 import { useMediaApi } from '@/composables/useMediaApi'
 import { useMediaTrack } from '@/composables/useMediaTrack'
 import AlbumCard from './photos/AlbumCard.vue'
@@ -1601,7 +1600,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="media-scope photos-page">
-    <!-- AppHeader 与媒体站二级导航由父级 MediaLayout 统一提供，本页不再自己渲染头部 -->
+    <!-- 全站导航（左栏 + 底部个人中心）由父级 AppShell 提供，本页不再自己渲染头部 -->
 
     <!-- ================= 相册墙（原 photos.html 的 main#wallView） ================= -->
     <main v-show="!album" class="wallView">
@@ -1794,7 +1793,6 @@ onBeforeUnmount(() => {
 
     <div v-if="fatalMsg" class="fatal">{{ fatalMsg }}</div>
 
-    <AppFooter />
   </div>
 </template>
 
@@ -1991,7 +1989,7 @@ onBeforeUnmount(() => {
 .phead {
   grid-column: 1 / -1;
   position: sticky;
-  /* 让开 AppHeader + 媒体站二级导航（由 MediaLayout 提供该量），否则标题条会被压在导航下面 */
+  /* 让开外壳顶栏/导航（AppShell 提供 --media-sticky-top），否则标题条会被压在导航下面 */
   top: var(--media-sticky-top, 0px);
   z-index: 2;
   display: flex;
@@ -2124,7 +2122,7 @@ onBeforeUnmount(() => {
 /* ---------- 册内网格 ---------- */
 .albumbar {
   position: sticky;
-  /* 同 .phead：避开 AppHeader + 二级导航 */
+  /* 同 .phead：避开外壳顶栏/导航 */
   top: var(--media-sticky-top, 0px);
   z-index: 30;
   display: flex;
@@ -2229,7 +2227,8 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 6px;
-  padding: 10px 12px 0;
+  /* 左右 16px 与 .topbar / .wall 对齐（原 12px：网格比工具栏少缩进 4px） */
+  padding: 10px 16px 0;
 }
 
 .cell {
