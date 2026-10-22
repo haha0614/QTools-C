@@ -233,6 +233,11 @@ onMounted(fetchTools)
 
 /* 工具卡片 */
 .tool-card {
+  /* 撑满所在栅格列（el-col 在 el-row 里默认 stretch），减去底部间距，
+     保证同一行卡片等高——否则描述行数不同会让卡片高度参差 */
+  height: calc(100% - 20px);
+  display: flex;
+  flex-direction: column;
   margin-bottom: 20px; /* 配合 el-row 的 gutter 补足纵向间距 */
   padding: 20px;
   border: 1px solid var(--qt-border);
@@ -267,10 +272,18 @@ onMounted(fetchTools)
   }
 
   &__desc {
+    /* 占据剩余高度，使图标/名称在等高卡片里始终贴顶 */
+    flex: 1;
     margin: 0;
     font-size: 13px;
     line-height: 1.6;
     color: var(--qt-text-secondary);
+    /* 描述最多两行，超出省略，避免个别工具的描述过长把卡片撑高 */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 }
 
