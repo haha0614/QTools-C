@@ -392,7 +392,10 @@ onMounted(() => {
      外壳下内边距不在 min-height 里扣，由下面的负 margin-bottom 抵消（否则会重复扣一次，底部多出 16px）。
      注意：--qt-shell-pad 由 variables.scss（桌面 28px）与 AppShell 移动端（16px）下发，本页只读不写死；
      若另一侧把外壳内边距再改一档，这里会自动跟随，不需要同步改本文件。 */
+  /* 用 dvh（可视视口高）而不是 vh：手机上地址栏展开时 100vh 会大于可视高，
+     页脚会被顶出屏幕。先给 100vh 作老浏览器兜底，再用 100dvh 覆盖。 */
   min-height: calc(100vh - var(--qt-topbar-h, 0px) - var(--qt-shell-pad, 16px));
+  min-height: calc(100dvh - var(--qt-topbar-h, 0px) - var(--qt-shell-pad, 16px));
   /* 抵消 AppShell .qt-shell__main 的 padding-bottom: var(--qt-space-4)，让末行文字贴住页面底边 */
   margin-bottom: calc(-1 * var(--qt-space-4, 16px));
   padding-top: 24px;
