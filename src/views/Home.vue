@@ -16,29 +16,29 @@ import { APP_INFO } from '@/utils/constants' // 站点信息常量（名称、�
 import * as ElementPlusIcons from '@element-plus/icons-vue' // 全局已注册图标，这里按名字动态取组件
 
 // ========== 内置兜底数据 ==========
-// 接口不可用时使用；顺序与 sort 一致，字段与后台返回保持一致（tool_name / tool_desc / tool_route / icon / sort）
+// 接口不可用时使用；顺序与 sort 一致，字段与后台返回保持一致（toolName / toolDesc / toolRoute / icon / sort）
 const FALLBACK_TOOLS = [
   {
     id: 'fallback-1',
-    tool_name: 'JSON格式化工具',
-    tool_desc: 'JSON格式化、压缩、语法校验',
-    tool_route: '/tool/json',
+    toolName: 'JSON格式化工具',
+    toolDesc: 'JSON格式化、压缩、语法校验',
+    toolRoute: '/tool/json',
     icon: 'Document',
     sort: 1
   },
   {
     id: 'fallback-2',
-    tool_name: '文本字数统计',
-    tool_desc: '统计汉字、字符、行数，可清除空格',
-    tool_route: '/tool/text-count',
+    toolName: '文本字数统计',
+    toolDesc: '统计汉字、字符、行数，可清除空格',
+    toolRoute: '/tool/text-count',
     icon: 'EditPen',
     sort: 2
   },
   {
     id: 'fallback-3',
-    tool_name: '随机密码生成',
-    tool_desc: '自定义长度，支持大小写、数字、符号',
-    tool_route: '/tool/pwd-gen',
+    toolName: '随机密码生成',
+    toolDesc: '自定义长度，支持大小写、数字、符号',
+    toolRoute: '/tool/pwd-gen',
     icon: 'Key',
     sort: 3
   }
@@ -50,9 +50,9 @@ const FALLBACK_TOOLS = [
 const LOCAL_TOOLS = [
   {
     id: 'local-media',
-    tool_name: '媒体站',
-    tool_desc: '视频与图片库：卡片墙、相册分组、收藏与断点续播',
-    tool_route: '/media/index.html',
+    toolName: '媒体站',
+    toolDesc: '视频与图片库：卡片墙、相册分组、收藏与断点续播',
+    toolRoute: '/media/index.html',
     icon: 'VideoCamera',
     sort: 100,
     external: true
@@ -69,9 +69,9 @@ const loadError = ref(false) // 加载失败：渲染 el-alert 错误提示
 // 把后台字段映射成视图字段，模板里不再直接依赖接口字段名
 const normalizeTool = (item) => ({
   id: item.id,
-  name: item.tool_name,
-  desc: item.tool_desc,
-  route: item.tool_route,
+  name: item.toolName,
+  desc: item.toolDesc,
+  route: item.toolRoute,
   icon: item.icon,
   sort: item.sort,
   external: !!item.external
