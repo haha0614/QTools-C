@@ -4,6 +4,124 @@
 const API = '/api/media';
 
 /* =========================================================================
+   事件上报（埋点）：只上报，不参与任何渲染/播放决策；内部异常一律吞掉，
+   保证埋点出问题也不影响页面。接口匿名，前端不处理响应。
+   POST /api/media/track  —— 行为事件
+   POST /api/toolVisit/add —— 工具级访问计数（媒体站在 tool_info 里的 id 是 4）
+   ========================================================================= */
+
+const TOOL_ID = 4;
+const TRACK_URL = API + '/track';
+const TOOL_VISIT_URL = '/api/toolVisit/add';
+const OWNER_STORE_KEY = 'ms.owner';   // 与 profile.js 共用的身份键
+
+// 设备标识：优先 localStorage['ms.owner']（profile.js 的落盘位置），退回同名 cookie；取不到传空
+function trackOwner() {
+  try {
+    const v = window.localStorage.getItem(OWNER_STORE_KEY);
+    if (v) return v;
+  } catch (e) { /* 无痕模式可能抛错 */ }
+  try {
+    const m = /(?:^|;\s*)ms\.owner=([^;]*)/.exec(document.cookie || '');
+    if (m) return decodeURIComponent(m[1]);
+  } catch (e) { /* 忽略 */ }
+  return '';
+}
+
+// 非阻塞 JSON POST：sendBeacon 优先（页面卸载时也能送达），否则 fetch keepalive；失败静默
+function postJson(url, payload) {
+  try {
+    const body = JSON.stringify(payload);
+    if (navigator.sendBeacon) {
+      const blob = new Blob([body], { type: 'application/json' });
+      if (navigator.sendBeacon(url, blob)) return;
+    }
+    fetch(url, {
+      method: 'POST', keepalive: true,
+      headers: { 'Content-Type': 'application/json' }, body: body,
+    }).catch(() => { /* 失败静默 */ });
+  } catch (e) { /* 上报失败不影响页面 */ }
+}
+
+// 统一的事件上报入口
+function track(eventType, targetType, targetKey, valueNum) {
+  try {
+    postJson(TRACK_URL, {
+      eventType: eventType,
+      targetType: targetType,
+      targetKey: String(targetKey == null ? '' : targetKey),
+      ownerKey: trackOwner(),
+      valueNum: Math.max(0, Math.round(Number(valueNum) || 0)),
+    });
+  } catch (e) { /* 忽略 */ }
+}
+
+const tkPage = { loaded: false, visStart: 0, visMs: 0 };        // 页面级：page_view 只报一次 + 可见毫秒
+const tkPlay = { id: '', ms: 0, clockAt: 0, running: false };   // 播放级：本次播放的视频与累计毫秒
+
+// 页面打开：page_view 与工具级访问各报一次，之后开始计可见时长
+function tkPageOpen() {
+  if (tkPage.loaded) return;
+  tkPage.loaded = true;
+  track('page_view', 'page', location.pathname, 0);
+  try { postJson(TOOL_VISIT_URL, { toolId: TOOL_ID }); } catch (e) { /* 忽略 */ }
+  if (document.visibilityState !== 'hidden') tkPage.visStart = Date.now();
+}
+
+// 结算并上报本段页面可见毫秒（隐藏/离开时调用，报完清零；重新可见时再起表）
+function tkDwellFlush() {
+  if (tkPage.visStart) { tkPage.visMs += Math.max(0, Date.now() - tkPage.visStart); tkPage.visStart = 0; }
+  const ms = tkPage.visMs;
+  tkPage.visMs = 0;
+  if (ms > 0) track('dwell', 'page', location.pathname, ms);
+}
+
+// 观看计时起表（时间戳差累计，避免 timeupdate 的跳变误差）
+function tkPlayClockStart() {
+  if (tkPlay.running) return;
+  tkPlay.clockAt = Date.now();
+  tkPlay.running = true;
+}
+
+// 结算本次观看：停表 → >0 才报 play_end → 清空并放开 play 去重标记（此后重播可再报一次 play）
+function tkPlayEnd() {
+  if (tkPlay.running) { tkPlay.ms += Math.max(0, Date.now() - tkPlay.clockAt); tkPlay.running = false; }
+  try {
+    if (tkPlay.ms > 0 && tkPlay.id) track('play_end', 'video', tkPlay.id, tkPlay.ms);
+  } catch (e) { /* 忽略 */ }
+  tkPlay.ms = 0;
+  tkPlay.id = '';
+}
+
+// 视频开始播放：同一视频本次播放只报一次 play（id 变了才报），随后起表
+function tkPlayStart() {
+  const id = curVideo ? curVideo.id : '';
+  if (!id) return;
+  if (tkPlay.id !== id) {
+    tkPlayEnd();          // 结算上一段（正常已由 pause 结算，这里兜底换源/切片的空档）
+    tkPlay.id = id;
+    track('play', 'video', id, 0);
+  }
+  tkPlayClockStart();
+}
+
+// 离开/隐藏：先结算观看时长再结算停留时长（pagehide 与 visibilitychange 都会到，第二次因计数清零而跳过）
+function tkPageHide() {
+  tkPlayEnd();
+  tkDwellFlush();
+}
+
+// 页面加载后调用一次：注册卸载/可见性监听并上报打开事件
+function initTracking() {
+  window.addEventListener('pagehide', tkPageHide);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') { tkPageHide(); return; }
+    if (!tkPage.visStart) tkPage.visStart = Date.now();   // 重新可见：接着累计
+  });
+  tkPageOpen();
+}
+
+/* =========================================================================
    纯函数区：无 DOM 依赖，Node 下可直接 require 做逻辑自测
    （文件末尾有 module.exports）
    ========================================================================= */
@@ -469,6 +587,7 @@ function boot() {
   initCols();
   initProfile();
   renderRecent();
+  initTracking();   // 埋点：page_view + toolVisit 各报一次，并挂载 pagehide/visibilitychange
 
   fetch(API + '/index', { cache: 'no-cache' })
     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
@@ -1355,6 +1474,11 @@ function bindEvents() {
     }
     if (curVideo && el.video.getAttribute('src')) el.pWarn.hidden = false;
   });
+
+  /* 播放埋点：独立挂监听，不改动上面的既有处理；play 去重上报，pause/ended 结算观看时长 */
+  el.video.addEventListener('play', tkPlayStart);
+  el.video.addEventListener('pause', tkPlayEnd);
+  el.video.addEventListener('ended', tkPlayEnd);
 
   el.drawerBtn.addEventListener('click', () => toggleDrawer());
   el.backdrop.addEventListener('click', () => toggleDrawer(false));

@@ -12,6 +12,87 @@
   // 后端媒体接口前缀：旧 /api、/media、/thumb、/preview 全部收敛到这一处
   var MEDIA = '/api/media';
 
+  /* ---------------- 事件上报（埋点） ----------------
+     只上报，不参与渲染/路由/交互决策；内部异常一律吞掉，保证埋点出问题也不影响页面。
+     接口匿名，前端不处理响应：
+       POST /api/media/track  —— 行为事件
+       POST /api/toolVisit/add —— 工具级访问计数（媒体站在 tool_info 里的 id 是 4） */
+
+  var TOOL_ID = 4;
+  var TRACK_URL = MEDIA + '/track';
+  var TOOL_VISIT_URL = '/api/toolVisit/add';
+  var OWNER_STORE_KEY = 'ms.owner';   // 与 profile.js 共用的身份键
+
+  // 设备标识：优先 localStorage['ms.owner']（profile.js 的落盘位置），退回同名 cookie；取不到传空
+  function trackOwner() {
+    try {
+      var v = window.localStorage.getItem(OWNER_STORE_KEY);
+      if (v) return v;
+    } catch (e) { /* 无痕模式可能抛错 */ }
+    try {
+      var m = /(?:^|;\s*)ms\.owner=([^;]*)/.exec(document.cookie || '');
+      if (m) return decodeURIComponent(m[1]);
+    } catch (e) { /* 忽略 */ }
+    return '';
+  }
+
+  // 非阻塞 JSON POST：sendBeacon 优先（页面卸载时也能送达），否则 fetch keepalive；失败静默
+  function postJson(url, payload) {
+    try {
+      var body = JSON.stringify(payload);
+      if (navigator.sendBeacon) {
+        var blob = new Blob([body], { type: 'application/json' });
+        if (navigator.sendBeacon(url, blob)) return;
+      }
+      fetch(url, {
+        method: 'POST', keepalive: true,
+        headers: { 'Content-Type': 'application/json' }, body: body
+      }).catch(function () { /* 失败静默 */ });
+    } catch (e) { /* 上报失败不影响页面 */ }
+  }
+
+  // 统一的事件上报入口
+  function track(eventType, targetType, targetKey, valueNum) {
+    try {
+      postJson(TRACK_URL, {
+        eventType: eventType,
+        targetType: targetType,
+        targetKey: String(targetKey == null ? '' : targetKey),
+        ownerKey: trackOwner(),
+        valueNum: Math.max(0, Math.round(Number(valueNum) || 0))
+      });
+    } catch (e) { /* 忽略 */ }
+  }
+
+  var tkPage = { loaded: false, visStart: 0, visMs: 0 };   // 页面级：page_view 只报一次 + 可见毫秒
+
+  // 页面打开：page_view 与工具级访问各报一次，之后开始计可见时长
+  function tkPageOpen() {
+    if (tkPage.loaded) return;
+    tkPage.loaded = true;
+    track('page_view', 'page', location.pathname, 0);
+    try { postJson(TOOL_VISIT_URL, { toolId: TOOL_ID }); } catch (e) { /* 忽略 */ }
+    if (document.visibilityState !== 'hidden') tkPage.visStart = Date.now();
+  }
+
+  // 结算并上报本段页面可见毫秒（隐藏/离开时调用，报完清零；重新可见时再起表）
+  function tkDwellFlush() {
+    if (tkPage.visStart) { tkPage.visMs += Math.max(0, Date.now() - tkPage.visStart); tkPage.visStart = 0; }
+    var ms = tkPage.visMs;
+    tkPage.visMs = 0;
+    if (ms > 0) track('dwell', 'page', location.pathname, ms);
+  }
+
+  // 页面加载后调用一次：注册卸载/可见性监听并上报打开事件
+  function initTracking() {
+    window.addEventListener('pagehide', tkDwellFlush);
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') { tkDwellFlush(); return; }
+      if (!tkPage.visStart) tkPage.visStart = Date.now();   // 重新可见：接着累计
+    });
+    tkPageOpen();
+  }
+
   // ---------------- 纯函数 ----------------
 
   function pad4(n) { return String(n).padStart(4, '0'); }
@@ -1236,6 +1317,7 @@
       updateCounter();
       appendBatch();
       document.title = album.title + ' · 图片站';
+      track('album_view', 'album', album.id, 0);   // 埋点：进入册视图（深链进入同样计一次）
       window.scrollTo(0, 0);
       if (startIndex != null) {
         // 深链 #album=<id>&i=<n>：直接定位并打开第 n 张的 lightbox
@@ -1421,6 +1503,7 @@
     resetTransform();
     var p = ps[i];
     els.lbCount.textContent = (i + 1) + ' / ' + n;
+    track('photo_click', 'photo', alb.id + ':' + i, 0);   // 埋点：大图显示某张图（翻页/深链同样计一次，序号 0 基）
     els.lbName.textContent = fileName(p.rel);
     setOrigButton(p);
     els.lbPrev.classList.toggle('off', i === 0);
@@ -1668,6 +1751,7 @@
 
     initSorts();
     applySortOptions();   // 视图决定 #sort 显示哪 6/7 项，并选中当前值
+    initTracking();       // 埋点：page_view + toolVisit 各报一次，并挂载 pagehide/visibilitychange
     loadIndex(true);
   }
 
