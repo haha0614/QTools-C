@@ -26,7 +26,7 @@ QTools-C 是 QTools 项目里**面向普通用户**的前端站点，与若依�
 
 | 路径 | 组件 | 标题（`meta.title`） | 说明 |
 | --- | --- | --- | --- |
-| `/` | `views/Home.vue` | `APP_INFO.name` | 首页：动态拉取后端工具列表渲染卡片（PC 4 列 / 中等屏 3 列 / 平板 2 列 / 手机 1 列），并始终追加本地静态入口「媒体站」（`/media/index.html`，整页跳转）；接口失败时显示「工具加载失败」并回退内置 3 条兜底卡片 |
+| `/` | `views/Home.vue` | `APP_INFO.name` | 首页：动态拉取后端工具列表渲染卡片（PC 4 列 / 中等屏 3 列 / 平板 2 列 / 手机 1 列）；「媒体站」入口已由 `tool_info` 下发（可在管理端「工具维护」上下架与排序），`tool_route` 为 `/media/index.html`，点击整页跳转；接口失败时显示「工具加载失败」并回退内置 4 条兜底卡片（含媒体站） |
 | `/tool/json` | `views/tool/JsonFormat.vue` | JSON格式化工具 | 格式化（2 空格缩进）/ 压缩 / 校验 / 清空 / 复制；解析错误在输入框下方红色行内提示，不弹窗、不清空输入 |
 | `/tool/text-count` | `views/tool/TextCount.vue` | 文本字数统计 | 输入即算五项：总字符数（含空格）/ 纯文字字符 / 汉字数量 / 英文单词数 / 总行数；另支持清空、复制、一键去除所有空格与换行 |
 | `/tool/pwd-gen` | `views/tool/PwdGen.vue` | 随机密码生成器 | 长度 4~64（默认 16），大写/小写/数字/符号四类开关；用 `crypto.getRandomValues` + 拒绝采样消除取模偏差 |
@@ -162,7 +162,7 @@ const { state, doLogin, doRegister, fetchMe, doLogout, claimDevice, clearAuth } 
 
 **后端不可用时的表现**（逐条都是设计行为，不是 bug）：
 
-- 首页：`el-alert` 显示「工具加载失败」，并回退渲染内置 3 条兜底卡片，首页始终可用。
+- 首页：`el-alert` 显示「工具加载失败」，并回退渲染内置 4 条兜底卡片（含媒体站），首页始终可用。
 - 工具页：计算全在前端，**完全不受影响**；埋点 `reportToolVisit` 全程 `silent`，失败只留一条 `console.warn`（先查列表反查 `toolId`，查不到就用 `FALLBACK_TOOL_IDS`：`/tool/json`→1、`/tool/text-count`→2、`/tool/pwd-gen`→3；都没命中则不发请求）。
 - 账号页：有 token 但 `/me` 失败时显示加载失败提示，不清 token；接口 401 才会清登录态并跳 `/login?redirect=/account`。
 - 媒体站：请求失败只影响内容渲染，页面本身照常打开。
@@ -180,6 +180,17 @@ const { state, doLogin, doRegister, fetchMe, doLogout, claimDevice, clearAuth } 
    后端接口本身就是 `/api/...`，加 rewrite 会把前缀吃掉导致 404。另外 `css.preprocessorOptions.scss.api = 'modern'` 用于消除 Dart Sass 的 `legacy-js-api is deprecated` 告警（项目只装了 `sass`，未装 `sass-embedded`，所以用 `'modern'` 而非 `'modern-compiler'`）。
 4. **`index.html` 用 `<link rel="icon" href="data:,">`**
    内联空 favicon，避免浏览器请求 `/favicon.ico` 得到 404（开发者工具 Network 面板一直飘红）。媒体站的三个 HTML 也各自带了同样的声明。
+
+## 自定义站点信息
+
+站点名、副标题与版权有且只有一个来源：`src/utils/constants.js` 的 `APP_INFO`（`name` / `slogan` / `copyright`，第 11-18 行）。页头 Logo、页脚、关于本站弹窗、浏览器标签页标题都从它取值；`APP_INTRO`（第 21 行）也已用它拼好，改一处即全站生效。
+
+- `index.html` 的静态 `<title>` 只是首屏兜底，应用启动后会被 `APP_INFO.name` 覆盖（`src/router/index.js:87-89`）。
+- 媒体站是**手写静态页**（`public/media/` 下 10 个文件，不经 Vue 构建）：`index.html` / `photos.html` / `me.html` 各自的 `<title>`、文案与样式都要单独改，不归 `APP_INFO` 管。
+- 改完 `public/media/` 里的 JS/CSS 记得递增 HTML 中的 `?v=` 版本号（当前 `20261022b`），否则浏览器可能仍在用缓存里的旧文件。
+- 品牌色改 `src/styles/variables.scss` 的 `--qt-*` 全局变量（`:root` 在第 7 行、`--qt-primary` 在第 14 行），组件内一律通过 `var(--qt-*)` 取值。
+
+端到端的改造顺序（工具列表、媒体内容、部署）见 **[自定义与迁移指南](../QTools/doc/自定义与迁移指南.md)**。
 
 ## 常见问题
 
