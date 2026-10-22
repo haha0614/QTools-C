@@ -48,7 +48,7 @@ const FALLBACK_TOOLS = [
     id: 'fallback-4',
     toolName: '媒体站',
     toolDesc: '视频与图片库：卡片墙、相册分组、收藏与断点续播',
-    toolRoute: '/media/index.html',
+    toolRoute: '/media',
     icon: 'VideoCamera',
     sort: 100,
     external: true

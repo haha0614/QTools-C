@@ -1,0 +1,113 @@
+/**
+ * mediaTheme.scss —— 媒体站变量映射层
+ * 用途：把 public/media/app.css 与 photo.css 那套「写死暗色」的变量名，映射到全局 --qt-* 主题变量，
+ *      让 Vue 版媒体站页面自动跟随亮 / 暗主题，同时不改动手写页的任何样式。
+ * 用法：
+ *   1) 全局引入（推荐，一次）：在媒体站布局组件或入口样式里 `@use '@/views/media/mediaTheme.scss';`
+ *      —— 默认同时输出 :root / html.dark 两套映射，任何页面都能直接用 var(--bg) 等变量。
+ *   2) 只在局部生效：`@use '@/views/media/mediaTheme.scss' with ($global: false);`
+ *      此时只输出 .media-scope 容器类，把媒体站页面包在 <div class="media-scope"> 内即获得同一套映射，
+ *      不污染全局命名（--bg / --fg 这类短名不会外泄到其它页面）。
+ * 变量清单来源（grep 结果，共 16 个：14 个主题色 + 2 个布局量，本文件 16/16 全覆盖）：
+ *   app.css:2-14  --bg --bg-2 --bg-3 --line --line-2 --fg --fg-dim --accent --accent-soft --warn --danger --sidebar-w --radius
+ *   photo.css:2-9 --bg --panel --panel2 --line --fg --dim --fg-dim --accent
+ * 说明：手写页写死 `<meta name="color-scheme" content="dark">`，Vue 页面不要复制这行——
+ *      亮暗由 html.dark 决定，容器内用 color-scheme 让滚动条 / 原生控件跟随。
+ */
+
+/* 是否输出全局 :root / html.dark 映射；false 时只输出 .media-scope */
+$global: true !default;
+
+/* ------------------------------------------------------------------ 亮色 */
+
+@mixin media-vars-light {
+  /* 底色三层：页面底 / 卡片 / hover 层 */
+  --bg: var(--qt-bg-page);
+  --bg-2: var(--qt-bg-card);
+  --bg-3: var(--qt-bg-hover);
+  /* photo.css 的并行命名（--panel ≈ 卡片、--panel2 ≈ 高一层） */
+  --panel: var(--qt-bg-card);
+  --panel2: var(--qt-bg-hover);
+  /* 描边两级：主描边跟随主题边框，次级描边向其与文字色的中间靠拢，
+     亮色下 ≈ #818387，对 --bg 的对比度 3.54:1（满足非文本 3:1），hover / 选中态看得见 */
+  --line: var(--qt-border);
+  --line-2: color-mix(in srgb, var(--qt-border) 45%, var(--qt-text-primary) 55%);
+  /* 文字：主文字直接用主题色（12.13:1）；次级文字把主题的 #909399 向主文字压一档，
+     得到 ≈ #6a6c70，对 --bg 4.90:1 / 对卡片 5.26:1 —— 直接用 qt 次级色只有 2.87:1，细字看不清 */
+  --fg: var(--qt-text-primary);
+  --fg-dim: color-mix(in srgb, var(--qt-text-secondary) 60%, var(--qt-text-primary) 40%);
+  --dim: color-mix(in srgb, var(--qt-text-secondary) 60%, var(--qt-text-primary) 40%);
+  /* 强调色与半透明底 */
+  --accent: var(--qt-primary);
+  --accent-soft: color-mix(in srgb, var(--qt-primary) 16%, transparent);
+  /* 语义色：--danger 跟主题；--warn 无色板变量，用深琥珀保证亮色底上可读（#ad5600 对 --bg 4.76:1 / 对卡片 5.11:1） */
+  --warn: #ad5600;
+  --danger: var(--qt-danger);
+  /* 布局量（非主题，但手写页通过 var() 消费，缺了会退化成浏览器默认） */
+  --sidebar-w: 240px;
+  --radius: 8px;
+}
+
+/* ------------------------------------------------------------------ 暗色 */
+
+@mixin media-vars-dark {
+  --bg: var(--qt-bg-page);
+  --bg-2: var(--qt-bg-card);
+  --bg-3: var(--qt-bg-hover);
+  --panel: var(--qt-bg-card);
+  --panel2: var(--qt-bg-hover);
+  --line: var(--qt-border);
+  --line-2: color-mix(in srgb, var(--qt-border) 60%, var(--qt-text-primary) 40%);
+  /* 暗色上次级文字直接用 qt 次级色即可（#a3a6ad 对 #141414 为 7.56:1，无需压暗） */
+  --fg: var(--qt-text-primary);
+  --fg-dim: var(--qt-text-secondary);
+  --dim: var(--qt-text-secondary);
+  --accent: var(--qt-primary);
+  --accent-soft: color-mix(in srgb, var(--qt-primary) 20%, transparent);
+  /* 暗色底上琥珀要更亮才够对比度（手写页原值） */
+  --warn: #ffb547;
+  --danger: var(--qt-danger);
+  --sidebar-w: 240px;
+  --radius: 8px;
+}
+
+/* -------------------------------------------------------------- 全局映射 */
+
+@if $global {
+  :root {
+    @include media-vars-light;
+  }
+
+  html.dark {
+    @include media-vars-dark;
+  }
+}
+
+/* ---------------------------------------------------------- 局部容器映射 */
+/* 只在这两类容器内生效，避免 --bg / --fg 这类短名污染全局 */
+
+.media-scope {
+  @include media-vars-light;
+
+  /* 滚动条 / video 控件 / 表单原生控件跟随容器主题 */
+  color-scheme: light;
+  background-color: var(--bg);
+  color: var(--fg);
+}
+
+html.dark .media-scope {
+  @include media-vars-dark;
+
+  color-scheme: dark;
+}
+
+/* 媒体站常用交互态：hover 只提亮底色，不改变文字色阶，亮暗两套下都不低于 4.5:1 */
+.media-scope {
+  a {
+    color: var(--accent);
+  }
+
+  a:hover {
+    color: color-mix(in srgb, var(--accent) 80%, var(--fg) 20%);
+  }
+}

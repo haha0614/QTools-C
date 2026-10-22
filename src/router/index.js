@@ -1,7 +1,8 @@
 /**
  * 路由配置
- * 用途：定义首页、三个工具页与用户端账号页（登录 / 注册 / 我的账号），全部懒加载；
- *      切换路由时回到页面顶部；进入需登录的页面前校验登录态。
+ * 用途：定义首页、三个工具页、媒体站迁移页（视频库 / 图片站 / 我的）与用户端账号页
+ *      （登录 / 注册 / 我的账号），全部懒加载；切换路由时回到页面顶部；
+ *      进入需登录的页面前校验登录态。
  */
 import { createRouter, createWebHistory } from 'vue-router'
 // 首页标题取全局站点名，避免多处硬编码
@@ -35,6 +36,35 @@ const routes = [
     component: () => import('../views/tool/PwdGen.vue'),
     meta: { title: '随机密码生成器' }
   },
+  // ---------- 媒体站（手写静态页 → Vue，迁移中） ----------
+  // 路由挂在 /media 下。服务端已配合改成「真实文件优先、其余回落 SPA」：
+  //   nginx   : location /media/ { try_files $uri /index.html; }（去掉旧的 302 与 =404）
+  //   Spring  : 去掉 /media/** 专用 handler，并把 media 从 SPA 回落排除前缀里移除
+  // 旧静态页仍可通过 /media/index.html、/media/photos.html、/media/me.html 访问，便于随时回滚。
+  {
+    path: '/media',
+    name: 'MediaVideo',
+    component: () => import('../views/media/VideoPage.vue'),
+    meta: { title: '媒体站 · 视频库' }
+  },
+  {
+    path: '/media/photos',
+    name: 'MediaPhotos',
+    component: () => import('../views/media/PhotosPage.vue'),
+    meta: { title: '媒体站 · 图片站' }
+  },
+  {
+    path: '/media/me',
+    name: 'MediaMe',
+    component: () => import('../views/media/MePage.vue'),
+    // 媒体站身份是 ms.owner（由页面自己带 X-Ms-Owner），与 app.token 无关，故不加 requiresAuth
+    meta: { title: '我的 · 媒体站' }
+  },
+  // 兼容迁移期曾用过的顶层路径（页面内部链接、书签）
+  { path: '/video', redirect: '/media' },
+  { path: '/photos', redirect: '/media/photos' },
+  { path: '/me', redirect: '/media/me' },
+
   // ---------- 用户端账号（站级：独立于若依后台） ----------
   {
     path: '/login',
