@@ -700,6 +700,9 @@ onBeforeUnmount(() => {
   /* 未登录：顶栏右侧「登录」按钮 */
   .qt-topbar__login {
     flex: 0 0 auto;
+    /* 靠右：页标题可能因去重而不渲染（首页标题 === 站点名），此时没有 flex 富余元素占位，
+       所以账号区自己吃下左侧空白，保证右侧始终贴边 */
+    margin-left: auto;
     height: 30px;
     padding: 0 12px;
     border: 1px solid var(--qt-primary);
@@ -722,6 +725,8 @@ onBeforeUnmount(() => {
   /* 已登录：头像 + 「我的」 */
   .qt-topbar__account {
     flex: 0 0 auto;
+    /* 同 __login：靠右贴边，不依赖页标题占位 */
+    margin-left: auto;
     display: flex;
     align-items: center;
     gap: 6px;

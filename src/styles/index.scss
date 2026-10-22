@@ -16,6 +16,21 @@ body {
   padding: 0;
 }
 
+/* 画布底色也交给我们的令牌：只设 body 时，<html> 的画布区（手机过度滚动、刘海区、
+   地址栏收起瞬间的露白）会用浏览器默认色，暗色下看起来"有点发灰/对不上"。
+   color-scheme 在 CSS 里再声明一次，保证 JS 执行前（或在 JS 失效时）原生控件已经正确。 */
+:root {
+  color-scheme: light;
+}
+
+html {
+  background-color: var(--qt-bg-page);
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
 /* 滚动条槽位常驻保留：媒体页/抽屉打开时 body.overflow = hidden 会让滚动条消失，
    内容区随之变宽，网格挤多一列、卡片变窄。stable 让槽位始终占位，锁滚动时不重排。 */
 html {

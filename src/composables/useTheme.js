@@ -69,7 +69,11 @@ function resolveTheme() {
   return systemPrefersDark() ? 'dark' : 'light'
 }
 
-// 应用主题：同步 ref 状态、<html> 类名与原生控件配色
+// 页面底色（与 variables.scss 的 --qt-bg-page 保持一致）：供 <meta theme-color> 使用
+const THEME_COLOR_LIGHT = '#f5f7fa'
+const THEME_COLOR_DARK = '#141414'
+
+// 应用主题：同步 ref 状态、<html> 类名、原生控件配色与手机地址栏颜色
 function applyTheme(theme) {
   isDark.value = theme === 'dark'
   if (typeof document !== 'undefined') {
@@ -79,6 +83,9 @@ function applyTheme(theme) {
     // 只切类名而不声明时，移动端（系统深色 + 浏览器自动深色）会自行反色，
     // 表现正是「跟随系统的暗色发灰、手动切换的暗色正常」。
     root.style.colorScheme = isDark.value ? 'dark' : 'light'
+    // 手机端地址栏 / 状态栏配色跟着页面走，否则暗色页面顶着一条亮色栏，观感很割裂
+    const meta = document.querySelector('meta[name="theme-color"]')
+    if (meta) meta.setAttribute('content', isDark.value ? THEME_COLOR_DARK : THEME_COLOR_LIGHT)
   }
 }
 
