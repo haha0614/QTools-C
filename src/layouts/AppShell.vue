@@ -525,19 +525,19 @@ onBeforeUnmount(() => {
 }
 
 /* ---------------------------------------------------------------- 折叠手柄热区 */
-/* 热区跨在分割线上：栏内 12px + 栏外 10px（right: -10px + width: 22px），
-   指针在分割线两侧各 10px 内都能唤出手柄，不必精确压线。
+/* 热区与手柄同宽（28px）且同心：以分割线为中心，栏内 14px + 栏外 14px
+   （right: -14px + width: 28px）。指针落在这条 28px 带内即可唤出手柄，不必精确压线。
    z-index 3 只是「左栏内最高」——左栏自身 z-index 60 才是形成层叠上下文的那个，
    热区永远不会盖过内容区里的浮层（媒体页抽屉 200+）。
-   栏外那 10px 会覆盖内容区最左 10px：非 bleed 页那里是 .qt-shell__main 的 28px 左右留白，
-   媒体页那里是本页自己的 --ms-gutter（桌面 16px）留白——两者都是纯空白，
-   碰不到任何可点元素，所以所有页面统一使用同一条跨线热区，不做例外。 */
+   栏外那 14px 会覆盖内容区最左 14px：非 bleed 页那里是 .qt-shell__main 的 28px 左右留白，
+   媒体页那里是本页自己的 --ms-gutter（桌面 16px）留白——两者都是纯空白（媒体页卡片从 16px
+   处才开始），碰不到任何可点元素，所以所有页面统一使用同一条跨线热区，不做例外。 */
 .qt-rail__hotzone {
   position: absolute;
   top: 0;
-  right: -10px;
+  right: -14px;
   z-index: 3;
-  width: 22px;
+  width: 28px;
   height: 100%;
   background-color: transparent;
   pointer-events: auto;
@@ -546,8 +546,9 @@ onBeforeUnmount(() => {
 .qt-rail__handle {
   position: absolute;
   top: 0;
-  /* 圆心落在分割线上：热区右缘 = 栏边 +10px，再外移 4px → 手柄右缘 = 栏边 +14px，28px 圆左右各出 14px */
-  right: -4px;
+  /* 手柄是热区的子元素：热区右缘 = 栏边 +14px，手柄 right:0 后右缘同为 +14px，
+     28px 圆正好左右各出 14px —— 圆心落在分割线上，与热区完全同心同宽。 */
+  right: 0;
   z-index: 2;
   display: flex;
   align-items: center;
