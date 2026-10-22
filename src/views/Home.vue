@@ -204,10 +204,43 @@ const goTool = (tool) => {
   else router.push(tool.route)
 }
 
-// Hero 主按钮：平滑滚动到工具索引
+// ========== 锚点滚动 ==========
+// 顶栏让位高度：优先读 CSS 变量 --qt-topbar-h（AppShell 移动端为 48px），
+// 其次读 .qt-topbar 实际高度（桌面 display:none 时为 0），都读不到才用 56 兜底。
+const TOPBAR_FALLBACK = 56
+const readTopbarHeight = (el) => {
+  const fromVar = parseFloat(getComputedStyle(el).getPropertyValue('--qt-topbar-h'))
+  if (Number.isFinite(fromVar) && fromVar > 0) return fromVar
+  const bar = document.querySelector('.qt-topbar')
+  if (bar) return Math.round(bar.getBoundingClientRect().height)
+  return TOPBAR_FALLBACK
+}
+
+// 找真正的滚动容器：AppShell 的 .qt-shell__main 没有 overflow，滚动的是文档；
+// 仍然逐级向上探测，避免将来外壳改成内部滚动时退化为"点不动"。
+const getScrollParent = (el) => {
+  let node = el ? el.parentElement : null
+  while (node && node !== document.body && node !== document.documentElement) {
+    const style = window.getComputedStyle(node)
+    const canScroll = /(auto|scroll|overlay)/.test(style.overflowY) && node.scrollHeight > node.clientHeight + 1
+    if (canScroll) return node
+    node = node.parentElement
+  }
+  return null
+}
+
+// Hero 主按钮：滚到工具索引区块标题稍上方（12px 呼吸 + 顶栏高度），不用 scrollIntoView
 const scrollToTools = () => {
   const el = toolsSection.value
-  if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  if (!el) return
+  const offset = readTopbarHeight(el) + 12
+  const scroller = getScrollParent(el)
+  if (scroller) {
+    const top = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - offset
+    scroller.scrollTo({ top, behavior: 'smooth' })
+    return
+  }
+  window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - offset, behavior: 'smooth' })
 }
 
 // Hero 次按钮：进入媒体站
@@ -353,7 +386,8 @@ onMounted(() => {
 /* 页面容器：左右留白由 AppShell 的 --qt-shell-pad 提供（不要再用 .qt-container，否则留白叠加成 44px） */
 .home-page {
   padding-top: 24px;
-  padding-bottom: 48px;
+  /* 底部留白交给 AppShell 的 --qt-shell-pad（桌面 28px / 移动 16px），本页不再叠加 */
+  padding-bottom: 0;
   color: var(--qt-text-primary);
 }
 
@@ -367,7 +401,8 @@ onMounted(() => {
 
 /* ---------- 1. Hero ---------- */
 .hero {
-  padding: 32px 28px;
+  /* 垂直内边距收紧到 24px：让工具索引标题在首屏下半部就能露出，锚点滚动才有意义 */
+  padding: 24px 28px;
   border: 1px solid var(--qt-border);
   border-radius: 12px;
   background-color: var(--qt-bg-card);
@@ -383,7 +418,7 @@ onMounted(() => {
 
   &__subtitle {
     max-width: 560px;
-    margin: 0 auto 20px;
+    margin: 0 auto 16px;
     font-size: 14px;
     color: var(--qt-text-secondary);
   }
@@ -393,7 +428,7 @@ onMounted(() => {
     flex-wrap: wrap;
     justify-content: center;
     gap: 8px;
-    margin: 0 0 22px;
+    margin: 0 0 18px;
     padding: 0;
     list-style: none;
   }
@@ -427,7 +462,7 @@ onMounted(() => {
 
 /* ---------- 2. 使用指引 ---------- */
 .guide {
-  margin-top: 28px;
+  margin-top: 24px;
 
   &__steps {
     display: grid;
@@ -482,8 +517,9 @@ onMounted(() => {
 
 /* ---------- 3. 工具索引 ---------- */
 .tools {
-  margin-top: 36px;
-  scroll-margin-top: 24px;
+  margin-top: 30px;
+  /* 退路：锚点 / scrollIntoView 场景下同样让开移动端 sticky 顶栏（--qt-topbar-h 由 AppShell 下发，桌面未定义即 0） */
+  scroll-margin-top: calc(var(--qt-topbar-h, 0px) + 16px);
 
   &__head {
     display: flex;
@@ -697,9 +733,10 @@ onMounted(() => {
 }
 
 /* ---------- 4. 页内页脚 ---------- */
+/* 距卡片网格 20px + 8px 内边距 = 28px；下方留白全交给 AppShell 的内容区 padding */
 .home-foot {
-  margin-top: 40px;
-  padding-top: 16px;
+  margin-top: 20px;
+  padding-top: 8px;
   border-top: 1px solid var(--qt-border);
   text-align: center;
 
@@ -740,7 +777,7 @@ onMounted(() => {
   }
 
   .hero {
-    padding: 26px 18px;
+    padding: 20px 18px;
   }
 
   .hero__title {

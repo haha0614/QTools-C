@@ -28,6 +28,13 @@ const routes = [
         meta: { title: APP_INFO.name }
       },
       {
+        // 独立的「全部工具」页：侧栏入口直达，不再回首页滚动到索引锚点
+        path: 'tools',
+        name: 'Tools',
+        component: () => import('../views/ToolsPage.vue'),
+        meta: { title: '全部工具' }
+      },
+      {
         path: 'tool/json',
         name: 'ToolJson',
         component: () => import('../views/tool/JsonFormat.vue'),

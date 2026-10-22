@@ -6,17 +6,22 @@
             页面主题变量仍由各页面自己负责（媒体页根节点的 .media-scope 未变）。
 
   折叠手柄（复刻 30aitool 的交互）：
-    1) 指针进入左栏（含手柄热区）→ 左栏右边缘浮现 28px 圆形按钮（‹ 收起 / › 展开）；
+    1) 左栏右边缘有一条 12px 宽的竖直透明热区（.qt-rail__hotzone），手柄是它的子元素（骑在边缘上，
+       指针从热区移向手柄时不会触发 mouseleave）；指针进入热区才浮现 28px 圆形按钮（‹ 收起 / › 展开），
+       在左栏其它位置移动不触发；
     2) 按钮纵向位置跟随指针 Y，translateY(clamp(y - railTop - 14, 40, railHeight - 40))，mousemove 用 rAF 节流；
-    3) 指针离开左栏 300ms 后淡出（opacity 过渡 + pointer-events: none，淡出期间不误触）；
+    3) 指针离开热区立即置为隐藏（无延时），视觉上只由 opacity 过渡做平滑；
     4) 点击切换折叠，状态写入 localStorage['qtools-rail-collapsed']（'1' 收起 / '0' 展开），刷新后保持。
+    5) 手柄只服务桌面；移动端靠 ☰ 抽屉，热区与手柄都 display: none。
 
   移动端（<1024px）：无底部 tabbar；顶栏 ☰ 打开全高抽屉（覆盖式 + 半透明遮罩，ESC / 点遮罩关闭，
     打开时锁定 <body> 滚动），抽屉内沿用同一套导航结构（展开态 200px 逻辑）。
+    顶栏右侧只放账号入口（未登录「登录」→ /login，已登录「我的」→ /me）；手机端不提供主题切换
+    （抽屉里也没有），主题由 useTheme 跟随系统偏好。
 -->
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 // 图标按名显式导入（本项目没有 unplugin-auto-import，模板里不能凭空出现组件名）
 import { House, Menu, Moon, Picture, Sunny, User, VideoPlay } from '@element-plus/icons-vue'
 import { APP_INFO } from '@/utils/constants'
@@ -24,6 +29,7 @@ import { useTheme } from '@/composables/useTheme'
 import { useAppAuth } from '@/composables/useAppAuth'
 
 const route = useRoute()
+const router = useRouter()
 // 主题：与站内其它组件共享同一单例（html.dark + localStorage['qtools-theme']）
 const { isDark, toggleTheme } = useTheme()
 // 登录态：决定底部入口显示「个人中心」还是「登录」
@@ -54,6 +60,8 @@ function toggleRail() {
 }
 
 /* ================================================================ 折叠手柄（跟随鼠标 Y） */
+// 手柄归属一条热区（.qt-rail__hotzone：左栏右边缘 12px 竖直窄条），而不是整个左栏。
+// 手柄是该热区的子元素，指针从热区滑到手柄上不会触发 mouseleave，因此不会「移向手柄时消失」。
 const railRef = ref(null)
 const handleVisible = ref(false)
 const handleY = ref(40) // 手柄相对左栏顶端的平移量（px）
@@ -61,28 +69,19 @@ const HANDLE_SIZE = 28 // 手柄直径，用于把指针 Y 对准圆心
 const HANDLE_EDGE = 40 // 上下各留 40px，避免贴边不可点
 
 let rafId = null
-let hideTimer = null
 
-// 指针进入左栏：立即显现并取消待执行的隐藏
-function showHandle() {
-  if (hideTimer) {
-    clearTimeout(hideTimer)
-    hideTimer = null
-  }
+// 指针进入热区：立即显现
+function onHotzoneEnter() {
   handleVisible.value = true
 }
 
-// 指针离开左栏：300ms 后再淡出，给「移向手柄」留出余量
-function scheduleHideHandle() {
-  if (hideTimer) clearTimeout(hideTimer)
-  hideTimer = setTimeout(() => {
-    handleVisible.value = false
-    hideTimer = null
-  }, 300)
+// 指针离开热区（含离开其子元素手柄）：状态同步立刻变 false，不留延时
+function onHotzoneLeave() {
+  handleVisible.value = false
 }
 
 // mousemove 用 requestAnimationFrame 节流：一帧只读一次布局、只写一次状态
-function onRailMouseMove(event) {
+function onHotzoneMove(event) {
   if (rafId !== null) return
   const pointerY = event.clientY
   rafId = requestAnimationFrame(() => {
@@ -151,8 +150,8 @@ const NAV_GROUPS = [
     title: '工具',
     items: [
       { to: '/', label: '首页', icon: House },
-      // 首页的工具卡片索引；具体滚动由下方 hash watch 负责（索引依赖接口数据，渲染有延迟）
-      { to: '/#tools', label: '全部工具', icon: Menu }
+      // 独立页面 /tools（首页 Hero 的「开始使用」仍走 /#tools 锚点，与侧栏无关）
+      { to: '/tools', label: '全部工具', icon: Menu }
     ]
   },
   {
@@ -170,12 +169,11 @@ const normalizedPath = computed(() => {
   return path === '' ? '/' : path
 })
 
-// 选中态：首页与「全部工具」共用路径 /，靠 hash 区分；其余精确匹配或子路径匹配
-// （/media 不做前缀匹配，否则会吞掉 /media/photos）
+// 选中态：首页只认 '/'（hash 不参与判断），其余精确匹配或子路径匹配
+// （/tools 命中「全部工具」，与「首页」互不误判；/media 不做前缀匹配，否则会吞掉 /media/photos）
 function isActive(item) {
   const path = normalizedPath.value
-  if (item.to === '/') return path === '/' && route.hash !== '#tools'
-  if (item.to === '/#tools') return path === '/' && route.hash === '#tools'
+  if (item.to === '/') return path === '/'
   return path === item.to || path.startsWith(item.to + '/')
 }
 
@@ -187,6 +185,20 @@ const accountItem = computed(() =>
 )
 
 const accountActive = computed(() => normalizedPath.value === accountItem.value.to)
+
+/* ================================================================ 移动端顶栏账号入口 */
+// 未登录 → 登录页并带回跳地址；已在登录页时不再自指，避免登录后跳回自身
+function goLogin() {
+  const redirect = route.fullPath
+  router.push({ path: '/login', query: redirect === '/login' ? {} : { redirect } })
+}
+
+// 已登录：没有头像 URL 时退化为昵称/用户名首字（大写），都没有则用「我」
+const avatarText = computed(() => {
+  const user = state.user || {}
+  const name = user.nickname || user.username || ''
+  return name ? String(name).charAt(0).toUpperCase() : '我'
+})
 
 // 移动端紧凑条中间的当前页标题：取最深匹配路由的 meta.title
 const pageTitle = computed(() => route.meta.title || APP_INFO.name)
@@ -227,7 +239,6 @@ watch(
 /* ================================================================ 卸载清理 */
 onBeforeUnmount(() => {
   if (rafId !== null) cancelAnimationFrame(rafId)
-  if (hideTimer) clearTimeout(hideTimer)
   if (hashTimer) clearTimeout(hashTimer)
   window.removeEventListener('keydown', onKeydown)
   unlockBodyScroll()
@@ -237,7 +248,7 @@ onBeforeUnmount(() => {
 <template>
   <!-- is-collapsed：桌面折叠态；is-drawer-open：移动端抽屉展开态。两者都只影响样式 -->
   <div class="qt-shell" :class="{ 'is-collapsed': railCollapsed, 'is-drawer-open': drawerOpen }">
-    <!-- 移动端紧凑条（桌面 display: none）：☰ + 站点名 + 当前页标题 + 主题切换 -->
+    <!-- 移动端紧凑条（桌面 display: none）：☰ + 站点名 + 当前页标题 + 登录/我的 -->
     <header class="qt-topbar">
       <button
         class="qt-topbar__icon"
@@ -251,27 +262,19 @@ onBeforeUnmount(() => {
       </button>
       <span class="qt-topbar__brand">{{ APP_INFO.name }}</span>
       <span class="qt-topbar__title">{{ pageTitle }}</span>
-      <button
-        class="qt-topbar__icon"
-        type="button"
-        :aria-label="isDark ? '切换到浅色模式' : '切换到暗色模式'"
-        @click="toggleTheme"
-      >
-        <el-icon :size="18"><component :is="isDark ? Moon : Sunny" /></el-icon>
-      </button>
+      <!-- 右侧只放账号入口：移动端不放主题切换（主题跟随系统） -->
+      <RouterLink v-if="state.user" class="qt-topbar__account" to="/me" aria-label="个人中心">
+        <span class="qt-topbar__avatar" aria-hidden="true">{{ avatarText }}</span>
+        <span>我的</span>
+      </RouterLink>
+      <button v-else class="qt-topbar__login" type="button" @click="goLogin">登录</button>
     </header>
 
     <!-- 移动端遮罩：点击关闭抽屉 -->
     <div v-if="drawerOpen" class="qt-scrim" @click="closeDrawer" />
 
     <!-- 左侧导航栏（桌面固定；移动端为覆盖式抽屉） -->
-    <aside
-      ref="railRef"
-      class="qt-rail"
-      @mouseenter="showHandle"
-      @mouseleave="scheduleHideHandle"
-      @mousemove="onRailMouseMove"
-    >
+    <aside ref="railRef" class="qt-rail">
       <!-- Logo：收起态只留首字徽标 -->
       <RouterLink class="qt-rail__logo" to="/" title="返回首页">
         <span class="qt-rail__logo-badge">{{ APP_INFO.name.charAt(0) }}</span>
@@ -296,10 +299,10 @@ onBeforeUnmount(() => {
         </div>
       </nav>
 
-      <!-- 底部固定区：主题切换 + 个人中心 / 登录 -->
+      <!-- 底部固定区：主题切换（移动端隐藏）+ 个人中心 / 登录 -->
       <div class="qt-rail__footer">
         <button
-          class="qt-rail__link qt-rail__link--button"
+          class="qt-rail__link qt-rail__link--button qt-rail__theme"
           type="button"
           :title="isDark ? '切换到浅色模式' : '切换到暗色模式'"
           @click="toggleTheme"
@@ -321,19 +324,27 @@ onBeforeUnmount(() => {
         </RouterLink>
       </div>
 
-      <!-- 折叠手柄：桌面显示，位置跟随指针 Y（transform 由 handleStyle 注入） -->
-      <button
-        class="qt-rail__handle"
-        :class="{ 'is-visible': handleVisible }"
-        type="button"
-        :style="handleStyle"
-        :aria-expanded="!railCollapsed"
-        :aria-label="railCollapsed ? '展开导航' : '收起导航'"
-        aria-controls="qt-rail-nav"
-        @click="toggleRail"
+      <!-- 折叠手柄热区：左栏右边缘 12px 竖直窄条，只有指针进入这里手柄才出现 -->
+      <div
+        class="qt-rail__hotzone"
+        @mouseenter="onHotzoneEnter"
+        @mousemove="onHotzoneMove"
+        @mouseleave="onHotzoneLeave"
       >
-        <span aria-hidden="true">{{ railCollapsed ? '›' : '‹' }}</span>
-      </button>
+        <!-- 手柄是热区的子元素：骑在边缘上（right: -14px），移向手柄不会触发热区 mouseleave -->
+        <button
+          class="qt-rail__handle"
+          :class="{ 'is-visible': handleVisible }"
+          type="button"
+          :style="handleStyle"
+          :aria-expanded="!railCollapsed"
+          :aria-label="railCollapsed ? '展开导航' : '收起导航'"
+          aria-controls="qt-rail-nav"
+          @click="toggleRail"
+        >
+          <span aria-hidden="true">{{ railCollapsed ? '›' : '‹' }}</span>
+        </button>
+      </div>
     </aside>
 
     <!-- 内容区：全站唯一的 <router-view /> -->
@@ -507,10 +518,24 @@ onBeforeUnmount(() => {
   border-top: 1px solid var(--qt-border);
 }
 
-/* ---------------------------------------------------------------- 折叠手柄 */
+/* ---------------------------------------------------------------- 折叠手柄热区 */
+/* 只有指针落在这条 12px 窄条（左栏右边缘、整栏高）里，手柄才出现；
+   z-index 高于左栏内容，保证热区始终在最上层；宽度很窄，不会挡住导航项的点击。 */
+.qt-rail__hotzone {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 3;
+  width: 12px;
+  height: 100%;
+  background-color: transparent;
+  pointer-events: auto;
+}
+
 .qt-rail__handle {
   position: absolute;
   top: 0;
+  /* 相对热区右边缘外移 14px：28px 圆的一半骑在栏边外、一半压住热区 */
   right: -14px;
   z-index: 2;
   display: flex;
@@ -530,9 +555,16 @@ onBeforeUnmount(() => {
   box-shadow: var(--qt-shadow-card);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.18s ease, color 0.16s, border-color 0.16s, background-color 0.16s;
+  /* 状态是同步切换的，这里只做 100ms 视觉淡入淡出 */
+  transition: opacity 0.1s ease, color 0.16s, border-color 0.16s, background-color 0.16s;
 
   &.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* 键盘聚焦时同样露出，避免只能用鼠标折叠 */
+  &:focus-visible {
     opacity: 1;
     pointer-events: auto;
   }
@@ -547,13 +579,14 @@ onBeforeUnmount(() => {
 .qt-shell__main {
   margin-left: var(--qt-rail-w);
   padding: var(--qt-shell-pad);
+  /* 底部留白收紧到 16px：非 bleed 页面末行下面不再顶一大片空白 */
+  padding-bottom: var(--qt-space-4, 16px);
   transition: margin-left 0.18s ease;
 }
 
-/* 媒体页（meta.bleed）：取消左右留白，贴到内容区边缘 */
+/* 媒体页（meta.bleed）：四边归零、完全贴边，内部间距由媒体页自己管 */
 .qt-shell__main.is-bleed {
-  padding-left: 0;
-  padding-right: 0;
+  padding: 0;
 }
 
 /* ---------------------------------------------------------------- 桌面（≥1024px）：折叠态 */
@@ -653,9 +686,68 @@ onBeforeUnmount(() => {
     text-overflow: ellipsis;
   }
 
+  /* 未登录：顶栏右侧「登录」按钮 */
+  .qt-topbar__login {
+    flex: 0 0 auto;
+    height: 30px;
+    padding: 0 12px;
+    border: 1px solid var(--qt-primary);
+    border-radius: var(--qt-radius-sm);
+    background-color: transparent;
+    color: var(--qt-primary);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    transition: border-color 0.16s, color 0.16s;
+
+    &:hover {
+      border-color: var(--qt-primary-hover);
+      color: var(--qt-primary-hover);
+    }
+  }
+
+  /* 已登录：头像 + 「我的」 */
+  .qt-topbar__account {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 6px;
+    border-radius: var(--qt-radius-sm);
+    color: var(--qt-text-primary);
+    font-size: 13px;
+    text-decoration: none;
+    transition: background-color 0.16s;
+
+    &:hover {
+      background-color: var(--qt-bg-hover);
+    }
+  }
+
+  .qt-topbar__avatar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background-color: var(--qt-primary);
+    color: var(--qt-on-primary);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
   /* 抽屉：同一套导航结构，从左侧滑入（宽度仍由 --qt-rail-w = 200px 决定） */
   .qt-rail {
     z-index: 80;
+    /* 动态视口高度：手机地址栏收起/展开时抽屉始终等于可视高度，底部操作区不会被顶出屏幕 */
+    height: 100vh;
+    height: 100dvh;
     transform: translateX(-100%);
   }
 
@@ -664,9 +756,26 @@ onBeforeUnmount(() => {
     box-shadow: var(--qt-shadow-pop);
   }
 
-  /* 手柄只在桌面可用（移动端折叠无意义） */
+  /* 手柄与热区只在桌面可用（移动端折叠无意义，抽屉靠 ☰ 开关） */
+  .qt-rail__hotzone,
   .qt-rail__handle {
     display: none;
+  }
+
+  /* 抽屉里不放主题切换：手机端主题跟随系统 */
+  .qt-rail__theme {
+    display: none;
+  }
+
+  /* 抽屉内容区独立滚动，底部再留一档空间，最后一项不会被裁切 */
+  .qt-rail__nav {
+    padding-bottom: var(--qt-space-4, 16px);
+    overflow-y: auto;
+  }
+
+  /* 底部操作区让开手机浏览器工具栏 + 安全区，保证「登录」完整可见可点 */
+  .qt-rail__footer {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   }
 
   /* 移动端内容区不吃左侧偏移 */
