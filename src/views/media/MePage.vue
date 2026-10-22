@@ -1,15 +1,15 @@
 <!--
   MePage.vue —— 媒体站「我的」页（Vue 版）
-  路由：/me，meta.title = '我的 · 媒体站'
-  说明：新页面走顶层路径而不是 /media/me —— /media/** 在部署层被静态目录占用
-        （nginx location /media/ + Spring SpaEntryController 都硬编码指向旧静态页），
-        走 /me 零基础设施改动、可随时回滚，旧页 /media/me.html 保持原样可用。
+  路由：/media/me（父级 MediaLayout 提供 AppHeader 与媒体站二级导航），meta.title = '我的 · 媒体站'
+  说明：本页不再自建顶部导航：站内三页互跳由 MediaLayout 的二级导航承担，
+        「回到工具站」由 AppHeader 的 Logo 承担；账号入口也由 AppHeader 提供。
+        旧静态页 /media/me.html 保持原样可用。
 
   来源：等价改写 public/media/me.html + me.js 的渲染逻辑，功能语义对照 public/media/profile.js。
         旧页 /media/me.html 保持可用，本页只新增，不改动 public/media/**。
 
   内容（对照旧页 me.js / profile.js 实现）：
-    1. 顶部导航：视频库(/video) / 图片站(/photos) / 回到工具站(/)
+    1. 顶部导航：由父级 MediaLayout 统一提供（视频库 / 图片站 / 我的 + AppHeader 账号入口）
     2. 昵称 + 头像：头像支持「8 套内置渐变」与「上传图片（裁剪 128×128 webp）」，均可保存
     3. 最近浏览：视频 / 图片分组，视频显示观看进度条，按时间倒序（服务端顺序，前端不再排序）
     4. 收藏：视频 / 图片分组，可点星标取消收藏（乐观更新，列表即时变化）
@@ -125,15 +125,15 @@ function favKey(item) {
 
 /**
  * 列表项的落地页地址
- * 迁移期指向旧的静态页（带 hash 参数，旧页 index.js / photo.js 靠 hash 定位播放与相册）；
- * 等 /video 与 /photos 迁完后，这里改成站内路由即可，其余代码不用动。
+ * 视频 → /media#play=<id>（视频库按 hash 打开播放器）；图片 → /media/photos#album=<相册>&i=<序号>。
+ * 两页都已迁到 Vue Router，因此这里直接给 SPA 路径，不再跳旧静态页。
  */
 function itemHref(item) {
   if (item && item.kind === 'photo') {
     const seq = parseInt(item.i != null ? item.i : item.seq, 10) || 0
-    return '/media/photos.html#album=' + encodeURIComponent(item.album || '') + '&i=' + seq
+    return '/media/photos#album=' + encodeURIComponent(item.album || '') + '&i=' + seq
   }
-  return '/media/index.html#play=' + encodeURIComponent((item && item.id) || '')
+  return '/media#play=' + encodeURIComponent((item && item.id) || '')
 }
 
 /**
@@ -419,13 +419,8 @@ onUnmounted(() => {
 <template>
   <!-- media-scope：mediaTheme.scss 局部模式的容器类，--bg / --fg 等短名只在此容器内生效 -->
   <div class="media-scope media-me">
-    <!-- 顶部导航：站点内三条路由；视频库 / 图片站目前是「迁移中」占位页，
-         内容里给出了旧页 /media/index.html 与 /media/photos.html 的入口 -->
-    <nav class="mm-nav" aria-label="站点导航">
-      <router-link class="mm-nav-a" to="/video">视频库</router-link>
-      <router-link class="mm-nav-a" to="/photos">图片站</router-link>
-      <router-link class="mm-nav-a" to="/">回到工具站</router-link>
-    </nav>
+    <!-- 站内导航（视频库 / 图片站 / 我的）与「回到工具站」的 Logo 由父级 MediaLayout 的
+         AppHeader + 二级导航承担，本页不再自建导航 -->
 
     <!-- 昵称 / 头像 -->
     <header class="mm-head">
@@ -476,8 +471,8 @@ onUnmounted(() => {
               </h3>
               <ul class="mm-list">
                 <li v-for="item in group.items" :key="favKey(item)" class="mm-item">
-                  <!-- 链接指向旧页对应位置（#play / #album），迁移完成后改为站内路由 -->
-                  <a class="mm-link" :href="itemHref(item)" :title="item.title || ''">
+                  <!-- 站内深链：视频跳到视频库并打开播放器，图片跳到图片站并开灯箱 -->
+                  <router-link class="mm-link" :to="itemHref(item)" :title="item.title || ''">
                     <span class="mm-th">
                       <img
                         v-if="itemThumbUrl(item)"
@@ -495,7 +490,7 @@ onUnmounted(() => {
                     <span class="mm-t">{{
                       item.title || (item.kind === 'photo' ? '图片' : '视频')
                     }}</span>
-                  </a>
+                  </router-link>
                   <!-- 星标只在收藏分组出现：取消收藏 -->
                   <button
                     v-if="sec.mode === 'fav'"
@@ -587,8 +582,6 @@ onUnmounted(() => {
    全部直接用 mediaTheme.scss 的变量；这里只保留主题层没有提供、且必须由本页决定的取值，
    集中一处方便后续替换。 */
 .media-me {
-  /* 强调色之上（按钮、渐变头像）的文字 */
-  --mt-on-accent: #fff;
   /* 星标压在封面图上，属于「图像上层」配色，不随主题变化 */
   --mt-star-bg: rgba(0, 0, 0, 0.58);
   --mt-star-bg-hover: rgba(255, 93, 93, 0.82);
@@ -614,25 +607,7 @@ onUnmounted(() => {
 }
 
 /* ---------- 顶部导航 ---------- */
-/* 前缀 .media-me 是为了压过 mediaTheme.scss 里 .media-scope a 的强调色规则 */
-.mm-nav {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 14px 0 10px;
-  border-bottom: 1px solid var(--line);
-}
-
-.media-me .mm-nav-a {
-  font-size: 13px;
-  color: var(--fg-dim);
-  text-decoration: none;
-  transition: color 0.16s;
-}
-
-.media-me .mm-nav-a:hover {
-  color: var(--fg);
-}
+/* 已交给父级 MediaLayout 的二级导航（AppHeader + tab 条），本页不再有 .mm-nav */
 
 /* ---------- 昵称 / 头像 ---------- */
 .mm-head {
@@ -654,7 +629,7 @@ onUnmounted(() => {
   overflow: hidden;
   font-size: 26px;
   font-weight: 600;
-  color: var(--mt-on-accent);
+  color: var(--accent-on);
   user-select: none;
 }
 
@@ -819,7 +794,7 @@ onUnmounted(() => {
 
 .mm-star:hover {
   background: var(--mt-star-bg-hover);
-  color: var(--mt-on-accent);
+  color: var(--accent-on);
 }
 
 /* ---------- 空态 / 提示 ---------- */
@@ -858,7 +833,8 @@ onUnmounted(() => {
 .mm-modal {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  /* 必须大于 AppHeader(100) 与布局导航(90)，否则弹窗会被头部/底部 tabbar 压住 */
+  z-index: 300;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -980,10 +956,11 @@ onUnmounted(() => {
   border-color: var(--accent);
 }
 
+/* 实心主按钮：背景用 --accent-btn（亮 #1f6fc7 / 暗 #2b76cd），白字 --accent-on 才够 4.5:1 */
 .mm-btn--primary {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--mt-on-accent);
+  border-color: var(--accent-btn);
+  background: var(--accent-btn);
+  color: var(--accent-on);
 }
 
 .mm-btn--primary:disabled {

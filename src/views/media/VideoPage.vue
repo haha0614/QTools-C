@@ -1392,7 +1392,9 @@ watch(
 
 .toolbar {
   position: sticky;
-  top: 0;
+  /* 让开 AppHeader + 媒体站二级导航（MediaLayout 在 .media-shell 上提供该量）；
+     手机端二级导航改成固定底部 tabbar，--media-nav-h 归零，本偏移自动只剩 AppHeader */
+  top: var(--media-sticky-top, 0px);
   z-index: 30;
   display: flex;
   flex-direction: column;
@@ -1497,8 +1499,9 @@ watch(
   min-width: 15px;
   padding: 2px 4px;
   border-radius: 8px;
-  background: var(--accent);
-  color: #fff;
+  /* 实心底上的白字：用 --accent-btn / --accent-on 才有 4.5:1 对比度 */
+  background: var(--accent-btn);
+  color: var(--accent-on);
   text-align: center;
 }
 

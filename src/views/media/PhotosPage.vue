@@ -14,7 +14,6 @@
 -->
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import AppHeader from '@/components/AppHeader.vue'
 import AppFooter from '@/components/AppFooter.vue'
 import { useMediaApi } from '@/composables/useMediaApi'
 import { useMediaTrack } from '@/composables/useMediaTrack'
@@ -1602,7 +1601,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="media-scope photos-page">
-    <AppHeader />
+    <!-- AppHeader 与媒体站二级导航由父级 MediaLayout 统一提供，本页不再自己渲染头部 -->
 
     <!-- ================= 相册墙（原 photos.html 的 main#wallView） ================= -->
     <main v-show="!album" class="wallView">
@@ -1645,7 +1644,7 @@ onBeforeUnmount(() => {
             全部图片
           </button>
         </div>
-        <a class="topLink" href="/media/index.html">视频站 &rsaquo;</a>
+        <router-link class="topLink" to="/media">视频库 &rsaquo;</router-link>
       </div>
 
       <div class="chipRow">
@@ -1755,7 +1754,7 @@ onBeforeUnmount(() => {
           张
           <button type="button" @click="doJump">定位</button>
         </label>
-        <a class="topLink" href="/media/index.html">视频站 &rsaquo;</a>
+        <router-link class="topLink" to="/media">视频库 &rsaquo;</router-link>
       </header>
 
       <div ref="gridEl" class="grid">
@@ -1806,9 +1805,6 @@ onBeforeUnmount(() => {
 @use './mediaTheme.scss' with ($global: false);
 
 .photos-page {
-  /* 局部语义色：强调底上的文字（mediaTheme 未提供该 token，亮/暗都取白） */
-  --mt-on-accent: #fff;
-
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -1906,8 +1902,8 @@ onBeforeUnmount(() => {
 }
 
 .segBtn.on {
-  background: var(--accent);
-  color: var(--mt-on-accent);
+  background: var(--accent-btn);
+  color: var(--accent-on);
 }
 
 .topLink {
@@ -1965,9 +1961,9 @@ onBeforeUnmount(() => {
 }
 
 .chip.on {
-  color: var(--mt-on-accent);
-  background: var(--accent);
-  border-color: var(--accent);
+  color: var(--accent-on);
+  background: var(--accent-btn);
+  border-color: var(--accent-btn);
 }
 
 .stat {
@@ -1995,7 +1991,8 @@ onBeforeUnmount(() => {
 .phead {
   grid-column: 1 / -1;
   position: sticky;
-  top: 0;
+  /* 让开 AppHeader + 媒体站二级导航（由 MediaLayout 提供该量），否则标题条会被压在导航下面 */
+  top: var(--media-sticky-top, 0px);
   z-index: 2;
   display: flex;
   align-items: baseline;
@@ -2127,7 +2124,8 @@ onBeforeUnmount(() => {
 /* ---------- 册内网格 ---------- */
 .albumbar {
   position: sticky;
-  top: 0;
+  /* 同 .phead：避开 AppHeader + 二级导航 */
+  top: var(--media-sticky-top, 0px);
   z-index: 30;
   display: flex;
   align-items: center;
@@ -2308,7 +2306,8 @@ onBeforeUnmount(() => {
   position: fixed;
   left: 16px;
   right: 16px;
-  bottom: 16px;
+  /* 手机端底部有媒体站 tabbar，错误条要整体上移，避免与它重叠 */
+  bottom: calc(16px + var(--media-tabbar-h, 0px));
   z-index: 200;
   padding: 12px 16px;
   border-radius: 8px;

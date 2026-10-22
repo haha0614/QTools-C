@@ -11,6 +11,9 @@
  * 变量清单来源（grep 结果，共 16 个：14 个主题色 + 2 个布局量，本文件 16/16 全覆盖）：
  *   app.css:2-14  --bg --bg-2 --bg-3 --line --line-2 --fg --fg-dim --accent --accent-soft --warn --danger --sidebar-w --radius
  *   photo.css:2-9 --bg --panel --panel2 --line --fg --dim --fg-dim --accent
+ * 在此之上本文件额外补 2 个可访问性令牌（手写页没有，Vue 页新增）：
+ *   --accent-btn : 实心按钮背景色（亮 #1f6fc7 / 暗 #2b76cd），保证与 --accent-on 的对比度 ≥ 4.5:1
+ *   --accent-on  : 压在 --accent-btn 上的文字色（白）
  * 说明：手写页写死 `<meta name="color-scheme" content="dark">`，Vue 页面不要复制这行——
  *      亮暗由 html.dark 决定，容器内用 color-scheme 让滚动条 / 原生控件跟随。
  */
@@ -40,9 +43,16 @@ $global: true !default;
   /* 强调色与半透明底 */
   --accent: var(--qt-primary);
   --accent-soft: color-mix(in srgb, var(--qt-primary) 16%, transparent);
-  /* 语义色：--danger 跟主题；--warn 无色板变量，用深琥珀保证亮色底上可读（#ad5600 对 --bg 4.76:1 / 对卡片 5.11:1） */
+  /* 实心按钮专用：白字压在 --qt-primary(#409eff) 上只有 2.78:1，达不到 WCAG AA。
+     改用更深的蓝 #1f6fc7 → 白字 5.05:1；--accent-on 是压在该底色上的文字色。
+     语义分工：--accent 用于链接/描边/进度条（与文字相邻，对比由文字色承担），
+     只有「实心按钮背景」必须用 --accent-btn。 */
+  --accent-btn: #1f6fc7;
+  --accent-on: #ffffff;
+  /* 语义色：亮色底上 #f56c6c 只有 2.70:1，压深到 #c9302c → 4.96:1；
+     --warn 无色板变量，用深琥珀保证亮色底上可读（#ad5600 对 --bg 4.76:1 / 对卡片 5.11:1） */
   --warn: #ad5600;
-  --danger: var(--qt-danger);
+  --danger: #c9302c;
   /* 布局量（非主题，但手写页通过 var() 消费，缺了会退化成浏览器默认） */
   --sidebar-w: 240px;
   --radius: 8px;
@@ -64,8 +74,12 @@ $global: true !default;
   --dim: var(--qt-text-secondary);
   --accent: var(--qt-primary);
   --accent-soft: color-mix(in srgb, var(--qt-primary) 20%, transparent);
+  /* 实心按钮：暗色下 #409eff 同样只有 2.78:1，用 #2b76cd → 白字 4.59:1 */
+  --accent-btn: #2b76cd;
+  --accent-on: #ffffff;
   /* 暗色底上琥珀要更亮才够对比度（手写页原值） */
   --warn: #ffb547;
+  /* 暗色下 #f56c6c 对 #141414 为 6.35:1，无需改 */
   --danger: var(--qt-danger);
   --sidebar-w: 240px;
   --radius: 8px;

@@ -24,9 +24,10 @@ const goHome = () => {
   router.push('/')
 }
 
-// 媒体站是 public/media 下的独立静态页（不在 Vue Router 里），只能整页跳转
+// 媒体站入口：/media 已在 Vue Router 内（嵌套路由，父级 MediaLayout 提供二级导航），
+// 走 SPA 内跳转即可；旧静态页 /media/index.html 仍可直接访问，仅用于回滚
 const goMedia = () => {
-  window.location.href = '/media/index.html'
+  router.push('/media')
 }
 
 // 已登录判定：有用户信息才算（token 存在但 /me 失败时按未登录展示，避免给出假昵称）

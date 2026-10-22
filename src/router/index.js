@@ -41,24 +41,32 @@ const routes = [
   //   nginx   : location /media/ { try_files $uri /index.html; }（去掉旧的 302 与 =404）
   //   Spring  : 去掉 /media/** 专用 handler，并把 media 从 SPA 回落排除前缀里移除
   // 旧静态页仍可通过 /media/index.html、/media/photos.html、/media/me.html 访问，便于随时回滚。
+  // 三条子路由共用一个布局外壳（AppHeader + 媒体站二级导航 + router-view），
+  // 父级不再有 meta.title：标题由子路由提供，afterEach 取的是最深匹配路由的 meta
   {
     path: '/media',
-    name: 'MediaVideo',
-    component: () => import('../views/media/VideoPage.vue'),
-    meta: { title: '媒体站 · 视频库' }
-  },
-  {
-    path: '/media/photos',
-    name: 'MediaPhotos',
-    component: () => import('../views/media/PhotosPage.vue'),
-    meta: { title: '媒体站 · 图片站' }
-  },
-  {
-    path: '/media/me',
-    name: 'MediaMe',
-    component: () => import('../views/media/MePage.vue'),
-    // 媒体站身份是 ms.owner（由页面自己带 X-Ms-Owner），与 app.token 无关，故不加 requiresAuth
-    meta: { title: '我的 · 媒体站' }
+    component: () => import('../views/media/MediaLayout.vue'),
+    children: [
+      {
+        path: '',
+        name: 'MediaVideo',
+        component: () => import('../views/media/VideoPage.vue'),
+        meta: { title: '媒体站 · 视频库' }
+      },
+      {
+        path: 'photos',
+        name: 'MediaPhotos',
+        component: () => import('../views/media/PhotosPage.vue'),
+        meta: { title: '媒体站 · 图片站' }
+      },
+      {
+        path: 'me',
+        name: 'MediaMe',
+        component: () => import('../views/media/MePage.vue'),
+        // 媒体站身份是 ms.owner（由页面自己带 X-Ms-Owner），与 app.token 无关，故不加 requiresAuth
+        meta: { title: '我的 · 媒体站' }
+      }
+    ]
   },
   // 兼容迁移期曾用过的顶层路径（页面内部链接、书签）
   { path: '/video', redirect: '/media' },
