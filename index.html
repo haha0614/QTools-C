@@ -11,6 +11,23 @@
     <meta name="color-scheme" content="light dark" />
     <!-- 手机浏览器地址栏 / 状态栏的配色：初始给亮色，应用启动后由 useTheme 按当前主题改写 -->
     <meta name="theme-color" content="#f5f7fa" />
+    <!--
+      中文字体 MiSans（小米开源，遵循 MiSans 字体许可）。用「中文网字计划」的分包方案：
+      每个字重一份 CSS，内部按 unicode-range 切成上百个小 woff2，浏览器只下载页面用到的字块。
+      只加载 regular(400) 与 semibold(600)；其余字重由浏览器就近匹配。
+      国内用 bootcdn；国际线路可换 https://cdn.jsdelivr.net/npm/misans-webfont/misans/misans-regular/result.css
+      离线/内网拿不到 CDN 时，会静默回落到 --qt-font-sans 里的系统字体栈。
+    -->
+    <link rel="preconnect" href="https://cdn.bootcdn.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.bootcdn.net/ajax/libs/misans-webfont/4.3.1/misans/misans-regular/result.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.bootcdn.net/ajax/libs/misans-webfont/4.3.1/misans/misans-semibold/result.css"
+    />
+
     <!-- 站点标题仅作首屏兜底：应用启动后由 src/utils/constants.js 的 APP_INFO.name 覆盖 -->
     <title>青兔在线工具箱</title>
     <link rel="icon" href="data:,">

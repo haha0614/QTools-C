@@ -6,6 +6,11 @@
  */
 
 :root {
+/* 全站字体（与参考站 30aitool 同一首选字体）：MiSans 由 index.html 以分包 webfont 引入，  
+      走不到时按后备栈回落到系统字体；组件里不要再各自写 font-family，一律继承 body。 */  
+   --qt-font-sans: "MiSans", MiSans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,  
+     "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;  
+   
   /* ---------- 颜色（原有 9 个，勿删） ---------- */
   --qt-bg-page: #f5f7fa;
   --qt-bg-card: #ffffff;
