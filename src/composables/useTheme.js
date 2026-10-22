@@ -59,11 +59,11 @@ function isMobileViewport() {
 
 /**
  * 计算当前应生效的主题
- * 移动端忽略手动选择（系统优先）；桌面端手动选择优先，无值才跟随系统
+ * 手机与桌面一致：手动选择优先，没有手动选择时才跟随系统。
+ * （早期版本让移动端忽略手动选择；为了让用户能在手机上手测并对比，改为两端同一条规则。）
  * @returns {'dark'|'light'}
  */
 function resolveTheme() {
-  if (isMobileViewport()) return systemPrefersDark() ? 'dark' : 'light'
   const stored = getStoredTheme()
   if (stored) return stored
   return systemPrefersDark() ? 'dark' : 'light'

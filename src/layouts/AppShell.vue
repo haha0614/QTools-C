@@ -778,9 +778,9 @@ onBeforeUnmount(() => {
     display: none;
   }
 
-  /* 抽屉里不放主题切换：手机端主题跟随系统 */
+  /* 抽屉底部保留主题切换：手机端默认跟随系统，但允许手动覆盖（便于对比与调试） */
   .qt-rail__theme {
-    display: none;
+    display: flex;
   }
 
   /* 抽屉内容区独立滚动，底部再留一档空间，最后一项不会被裁切 */
