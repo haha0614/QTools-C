@@ -205,13 +205,6 @@ const pageTitle = computed(() => route.meta.title || APP_INFO.name)
 // 首页的 meta.title 恰好等于站点名，直接渲染会让顶栏出现「xx xx」重复，故与站点名相同时不显示
 const showPageTitle = computed(() => Boolean(pageTitle.value) && pageTitle.value !== APP_INFO.name)
 
-/* 折线图标：display:block 去掉行内元素的基线留白，配合按钮的 flex 居中保证正中心 */
-.qt-rail__handle-icon {
-  display: block;
-  width: 14px;
-  height: 14px;
-  pointer-events: none;
-}
 /* ================================================================ 内容区 */
 // 媒体页需要贴边全宽：由路由 meta.bleed 取消内容区左右留白
 const isBleed = computed(() => Boolean(route.meta && route.meta.bleed))
@@ -635,6 +628,14 @@ onBeforeUnmount(() => {
     border-color: var(--qt-primary);
     color: var(--qt-primary);
   }
+}
+
+/* 折线图标：display:block 去掉行内元素的基线留白，配合按钮的 flex 居中保证正中心 */
+.qt-rail__handle-icon {
+  display: block;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
 }
 
 /* ---------------------------------------------------------------- 内容区 */
