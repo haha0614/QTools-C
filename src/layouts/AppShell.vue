@@ -305,7 +305,7 @@ onBeforeUnmount(() => {
         </div>
       </nav>
 
-      <!-- 底部固定区：主题切换（移动端隐藏）+ 个人中心 / 登录 -->
+      <!-- 底部固定区：主题切换 + 开源仓库 + 个人中心 / 登录 -->
       <div class="qt-rail__footer">
         <button
           class="qt-rail__link qt-rail__link--button qt-rail__theme"
@@ -318,6 +318,25 @@ onBeforeUnmount(() => {
           </el-icon>
           <span class="qt-rail__label">{{ isDark ? '暗色模式' : '浅色模式' }}</span>
         </button>
+
+        <!-- 开源仓库：地址取自 APP_INFO.github，留空则不渲染；新标签打开 -->
+        <a
+          v-if="APP_INFO.github"
+          class="qt-rail__link"
+          :href="APP_INFO.github"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="在 GitHub 上查看源码"
+        >
+          <span class="qt-rail__icon qt-rail__icon--svg" aria-hidden="true">
+            <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor">
+              <path
+                d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
+              />
+            </svg>
+          </span>
+          <span class="qt-rail__label">GitHub</span>
+        </a>
 
         <RouterLink
           class="qt-rail__link"
@@ -505,6 +524,12 @@ onBeforeUnmount(() => {
   appearance: none;
 }
 
+/* 内联 SVG 图标（Element Plus 没有 GitHub 图标）：与 el-icon 同尺寸、同基线 */
+.qt-rail__icon--svg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 .qt-rail__icon {
   flex: 0 0 auto;
 }

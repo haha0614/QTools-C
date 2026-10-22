@@ -377,7 +377,18 @@ onMounted(() => {
     <!-- ===== 4. 页内页脚说明 ===== -->
     <footer class="home-foot">
       <p class="home-foot__line">所有工具在浏览器本地运行，不上传任何数据</p>
-      <p class="home-foot__meta">{{ APP_INFO.copyright }}</p>
+      <p class="home-foot__meta">
+        {{ APP_INFO.copyright }}
+        <template v-if="APP_INFO.github">
+          ·
+          <a
+            class="home-foot__link"
+            :href="APP_INFO.github"
+            target="_blank"
+            rel="noopener noreferrer"
+          >GitHub ↗</a>
+        </template>
+      </p>
     </footer>
   </div>
 </template>
@@ -774,6 +785,18 @@ onMounted(() => {
     margin: 6px 0 0;
     font-size: 12px;
     color: var(--qt-text-secondary);
+  }
+
+  /* 开源仓库链接：低调的次要色，hover 才提亮到主色 */
+  &__link {
+    color: var(--qt-text-secondary);
+    border-bottom: 1px solid var(--qt-border);
+    transition: color 0.16s, border-color 0.16s;
+
+    &:hover {
+      color: var(--qt-primary);
+      border-bottom-color: var(--qt-primary);
+    }
   }
 }
 
