@@ -51,15 +51,16 @@
     } catch (e) { /* 上报失败不影响页面 */ }
   }
 
-  // 统一的事件上报入口
-  function track(eventType, targetType, targetKey, valueNum) {
+  // 统一的事件上报入口；progress 为可选的 0–100 整数百分比（图片事件不传，保持接口与 app.js 一致）
+  function track(eventType, targetType, targetKey, valueNum, progress) {
     try {
       postJson(TRACK_URL, {
         eventType: eventType,
         targetType: targetType,
         targetKey: String(targetKey == null ? '' : targetKey),
         ownerKey: trackOwner(),
-        valueNum: Math.max(0, Math.round(Number(valueNum) || 0))
+        valueNum: Math.max(0, Math.round(Number(valueNum) || 0)),
+        progress: Math.min(100, Math.max(0, Math.round(Number(progress) || 0)))
       });
     } catch (e) { /* 忽略 */ }
   }
@@ -661,6 +662,10 @@
   // 切人物：只改 UI 与 hash（replaceState），不产生历史条目
   function selectPerson(name) {
     state.person = matchPerson(name);
+    // 埋点：选中真实人物才上报（「全部」是空串、占位组名 UNGROUPED 不报）
+    if (state.person && state.person !== UNGROUPED) {
+      track('person_click', 'person', String(state.person).slice(0, 64), 0, 0);
+    }
     syncChips();
     renderWall();
     writeRoute();

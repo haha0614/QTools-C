@@ -43,8 +43,8 @@ function postJson(url, payload) {
   } catch (e) { /* 上报失败不影响页面 */ }
 }
 
-// 统一的事件上报入口
-function track(eventType, targetType, targetKey, valueNum) {
+// 统一的事件上报入口；progress 为可选的 0–100 整数百分比（仅 play_end 使用，其它事件传 0 或不传）
+function track(eventType, targetType, targetKey, valueNum, progress) {
   try {
     postJson(TRACK_URL, {
       eventType: eventType,
@@ -52,12 +52,15 @@ function track(eventType, targetType, targetKey, valueNum) {
       targetKey: String(targetKey == null ? '' : targetKey),
       ownerKey: trackOwner(),
       valueNum: Math.max(0, Math.round(Number(valueNum) || 0)),
+      progress: Math.min(100, Math.max(0, Math.round(Number(progress) || 0))),
     });
   } catch (e) { /* 忽略 */ }
 }
 
 const tkPage = { loaded: false, visStart: 0, visMs: 0 };        // 页面级：page_view 只报一次 + 可见毫秒
-const tkPlay = { id: '', ms: 0, clockAt: 0, running: false };   // 播放级：本次播放的视频与累计毫秒
+// 播放级：id/sessId/sessKey 标识「播放器会话」，reported 标记本会话是否已报过 play，ms 为累计毫秒
+const tkPlay = { id: '', sessId: '', sessKey: '', reported: false, ms: 0, clockAt: 0, running: false };
+let tkPlaySessNo = 0;   // 播放器会话序号，仅在 openPlayer 里自增
 
 // 页面打开：page_view 与工具级访问各报一次，之后开始计可见时长
 function tkPageOpen() {
@@ -83,25 +86,46 @@ function tkPlayClockStart() {
   tkPlay.running = true;
 }
 
-// 结算本次观看：停表 → >0 才报 play_end → 清空并放开 play 去重标记（此后重播可再报一次 play）
+// 开一个新播放器会话：openPlayer 是「打开播放器」的唯一入口（点卡片、上一个/下一个、深链都走它），
+// 换源/切清晰度只改 el.video.src，不会经过这里，因此同一会话内只可能报一次 play
+function tkPlayOpenSession(id) {
+  tkPlaySessNo += 1;
+  tkPlay.sessId = id;
+  tkPlay.sessKey = id + '#' + tkPlaySessNo;
+  tkPlay.reported = false;
+}
+
+// 完播率百分比：absPos() 已处理转码 offset，contentDur() 已处理时长口径；取不到时长按 0
+function tkPlayProgress() {
+  try {
+    const dur = contentDur(el.video);
+    if (!(dur > 0)) return 0;
+    const pct = absPos(el.video) / dur * 100;
+    if (!isFinite(pct)) return 0;
+    return Math.min(100, Math.max(0, Math.round(pct)));
+  } catch (e) { return 0; }
+}
+
+// 结算本次观看：停表 → >0 才报 play_end（带进度百分比）→ 清空累计
 function tkPlayEnd() {
   if (tkPlay.running) { tkPlay.ms += Math.max(0, Date.now() - tkPlay.clockAt); tkPlay.running = false; }
   try {
-    if (tkPlay.ms > 0 && tkPlay.id) track('play_end', 'video', tkPlay.id, tkPlay.ms);
+    if (tkPlay.ms > 0 && tkPlay.id) track('play_end', 'video', tkPlay.id, tkPlay.ms, tkPlayProgress());
   } catch (e) { /* 忽略 */ }
   tkPlay.ms = 0;
   tkPlay.id = '';
 }
 
-// 视频开始播放：同一视频本次播放只报一次 play（id 变了才报），随后起表
+// 视频开始播放：play 只在本会话首次消费时上报（暂停恢复、换源重播一律不新增），随后起表
 function tkPlayStart() {
   const id = curVideo ? curVideo.id : '';
   if (!id) return;
   if (tkPlay.id !== id) {
-    tkPlayEnd();          // 结算上一段（正常已由 pause 结算，这里兜底换源/切片的空档）
+    tkPlayEnd();                                       // 结算上一段（正常已由 pause 结算，这里兜底换源/切片的空档）
     tkPlay.id = id;
-    track('play', 'video', id, 0);
+    if (tkPlay.sessId !== id) tkPlayOpenSession(id);    // 兜底：没有会话时补一个（异常/深链路径）
   }
+  if (!tkPlay.reported) { tkPlay.reported = true; track('play', 'video', id, 0, 0); }
   tkPlayClockStart();
 }
 
@@ -1077,6 +1101,7 @@ function openPlayer(id) {
 
   curId = id;
   curVideo = v;
+  tkPlayOpenSession(id);   // 新播放器会话：本次打开内只报一次 play（换源/切清晰度不再重复计数）
   el.player.hidden = false;
   document.body.classList.add('lock');
   el.pTitle.textContent = v.title;
@@ -1274,6 +1299,31 @@ function bindEvents() {
     if (e.key === 'Escape') { el.search.value = ''; STATE.q = ''; render(); }
   });
 
+  /* 搜索埋点：在既有 80ms 筛选防抖之外单独去抖 700ms，IME 组合期不上报，同一关键词只报一次 */
+  let tkSearchT = 0;
+  let tkSearchLast = '';
+  let tkComposing = false;
+  const reportSearch = () => {
+    tkSearchT = 0;
+    const q = String(el.search.value == null ? '' : el.search.value).trim().slice(0, 64);
+    if (!q || q === tkSearchLast) return;
+    tkSearchLast = q;
+    track('search', 'keyword', q, 0, 0);
+  };
+  const scheduleSearch = () => {
+    if (tkComposing) return;
+    clearTimeout(tkSearchT);
+    tkSearchT = setTimeout(reportSearch, 700);
+  };
+  el.search.addEventListener('input', scheduleSearch);
+  el.search.addEventListener('compositionstart', () => { tkComposing = true; });
+  el.search.addEventListener('compositionend', () => { tkComposing = false; scheduleSearch(); });
+  el.search.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' || tkComposing) return;
+    clearTimeout(tkSearchT);
+    reportSearch();
+  });
+
   el.sort.addEventListener('change', () => {
     STATE.sort = el.sort.value;
     STATE.sortPinned = true;      // 手动选过就写进 hash，刷新保持
@@ -1317,6 +1367,8 @@ function bindEvents() {
     const name = cb.parentNode.dataset.name;
     const arr = STATE.facets[f] || (STATE.facets[f] = []);
     toggleIn(arr, name);
+    // facet 值切到「选中」才上报（取消勾选不上报）；「演员」走同一入口，无需单独处理
+    if (arr.indexOf(name) >= 0) track('tag_click', 'tag', (f + ':' + name).slice(0, 64), 0, 0);
     if (!arr.length) delete STATE.facets[f];
     render();
   });
