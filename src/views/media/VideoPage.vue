@@ -35,11 +35,15 @@
             class="icon-btn sel-btn"
             type="button"
             :aria-pressed="selectMode ? 'true' : 'false'"
-            :title="selectMode ? '退出选择模式' : '多选：批量加标签 / 移除标签 / 评分'"
+            :disabled="!canEdit"
+            :title="selectTitle"
             @click="toggleSelectMode"
           >
             {{ selectMode ? '完成' : '选择' }}
           </button>
+          <!-- 编辑策略常驻提示：off 档说清「为什么不能编辑」，local 档说清「只在本浏览器」 -->
+          <span v-if="readOnlyEdit" class="policy-hint" :title="HINT_OFF">{{ HINT_OFF }}</span>
+          <span v-else-if="isLocal" class="policy-hint policy-hint-local" :title="HINT_LOCAL">本地编辑（清缓存即丢）</span>
           <button
             ref="filterBtnEl"
             class="icon-btn filter-toggle"
@@ -68,9 +72,12 @@
             :all-tags="allTags"
             :tags-loading="tagsLoading"
             :busy="batchBusy"
+            :level="editLevel"
+            :local-count="localEditedCount"
             @select-all="selectAllVisible"
             @clear="clearSelection"
             @exit="exitSelectMode"
+            @clear-local="onClearLocal"
             @add-tags="(ids) => applyBatchMeta({ addTagIds: ids }, '已加标签')"
             @remove-tags="(ids) => applyBatchMeta({ removeTagIds: ids }, '已移除标签')"
             @rating="(n) => applyBatchMeta({ rating: n }, n > 0 ? '评分已设为 ' + n + ' 分' : '评分已清除')"
@@ -121,6 +128,7 @@
             :selected="selectedSet.has(v.id)"
             :rating="cardMeta(v).rating"
             :tags="cardMeta(v).tags"
+            :local="!!cardMeta(v).local"
             @open="openPlayer"
             @toggle-fav="toggleFav"
             @select="onCardSelect"
@@ -209,6 +217,8 @@
       :video="curVideo"
       :all-tags="allTags"
       :tags-loading="tagsLoading"
+      :level="editLevel"
+      :at-sec="metaAtSec"
       @close="closeMeta"
       @updated="onMetaUpdated"
       @tag-created="onTagCreated"
@@ -224,6 +234,16 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useMediaApi } from '@/composables/useMediaApi'
 import { useMediaTrack } from '@/composables/useMediaTrack'
+import { useMediaEditPolicy, LEVEL_OFF, HINT_OFF, HINT_LOCAL } from '@/composables/useMediaEditPolicy'
+import {
+  localOrgVersion,
+  readLocalMeta,
+  listLocalIds,
+  readLocalTags,
+  writeLocalMeta,
+  clearLocalOrg,
+  mergeCardMeta
+} from '@/composables/useMediaLocalOrg'
 import FilterSidebar from './video/FilterSidebar.vue'
 import QuickFilters from './video/QuickFilters.vue'
 import VideoCard from './video/VideoCard.vue'
@@ -719,6 +739,23 @@ const batchBusy = ref(false)
 const metaOpen = ref(false)
 /** 本地覆盖层：id → { rating, tags }，批量/单条写入后立即反映到卡片，无需重拉整份索引 */
 const metaOverrides = reactive({})
+
+/* ---- 三档编辑策略：off 禁写 / local 只写 localStorage / full 走接口 ---- */
+const { level: editLevel, canEdit, readOnly: readOnlyEdit, isLocal, loadEditPolicy } = useMediaEditPolicy()
+/** 选择按钮 title：off 档统一提示「仅私有部署可编辑…」 */
+const selectTitle = computed(() => {
+  if (editLevel.value === LEVEL_OFF) return HINT_OFF
+  return selectMode.value ? '退出选择模式' : '多选：批量加标签 / 移除标签 / 评分'
+})
+/** 有本地覆盖的视频数：批量条「清除本地修改」与卡片「本地」徽标共用同一份数据 */
+const localEditedCount = computed(() => {
+  if (!isLocal.value) return 0
+  // 依赖版本号：localStorage 写入后重新计算（否则 computed 不会重算）
+  void localOrgVersion.value
+  return listLocalIds().length
+})
+/** 信息抽屉「在当前时间加标记」用的起手位置：打开抽屉那一刻从播放器取 */
+const metaAtSec = ref(0)
 const toastMsg = ref('')
 let toastTimer = 0
 /** 播放层只借用播放会话相关的三个方法（不能让它自己调 useMediaTrack，否则卸载时会 dispose 页面级监听） */
@@ -1383,8 +1420,14 @@ const EMPTY_META = { rating: 0, tags: [] }
  */
 const cardMetaMap = computed(() => {
   const out = {}
+  const localMode = isLocal.value
+  // 依赖版本号：本地覆盖写入后卡片要跟着变
+  if (localMode) void localOrgVersion.value
   for (const v of videos.value) {
-    out[v.id] = metaOverrides[v.id] || { rating: Number(v.rating) || 0, tags: v.tags || [] }
+    // 合并顺序：索引 → 本地覆盖 → 渲染（local 档）；full 档沿用服务端写回/乐观覆盖
+    out[v.id] = localMode
+      ? mergeCardMeta(v, readLocalMeta(v.id))
+      : metaOverrides[v.id] || { rating: Number(v.rating) || 0, tags: v.tags || [] }
   }
   // 覆盖层里可能出现不在当前索引/筛选结果中的 id（批量后切换筛选、抽屉里改完再回列表）：
   // 一并算进来，保证索引为空时也能响应覆盖层变化
@@ -1404,19 +1447,20 @@ function cardMeta(v) {
 }
 
 /**
- * 标签库：GET /api/media/admin/tags
+ * 标签库：GET /api/media/tags（匿名只读）
  * 接口未就绪时只把列表清空（选择器显示「无匹配标签」），announce 为真时才弹提示，
- * 避免页面首屏就出现一次失败提示。
+ * 避免页面首屏就出现一次失败提示。local 档额外并入本机新建的标签。
  */
 async function loadTags(announce) {
   if (tagsLoading.value) return
   tagsLoading.value = true
   try {
-    const body = await api.listAdminTags({ silent: true })
+    const body = await api.listTags({ silent: true })
     const list = Array.isArray(body) ? body : body && Array.isArray(body.tags) ? body.tags : []
-    allTags.value = list.filter((t) => t && t.id != null && t.name)
+    const server = list.filter((t) => t && t.id != null && t.name)
+    allTags.value = isLocal.value ? server.concat(readLocalTags()) : server
   } catch {
-    allTags.value = []
+    allTags.value = isLocal.value ? readLocalTags() : []
     if (announce) showToast('标签库加载失败：接口未就绪')
   } finally {
     tagsLoading.value = false
@@ -1429,6 +1473,7 @@ function onTagCreated(tag) {
 }
 
 function toggleSelectMode() {
+  if (readOnlyEdit.value) return
   if (selectMode.value) {
     exitSelectMode()
     return
@@ -1497,49 +1542,87 @@ function selectAllVisible() {
   if (view.value.length > MAX_BATCH) showToast('已选前 ' + MAX_BATCH + ' 项（单次上限）')
 }
 
-/** 乐观更新：把一次批量写入的结果落到 metaOverrides 上（标签按 id 从标签库取名称与颜色） */
-function applyLocalBatch(ids, patch) {
-  const tagById = new Map(allTags.value.map((t) => [t.id, t]))
+/** 索引里的标签是 [facet, name] 成对数组（也可能是名称字符串）：统一成 {id?,name,color} */
+function indexTagsToObjects(list) {
+  const out = []
+  for (const t of list || []) {
+    if (typeof t === 'string') out.push({ name: t, color: '' })
+    else if (Array.isArray(t)) out.push({ name: t[1] || t[0], color: '' })
+    else if (t && t.name) out.push({ id: t.id, name: t.name, color: t.color || '' })
+  }
+  return out
+}
+
+/**
+ * 一次批量写入后的 { rating, tags }（纯计算）
+ * full 档的乐观覆盖与 local 档的落盘共用同一套标签合并规则。
+ */
+function computeBatchMeta(cur, patch, tagById) {
   // 索引里的标签是名称字符串，元信息接口给的是 {id,name,color}：取值键两种都兼容
   const keyOf = (x) => (typeof x === 'string' ? x : x && x.id != null ? x.id : x && x.name)
   const nameOf = (x) => (typeof x === 'string' ? x : x && x.name)
   const removedIds = Array.isArray(patch.removeTagIds) ? patch.removeTagIds : []
   const removedNames = new Set(removedIds.map((tid) => (tagById.get(tid) ? tagById.get(tid).name : null)).filter(Boolean))
+  let tags = Array.isArray(cur.tags) ? cur.tags.slice() : []
 
+  if (Array.isArray(patch.addTagIds)) {
+    for (const tid of patch.addTagIds) {
+      const t = tagById.get(tid) || { id: tid, name: String(tid) }
+      const dup = tags.some((x) => keyOf(x) === t.id || (t.name && nameOf(x) === t.name))
+      if (!dup) tags.push(t)
+    }
+  }
+  if (removedIds.length) {
+    tags = tags.filter((x) => {
+      const k = keyOf(x)
+      if (k != null && removedIds.indexOf(k) >= 0) return false
+      return !removedNames.has(nameOf(x))
+    })
+  }
+
+  const rating = Object.prototype.hasOwnProperty.call(patch, 'rating') ? Number(patch.rating) || 0 : Number(cur.rating) || 0
+  return { rating, tags }
+}
+
+/** full 档乐观更新：把一次批量写入的结果落到 metaOverrides 上 */
+function applyLocalBatch(ids, patch) {
+  const tagById = new Map(allTags.value.map((t) => [t.id, t]))
   for (const id of ids) {
     const v = byId.value.get(id)
-    const cur = metaOverrides[id] || {
-      rating: Number(v && v.rating) || 0,
-      tags: (v && v.tags) || []
-    }
-    let tags = Array.isArray(cur.tags) ? cur.tags.slice() : []
-
-    if (Array.isArray(patch.addTagIds)) {
-      for (const tid of patch.addTagIds) {
-        const t = tagById.get(tid) || { id: tid, name: String(tid) }
-        const dup = tags.some((x) => keyOf(x) === t.id || (t.name && nameOf(x) === t.name))
-        if (!dup) tags.push(t)
-      }
-    }
-    if (removedIds.length) {
-      tags = tags.filter((x) => {
-        const k = keyOf(x)
-        if (k != null && removedIds.indexOf(k) >= 0) return false
-        return !removedNames.has(nameOf(x))
-      })
-    }
-
-    const rating = Object.prototype.hasOwnProperty.call(patch, 'rating') ? Number(patch.rating) || 0 : cur.rating
-    metaOverrides[id] = { rating, tags }
+    const cur = metaOverrides[id] || { rating: Number(v && v.rating) || 0, tags: indexTagsToObjects(v && v.tags) }
+    metaOverrides[id] = computeBatchMeta(cur, patch, tagById)
   }
 }
 
+/** local 档写入：只落 localStorage（ms.org.<ownerKey>.<videoId>），不发任何请求 */
+function applyLocalBatchStore(ids, patch) {
+  const tagById = new Map(allTags.value.map((t) => [t.id, t]))
+  for (const id of ids) {
+    const v = byId.value.get(id)
+    const cur = readLocalMeta(id) || { rating: Number(v && v.rating) || 0, tags: indexTagsToObjects(v && v.tags) }
+    const next = computeBatchMeta(cur, patch, tagById)
+    // 只落这次真正改动的字段：没动评分就不把索引里的评分「钉死」进本地覆盖
+    const localPatch = { tags: next.tags }
+    if (Object.prototype.hasOwnProperty.call(patch, 'rating')) localPatch.rating = next.rating
+    writeLocalMeta(id, localPatch)
+  }
+}
+
+/** 「清除本地修改」：清掉本机全部 ms.org.* 与本地标签 */
+function onClearLocal() {
+  const n = clearLocalOrg()
+  for (const id of Object.keys(metaOverrides)) delete metaOverrides[id]
+  showToast(n ? '已清除本地修改（' + n + ' 项）' : '没有本地修改')
+}
+
 /**
- * 批量写入：一次请求覆盖全部选中项
- * POST /api/media/admin/videos/batch-meta  body { ids, addTagIds?, removeTagIds?, rating? } → { updated }
+ * 批量写入：
+ *   local 档 —— 只写 localStorage，不调用任何写接口；
+ *   full 档  —— 一次请求覆盖全部选中项：POST /api/media/videos/batch-meta
+ *               body { ids, addTagIds?, removeTagIds?, rating? } → { updated }
  */
 async function applyBatchMeta(patch, okText) {
-  if (batchBusy.value) return
+  if (batchBusy.value || readOnlyEdit.value) return
   const ids = selectedIds.value.slice()
   if (!ids.length) {
     showToast('请先选择视频')
@@ -1547,6 +1630,11 @@ async function applyBatchMeta(patch, okText) {
   }
   if (ids.length > MAX_BATCH) {
     showToast('最多选择 ' + MAX_BATCH + ' 项')
+    return
+  }
+  if (isLocal.value) {
+    applyLocalBatchStore(ids, patch)
+    showToast((okText || '批量更新') + '：' + ids.length + ' 项已本地保存（仅本浏览器）')
     return
   }
   batchBusy.value = true
@@ -1564,6 +1652,9 @@ async function applyBatchMeta(patch, okText) {
 }
 
 function openMeta() {
+  // 「在当前时间加标记」的起手位置：播放器暴露 getCurrentTime（见 MediaPlayer defineExpose）
+  const pl = playerRef.value
+  metaAtSec.value = pl && typeof pl.getCurrentTime === 'function' ? pl.getCurrentTime() : 0
   metaOpen.value = true
   if (!allTags.value.length) loadTags(false)
 }
@@ -1572,9 +1663,17 @@ function closeMeta() {
   metaOpen.value = false
 }
 
-/** 单条抽屉写成功：用服务端权威值刷新该卡片 */
+/**
+ * 单条抽屉写成功：
+ *   local 档 —— 抽屉已写入 localStorage，这里只需让卡片按本地覆盖重算；
+ *   full 档  —— 用服务端权威值刷新该卡片。
+ */
 function onMetaUpdated(meta) {
   if (!meta || !meta.id) return
+  if (isLocal.value) {
+    void localOrgVersion.value
+    return
+  }
   metaOverrides[meta.id] = { rating: Number(meta.rating) || 0, tags: meta.tags || [] }
 }
 
@@ -1711,6 +1810,13 @@ onMounted(() => {
   if (mq && mq.addEventListener) mq.addEventListener('change', onMqChange)
   loadUser()
   loadIndex()
+  // 启动时取一次编辑策略：失败回退 full 并在控制台 warn（旧后端行为不变）
+  loadEditPolicy()
+  loadTags(false)
+})
+
+/** 策略晚于首屏到达（full → off/local）时补拉一次标签库：local 档要并入本机标签 */
+watch(editLevel, () => {
   loadTags(false)
 })
 
@@ -1881,6 +1987,33 @@ watch(
   background: var(--accent-soft);
   border-color: var(--accent);
   color: var(--accent);
+}
+
+/* 编辑策略 off 档：选择按钮禁用 + 工具栏常驻一句说明（title 与空态共用同一文案） */
+.sel-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+  border-style: dashed;
+}
+
+.policy-hint-local {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.policy-hint {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  line-height: 1.3;
+  color: var(--fg-dim);
+  border: 1px dashed var(--line-2);
+  border-radius: 999px;
+  padding: 3px 8px;
 }
 
 /* 批量操作条行：跟随工具栏吸顶，移动端由 BatchBar 自身换行 */

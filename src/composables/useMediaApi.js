@@ -181,38 +181,51 @@ export function getAlbum(id, options) {
   return mediaRequest({ url: '/album/' + encodeURIComponent(String(id == null ? '' : id)), silent: opt.silent !== false })
 }
 
-/* --------------------------------------------- 媒体库组织（M3：标签 / 评分 / 标记） */
-/* 契约来源：M3-A 后端接口。所有写接口一律 silent（失败由调用方 toast 兜底），
-   页面侧只提示不阻塞播放；后端尚未就绪时这里只会 reject，不会抛出未捕获异常。 */
+/* ------------------------------------ 媒体库组织（M3：三档编辑策略 + 标签 / 评分 / 标记） */
+/* 契约来源：M3-C 后端接口（站端匿名读、写受编辑策略管控）。所有写接口一律 silent
+   （失败由调用方 toast 兜底），页面侧只提示不阻塞播放；后端尚未就绪时这里只会
+   reject，不会抛出未捕获异常。
+   路径约定：站端用 /tags、/video/{id}/meta、/videos/batch-meta（无 admin 前缀），
+            管理端用 /admin/**；GET 元信息保留 legacy 回退（旧后端只有 admin 路径）。 */
 
-/** 标签库 后端：GET /api/media/admin/tags → [{id,name,color,useCount}] */
-export function listAdminTags(options) {
+/** 编辑策略 后端：GET /api/media/edit-policy → { level: 'off' | 'local' | 'full' }（匿名） */
+export function getEditPolicy(options) {
   const opt = options || {}
-  return mediaRequest({ url: '/admin/tags', silent: opt.silent !== false })
+  return mediaRequest({ url: '/edit-policy', silent: opt.silent !== false })
+}
+
+/** 标签库 后端：GET /api/media/tags → [{id,name,color,useCount}]（匿名只读） */
+export function listTags(options) {
+  const opt = options || {}
+  return mediaRequest({ url: '/tags', silent: opt.silent !== false })
 }
 
 /**
- * 新建标签 后端：POST /api/media/admin/tags（契约未定义，按尝试实现）
- * 后端未实现时只会 reject，调用方提示「新建标签暂不可用」，不影响既有标签的勾选
+ * 新建标签 后端：POST /api/media/tags（仅 full 档可写）body { name, color? }
  * @param {{name:string, color?:string}} payload
  * @param {{silent?:boolean}} [options]
  */
-export function createAdminTag(payload, options) {
+export function createTag(payload, options) {
   const opt = options || {}
-  return mediaRequest({ url: '/admin/tags', method: 'post', data: payload || {}, silent: opt.silent !== false })
-}
-
-/** 单条元信息 后端：GET /api/media/admin/video/{id}/meta → {rating,tags:[{id,name,color}],markers:[{id,pos,label,color}]} */
-export function getVideoMeta(id, options) {
-  const opt = options || {}
-  return mediaRequest({
-    url: '/admin/video/' + encodeURIComponent(String(id == null ? '' : id)) + '/meta',
-    silent: opt.silent !== false
-  })
+  return mediaRequest({ url: '/tags', method: 'post', data: payload || {}, silent: opt.silent !== false })
 }
 
 /**
- * 单条更新 后端：PUT /api/media/admin/video/{id}/meta
+ * 单条元信息 后端：GET /api/media/video/{id}/meta → { rating, tags:[{id,name,color}], markers:[{id,pos,label,color}] }
+ * 旧后端（仅 /admin/video/{id}/meta）时自动回退一次，站端 private 部署仍能读到标记。
+ */
+export async function getVideoMeta(id, options) {
+  const opt = options || {}
+  const path = '/video/' + encodeURIComponent(String(id == null ? '' : id)) + '/meta'
+  try {
+    return await mediaRequest({ url: path, silent: opt.silent !== false })
+  } catch (err) {
+    return mediaRequest({ url: '/admin' + path, silent: opt.silent !== false })
+  }
+}
+
+/**
+ * 单条更新 后端：PUT /api/media/video/{id}/meta（仅 full 档）
  * body 支持 { rating, addTagIds, removeTagIds, markers }
  * @param {string} id
  * @param {{rating?:number, addTagIds?:string[], removeTagIds?:string[], markers?:object[]}} payload
@@ -221,7 +234,7 @@ export function getVideoMeta(id, options) {
 export function saveVideoMeta(id, payload, options) {
   const opt = options || {}
   return mediaRequest({
-    url: '/admin/video/' + encodeURIComponent(String(id == null ? '' : id)) + '/meta',
+    url: '/video/' + encodeURIComponent(String(id == null ? '' : id)) + '/meta',
     method: 'put',
     data: payload || {},
     silent: opt.silent !== false
@@ -229,7 +242,7 @@ export function saveVideoMeta(id, payload, options) {
 }
 
 /**
- * 批量更新 后端：POST /api/media/admin/videos/batch-meta
+ * 批量更新 后端：POST /api/media/videos/batch-meta（仅 full 档）
  * body { ids, addTagIds?, removeTagIds?, rating? } → { updated }
  * 一次请求覆盖全部选中项（页面侧合并成单次调用，不做逐条循环）
  * @param {{ids:string[], addTagIds?:string[], removeTagIds?:string[], rating?:number}} payload
@@ -238,7 +251,7 @@ export function saveVideoMeta(id, payload, options) {
 export function batchVideoMeta(payload, options) {
   const opt = options || {}
   return mediaRequest({
-    url: '/admin/videos/batch-meta',
+    url: '/videos/batch-meta',
     method: 'post',
     data: payload || {},
     silent: opt.silent !== false
@@ -344,8 +357,9 @@ const mediaApi = {
   getVideo,
   getAlbum,
   // 媒体库组织（M3）
-  listAdminTags,
-  createAdminTag,
+  getEditPolicy,
+  listTags,
+  createTag,
   getVideoMeta,
   saveVideoMeta,
   batchVideoMeta,

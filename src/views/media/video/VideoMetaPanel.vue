@@ -1,21 +1,30 @@
 <!--
   VideoMetaPanel.vue —— 单条视频的「信息」抽屉（评分 / 标签 / 标记）
-  职责：打开时按 id 拉 /admin/video/{id}/meta，编辑后 PUT 回写；
+  职责：编辑策略 full 档按 id 拉 /video/{id}/meta，编辑后 PUT 回写；
         写成功把最新 {rating,tags} 通过 updated 事件交还页面刷新卡片。
+  三档（编辑策略 level）：
+    off   —— 全部编辑控件禁用，只展示评分 / 标签 / 标记，并提示「仅私有部署可编辑…」；
+    local —— 只读写 localStorage（ms.org.<ownerKey>.<videoId>），不发任何请求，标题旁显示「本地」；
+    full  —— 走接口（PUT /api/media/video/{id}/meta）。
   约定：不碰播放链路——所有请求 silent + try/catch，失败只 toast 提示，绝不阻塞播放；
-        标记只支持删除与展示（新增需要播放器当前时间，留待后续）。
+        标记新增用「手填 mm:ss + 说明 + 颜色」的最小实现，起点由播放器打开抽屉时的位置预填。
 -->
 <template>
   <div class="vp-back" @click="emit('close')"></div>
   <aside class="vp" role="dialog" aria-modal="true" aria-label="视频信息" @keydown.esc.stop="emit('close')">
     <header class="vp-head">
       <h2 class="vp-title" :title="video.title">{{ video.title }}</h2>
+      <span v-if="isLocal" class="vp-local" title="本地编辑：仅保存在本浏览器，清除缓存即消失">本地</span>
       <button class="vp-x" type="button" aria-label="关闭信息" @click="emit('close')">×</button>
     </header>
 
     <div class="vp-body">
+      <!-- 编辑策略提示：off 只读 / local 只写本机 -->
+      <p v-if="readOnly" class="vp-hint vp-policy">{{ HINT_OFF }}</p>
+      <p v-else-if="isLocal" class="vp-hint vp-policy">{{ HINT_LOCAL }}</p>
+
       <div v-if="loading" class="vp-hint">加载中…</div>
-      <div v-if="errorMsg" class="vp-err">{{ errorMsg }}</div>
+      <p v-if="readNote" class="vp-hint vp-note">{{ readNote }}</p>
 
       <!-- 评分：0-10，0 表示未评分 -->
       <section class="vp-sec">
@@ -28,7 +37,7 @@
               class="vp-star"
               :class="{ on: n <= rating }"
               type="button"
-              :disabled="saving"
+              :disabled="locked"
               :aria-label="'评分 ' + n"
               @click="setRating(n)"
             >
@@ -45,12 +54,12 @@
             max="10"
             step="1"
             :value="rating"
-            :disabled="saving"
+            :disabled="locked"
             aria-label="评分滑条"
             @input="ratingDraft = Number($event.target.value) || 0"
             @change="setRating(ratingDraft)"
           />
-          <button class="vp-mini" type="button" :disabled="saving || rating === 0" @click="setRating(0)">清除</button>
+          <button class="vp-mini" type="button" :disabled="locked || rating === 0" @click="setRating(0)">清除</button>
         </div>
       </section>
 
@@ -63,17 +72,18 @@
           <span v-for="t in tags" :key="t.id || t.name" class="vp-tag" :style="t.color ? { borderColor: t.color } : null">
             <i class="vp-dot" :style="{ background: t.color || 'transparent' }"></i>
             <span class="vp-tag-n" :title="t.name">{{ t.name }}</span>
-            <button class="vp-tag-x" type="button" :disabled="saving" :aria-label="'移除标签 ' + t.name" @click="removeTag(t)">
+            <button class="vp-tag-x" type="button" :disabled="locked" :aria-label="'移除标签 ' + t.name" @click="removeTag(t)">
               ×
             </button>
           </span>
-          <button class="vp-add" type="button" :disabled="saving" @click="pickerOpen = !pickerOpen">＋ 加标签</button>
+          <button class="vp-add" type="button" :disabled="locked" @click="pickerOpen = !pickerOpen">＋ 加标签</button>
         </div>
-        <div v-if="pickerOpen" class="vp-picker">
+        <div v-if="pickerOpen && !readOnly" class="vp-picker">
           <TagPicker
             :all-tags="allTags"
             :selected="EMPTY"
             :loading="tagsLoading"
+            :level="level"
             @confirm="addTags"
             @close="pickerOpen = false"
             @created="(t) => emit('tag-created', t)"
@@ -82,7 +92,7 @@
         </div>
       </section>
 
-      <!-- 标记：只展示 + 删除（新增标记需要播放器当前时间，本期不做） -->
+      <!-- 标记：展示 + 删除 + 新增（新增用「mm:ss + 说明 + 颜色」的最小实现） -->
       <section class="vp-sec">
         <h3 class="vp-h3">
           标记<span class="vp-h3n">{{ markers.length }}</span>
@@ -92,12 +102,38 @@
             <i class="vp-dot" :style="{ background: m.color || 'transparent' }"></i>
             <span class="vp-mark-pos">{{ fmtPos(m.pos) }}</span>
             <span class="vp-mark-lab" :title="m.label">{{ m.label || '（无描述）' }}</span>
-            <button class="vp-tag-x" type="button" :disabled="saving" aria-label="删除标记" @click="removeMarker(m)">
+            <button class="vp-tag-x" type="button" :disabled="locked" aria-label="删除标记" @click="removeMarker(m)">
               ×
             </button>
           </li>
         </ul>
-        <div v-else class="vp-hint">暂无标记（新增标记留待后续版本）</div>
+        <div v-else class="vp-hint">暂无标记</div>
+
+        <div v-if="!readOnly" class="vp-mark-add">
+          <button class="vp-mini" type="button" :disabled="locked" :title="'用打开抽屉时的播放位置 ' + atText" @click="fillCurrentTime">
+            当前时间 {{ atText }}
+          </button>
+          <input
+            v-model="markAt"
+            class="vp-mark-mmss"
+            type="text"
+            inputmode="numeric"
+            placeholder="mm:ss"
+            :disabled="locked"
+            aria-label="标记位置 mm:ss"
+          />
+          <input
+            v-model="markLabel"
+            class="vp-mark-label"
+            type="text"
+            placeholder="标记说明（可空）"
+            maxlength="32"
+            :disabled="locked"
+            aria-label="标记说明"
+          />
+          <input v-model="markColor" class="vp-mark-color" type="color" :disabled="locked" aria-label="标记颜色" />
+          <button class="vp-mini vp-mini-ok" type="button" :disabled="locked" @click="addMarker">＋ 加标记</button>
+        </div>
       </section>
 
       <div v-if="saving" class="vp-hint">保存中…</div>
@@ -106,8 +142,10 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useMediaApi } from '@/composables/useMediaApi'
+import { HINT_OFF, HINT_LOCAL } from '@/composables/useMediaEditPolicy'
+import { readLocalMeta, writeLocalMeta } from '@/composables/useMediaLocalOrg'
 import TagPicker from './TagPicker.vue'
 
 const props = defineProps({
@@ -116,7 +154,11 @@ const props = defineProps({
   /** 标签库 */
   allTags: { type: Array, default: () => [] },
   /** 标签库是否加载中 */
-  tagsLoading: { type: Boolean, default: false }
+  tagsLoading: { type: Boolean, default: false },
+  /** 编辑策略档位：off 只读 / local 只写本地 / full 走接口 */
+  level: { type: String, default: 'full' },
+  /** 打开抽屉那一刻的播放位置（秒）：「在当前时间加标记」的起点 */
+  atSec: { type: Number, default: 0 }
 })
 
 const emit = defineEmits(['close', 'updated', 'tag-created', 'notify'])
@@ -126,20 +168,42 @@ const api = useMediaApi()
 /** 稳定引用：避免每次渲染新建 [] 触发 TagPicker 的 selected 侦听器 */
 const EMPTY = []
 
+const readOnly = computed(() => props.level === 'off')
+const isLocal = computed(() => props.level === 'local')
+const isFull = computed(() => props.level === 'full')
+
 const loading = ref(true)
 const saving = ref(false)
-const errorMsg = ref('')
+/** 站端只有写接口（GET /video/{id}/meta 仅存在于 /admin/**，匿名访客 401）：读不到就只提示，不阻塞编辑 */
+const readNote = ref('')
 const pickerOpen = ref(false)
 
-/** 服务端元信息；索引兜底值先顶上，接口未就绪时面板仍可展示 */
-const rating = ref(Number(props.video.rating) || 0)
-const ratingDraft = ref(Number(props.video.rating) || 0)
-const tags = ref(normalizeTags(props.video.tags))
-const markers = ref([])
+/** off 档不发请求也不允许任何写入：控件统一用 locked 置灰 */
+const locked = computed(() => readOnly.value || saving.value)
 
+/* 初始值：local 档先看本地覆盖，其余用索引兜底（接口未就绪时面板仍可展示） */
+const seed = isLocal.value ? readLocalMeta(props.video.id) : null
+const seedRating = seed && typeof seed.rating === 'number' ? seed.rating : Number(props.video.rating) || 0
+const rating = ref(seedRating)
+const ratingDraft = ref(seedRating)
+const tags = ref(normalizeTags(seed && Array.isArray(seed.tags) ? seed.tags : props.video.tags))
+const markers = ref(seed && Array.isArray(seed.markers) ? seed.markers.filter((m) => m && m.id != null) : [])
+
+/** 新增标记的最小表单：mm:ss + 说明 + 颜色 */
+const markAt = ref('')
+const markLabel = ref('')
+const markColor = ref('#4f9cf9')
+
+const atText = computed(() => fmtPos(props.atSec))
+
+/** 索引里是名称 / [facet, name] 成对数组，接口与本地覆盖里是 {id,name,color}：统一形态 */
 function normalizeTags(list) {
   return (list || [])
-    .map((t) => (typeof t === 'string' ? { id: '', name: t, color: '' } : { id: t && t.id, name: t && t.name, color: t && t.color }))
+    .map((t) => {
+      if (typeof t === 'string') return { name: t, color: '' }
+      if (Array.isArray(t)) return { name: t[1] || t[0], color: '' }
+      return { id: t && t.id, name: t && t.name, color: (t && t.color) || '' }
+    })
     .filter((t) => t.name)
 }
 
@@ -151,45 +215,64 @@ function fmtPos(pos) {
   return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s
 }
 
-/** 应用服务端返回的元信息到本地状态，并把展示所需的最小信息交还页面 */
+/** mm:ss → 秒；接受 mm:ss / m:ss / 纯秒数，非法返回 null */
+function parsePos(text) {
+  const s = String(text == null ? '' : text).trim()
+  if (!s) return null
+  const parts = s.split(':')
+  if (parts.length === 1) {
+    const n = Number(parts[0])
+    return isFinite(n) && n >= 0 ? Math.round(n) : null
+  }
+  if (parts.length !== 2) return null
+  const m = Number(parts[0])
+  const sec = Number(parts[1])
+  if (!isFinite(m) || !isFinite(sec) || m < 0 || sec < 0 || sec >= 60) return null
+  return Math.round(m * 60 + sec)
+}
+
+/** 应用（服务端）元信息到本地状态，并把展示所需的最小信息交还页面 */
 function applyMeta(body, quiet) {
   if (!body || typeof body !== 'object') return
   rating.value = Number(body.rating) || 0
   ratingDraft.value = rating.value
   tags.value = normalizeTags(body.tags)
   markers.value = Array.isArray(body.markers) ? body.markers.filter((m) => m && m.id != null) : []
-  if (!quiet) errorMsg.value = ''
+  if (!quiet) readNote.value = ''
   emit('updated', { id: props.video.id, rating: rating.value, tags: tags.value })
 }
 
+/**
+ * 只有 full 档读接口：off 档禁写、local 档不碰网络（本地覆盖已经是最新值）。
+ * 读失败（站端没有匿名 GET 元信息接口）时保留索引兜底值，只提示标记不可见。
+ */
 async function load() {
   loading.value = true
   try {
     const body = await api.getVideoMeta(props.video.id, { silent: true })
     applyMeta(body)
-    errorMsg.value = ''
+    readNote.value = ''
   } catch {
-    // 接口未就绪：保留索引兜底值，仅提示，不影响播放
-    errorMsg.value = '组织信息接口尚未就绪：可查看但暂时无法编辑'
+    readNote.value = '标记需要管理员身份读取，站端暂不展示；评分与标签按索引显示，仍可直接编辑'
   } finally {
     loading.value = false
   }
 }
 
 /**
- * 统一写入出口：PUT /admin/video/{id}/meta
- * 成功后再拉一次元信息（权威值）；重拉失败就用本地乐观值，保证卡片状态可见
+ * full 档写入出口：PUT /api/media/video/{id}/meta
+ * 后端返回补丁后的完整元数据（rating / tags / markers），直接当权威值用，不再多打一次读接口。
  */
-async function save(patch, optimistic, okMsg) {
+async function saveServer(patch, optimistic, okMsg) {
   if (saving.value) return
   saving.value = true
   try {
-    await api.saveVideoMeta(props.video.id, patch, { silent: true })
+    const body = await api.saveVideoMeta(props.video.id, patch, { silent: true })
     if (optimistic) optimistic()
-    try {
-      const body = await api.getVideoMeta(props.video.id, { silent: true })
+    if (body && typeof body === 'object' && (body.rating != null || Array.isArray(body.tags))) {
       applyMeta(body)
-    } catch {
+      readNote.value = ''
+    } else {
       emit('updated', { id: props.video.id, rating: rating.value, tags: tags.value })
     }
     emit('notify', okMsg)
@@ -200,42 +283,152 @@ async function save(patch, optimistic, okMsg) {
   }
 }
 
+/** local 档写入出口：只写 localStorage，不发任何请求 */
+function saveLocal(patch, optimistic, okMsg) {
+  const merged = writeLocalMeta(props.video.id, patch || {})
+  if (optimistic) optimistic()
+  rating.value = Number(merged.rating) || 0
+  ratingDraft.value = rating.value
+  if (Array.isArray(merged.tags)) tags.value = normalizeTags(merged.tags)
+  if (Array.isArray(merged.markers)) markers.value = merged.markers
+  emit('updated', { id: props.video.id, rating: rating.value, tags: tags.value })
+  emit('notify', (okMsg || '已保存') + '（仅本机）')
+}
+
+/**
+ * 统一写入出口：按档位分流
+ * @param {object} patch 服务端 body
+ * @param {Function|null} optimistic 本地乐观更新
+ * @param {string} okMsg 成功提示
+ * @param {object} [localPatch] local 档要落的字段（缺省用 patch）
+ */
+function save(patch, optimistic, okMsg, localPatch) {
+  if (readOnly.value || saving.value) return
+  if (isLocal.value) {
+    saveLocal(localPatch || patch || {}, optimistic, okMsg)
+    return
+  }
+  saveServer(patch, optimistic, okMsg)
+}
+
 function setRating(n) {
   const v = Math.max(0, Math.min(10, Number(n) || 0))
   if (v === rating.value) {
     ratingDraft.value = v
     return
   }
-  save({ rating: v }, () => {
-    rating.value = v
-    ratingDraft.value = v
-  }, v > 0 ? '评分已设为 ' + v + ' 分' : '评分已清除')
+  save(
+    { rating: v },
+    () => {
+      rating.value = v
+      ratingDraft.value = v
+    },
+    v > 0 ? '评分已设为 ' + v + ' 分' : '评分已清除',
+    { rating: v }
+  )
 }
 
 function addTags(ids) {
   if (!ids || !ids.length) return
   pickerOpen.value = false
-  save({ addTagIds: ids.slice() }, null, '已加 ' + ids.length + ' 个标签')
+  const tagById = new Map((props.allTags || []).map((t) => [t.id, t]))
+  const added = ids.map((id) => tagById.get(id) || { id, name: String(id), color: '' })
+  const next = tags.value.concat(added.filter((t) => !tags.value.some((x) => x.name === t.name)))
+  save(
+    { addTagIds: ids.slice() },
+    () => {
+      tags.value = next
+    },
+    '已加 ' + ids.length + ' 个标签',
+    { tags: next }
+  )
 }
 
 function removeTag(t) {
-  if (!t || !t.id) {
+  if (!t) return
+  const rest = tags.value.filter((x) => x !== t && x.name !== t.name)
+  if (isLocal.value) {
+    save(
+      {},
+      () => {
+        tags.value = rest
+      },
+      '已移除标签「' + t.name + '」',
+      { tags: rest }
+    )
+    return
+  }
+  if (!t.id) {
     emit('notify', '该标签来自索引快照，暂无法移除（缺少标签 id）')
     return
   }
-  save({ removeTagIds: [t.id] }, () => {
-    tags.value = tags.value.filter((x) => x.id !== t.id)
-  }, '已移除标签「' + t.name + '」')
+  save(
+    { removeTagIds: [t.id] },
+    () => {
+      tags.value = rest
+    },
+    '已移除标签「' + t.name + '」'
+  )
+}
+
+/** 服务端 markers 只带它认识的字段；本机临时 id（m- 前缀）不带，交给后端分配 */
+function serverMarkers(list) {
+  return (list || []).map((m) => {
+    const out = { pos: Number(m.pos) || 0, label: m.label || '', color: m.color || '' }
+    if (m.id != null && String(m.id).indexOf('m-') !== 0) out.id = m.id
+    return out
+  })
+}
+
+/** 用打开抽屉时的播放位置预填 mm:ss */
+function fillCurrentTime() {
+  markAt.value = fmtPos(props.atSec)
+}
+
+function addMarker() {
+  const pos = parsePos(markAt.value)
+  if (pos == null) {
+    emit('notify', '标记位置请填 mm:ss')
+    return
+  }
+  const marker = {
+    id: 'm-' + Date.now().toString(36),
+    pos,
+    label: String(markLabel.value || '').trim().slice(0, 32),
+    color: markColor.value || ''
+  }
+  const next = markers.value.concat([marker])
+  save(
+    { markers: serverMarkers(next) },
+    () => {
+      markers.value = next
+    },
+    '已加标记 ' + fmtPos(pos),
+    { markers: next }
+  )
+  markAt.value = ''
+  markLabel.value = ''
 }
 
 function removeMarker(m) {
   const rest = markers.value.filter((x) => x.id !== m.id)
-  save({ markers: rest }, () => {
-    markers.value = rest
-  }, '已删除标记')
+  save(
+    { markers: serverMarkers(rest) },
+    () => {
+      markers.value = rest
+    },
+    '已删除标记',
+    { markers: rest }
+  )
 }
 
-onMounted(load)
+onMounted(() => {
+  if (!isFull.value) {
+    loading.value = false
+    return
+  }
+  load()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -532,5 +725,83 @@ onMounted(load)
     width: 100%;
     border-left: 0;
   }
+}
+/* local 档徽标：与卡片/BatchBar 同一套虚线主色描边 */
+.vp-local {
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 0 6px;
+  border: 1px dashed var(--accent);
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--accent);
+}
+
+/* 策略提示行：off / local 各一句，紧跟标题下方 */
+.vp-policy {
+  padding: 6px 9px;
+  border: 1px dashed var(--line-2);
+  border-radius: var(--radius);
+  background: var(--bg-3);
+}
+
+/* 站端读不到元信息（没有匿名 GET）时的中性提示 */
+.vp-note {
+  color: var(--warn);
+}
+
+/* 新增标记：mm:ss + 说明 + 颜色 + 提交，一行放不下就换行 */
+.vp-mark-add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.vp-mark-mmss {
+  width: 68px;
+  padding: 3px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.vp-mark-label {
+  flex: 1 1 90px;
+  min-width: 0;
+  padding: 3px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+}
+
+.vp-mark-color {
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  cursor: pointer;
+}
+
+.vp-mini-ok {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.vp-mark-add :disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 </style>

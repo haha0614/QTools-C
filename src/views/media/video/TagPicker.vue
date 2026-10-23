@@ -2,7 +2,8 @@
   TagPicker.vue —— 标签选择器（批量条与单条信息面板共用）
   职责：搜索标签库、多选勾选、现场新建标签；只负责「选哪几个」，真正写接口由父组件发起。
   约定：全部走 --qt-* / mediaTheme 变量；不 teleport，由父级容器定位（父级需 position: relative）。
-        新建标签的接口不在 M3-A 契约内，失败只提示、不影响已勾选项（见 createFromQuery）。
+        编辑策略三档：off 只读（勾选框与「确定」禁用、不出现新建入口）；local 新建只写本地
+        标签数组（ms.orgtags.<ownerKey>），不发请求；full 走 POST /api/media/tags。
 -->
 <template>
   <div class="tp" role="dialog" aria-label="选择标签" @keydown.esc.stop="emit('close')">
@@ -22,7 +23,7 @@
     <ul v-if="filtered.length" class="tp-list">
       <li v-for="t in filtered" :key="t.id">
         <label class="tp-item">
-          <input type="checkbox" :checked="picked.includes(t.id)" @change="toggle(t.id)" />
+          <input type="checkbox" :checked="picked.includes(t.id)" :disabled="readOnly" @change="toggle(t.id)" />
           <span class="tp-dot" :style="{ background: t.color || 'transparent' }"></span>
           <span class="tp-name" :title="t.name">{{ t.name }}</span>
           <span v-if="t.useCount != null" class="tp-use">{{ t.useCount }}</span>
@@ -33,13 +34,15 @@
 
     <div v-if="canCreate" class="tp-foot">
       <button class="tp-new" type="button" :disabled="creating" @click="createFromQuery">
-        {{ creating ? '新建中…' : '＋ 新建「' + q.trim() + '」' }}
+        {{ creating ? '新建中…' : '＋ 新建「' + q.trim() + '」' + (isLocal ? '（仅本地）' : '') }}
       </button>
     </div>
+    <!-- off 档：只读提示（勾选与新建都不可用，文案与工具栏同一句） -->
+    <p v-if="readOnly" class="tp-hint">{{ HINT_OFF }}</p>
 
     <div class="tp-bar">
       <span class="tp-count">已选 {{ picked.length }}</span>
-      <button class="tp-ok" type="button" :disabled="!picked.length" @click="emit('confirm', picked.slice())">
+      <button class="tp-ok" type="button" :disabled="readOnly || !picked.length" @click="emit('confirm', picked.slice())">
         确定
       </button>
     </div>
@@ -49,6 +52,8 @@
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useMediaApi } from '@/composables/useMediaApi'
+import { HINT_OFF } from '@/composables/useMediaEditPolicy'
+import { addLocalTag } from '@/composables/useMediaLocalOrg'
 
 const props = defineProps({
   /** 标签库 [{id,name,color,useCount}] */
@@ -56,7 +61,9 @@ const props = defineProps({
   /** 初始已选标签 id */
   selected: { type: Array, default: () => [] },
   /** 标签库是否仍在加载 */
-  loading: { type: Boolean, default: false }
+  loading: { type: Boolean, default: false },
+  /** 编辑策略档位：off 只读 / local 只写本地 / full 走接口 */
+  level: { type: String, default: 'full' }
 })
 
 const emit = defineEmits(['confirm', 'close', 'created', 'notify'])
@@ -68,6 +75,9 @@ const picked = ref((props.selected || []).slice())
 const creating = ref(false)
 const qEl = ref(null)
 
+const readOnly = computed(() => props.level === 'off')
+const isLocal = computed(() => props.level === 'local')
+
 const filtered = computed(() => {
   const kw = q.value.trim().toLowerCase()
   const list = props.allTags || []
@@ -75,36 +85,48 @@ const filtered = computed(() => {
   return list.filter((t) => String(t.name || '').toLowerCase().includes(kw))
 })
 
-/** 只有输入了库里没有的名称才出现「新建」入口 */
+/** 只有输入了库里没有的名称才出现「新建」入口；off 档没有新建 */
 const canCreate = computed(() => {
+  if (readOnly.value) return false
   const kw = q.value.trim()
   if (!kw) return false
   return !(props.allTags || []).some((t) => String(t.name || '').toLowerCase() === kw.toLowerCase())
 })
 
 function toggle(id) {
+  if (readOnly.value) return
   const i = picked.value.indexOf(id)
   if (i >= 0) picked.value.splice(i, 1)
   else picked.value.push(id)
 }
 
 /**
- * 现场新建：POST /api/media/admin/tags 不在 M3-A 契约内，
- * 失败只提示并保留已勾选项，不阻塞后续加标签/评分。
+ * 现场新建标签：
+ *   local 档 —— 只写本地标签数组（ms.orgtags.<ownerKey>），不发请求；
+ *   full 档  —— POST /api/media/tags，失败只提示并保留已勾选项，不阻塞后续加标签/评分。
  */
 async function createFromQuery() {
   const name = q.value.trim()
-  if (!name || creating.value) return
+  if (!name || creating.value || readOnly.value) return
+  if (isLocal.value) {
+    const tag = addLocalTag(name)
+    if (!tag) return
+    emit('created', tag)
+    if (!picked.value.includes(tag.id)) picked.value.push(tag.id)
+    q.value = ''
+    nextTick(() => qEl.value && qEl.value.focus())
+    return
+  }
   creating.value = true
   try {
-    const body = await api.createAdminTag({ name }, { silent: true })
+    const body = await api.createTag({ name }, { silent: true })
     const tag = body && body.id ? body : { id: 'tmp-' + name, name, color: '' }
     emit('created', tag)
     if (!picked.value.includes(tag.id)) picked.value.push(tag.id)
     q.value = ''
     nextTick(() => qEl.value && qEl.value.focus())
   } catch {
-    emit('notify', '新建标签失败：后端暂不支持，请使用已有标签')
+    emit('notify', '新建标签失败：接口未就绪或网络异常')
   } finally {
     creating.value = false
   }
@@ -230,6 +252,16 @@ onMounted(() => {
 .tp-foot {
   border-top: 1px solid var(--line);
   padding-top: 6px;
+}
+
+/* off 档提示：与 VideoPage 工具栏同一文案 */
+.tp-hint {
+  margin: 0;
+  padding: 6px 3px;
+  border-top: 1px dashed var(--line);
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--fg-dim);
 }
 
 .tp-new {

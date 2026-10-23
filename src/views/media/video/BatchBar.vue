@@ -1,12 +1,14 @@
 <!--
   BatchBar.vue —— 卡片墙多选批量操作条
   职责：显示「已选 N 项」、全选 / 清空 / 退出，以及三类批量写入入口（加标签 / 移除标签 / 设置评分）。
-  约定：不自己发请求——所有写入由 VideoPage 合并成一次 batch-meta 调用；
+  约定：不自己发请求——full 档由 VideoPage 合并成一次 batch-meta 调用，local 档只写 localStorage；
+        local 档额外显示「本地」徽标与「清除本地修改」；off 档整条不出现（选择按钮已禁用）。
         标签选择器复用 TagPicker；弹层用绝对定位挂在操作条内（父级 position: relative）。
 -->
 <template>
   <div class="bb" @mousedown.stop>
     <span class="bb-count">已选 <b>{{ count }}</b> 项</span>
+    <span v-if="isLocal" class="bb-local" title="本地编辑：只保存在本浏览器，清除缓存即消失">本地</span>
 
     <button class="bb-btn" type="button" @click="emit('select-all')">全选</button>
     <button class="bb-btn" type="button" :disabled="!count" @click="emit('clear')">清空</button>
@@ -41,6 +43,17 @@
       ★ 评分
     </button>
 
+    <button
+      v-if="isLocal"
+      class="bb-btn bb-ghost"
+      type="button"
+      :disabled="!localCount"
+      :title="localCount ? '清除本机 ' + localCount + ' 条本地修改' : '本机没有本地修改'"
+      @click="emit('clear-local')"
+    >
+      清除本地修改<span v-if="localCount" class="bb-clear-n">{{ localCount }}</span>
+    </button>
+
     <span class="bb-sep" aria-hidden="true"></span>
     <button class="bb-btn bb-ghost" type="button" @click="emit('exit')">取消</button>
 
@@ -52,6 +65,7 @@
         :all-tags="allTags"
         :selected="EMPTY"
         :loading="tagsLoading"
+        :level="level"
         @confirm="onTagsConfirm"
         @close="panel = ''"
         @created="(t) => emit('created', t)"
@@ -94,10 +108,10 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import TagPicker from './TagPicker.vue'
 
-defineProps({
+const props = defineProps({
   /** 已选卡片数 */
   count: { type: Number, default: 0 },
   /** 标签库 */
@@ -105,10 +119,16 @@ defineProps({
   /** 标签库是否加载中 */
   tagsLoading: { type: Boolean, default: false },
   /** 批量请求进行中：按钮置灰避免重复提交 */
-  busy: { type: Boolean, default: false }
+  busy: { type: Boolean, default: false },
+  /** 编辑策略档位：local 档显示本地徽标 + 清除入口 */
+  level: { type: String, default: 'full' },
+  /** 本机已有的本地修改条数（0 = 「清除本地修改」置灰） */
+  localCount: { type: Number, default: 0 }
 })
 
-const emit = defineEmits(['select-all', 'clear', 'exit', 'add-tags', 'remove-tags', 'rating', 'created', 'notify'])
+const emit = defineEmits(['select-all', 'clear', 'exit', 'add-tags', 'remove-tags', 'rating', 'created', 'notify', 'clear-local'])
+
+const isLocal = computed(() => props.level === 'local')
 
 /** 稳定引用：每次渲染新建 [] 会让 TagPicker 的 selected 侦听器反复重置已勾选项 */
 const EMPTY = []
@@ -169,6 +189,22 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocDown))
 .bb-count b {
   color: var(--accent);
   font-weight: 600;
+}
+
+/* local 档徽标：与卡片上的「本地」同一套视觉语言（虚线描边 + 主色） */
+.bb-local {
+  padding: 0 6px;
+  border: 1px dashed var(--accent);
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--accent);
+}
+
+.bb-clear-n {
+  margin-left: 4px;
+  font-size: 11px;
+  opacity: 0.7;
 }
 
 .bb-btn {

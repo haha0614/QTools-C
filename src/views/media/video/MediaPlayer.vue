@@ -879,7 +879,15 @@ function settle() {
   if (v) settlePlay(v.id)
 }
 
-defineExpose({ togglePlay, seekRel, adjustVolume, toggleFullscreen, settle })
+defineExpose({
+  togglePlay,
+  seekRel,
+  adjustVolume,
+  toggleFullscreen,
+  settle,
+  /** 当前内容位置（秒）：信息抽屉「在当前时间加标记」的起点；转码流已加上流起点 */
+  getCurrentTime: absPos
+})
 </script>
 
 <style lang="scss" scoped>

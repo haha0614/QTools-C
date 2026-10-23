@@ -46,7 +46,9 @@
       <h3 :title="video.title">{{ video.title }}</h3>
       <div class="card-sub">{{ video.folder }} · {{ sizeText }}</div>
       <!-- 组织信息：有评分显示 ★N；标签最多 2 个 chip，其余折叠成 +N -->
-      <div v-if="rating > 0 || shownTags.length" class="card-meta">
+      <div v-if="local || rating > 0 || shownTags.length" class="card-meta">
+        <!-- local 档：这条组织信息只存在本浏览器（不落服务端），用人眼可见的徽标提示 -->
+        <span v-if="local" class="cm-local" title="本地编辑：仅保存在本浏览器，清除缓存即消失">本地</span>
         <span v-if="rating > 0" class="cm-rate" :title="'评分 ' + rating">★{{ rating }}</span>
         <span
           v-for="t in shownTags"
@@ -81,7 +83,9 @@ const props = defineProps({
   /** 评分（0 表示未评分，1-10） */
   rating: { type: Number, default: 0 },
   /** 标签数组：[{id?,name,color?}] 或字符串名称数组（索引里是名称数组） */
-  tags: { type: Array, default: () => [] }
+  tags: { type: Array, default: () => [] },
+  /** 该条组织信息来自 localStorage（编辑策略 local 档）：显示「本地」徽标 */
+  local: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['open', 'toggle-fav', 'select'])
@@ -299,6 +303,16 @@ function resBadge(w) {
   margin-top: 2px;
   min-width: 0;
   overflow: hidden;
+}
+
+.cm-local {
+  flex: 0 0 auto;
+  padding: 0 5px;
+  border: 1px dashed var(--accent);
+  border-radius: 999px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--accent);
 }
 
 .cm-rate {
