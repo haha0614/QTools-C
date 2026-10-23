@@ -200,6 +200,22 @@ export function photoThumbUrl(albumId, i) {
   return API_BASE + '/media/thumb/p/' + encodeURIComponent(String(albumId == null ? '' : albumId)) + '/' + pad4(i)
 }
 
+/**
+ * 视频精灵图：10 列 × 10 行，每格 160×90（thumbs/s/<content_hash>.jpg）
+ * 后端：GET /api/media/sprite/{id}，产物不存在即 404 —— 调用方先用 hasSprite 判断
+ */
+export function spriteUrl(id) {
+  return API_BASE + '/media/sprite/' + encodeURIComponent(String(id == null ? '' : id))
+}
+
+/**
+ * 视频预览视频：静音 320×180 4fps 5~8 秒（thumbs/pv2/<content_hash>.mp4｜.webm）
+ * 后端：GET /api/media/preview/{id}，支持 Range；产物不存在即 404 —— 先用 hasPreview 判断
+ */
+export function previewUrl(id) {
+  return API_BASE + '/media/preview/' + encodeURIComponent(String(id == null ? '' : id))
+}
+
 /** 图片预览图：photo.js:102 `MEDIA + '/preview/p/' + albumId + '/' + pad4(i)` */
 export function photoPreviewUrl(albumId, i) {
   return API_BASE + '/media/preview/p/' + encodeURIComponent(String(albumId == null ? '' : albumId)) + '/' + pad4(i)
@@ -265,6 +281,8 @@ const mediaApi = {
   getAlbum,
   // URL 构造
   videoThumbUrl,
+  spriteUrl,
+  previewUrl,
   photoThumbUrl,
   photoPreviewUrl,
   thumbUrlFromRel,

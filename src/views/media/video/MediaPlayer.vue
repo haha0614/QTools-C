@@ -40,17 +40,39 @@
     </div>
 
     <div v-if="isTranscode" class="p-seekbar">
-      <input
-        class="p-seek"
-        type="range"
-        min="0"
-        :max="seekMax"
-        step="1"
-        :value="seekPos"
-        aria-label="播放位置"
-        @input="onSeekInput"
-        @change="onSeekCommit"
-      />
+      <div class="p-seekwrap">
+        <input
+          class="p-seek"
+          type="range"
+          min="0"
+          :max="seekMax"
+          step="1"
+          :value="seekPos"
+          aria-label="播放位置"
+          @input="onSeekInput"
+          @change="onSeekCommit"
+          @mousemove="onSeekHover"
+          @mouseleave="onSeekLeave"
+        />
+        <!-- hover 预览：精灵图整图 + background-position 切格（10×10，共 100 格） -->
+        <div v-if="hoverVisible" class="p-hover" :style="floatStyle(hoverRatio)">
+          <div class="p-hover-img" :style="spriteStyle"></div>
+          <span class="p-hover-t">{{ hoverTimeText }}</span>
+        </div>
+        <!-- 拖动预览：pv2 缩时视频，按拖动比例定位帧 -->
+        <div v-if="clipVisible" class="p-clip" :style="floatStyle(clipRatio)">
+          <video
+            ref="clipEl"
+            class="p-clip-v"
+            muted
+            playsinline
+            preload="none"
+            :src="previewSrc"
+            @loadedmetadata="onClipMetadata"
+          ></video>
+          <span class="p-clip-t">{{ clipTimeText }}</span>
+        </div>
+      </div>
       <span class="p-seek-now">{{ fmtDur(seekPos) }} / {{ fmtDur(seekDur) }}</span>
     </div>
 
@@ -88,7 +110,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useMediaApi } from '@/composables/useMediaApi'
 
 const props = defineProps({
@@ -151,6 +173,128 @@ let lastPosWrite = 0
 let lastRecentPush = 0
 let qHintTimer = 0
 let openedVideo = null
+
+/* ------------------------------------------------- 进度条 hover / 拖动预览 */
+/* 派生资源（精灵图 / 预览视频）默认不生成，后端 /media/index 给出 hasSprite / hasPreview，
+   不可用时这里一律不发请求、不显示浮层，交互与原来完全一致。 */
+
+/** 精灵图固定 10 列 × 10 行、每格 160×90（build-thumbs.js SPRITE） */
+const SPRITE_COLS = 10
+const SPRITE_ROWS = 10
+const SPRITE_CELLS = SPRITE_COLS * SPRITE_ROWS
+
+/** 预览视频成片 5~8 秒（build-thumbs.js PV）：元数据没到时按 8 秒兜底 */
+const CLIP_FALLBACK_SEC = 8
+
+const clipEl = ref(null)
+const hoverVisible = ref(false)
+const clipVisible = ref(false)
+const hoverRatio = ref(0)
+const clipRatio = ref(0)
+const clipTime = ref(0)
+let clipDur = 0
+
+const hasSprite = computed(() => !!(props.video && props.video.hasSprite))
+const hasPreview = computed(() => !!(props.video && props.video.hasPreview))
+
+/** 触屏没有 hover：≤768px 只保留拖动时的预览视频（样式同时兜一层 display:none） */
+const canHover =
+  typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia('(hover: hover) and (pointer: fine)').matches
+    : true
+
+const spriteSrc = computed(() => (hasSprite.value ? api.spriteUrl(props.video.id) : ''))
+const previewSrc = computed(() => (hasPreview.value ? api.previewUrl(props.video.id) : ''))
+
+const hoverTimeText = computed(() => fmtDur(hoverRatio.value * (seekDur.value || 0)))
+const clipTimeText = computed(() => fmtDur(clipTime.value))
+
+/** 浮层水平位置：跟进度条比例走，两侧留半宽避免出界（卡片宽 160，半宽 80） */
+function floatStyle(ratio) {
+  const pct = Math.min(100, Math.max(0, (Number(ratio) || 0) * 100))
+  return { left: 'clamp(80px, ' + pct.toFixed(3) + '%, calc(100% - 80px))' }
+}
+
+/** 指针位置 → 0~1 比例（range 滑块自身宽度带来的几像素误差可忽略） */
+function ratioFromEvent(e) {
+  const el = e && e.currentTarget
+  if (!el || typeof el.getBoundingClientRect !== 'function') return 0
+  const rect = el.getBoundingClientRect()
+  if (!rect || !rect.width) return 0
+  return Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width))
+}
+
+/** 比例 → 精灵图格号 → col/row，再用 background-position 百分比切格（不依赖固定像素） */
+const spriteStyle = computed(() => {
+  const ratio = Math.min(1, Math.max(0, hoverRatio.value))
+  const cell = Math.min(SPRITE_CELLS - 1, Math.floor(ratio * SPRITE_CELLS))
+  const col = cell % SPRITE_COLS
+  const row = Math.floor(cell / SPRITE_COLS)
+  return {
+    backgroundImage: 'url("' + spriteSrc.value + '")',
+    backgroundSize: SPRITE_COLS * 100 + '% ' + SPRITE_ROWS * 100 + '%',
+    backgroundPosition:
+      (col / (SPRITE_COLS - 1)) * 100 + '% ' + (row / (SPRITE_ROWS - 1)) * 100 + '%'
+  }
+})
+
+function onSeekHover(e) {
+  if (!canHover || !hasSprite.value) return
+  if (clipVisible.value) {
+    // 拖动中只显示预览视频：卡片与视频浮层同位置同尺寸，叠在一起看不清
+    hoverVisible.value = false
+    return
+  }
+  hoverRatio.value = ratioFromEvent(e)
+  hoverVisible.value = true
+}
+
+function onSeekLeave() {
+  hoverVisible.value = false
+}
+
+/** 按拖动比例把预览视频定位到对应帧（元数据未到时先 load，loadedmetadata 再补定位） */
+function seekClip(ratio) {
+  const r = Math.min(1, Math.max(0, Number(ratio) || 0))
+  clipRatio.value = r
+  const dur = clipDur > 0 ? clipDur : CLIP_FALLBACK_SEC
+  clipTime.value = r * dur
+  const el = clipEl.value
+  if (!el) return
+  if (!el.readyState) {
+    try {
+      el.load()
+    } catch {
+      /* 忽略：个别浏览器对未挂载的 src 直接抛 */
+    }
+    return
+  }
+  try {
+    el.currentTime = Math.max(0, Math.min(dur - 0.04, clipTime.value))
+  } catch {
+    /* 忽略：未就绪的流拒绝赋值 */
+  }
+}
+
+function onClipMetadata() {
+  const el = clipEl.value
+  const d = el && el.duration
+  if (isFinite(d) && d > 0) clipDur = d
+  seekClip(clipRatio.value)
+}
+
+/** 拖动开始：露出预览视频（<video> 下一帧才挂载，定位放到 nextTick） */
+function showClip(ratio) {
+  if (!hasPreview.value) return
+  hoverVisible.value = false
+  clipVisible.value = true
+  seekClip(ratio)
+  nextTick(() => seekClip(clipRatio.value))
+}
+
+function hideClip() {
+  clipVisible.value = false
+}
 
 const subSrc = computed(() => (props.video && props.video.sub ? api.subUrl(props.video.sub) : ''))
 const tagList = computed(() => props.video.tags || [])
@@ -341,6 +485,10 @@ function openVideo(v, resumePos) {
   lastPosWrite = Date.now()
   lastRecentPush = Date.now()
   tapVisible.value = false
+  // 换片 / 重开：浮层不能残留上一部的格子与预览帧（clipDur 也要重测）
+  hoverVisible.value = false
+  hideClip()
+  clipDur = 0
   tryPlay()
 }
 
@@ -396,10 +544,13 @@ function onQualityChange(e) {
 function onSeekInput(e) {
   qSeekDragging = true
   seekPos.value = Number(e.target.value) || 0
+  // 拖动中露预览视频：比例 = 当前进度 / 总时长（与松手后的 seek 目标同源）
+  if (hasPreview.value) showClip(seekMax.value > 0 ? seekPos.value / seekMax.value : 0)
 }
 
 function onSeekCommit(e) {
   qSeekDragging = false
+  hideClip()
   if (!isTranscode.value) return
   applySource(props.video, Number(e.target.value) || 0, 0)
   tryPlay()
@@ -720,12 +871,66 @@ defineExpose({ togglePlay, seekRel, adjustVolume, toggleFullscreen, settle })
   min-width: 0;
 }
 
+/* 进度条容器：hover 卡片与拖动预览都挂在这一层（position:relative 的定位基准） */
+.p-seekwrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
 .p-seek {
   flex: 1;
   min-width: 0;
   height: 4px;
   accent-color: var(--accent);
   cursor: pointer;
+}
+
+/* hover 卡片 / 拖动预览：同为 160×90 浮层，颜色只取 mediaTheme 变量（= --qt-* 映射） */
+.p-hover,
+.p-clip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  z-index: 3;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* 精灵图单格也是 160×90：background-size 1000% 1000% + background-position 百分比切格，
+   不写死像素，卡片缩放时格子仍对齐 */
+.p-hover-img {
+  width: 160px;
+  height: 90px;
+  background-repeat: no-repeat;
+  background-color: var(--bg-3);
+}
+
+.p-clip-v {
+  display: block;
+  width: 160px;
+  height: 90px;
+  object-fit: cover;
+  background: var(--bg-3);
+}
+
+.p-hover-t,
+.p-clip-t {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 2px 6px;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  color: var(--fg);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
 .p-seek-now {
@@ -864,6 +1069,11 @@ defineExpose({ togglePlay, seekRel, adjustVolume, toggleFullscreen, settle })
   .p-restart {
     bottom: 56px;
     left: 10px;
+  }
+
+  /* 触屏无 hover：只保留拖动时的预览视频 */
+  .p-hover {
+    display: none;
   }
 }
 </style>
