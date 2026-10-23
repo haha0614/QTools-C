@@ -126,6 +126,8 @@ const normTags = computed(() =>
   (props.tags || [])
     .map((t) => (typeof t === 'string' ? { name: t, color: '' } : Array.isArray(t) ? { name: t[1] || t[0], color: '' } : { id: t && t.id, name: t && t.name, color: t && t.color }))
     .filter((t) => t.name)
+    // 同一名字可能同时挂在多个 facet 下（历史数据：ASMR 既属分类又属类型），按名称去重
+    .filter((t, i, arr) => arr.findIndex((x) => x.name === t.name) === i)
 )
 
 const shownTags = computed(() => normTags.value.slice(0, 2))
