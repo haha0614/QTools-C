@@ -1,6 +1,8 @@
 <!--
   MediaPlayer.vue —— 播放层（app.js 播放器部分的等价实现）
-  覆盖：进度记忆与续播、清晰度切换（原画直连 / 实时转码 + 内容偏移）、转码流自绘进度条与 seek 重开流、
+  覆盖：进度记忆与续播、清晰度切换（原画直连 / 实时转码 + 内容偏移）、原画与转码统一的自绘控制条
+        （播放/暂停 · 进度 · 时间 · 音量 · 画质 · 上一部/下一部 · 全屏，两种模式同一套 UI，不再使用原生 controls）、
+        进度条 hover 精灵图卡片 / 拖动预览片段、seek（转码重开流 + pendingSeek / 原画直写 currentTime）、
         上一个 / 下一个、收藏、字幕轨注入、异常编码回退、播放器会话式 play 埋点与 play_end 结算。
   约定：面板状态（当前视频 / 上一部下一个可用性 / 收藏 / 清晰度）由 VideoPage 持有，本组件通过 props 接收、
         emit 回传，不直接读写 localStorage 与服务端。
@@ -30,65 +32,22 @@
       </div>
     </div>
 
-    <div class="p-qbar">
-      <label class="p-q-lab" for="msVideoQ">画质</label>
-      <select id="msVideoQ" class="p-q" :value="curQ" @change="onQualityChange">
-        <option v-for="q in Q_VALUES" :key="q" :value="q">{{ q === 'orig' ? '原画（直连）' : Q_LABELS[q] }}</option>
-      </select>
-      <span class="p-q-now">{{ qLabel(curQ) }}</span>
-      <span v-if="qHintVisible" class="p-q-hint">转码中…</span>
-    </div>
-
-    <div v-if="isTranscode" class="p-seekbar">
-      <div class="p-seekwrap">
-        <input
-          class="p-seek"
-          type="range"
-          min="0"
-          :max="seekMax"
-          step="1"
-          :value="seekPos"
-          aria-label="播放位置"
-          @input="onSeekInput"
-          @change="onSeekCommit"
-          @mousemove="onSeekHover"
-          @mouseleave="onSeekLeave"
-        />
-        <!-- hover 预览：精灵图整图 + background-position 切格（10×10，共 100 格） -->
-        <div v-if="hoverVisible" class="p-hover" :style="floatStyle(hoverRatio)">
-          <div class="p-hover-img" :style="spriteStyle"></div>
-          <span class="p-hover-t">{{ hoverTimeText }}</span>
-        </div>
-        <!-- 拖动预览：pv2 缩时视频，按拖动比例定位帧 -->
-        <div v-if="clipVisible" class="p-clip" :style="floatStyle(clipRatio)">
-          <video
-            ref="clipEl"
-            class="p-clip-v"
-            muted
-            playsinline
-            preload="none"
-            :src="previewSrc"
-            @loadedmetadata="onClipMetadata"
-          ></video>
-          <span class="p-clip-t">{{ clipTimeText }}</span>
-        </div>
-      </div>
-      <span class="p-seek-now">{{ fmtDur(seekPos) }} / {{ fmtDur(seekDur) }}</span>
-    </div>
-
     <div v-if="warnVisible" class="p-warn">该片为 HEVC/异常编码，浏览器可能无法播放</div>
 
     <div ref="stageEl" class="p-stage">
+      <!-- 原画与转码都不再挂原生 controls：控制条统一用下方自绘 .p-ctrl -->
       <video
         ref="videoEl"
-        controls
         autoplay
         playsinline
         preload="metadata"
+        @click="onVideoClick"
         @play="onPlay"
         @playing="onPlaying"
         @loadeddata="onLoadedData"
         @loadedmetadata="onLoadedMetadata"
+        @durationchange="onDurationChange"
+        @volumechange="onVolumeChange"
         @timeupdate="onTimeUpdate"
         @pause="onPause"
         @ended="onEnded"
@@ -99,6 +58,97 @@
       </video>
       <button v-if="tapVisible" class="p-tap" type="button" @click="onTapPlay">▶ 点击播放</button>
       <button v-if="restartVisible" class="p-restart" type="button" @click="onRestart">从头播放</button>
+    </div>
+
+    <!-- 自绘控制条：原画（直连）与转码共用一套 UI，原画模式不再使用浏览器原生 controls -->
+    <div class="p-ctrl">
+      <div class="p-seekbar">
+        <!-- mousemove 挂在 20px 高的容器上，命中带比 4px 轨道宽，指针略偏也能触发 -->
+        <div class="p-seekwrap" @mousemove="onSeekHover" @mouseleave="onSeekLeave">
+          <input
+            ref="seekEl"
+            class="p-seek"
+            type="range"
+            min="0"
+            :max="seekMax"
+            step="1"
+            :value="seekPos"
+            aria-label="播放位置"
+            :aria-valuetext="fmtDur(seekPos) + ' / ' + fmtDur(seekDur)"
+            @input="onSeekInput"
+            @change="onSeekCommit"
+            @keydown="onSeekKey"
+          />
+          <!-- 1px 指示线：与卡片同源比例，告诉用户这里能 hover；无 hasSprite 时不渲染 -->
+          <div v-if="hoverVisible" class="p-hover-line" :style="hoverLineStyle"></div>
+          <!-- hover 预览：精灵图整图 + background-position 切格（10×10，共 100 格）；无 hasSprite 时永不渲染 -->
+          <div v-if="hoverVisible" class="p-hover" :style="floatStyle(hoverRatio)">
+            <div class="p-hover-img" :style="spriteStyle"></div>
+            <span class="p-hover-t">{{ hoverTimeText }}</span>
+          </div>
+          <!-- 拖动预览：pv2 缩时视频，按拖动比例定位帧；无 hasPreview 时永不挂载（因此不发请求） -->
+          <div v-if="clipVisible" class="p-clip" :style="floatStyle(clipRatio)">
+            <video
+              ref="clipEl"
+              class="p-clip-v"
+              muted
+              playsinline
+              preload="none"
+              :src="previewSrc"
+              @loadedmetadata="onClipMetadata"
+            ></video>
+            <span class="p-clip-t">{{ clipTimeText }}</span>
+          </div>
+        </div>
+        <span class="p-seek-now">{{ fmtDur(seekPos) }} / {{ fmtDur(seekDur) }}</span>
+      </div>
+
+      <div class="p-ctrlline">
+        <button
+          class="p-btn p-btn-play"
+          type="button"
+          :aria-label="isPlaying ? '暂停' : '播放'"
+          @click="togglePlay"
+        >
+          {{ isPlaying ? '⏸' : '▶' }}
+        </button>
+        <button
+          class="p-btn"
+          type="button"
+          :aria-label="muted || volume === 0 ? '取消静音' : '静音'"
+          @click="toggleMute"
+        >
+          {{ muted || volume === 0 ? '🔇' : '🔊' }}
+        </button>
+        <input
+          class="p-vol"
+          type="range"
+          min="0"
+          max="1"
+          step="0.05"
+          :value="muted ? 0 : volume"
+          aria-label="音量"
+          @input="onVolumeInput"
+        />
+        <span class="p-ctrl-gap"></span>
+        <label class="p-q-lab" for="msVideoQ">画质</label>
+        <select id="msVideoQ" class="p-q" :value="curQ" @change="onQualityChange">
+          <option v-for="q in Q_VALUES" :key="q" :value="q">{{ q === 'orig' ? '原画（直连）' : Q_LABELS[q] }}</option>
+        </select>
+        <span class="p-q-now">{{ qLabel(curQ) }}</span>
+        <span v-if="qHintVisible" class="p-q-hint">转码中…</span>
+        <span class="p-ctrl-gap"></span>
+        <button v-if="hasPrev" class="p-btn" type="button" aria-label="上一部" @click="emit('prev')">⏮</button>
+        <button v-if="hasNext" class="p-btn" type="button" aria-label="下一部" @click="emit('next')">⏭</button>
+        <button
+          class="p-btn"
+          type="button"
+          :aria-label="fsActive ? '退出全屏' : '全屏'"
+          @click="toggleFullscreen"
+        >
+          {{ fsActive ? '⤢' : '⛶' }}
+        </button>
+      </div>
     </div>
 
     <div class="p-tags">
@@ -158,6 +208,11 @@ const qHintVisible = ref(false)
 const seekPos = ref(0)
 const seekDur = ref(0)
 const seekMax = ref(1)
+/** 自绘控制条用的状态镜像（真值仍以 <video> 为准，事件里同步） */
+const isPlaying = ref(false)
+const volume = ref(1)
+const muted = ref(false)
+const fsActive = ref(false)
 
 /** 当前清晰度：props.quality 的内部镜像，切换时可同步生效（不必等父级下一帧） */
 const curQ = ref(Q_VALUES.indexOf(props.quality) >= 0 ? props.quality : 'orig')
@@ -187,6 +242,7 @@ const SPRITE_CELLS = SPRITE_COLS * SPRITE_ROWS
 const CLIP_FALLBACK_SEC = 8
 
 const clipEl = ref(null)
+const seekEl = ref(null)
 const hoverVisible = ref(false)
 const clipVisible = ref(false)
 const hoverRatio = ref(0)
@@ -197,11 +253,20 @@ let clipDur = 0
 const hasSprite = computed(() => !!(props.video && props.video.hasSprite))
 const hasPreview = computed(() => !!(props.video && props.video.hasPreview))
 
-/** 触屏没有 hover：≤768px 只保留拖动时的预览视频（样式同时兜一层 display:none） */
-const canHover =
+/* hover 门槛只看断点，不看 (hover:hover)/(pointer:fine)：
+   旧实现是一次性 matchMedia('(hover: hover) and (pointer: fine)')，在触屏笔记本 / 远程桌面 /
+   主指针被识别成 coarse 的桌面浏览器上恒为 false —— 卡片因此永远不出现（修复的根因之一）。
+   现在桌面宽度一律允许，≤768px 断点只保留拖动预览（样式再兜一层 display:none）。 */
+const mobileMq =
   typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-    ? window.matchMedia('(hover: hover) and (pointer: fine)').matches
-    : true
+    ? window.matchMedia('(max-width: 768px)')
+    : null
+const isMobile = ref(mobileMq ? mobileMq.matches : false)
+const canHover = computed(() => !isMobile.value)
+
+function onMobileMqChange(e) {
+  isMobile.value = e ? !!e.matches : false
+}
 
 const spriteSrc = computed(() => (hasSprite.value ? api.spriteUrl(props.video.id) : ''))
 const previewSrc = computed(() => (hasPreview.value ? api.previewUrl(props.video.id) : ''))
@@ -215,9 +280,10 @@ function floatStyle(ratio) {
   return { left: 'clamp(80px, ' + pct.toFixed(3) + '%, calc(100% - 80px))' }
 }
 
-/** 指针位置 → 0~1 比例（range 滑块自身宽度带来的几像素误差可忽略） */
+/** 指针位置 → 0~1 比例：优先取 range 自身 rect（mousemove 挂在高 20px 的 .p-seekwrap 上，
+    否则只有 4px 轨道能命中，指针稍偏就收不到事件 —— 修复的根因之二） */
 function ratioFromEvent(e) {
-  const el = e && e.currentTarget
+  const el = seekEl.value || (e && e.currentTarget)
   if (!el || typeof el.getBoundingClientRect !== 'function') return 0
   const rect = el.getBoundingClientRect()
   if (!rect || !rect.width) return 0
@@ -238,8 +304,13 @@ const spriteStyle = computed(() => {
   }
 })
 
+/** 1px 指示线位置：与卡片同源比例，提示「这条轨道可以 hover 出预览」 */
+const hoverLineStyle = computed(() => ({
+  left: (Math.min(1, Math.max(0, hoverRatio.value)) * 100).toFixed(3) + '%'
+}))
+
 function onSeekHover(e) {
-  if (!canHover || !hasSprite.value) return
+  if (!canHover.value || !hasSprite.value) return
   if (clipVisible.value) {
     // 拖动中只显示预览视频：卡片与视频浮层同位置同尺寸，叠在一起看不清
     hoverVisible.value = false
@@ -385,11 +456,29 @@ function beginQHint() {
 /* ---------------------------------------------------------------- 进度条 */
 
 function updateSeekUi() {
-  if (!isTranscode.value) return
   const dur = contentDur() || 0
   if (dur > 0) seekMax.value = Math.round(dur)
   seekDur.value = dur
-  if (!qSeekDragging) seekPos.value = Math.round(absPos())
+  if (qSeekDragging) return
+  const pos = absPos()
+  if (isFinite(pos) && pos >= 0) seekPos.value = Math.round(pos)
+}
+
+/** 原画模式 seek：直写 currentTime，浏览器按 Range 取新位置（不重开流、不动 streamStart） */
+function seekOrigTo(sec) {
+  const el = videoEl.value
+  if (!el) return
+  const d = isFinite(el.duration) && el.duration > 0 ? el.duration : 0
+  const cap = d || (seekMax.value > 0 ? seekMax.value : 0)
+  let t = Number(sec) || 0
+  if (cap > 0) t = Math.min(t, cap)
+  t = Math.max(0, t)
+  try {
+    el.currentTime = t
+  } catch {
+    /* 忽略：未就绪的流拒绝赋值 */
+  }
+  seekPos.value = Math.round(t)
 }
 
 /* ---------------------------------------------------------------- 换源 */
@@ -485,6 +574,8 @@ function openVideo(v, resumePos) {
   lastPosWrite = Date.now()
   lastRecentPush = Date.now()
   tapVisible.value = false
+  isPlaying.value = false
+  onVolumeChange()
   // 换片 / 重开：浮层不能残留上一部的格子与预览帧（clipDur 也要重测）
   hoverVisible.value = false
   hideClip()
@@ -506,11 +597,25 @@ watch(
   }
 )
 
+/** 全屏状态镜像：只用于切换控制条上的「全屏 / 退出全屏」标签 */
+function onFsChange() {
+  const d = document
+  fsActive.value = !!(d.fullscreenElement || d.webkitFullscreenElement)
+}
+
 onMounted(() => {
+  if (mobileMq && mobileMq.addEventListener) mobileMq.addEventListener('change', onMobileMqChange)
+  document.addEventListener('fullscreenchange', onFsChange)
+  document.addEventListener('webkitfullscreenchange', onFsChange)
   openVideo(props.video, props.startPos)
 })
 
 onBeforeUnmount(() => {
+  if (mobileMq && mobileMq.removeEventListener) {
+    mobileMq.removeEventListener('change', onMobileMqChange)
+  }
+  document.removeEventListener('fullscreenchange', onFsChange)
+  document.removeEventListener('webkitfullscreenchange', onFsChange)
   endQHint()
   const el = videoEl.value
   const v = openedVideo || props.video
@@ -543,35 +648,91 @@ function onQualityChange(e) {
 
 function onSeekInput(e) {
   qSeekDragging = true
-  seekPos.value = Number(e.target.value) || 0
+  const target = Number(e.target.value) || 0
+  seekPos.value = target
   // 拖动中露预览视频：比例 = 当前进度 / 总时长（与松手后的 seek 目标同源）
-  if (hasPreview.value) showClip(seekMax.value > 0 ? seekPos.value / seekMax.value : 0)
+  if (hasPreview.value) showClip(seekMax.value > 0 ? target / seekMax.value : 0)
+  // 原画：拖动即写 currentTime；转码流只能松手后重开流（拖动中不动 currentTime，不动 offset）
+  if (!isTranscode.value) seekOrigTo(target)
 }
 
 function onSeekCommit(e) {
   qSeekDragging = false
   hideClip()
-  if (!isTranscode.value) return
-  applySource(props.video, Number(e.target.value) || 0, 0)
+  const target = Number(e.target.value) || 0
+  if (!isTranscode.value) {
+    seekOrigTo(target)
+    updateSeekUi()
+    return
+  }
+  applySource(props.video, target, 0)
   tryPlay()
+}
+
+/** 进度条键盘 ←/→：自己处理并阻断冒泡，避免与页面级快捷键重复跳一次 */
+function onSeekKey(e) {
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+  e.preventDefault()
+  e.stopPropagation()
+  const step = e.shiftKey ? 15 : 5
+  seekRel(e.key === 'ArrowLeft' ? -step : step)
+  if (!isTranscode.value) seekPos.value = Math.round(absPos())
 }
 
 /* ---------------------------------------------------------------- video 事件 */
 
 function onPlay() {
+  isPlaying.value = true
   props.tracker.trackPlayStart(props.video.id)
 }
 
 function onPlaying() {
+  isPlaying.value = true
   tapVisible.value = false
   endQHint()
 }
 
+/** 点画面切换播放/暂停：移除原生 controls 后补回等价能力 */
+function onVideoClick() {
+  togglePlay()
+}
+
 function onLoadedData() {
   endQHint()
+  updateSeekUi()
+}
+
+function onDurationChange() {
+  updateSeekUi()
+}
+
+/** 静音 / 音量滑块的唯一同步点：键盘 ↑/↓ 调 el.volume 时也会走到这里 */
+function onVolumeChange() {
+  const el = videoEl.value
+  if (!el) return
+  volume.value = isFinite(el.volume) ? el.volume : 1
+  muted.value = !!el.muted
+}
+
+function onVolumeInput(e) {
+  const el = videoEl.value
+  if (!el) return
+  const v = Math.max(0, Math.min(1, Number(e.target.value) || 0))
+  el.volume = v
+  el.muted = v <= 0
+  onVolumeChange()
+}
+
+function toggleMute() {
+  const el = videoEl.value
+  if (!el) return
+  el.muted = !el.muted
+  if (!el.muted && el.volume <= 0) el.volume = 0.5
+  onVolumeChange()
 }
 
 function onLoadedMetadata() {
+  updateSeekUi()
   if (!pendingSeek) return
   const abs = pendingSeek
   pendingSeek = 0
@@ -598,12 +759,14 @@ function onTimeUpdate() {
 }
 
 function onPause() {
+  isPlaying.value = false
   savePosFor(props.video)
   pushRecentServer()
   settlePlay()
 }
 
 function onEnded() {
+  isPlaying.value = false
   const v = props.video
   if (!v) return
   emit('clear-pos', v.id)
@@ -612,7 +775,7 @@ function onEnded() {
   settlePlay()
 }
 
-/** 转码模式下拖动原生进度条：片内偏移超过 5 秒就从新时间点重开流（原画保持 Range 行为） */
+/** 转码模式下浏览器发起的 seeking：片内偏移超过 5 秒就从新时间点重开流；原画直接由 Range 处理 */
 function onSeeking() {
   if (!isTranscode.value || !props.video) return
   if (Date.now() - lastQSrcAt < 600) return // 换源刚发生，忽略随之而来的 seeking
@@ -809,17 +972,80 @@ defineExpose({ togglePlay, seekRel, adjustVolume, toggleFullscreen, settle })
   font-weight: 600;
 }
 
-.p-qbar {
+/* 自绘控制条：原画（直连）与转码共用一套；颜色只取 mediaTheme 变量（--bg/--fg/--line/--accent → --qt-*） */
+.p-ctrl {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 14px 8px;
+  background: var(--bg-2);
+  border-top: 1px solid var(--line);
+  min-width: 0;
+  overflow: visible;
+}
+
+.p-ctrlline {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 7px 14px;
-  background: var(--bg-2);
-  border-bottom: 1px solid var(--line);
+  min-width: 0;
   font-size: 12.5px;
   color: var(--fg-dim);
-  min-width: 0;
+}
+
+.p-ctrl-gap {
+  flex: 1 1 auto;
+}
+
+.p-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-3);
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.p-btn:hover {
+  border-color: var(--line-2);
+}
+
+.p-btn:active {
+  background: var(--accent-soft);
+}
+
+.p-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.p-btn-play {
+  min-width: 42px;
+  color: var(--accent);
+}
+
+.p-vol {
+  flex-shrink: 0;
+  width: 86px;
+  height: 4px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.p-vol:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 .p-q-lab {
@@ -860,24 +1086,26 @@ defineExpose({ togglePlay, seekRel, adjustVolume, toggleFullscreen, settle })
   font-size: 12px;
 }
 
-/* 转码流 seekable 恒为空，原生进度条拖不动，用自绘进度条重开流 */
+/* 进度条行：原画直写 currentTime，转码重开流 + pendingSeek，UI 同一套 */
 .p-seekbar {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 5px 14px 8px;
-  background: var(--bg-2);
-  border-bottom: 1px solid var(--line);
   min-width: 0;
+  overflow: visible;
 }
 
-/* 进度条容器：hover 卡片与拖动预览都挂在这一层（position:relative 的定位基准） */
+/* 进度条容器：hover 卡片 / 拖动预览 / 1px 指示线都挂在这一层（position:relative 的定位基准）。
+   mousemove 挂在这一层（20px 命中带），而不是只有 4px 高的 range 轨道 */
 .p-seekwrap {
   position: relative;
   flex: 1;
+  min-height: 20px;
   min-width: 0;
   display: flex;
   align-items: center;
+  cursor: pointer;
+  overflow: visible;
 }
 
 .p-seek {
@@ -888,18 +1116,37 @@ defineExpose({ togglePlay, seekRel, adjustVolume, toggleFullscreen, settle })
   cursor: pointer;
 }
 
-/* hover 卡片 / 拖动预览：同为 160×90 浮层，颜色只取 mediaTheme 变量（= --qt-* 映射） */
+.p-seek:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* hover 卡片 / 拖动预览：同为 160×90 浮层，颜色只取 mediaTheme 变量（= --qt-* 映射）。
+   卡片在控制条上方弹出（控制条在舞台下方），z-index 抬到浮层最高，父级都不裁剪 */
 .p-hover,
 .p-clip {
   position: absolute;
   bottom: calc(100% + 8px);
   transform: translateX(-50%);
-  z-index: 3;
+  z-index: 6;
   border: 1px solid var(--line-2);
   border-radius: var(--radius);
   background: var(--bg-2);
+  box-shadow: 0 6px 18px var(--accent-soft);
   overflow: hidden;
   pointer-events: none;
+}
+
+/* 1px 指示线：hover 位置提示；只有 hasSprite 的片子会渲染，其它片子零浮层 */
+.p-hover-line {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  width: 1px;
+  background: var(--accent);
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 5;
 }
 
 /* 精灵图单格也是 160×90：background-size 1000% 1000% + background-position 百分比切格，
@@ -1038,11 +1285,6 @@ defineExpose({ togglePlay, seekRel, adjustVolume, toggleFullscreen, settle })
     padding: 8px 10px;
   }
 
-  .p-qbar {
-    padding: 6px 10px;
-    gap: 6px;
-  }
-
   .p-q {
     max-width: 118px;
   }
@@ -1072,8 +1314,59 @@ defineExpose({ togglePlay, seekRel, adjustVolume, toggleFullscreen, settle })
   }
 
   /* 触屏无 hover：只保留拖动时的预览视频 */
-  .p-hover {
+  .p-hover,
+  .p-hover-line {
     display: none;
+  }
+
+  /* 移动端控制条：按钮加大到可点尺寸，音量滑块让位给静音按钮 */
+  .p-ctrl {
+    padding: 6px 10px 10px;
+    gap: 6px;
+  }
+
+  .p-seekbar {
+    gap: 8px;
+  }
+
+  .p-seekwrap {
+    min-height: 26px;
+  }
+
+  .p-seek {
+    height: 6px;
+  }
+
+  .p-ctrlline {
+    gap: 6px;
+  }
+
+  .p-btn {
+    min-width: 40px;
+    height: 38px;
+    font-size: 15px;
+  }
+
+  .p-btn-play {
+    min-width: 54px;
+  }
+
+  .p-vol {
+    display: none;
+  }
+
+  /* 画质行只留下拉，省出横向空间给按钮 */
+  .p-q-lab,
+  .p-q-now {
+    display: none;
+  }
+
+  .p-q {
+    max-width: 96px;
+  }
+
+  .p-seek-now {
+    font-size: 12.5px;
   }
 }
 </style>
