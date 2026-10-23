@@ -26,6 +26,7 @@
         <button class="btn p-fav" :class="{ on: fav }" type="button" :aria-pressed="fav" @click="emit('toggle-fav')">
           {{ fav ? '★ 已收藏' : '☆ 收藏' }}
         </button>
+        <button class="btn btn-meta" type="button" title="评分 / 标签 / 标记" @click="emit('open-meta')">信息</button>
         <button class="btn" type="button" :disabled="!hasPrev" @click="emit('prev')">上一部</button>
         <button class="btn" type="button" :disabled="!hasNext" @click="emit('next')">下一部</button>
         <button class="btn btn-primary" type="button" @click="emit('close')">关闭 (Esc)</button>
@@ -191,7 +192,8 @@ const emit = defineEmits([
   'update:quality',
   'save-pos',
   'clear-pos',
-  'push-recent'
+  'push-recent',
+  'open-meta'
 ])
 
 const api = useMediaApi()

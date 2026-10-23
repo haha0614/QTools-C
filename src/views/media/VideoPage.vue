@@ -32,6 +32,15 @@
           </select>
           <button class="btn-ghost" type="button" @click="clearAll">清空</button>
           <button
+            class="icon-btn sel-btn"
+            type="button"
+            :aria-pressed="selectMode ? 'true' : 'false'"
+            :title="selectMode ? '退出选择模式' : '多选：批量加标签 / 移除标签 / 评分'"
+            @click="toggleSelectMode"
+          >
+            {{ selectMode ? '完成' : '选择' }}
+          </button>
+          <button
             ref="filterBtnEl"
             class="icon-btn filter-toggle"
             type="button"
@@ -50,6 +59,24 @@
           >
             ▦
           </button>
+        </div>
+
+        <!-- 选择模式：已选计数 + 批量操作条（吸顶在工具栏内，滚动时始终可见） -->
+        <div v-if="selectMode" class="tb-row tb-batch">
+          <BatchBar
+            :count="selectedIds.length"
+            :all-tags="allTags"
+            :tags-loading="tagsLoading"
+            :busy="batchBusy"
+            @select-all="selectAllVisible"
+            @clear="clearSelection"
+            @exit="exitSelectMode"
+            @add-tags="(ids) => applyBatchMeta({ addTagIds: ids }, '已加标签')"
+            @remove-tags="(ids) => applyBatchMeta({ removeTagIds: ids }, '已移除标签')"
+            @rating="(n) => applyBatchMeta({ rating: n }, n > 0 ? '评分已设为 ' + n + ' 分' : '评分已清除')"
+            @created="onTagCreated"
+            @notify="showToast"
+          />
         </div>
 
         <div v-if="!isMobile" class="tb-row tb-filters">
@@ -90,8 +117,13 @@
             :video="v"
             :pos="posMap[v.id] || 0"
             :fav="isFavVideo(v.id)"
+            :select-mode="selectMode"
+            :selected="selectedSet.has(v.id)"
+            :rating="cardMeta(v).rating"
+            :tags="cardMeta(v).tags"
             @open="openPlayer"
             @toggle-fav="toggleFav"
+            @select="onCardSelect"
           />
           <div ref="sentinelEl" class="grid-sentinel"></div>
         </div>
@@ -168,7 +200,23 @@
       @save-pos="onSavePos"
       @clear-pos="onClearPos"
       @push-recent="onPushRecent"
+      @open-meta="openMeta"
     />
+
+    <!-- 单条组织信息（评分 / 标签 / 标记）：独立于播放层，接口失败只提示不阻塞播放 -->
+    <VideoMetaPanel
+      v-if="metaOpen && curVideo"
+      :video="curVideo"
+      :all-tags="allTags"
+      :tags-loading="tagsLoading"
+      @close="closeMeta"
+      @updated="onMetaUpdated"
+      @tag-created="onTagCreated"
+      @notify="showToast"
+    />
+
+    <!-- 页面级轻提示：批量结果 / 接口未就绪都在这里反馈，2.4s 自动消失 -->
+    <div v-if="toastMsg" class="ms-toast" role="status" aria-live="polite">{{ toastMsg }}</div>
   </div>
 </template>
 
@@ -181,6 +229,8 @@ import QuickFilters from './video/QuickFilters.vue'
 import VideoCard from './video/VideoCard.vue'
 import RecentStrip from './video/RecentStrip.vue'
 import MediaPlayer from './video/MediaPlayer.vue'
+import BatchBar from './video/BatchBar.vue'
+import VideoMetaPanel from './video/VideoMetaPanel.vue'
 
 const api = useMediaApi()
 const tk = useMediaTrack()
@@ -651,6 +701,26 @@ const sentinelEl = ref(null)
 
 const searchInput = ref(state.q)
 const visibleLimit = ref(CHUNK)
+
+/* ---- 媒体库组织（M3）：选择模式 / 批量写入 / 标签库 / 单条信息抽屉 ---- */
+
+/** 单次批量上限：超过只提示不提交（后端 batch-meta 一次请求） */
+const MAX_BATCH = 500
+const selectMode = ref(false)
+/** 已选视频 id（顺序即选择顺序，用于展示与提交 body.ids） */
+const selectedIds = ref([])
+const selectedSet = computed(() => new Set(selectedIds.value))
+/** Shift 连选的锚点：上一次点过的卡片在 visibleVideos 里的下标 */
+const selectAnchor = ref(-1)
+/** 标签库缓存（进入选择模式 / 打开信息抽屉时按需拉取） */
+const allTags = ref([])
+const tagsLoading = ref(false)
+const batchBusy = ref(false)
+const metaOpen = ref(false)
+/** 本地覆盖层：id → { rating, tags }，批量/单条写入后立即反映到卡片，无需重拉整份索引 */
+const metaOverrides = reactive({})
+const toastMsg = ref('')
+let toastTimer = 0
 /** 播放层只借用播放会话相关的三个方法（不能让它自己调 useMediaTrack，否则卸载时会 dispose 页面级监听） */
 const tracker = {
   openPlaySession: tk.openPlaySession,
@@ -1173,6 +1243,7 @@ function openPlayer(id) {
 }
 
 function closePlayer() {
+  metaOpen.value = false
   curVideo.value = null
   if (state.play) {
     state.play = ''
@@ -1288,6 +1359,226 @@ function restoreScroll() {
 }
 
 /* =========================================================================
+   媒体库组织（M3）：卡片多选 + 批量写入 + 单条信息抽屉
+   约定：不走播放链路——所有写接口 silent + try/catch，失败只 toast 提示；
+        写入成功后先在 metaOverrides 上做乐观更新（卡片立刻变），再让受影响项各自以服务端值为准。
+   ========================================================================= */
+
+/** 页面级轻提示（批量结果 / 接口未就绪），2.4s 自动消失，与旧页 toast 时长一致 */
+function showToast(msg) {
+  if (!msg) return
+  toastMsg.value = msg
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => {
+    toastMsg.value = ''
+  }, 2400)
+}
+
+const EMPTY_META = { rating: 0, tags: [] }
+
+/**
+ * 卡片展示用的组织信息：本地覆盖层优先，其次索引里带的 rating / tags。
+ * 按 id 预计算成表（只在索引或覆盖层变化时重算），避免每次页面渲染都给每张卡片新建对象，
+ * 否则 176 张卡片的 props 全部变化，滚动/输入时会整体重渲染。
+ */
+const cardMetaMap = computed(() => {
+  const out = {}
+  for (const v of videos.value) {
+    out[v.id] = metaOverrides[v.id] || { rating: Number(v.rating) || 0, tags: v.tags || [] }
+  }
+  // 覆盖层里可能出现不在当前索引/筛选结果中的 id（批量后切换筛选、抽屉里改完再回列表）：
+  // 一并算进来，保证索引为空时也能响应覆盖层变化
+  for (const id of Object.keys(metaOverrides)) {
+    if (!out[id]) out[id] = metaOverrides[id]
+  }
+  return out
+})
+
+function cardMeta(v) {
+  const m = cardMetaMap.value[v.id] || EMPTY_META
+  if (!m.tags || !m.tags.length) {
+    const names = Array.isArray(v.dictTags) ? v.dictTags : []
+    if (names.length) return Object.assign({}, m, { tags: names.map((x) => ({ name: x, color: '' })) })
+  }
+  return m
+}
+
+/**
+ * 标签库：GET /api/media/admin/tags
+ * 接口未就绪时只把列表清空（选择器显示「无匹配标签」），announce 为真时才弹提示，
+ * 避免页面首屏就出现一次失败提示。
+ */
+async function loadTags(announce) {
+  if (tagsLoading.value) return
+  tagsLoading.value = true
+  try {
+    const body = await api.listAdminTags({ silent: true })
+    const list = Array.isArray(body) ? body : body && Array.isArray(body.tags) ? body.tags : []
+    allTags.value = list.filter((t) => t && t.id != null && t.name)
+  } catch {
+    allTags.value = []
+    if (announce) showToast('标签库加载失败：接口未就绪')
+  } finally {
+    tagsLoading.value = false
+  }
+}
+
+function onTagCreated(tag) {
+  if (!tag || tag.id == null) return
+  if (!allTags.value.some((t) => t.id === tag.id)) allTags.value = allTags.value.concat([tag])
+}
+
+function toggleSelectMode() {
+  if (selectMode.value) {
+    exitSelectMode()
+    return
+  }
+  selectMode.value = true
+  selectAnchor.value = -1
+  if (!allTags.value.length) loadTags(true)
+}
+
+function exitSelectMode() {
+  selectMode.value = false
+  clearSelection()
+}
+
+function clearSelection() {
+  selectedIds.value = []
+  selectAnchor.value = -1
+}
+
+/**
+ * 卡片点击（选择模式）：Shift 连选按当前可见顺序取区间，其余为单项切换。
+ * 总数受 MAX_BATCH 约束，超出的新增忽略并提示。
+ */
+function onCardSelect(id, shift) {
+  const list = visibleVideos.value
+  const idx = list.findIndex((v) => v.id === id)
+  // 只接受当前可见卡片的选择（未知 id / 已不在结果里的卡片直接忽略）
+  if (idx < 0) return
+
+  if (shift && selectAnchor.value >= 0 && idx >= 0) {
+    const a = Math.min(selectAnchor.value, idx)
+    const b = Math.max(selectAnchor.value, idx)
+    const cur = new Set(selectedIds.value)
+    const add = []
+    for (let i = a; i <= b; i++) {
+      const vid = list[i].id
+      if (!cur.has(vid) && add.indexOf(vid) < 0) add.push(vid)
+    }
+    if (cur.size + add.length > MAX_BATCH) {
+      showToast('最多选择 ' + MAX_BATCH + ' 项')
+      selectAnchor.value = idx
+      return
+    }
+    selectedIds.value = selectedIds.value.concat(add)
+    selectAnchor.value = idx
+    return
+  }
+
+  if (selectedIds.value.indexOf(id) >= 0) {
+    selectedIds.value = selectedIds.value.filter((x) => x !== id)
+  } else {
+    if (selectedIds.value.length >= MAX_BATCH) {
+      showToast('最多选择 ' + MAX_BATCH + ' 项')
+      return
+    }
+    selectedIds.value = selectedIds.value.concat([id])
+  }
+  selectAnchor.value = idx
+}
+
+/** 全选：当前筛选结果（不是全库），同样受 MAX_BATCH 限制 */
+function selectAllVisible() {
+  const ids = view.value.slice(0, MAX_BATCH).map((v) => v.id)
+  selectedIds.value = ids
+  selectAnchor.value = -1
+  if (view.value.length > MAX_BATCH) showToast('已选前 ' + MAX_BATCH + ' 项（单次上限）')
+}
+
+/** 乐观更新：把一次批量写入的结果落到 metaOverrides 上（标签按 id 从标签库取名称与颜色） */
+function applyLocalBatch(ids, patch) {
+  const tagById = new Map(allTags.value.map((t) => [t.id, t]))
+  // 索引里的标签是名称字符串，元信息接口给的是 {id,name,color}：取值键两种都兼容
+  const keyOf = (x) => (typeof x === 'string' ? x : x && x.id != null ? x.id : x && x.name)
+  const nameOf = (x) => (typeof x === 'string' ? x : x && x.name)
+  const removedIds = Array.isArray(patch.removeTagIds) ? patch.removeTagIds : []
+  const removedNames = new Set(removedIds.map((tid) => (tagById.get(tid) ? tagById.get(tid).name : null)).filter(Boolean))
+
+  for (const id of ids) {
+    const v = byId.value.get(id)
+    const cur = metaOverrides[id] || {
+      rating: Number(v && v.rating) || 0,
+      tags: (v && v.tags) || []
+    }
+    let tags = Array.isArray(cur.tags) ? cur.tags.slice() : []
+
+    if (Array.isArray(patch.addTagIds)) {
+      for (const tid of patch.addTagIds) {
+        const t = tagById.get(tid) || { id: tid, name: String(tid) }
+        const dup = tags.some((x) => keyOf(x) === t.id || (t.name && nameOf(x) === t.name))
+        if (!dup) tags.push(t)
+      }
+    }
+    if (removedIds.length) {
+      tags = tags.filter((x) => {
+        const k = keyOf(x)
+        if (k != null && removedIds.indexOf(k) >= 0) return false
+        return !removedNames.has(nameOf(x))
+      })
+    }
+
+    const rating = Object.prototype.hasOwnProperty.call(patch, 'rating') ? Number(patch.rating) || 0 : cur.rating
+    metaOverrides[id] = { rating, tags }
+  }
+}
+
+/**
+ * 批量写入：一次请求覆盖全部选中项
+ * POST /api/media/admin/videos/batch-meta  body { ids, addTagIds?, removeTagIds?, rating? } → { updated }
+ */
+async function applyBatchMeta(patch, okText) {
+  if (batchBusy.value) return
+  const ids = selectedIds.value.slice()
+  if (!ids.length) {
+    showToast('请先选择视频')
+    return
+  }
+  if (ids.length > MAX_BATCH) {
+    showToast('最多选择 ' + MAX_BATCH + ' 项')
+    return
+  }
+  batchBusy.value = true
+  try {
+    const body = await api.batchVideoMeta(Object.assign({ ids }, patch), { silent: true })
+    const n = body && typeof body.updated === 'number' ? body.updated : ids.length
+    applyLocalBatch(ids, patch)
+    showToast((okText || '批量更新') + '：' + n + ' 项已更新')
+  } catch {
+    // 接口未就绪 / 网络异常：只提示，不动卡片状态，也不影响播放
+    showToast('批量更新失败：接口未就绪或网络异常')
+  } finally {
+    batchBusy.value = false
+  }
+}
+
+function openMeta() {
+  metaOpen.value = true
+  if (!allTags.value.length) loadTags(false)
+}
+
+function closeMeta() {
+  metaOpen.value = false
+}
+
+/** 单条抽屉写成功：用服务端权威值刷新该卡片 */
+function onMetaUpdated(meta) {
+  if (!meta || !meta.id) return
+  metaOverrides[meta.id] = { rating: Number(meta.rating) || 0, tags: meta.tags || [] }
+}
+
+/* =========================================================================
    数据加载
    ========================================================================= */
 
@@ -1325,6 +1616,10 @@ function onKey(e) {
     }
     if (drawerOpen.value) {
       closeDrawer()
+      return
+    }
+    if (selectMode.value) {
+      exitSelectMode()
       return
     }
     if (typing && t.blur) t.blur()
@@ -1416,6 +1711,7 @@ onMounted(() => {
   if (mq && mq.addEventListener) mq.addEventListener('change', onMqChange)
   loadUser()
   loadIndex()
+  loadTags(false)
 })
 
 onBeforeUnmount(() => {
@@ -1431,6 +1727,7 @@ onBeforeUnmount(() => {
   }
   clearTimeout(searchTimer)
   clearTimeout(tkSearchTimer)
+  clearTimeout(toastTimer)
   tk.flushAll()
   document.body.style.overflow = ''
 })
@@ -1579,6 +1876,23 @@ watch(
   text-align: center;
 }
 
+/* 「选择」按钮：进入多选批量模式时高亮（aria-pressed 是唯一状态源） */
+.sel-btn[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* 批量操作条行：跟随工具栏吸顶，移动端由 BatchBar 自身换行 */
+.tb-batch {
+  align-items: flex-start;
+}
+
+.tb-batch > * {
+  flex: 1;
+  min-width: 0;
+}
+
 .cols-btn {
   display: none;
 }
@@ -1665,6 +1979,27 @@ watch(
 .drawer-backdrop.show {
   opacity: 1;
   pointer-events: auto;
+}
+
+/* 页面级轻提示：层级高于播放器(100)/筛选抽屉(200)/信息抽屉(300)，
+   仍低于 Element Plus 的 message/modal 层（1000+），不会压过全局提示 */
+.ms-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  z-index: 900;
+  max-width: calc(100vw - 32px);
+  padding: 8px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: var(--bg-2);
+  color: var(--fg);
+  font-size: 13px;
+  line-height: 1.4;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  text-align: center;
 }
 
 /* ---------------------------------------------------------------- 筛选抽屉 */

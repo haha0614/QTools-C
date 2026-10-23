@@ -6,11 +6,18 @@
 <template>
   <article
     class="card"
+    :class="{ 'is-select': selectMode, 'is-checked': selectMode && selected }"
     tabindex="0"
+    role="button"
+    :aria-pressed="selectMode ? selected : undefined"
     :data-id="video.id"
-    @click="emit('open', video.id)"
-    @keydown.enter.prevent="emit('open', video.id)"
+    @click="onCardClick"
+    @keydown.enter.prevent="onCardKey"
   >
+    <!-- 选择模式：左上角复选框只做视觉，命中区是整个卡片（点击卡片=选择，不打开播放器） -->
+    <span v-if="selectMode" class="card-check" :class="{ on: selected }" aria-hidden="true">
+      <svg viewBox="0 0 16 16" width="11" height="11"><path v-if="selected" d="M2 8.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+    </span>
     <div class="thumb" :class="{ noimg: coverFailed }">
       <img
         v-if="!coverFailed"
@@ -38,6 +45,19 @@
     <div class="card-body">
       <h3 :title="video.title">{{ video.title }}</h3>
       <div class="card-sub">{{ video.folder }} · {{ sizeText }}</div>
+      <!-- 组织信息：有评分显示 ★N；标签最多 2 个 chip，其余折叠成 +N -->
+      <div v-if="rating > 0 || shownTags.length" class="card-meta">
+        <span v-if="rating > 0" class="cm-rate" :title="'评分 ' + rating">★{{ rating }}</span>
+        <span
+          v-for="t in shownTags"
+          :key="t.id || t.name"
+          class="cm-tag"
+          :style="t.color ? { borderColor: t.color, color: t.color } : null"
+          :title="t.name"
+          >{{ t.name }}</span
+        >
+        <span v-if="restTagCount" class="cm-tag cm-more" :title="restTagText">+{{ restTagCount }}</span>
+      </div>
     </div>
     <div v-if="progressPct > 0" class="card-prog"><i :style="{ width: progressPct + '%' }"></i></div>
   </article>
@@ -53,10 +73,39 @@ const props = defineProps({
   /** 续播秒数（0 表示没有进度） */
   pos: { type: Number, default: 0 },
   /** 是否已收藏 */
-  fav: { type: Boolean, default: false }
+  fav: { type: Boolean, default: false },
+  /** 选择模式：卡片点击改为选择，不打开播放器 */
+  selectMode: { type: Boolean, default: false },
+  /** 选择模式下是否已选中 */
+  selected: { type: Boolean, default: false },
+  /** 评分（0 表示未评分，1-10） */
+  rating: { type: Number, default: 0 },
+  /** 标签数组：[{id?,name,color?}] 或字符串名称数组（索引里是名称数组） */
+  tags: { type: Array, default: () => [] }
 })
 
-const emit = defineEmits(['open', 'toggle-fav'])
+const emit = defineEmits(['open', 'toggle-fav', 'select'])
+
+/**
+ * 卡片主体点击：选择模式下只发 select（不触发 open），否则打开播放器。
+ * Shift 键由事件本身携带，连选范围由 VideoPage 依据当前可见顺序计算。
+ */
+function onCardClick(ev) {
+  if (props.selectMode) {
+    emit('select', props.video.id, !!(ev && ev.shiftKey))
+    return
+  }
+  emit('open', props.video.id)
+}
+
+/** 键盘回车与鼠标点击同一分支：选择模式下回车=选择（无 Shift 语义） */
+function onCardKey(ev) {
+  if (props.selectMode) {
+    emit('select', props.video.id, !!(ev && ev.shiftKey))
+    return
+  }
+  emit('open', props.video.id)
+}
 
 const api = useMediaApi()
 
@@ -71,6 +120,17 @@ const progressPct = computed(() => {
   if (!(props.pos > 0) || !(dur > 0)) return 0
   return Math.min(100, (props.pos / dur) * 100)
 })
+
+/** 标签归一化：索引里给的是名称数组，元信息接口给的是 {id,name,color}，两种都收 */
+const normTags = computed(() =>
+  (props.tags || [])
+    .map((t) => (typeof t === 'string' ? { name: t, color: '' } : Array.isArray(t) ? { name: t[1] || t[0], color: '' } : { id: t && t.id, name: t && t.name, color: t && t.color }))
+    .filter((t) => t.name)
+)
+
+const shownTags = computed(() => normTags.value.slice(0, 2))
+const restTagCount = computed(() => Math.max(0, normTags.value.length - 2))
+const restTagText = computed(() => normTags.value.slice(2).map((t) => t.name).join(' / '))
 
 const durText = computed(() => fmtDur(props.video.dur))
 const sizeText = computed(() => fmtSize(props.video.size))
@@ -226,6 +286,79 @@ function resBadge(w) {
   display: block;
   height: 100%;
   background: var(--accent);
+}
+
+/* 组织信息行：评分 + 标签 chip（最多 2 个 + N）。字号比副标题更小，避免挤占标题宽度 */
+.card-meta {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cm-rate {
+  flex: 0 0 auto;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--warn);
+}
+
+.cm-tag {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 84px;
+  padding: 0 5px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--fg-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cm-more {
+  flex: 0 0 auto;
+  max-width: none;
+  border-style: dashed;
+}
+
+/* 选择模式：整卡描边高亮，复选框为纯视觉元素 */
+.card.is-select {
+  cursor: pointer;
+}
+
+.card.is-checked {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.card-check {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  z-index: 4;
+  width: 17px;
+  height: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--accent-on);
+  border-radius: 4px;
+  /* 封面深浅不定：半透明黑底 + 恒白勾选，亮暗两套都能看清 */
+  background: rgba(0, 0, 0, 0.62);
+  color: var(--accent-on);
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.card-check.on {
+  background: var(--accent-btn);
+  border-color: var(--accent-btn);
 }
 
 /* 收藏星：卡片右上角，绝对定位不参与布局 */

@@ -181,6 +181,70 @@ export function getAlbum(id, options) {
   return mediaRequest({ url: '/album/' + encodeURIComponent(String(id == null ? '' : id)), silent: opt.silent !== false })
 }
 
+/* --------------------------------------------- 媒体库组织（M3：标签 / 评分 / 标记） */
+/* 契约来源：M3-A 后端接口。所有写接口一律 silent（失败由调用方 toast 兜底），
+   页面侧只提示不阻塞播放；后端尚未就绪时这里只会 reject，不会抛出未捕获异常。 */
+
+/** 标签库 后端：GET /api/media/admin/tags → [{id,name,color,useCount}] */
+export function listAdminTags(options) {
+  const opt = options || {}
+  return mediaRequest({ url: '/admin/tags', silent: opt.silent !== false })
+}
+
+/**
+ * 新建标签 后端：POST /api/media/admin/tags（契约未定义，按尝试实现）
+ * 后端未实现时只会 reject，调用方提示「新建标签暂不可用」，不影响既有标签的勾选
+ * @param {{name:string, color?:string}} payload
+ * @param {{silent?:boolean}} [options]
+ */
+export function createAdminTag(payload, options) {
+  const opt = options || {}
+  return mediaRequest({ url: '/admin/tags', method: 'post', data: payload || {}, silent: opt.silent !== false })
+}
+
+/** 单条元信息 后端：GET /api/media/admin/video/{id}/meta → {rating,tags:[{id,name,color}],markers:[{id,pos,label,color}]} */
+export function getVideoMeta(id, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/admin/video/' + encodeURIComponent(String(id == null ? '' : id)) + '/meta',
+    silent: opt.silent !== false
+  })
+}
+
+/**
+ * 单条更新 后端：PUT /api/media/admin/video/{id}/meta
+ * body 支持 { rating, addTagIds, removeTagIds, markers }
+ * @param {string} id
+ * @param {{rating?:number, addTagIds?:string[], removeTagIds?:string[], markers?:object[]}} payload
+ * @param {{silent?:boolean}} [options]
+ */
+export function saveVideoMeta(id, payload, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/admin/video/' + encodeURIComponent(String(id == null ? '' : id)) + '/meta',
+    method: 'put',
+    data: payload || {},
+    silent: opt.silent !== false
+  })
+}
+
+/**
+ * 批量更新 后端：POST /api/media/admin/videos/batch-meta
+ * body { ids, addTagIds?, removeTagIds?, rating? } → { updated }
+ * 一次请求覆盖全部选中项（页面侧合并成单次调用，不做逐条循环）
+ * @param {{ids:string[], addTagIds?:string[], removeTagIds?:string[], rating?:number}} payload
+ * @param {{silent?:boolean}} [options]
+ */
+export function batchVideoMeta(payload, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/admin/videos/batch-meta',
+    method: 'post',
+    data: payload || {},
+    silent: opt.silent !== false
+  })
+}
+
 /* ------------------------------------------------------------- 资源 URL 构造 */
 /* 全部返回绝对路径（不含 origin），可直接给 <img src> / <video src> 使用。
    规则出处：app.js:862/978/1036/1037/1169，photo.js:99/101/102/103，profile.js:82-84。 */
@@ -279,6 +343,12 @@ const mediaApi = {
   getMe,
   getVideo,
   getAlbum,
+  // 媒体库组织（M3）
+  listAdminTags,
+  createAdminTag,
+  getVideoMeta,
+  saveVideoMeta,
+  batchVideoMeta,
   // URL 构造
   videoThumbUrl,
   spriteUrl,
