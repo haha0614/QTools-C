@@ -50,14 +50,30 @@
            persons 为空时先显示旧 actors 名字，两者都空才兜底显示素人（isAmateur 判定，见 personRules.js） -->
       <div class="card-persons">
         <template v-if="shownPersons.length">
-          <span
-            v-for="pp in shownPersons"
-            :key="pp.id || pp.name"
-            class="cp-chip"
-            :class="{ 'is-auto': isAmateurName(pp.name) }"
-            :title="pp.name + (pp.role ? ' · ' + pp.role : '')"
-            >{{ pp.name }}<i v-if="pp.role" class="cp-role">{{ pp.role }}</i></span
-          >
+          <!-- P5.4：人物 chip（含「素人」）可点进人物页 —— 只有带 id 的人物可点，纯名字形态降级为 span。
+               防误触与右下角播放列表入口同一套：@click.stop + @keydown.stop，点 chip 既不打开播放器，
+               也不在选择模式下把这一次点击当成「勾选整卡」；键盘 Enter/Space 由 button 原生行为换算成 click。 -->
+          <template v-for="pp in shownPersons" :key="pp.id || pp.name">
+            <button
+              v-if="personIdOf(pp) != null"
+              class="cp-chip is-link"
+              :class="{ 'is-auto': isAmateurName(pp.name) }"
+              type="button"
+              :aria-label="'查看人物：' + pp.name"
+              :title="personTitle(pp)"
+              @click.stop="onPersonChip(pp)"
+              @keydown.stop
+            >
+              {{ pp.name }}<i v-if="pp.role" class="cp-role">{{ pp.role }}</i>
+            </button>
+            <span
+              v-else
+              class="cp-chip"
+              :class="{ 'is-auto': isAmateurName(pp.name) }"
+              :title="personTitle(pp)"
+              >{{ pp.name }}<i v-if="pp.role" class="cp-role">{{ pp.role }}</i></span
+            >
+          </template>
           <span v-if="restPersonCount" class="cp-chip cp-more" :title="restPersonText">+{{ restPersonCount }}</span>
         </template>
         <template v-else-if="shownActors.length">
@@ -178,7 +194,7 @@ const props = defineProps({
   level: { type: String, default: 'full' }
 })
 
-const emit = defineEmits(['open', 'toggle-fav', 'select', 'added', 'notify'])
+const emit = defineEmits(['open', 'toggle-fav', 'select', 'added', 'notify', 'person'])
 
 /**
  * 卡片主体点击：选择模式下只发 select（不触发 open），否则打开播放器。
@@ -375,6 +391,29 @@ const restActorText = computed(() => fallbackActors.value.slice(2).join(' / '))
 
 /** 兜底 B：persons 与 actors 都为空 → 显示素人 chip（后端就绪后每个视频都应有 persons，这条只会命中旧缓存） */
 const amateurFallback = computed(() => isAmateur(normPersons.value, props.actors))
+
+/* ------------------------------------------------------------------ 人物 chip（P5.4） */
+
+/** chip 的可点判定：索引 persons 自带 id；纯名字形态（历史数据 / 旧 actors）没有 id → 不可点 */
+function personIdOf(pp) {
+  const id = pp && pp.id
+  return id == null || String(id) === '' ? null : id
+}
+
+/** title：名字 + 角色（与可点 / 不可点两种渲染共用，避免两处文案漂移） */
+function personTitle(pp) {
+  return pp.name + (pp.role ? ' · ' + pp.role : '')
+}
+
+/**
+ * 点人物 chip：只把 id 交给页面（VideoPage / PersonDetailPage 用 router.push 跳 /media/person/:id），
+ * 卡片自己不认识路由。模板上的 .stop 已经拦住冒泡，因此这里不会触发 open / select。
+ */
+function onPersonChip(pp) {
+  const id = personIdOf(pp)
+  if (id == null) return
+  emit('person', id)
+}
 
 /** 工作室归一化：索引给名称数组，管理端/详情接口可能给 [{id,name}]，两种都收 */
 const normStudios = computed(() =>
@@ -684,6 +723,40 @@ function resBadge(w) {
   border-color: var(--line-2);
   background: transparent;
   color: var(--fg-dim);
+}
+
+/* P5.4：可点的人物 chip（button）—— 复位 button 的默认外观，只保留 chip 视觉；
+   常显下划线（currentColor，亮暗两套主题都看得见）提示「这个不是纯文字」 */
+button.cp-chip.is-link {
+  font: inherit;
+  font-size: 11px;
+  appearance: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* hover / 键盘聚焦：描边与文字一起提到强调色，下划线加粗 —— 与右下角入口同一套反馈语言 */
+button.cp-chip.is-link:hover,
+button.cp-chip.is-link:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  text-decoration-thickness: 2px;
+  outline: none;
+}
+
+/* 素人 chip 的可点态：静态保持次级色（不是具体某个人），hover / 聚焦时才提亮 */
+button.cp-chip.is-link.is-auto {
+  color: var(--fg-dim);
+}
+
+button.cp-chip.is-link.is-auto:hover,
+button.cp-chip.is-link.is-auto:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .cp-role {

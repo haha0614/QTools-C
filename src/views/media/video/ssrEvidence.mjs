@@ -83,7 +83,10 @@ const hAmateur = await render(card, {
   actors: []
 })
 has(hAmateur, '>素人<!---->', 'A2 persons 含真实素人 → 按普通人物 chip 渲染')
-has(hAmateur, 'is-auto cp-chip" title="素人"', 'A2 真实素人 chip 带 is-auto（略淡，但仍与真人 chip 同形）')
+// P5.4：有 id 的人物 chip 是可点按钮（aria-label 指向人物页），不再是 span。
+// class 属性里 is-auto（动态）排在 cp-chip / is-link（静态）之前，故用正则而不写死顺序。
+ok(/<button[^>]*class="[^"]*cp-chip[^"]*is-link[^"]*"[^>]*aria-label="查看人物：素人"/.test(hAmateur), 'A2b 真实素人 chip 是 button + aria-label（可点进人物页，P5.4）', String(hAmateur).slice(String(hAmateur).indexOf('card-persons'), String(hAmateur).indexOf('card-persons') + 240))
+hasNot(hAmateur, '<span class="is-auto cp-chip"', 'A2b 有 id 时不再渲染不可点的 span')
 hasNot(hAmateur, '未收录演员', 'A2 真实素人在场时不出现「未收录演员」兜底 chip')
 has(hAmateur, '甲', 'A2 真人一起渲染')
 has(hAmateur, '主演', 'A2 角色随 chip 显示')
@@ -98,9 +101,14 @@ const hThree = await render(card, {
   ],
   actors: []
 })
-ok(count(hThree, 'class="cp-chip"') === 2, 'A3 三人真人 → 只渲染 2 个 chip', 'cp-chip 数: ' + count(hThree, 'class="cp-chip"'))
+ok((String(hThree).match(/<button[^>]*class="[^"]*cp-chip[^"]*is-link/g) || []).length === 2, 'A3 三人真人 → 只渲染 2 个可点 chip', '可点 chip 数: ' + (String(hThree).match(/<button[^>]*cp-chip/g) || []).length)
 has(hThree, '+1', 'A3 第三人折叠成 +1')
 has(hThree, '丙', 'A3 +1 的 title 带上第三人（restPersonText）')
+
+// P5.4：没有 id 的人物（纯名字形态的历史数据）降级为不可点的 span
+const hNoId = await render(card, { ...cardBase, persons: [{ name: '无编号' }, { name: '配角甲', role: '配角' }], actors: [] })
+ok(/<span[^>]*class="[^"]*cp-chip[^"]*"[^>]*title="无编号"/.test(hNoId), 'A4b 无 id → 降级为 span（不可点）', String(hNoId).slice(String(hNoId).indexOf('card-persons'), String(hNoId).indexOf('card-persons') + 240))
+hasNot(hNoId, '查看人物：', 'A4b 无 id 时不渲染 aria-label（不是交互控件）')
 
 const hActors = await render(card, { ...cardBase, persons: [], actors: ['旧演员甲', '旧演员乙'] })
 has(hActors, '旧演员甲', 'A4 persons=[] actors 有值 → 显示真实演员名')

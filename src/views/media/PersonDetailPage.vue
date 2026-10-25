@@ -149,6 +149,12 @@ function openVideo(id) {
   router.push('/media#play=' + encodeURIComponent(String(id)))
 }
 
+/** P5.4：卡片上的人物 chip（含素人）点了 → 该人物详情页（点的就是本页人物时等价原地刷新） */
+function openPerson(id) {
+  if (id == null || String(id) === '') return
+  router.push('/media/person/' + encodeURIComponent(String(id)))
+}
+
 function openAlbum(id) {
   if (id == null) return
   router.push('/media/photos#album=' + encodeURIComponent(String(id)))
@@ -214,6 +220,7 @@ onBeforeUnmount(() => {
           :video="v"
           :persons="v.persons || []"
           @open="openVideo"
+          @person="openPerson"
         />
       </div>
     </section>

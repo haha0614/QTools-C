@@ -153,6 +153,7 @@
             :playlist-btn="true"
             :level="editLevel"
             @open="openPlayer"
+            @person="openPerson"
             @toggle-fav="toggleFav"
             @select="onCardSelect"
             @added="onPlaylistAdded"
@@ -1736,6 +1737,12 @@ watch(
 /* =========================================================================
    播放器
    ========================================================================= */
+
+/** P5.4：卡片上的人物 chip（含素人）点了 → 该人物详情页（/media/person/:id 路由 P3 已有） */
+function openPerson(id) {
+  if (id == null || String(id) === '') return
+  router.push('/media/person/' + encodeURIComponent(String(id)))
+}
 
 function openPlayer(id) {
   const v = byId.value.get(id)

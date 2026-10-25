@@ -30,7 +30,10 @@
       <!-- 人物 / 演员（P3-B 只读 → P5.3-B 可编辑）：
            「素人」是**真实人物**（后端把没有真演员的视频都绑给它），按普通人物 chip 渲染，
            形状与真实人物一致、只把主色降为次级色；persons 与 actors 都为空时才用同一个 chip 兜底。
-           编辑：与标签同构 —— chips + 「＋ 加演员」打开 PersonPicker，写 PUT /video/{id}/persons。 -->
+           编辑：与标签同构 —— chips + 「＋ 加演员」打开 PersonPicker，写 PUT /video/{id}/persons。
+           P5.4 决定：**抽屉里的 chip 不做跳转**（卡片上的 chip 才跳人物页）。理由：抽屉是编辑面 ——
+           评分输入、标记表单（mm:ss + 说明）都可能停在「已输入未保存」的状态，chip 一跳就把整个抽屉
+           卸载、未保存输入直接丢；而人物页只隔一次点击（关抽屉 → 点卡片 chip），可发现性不用靠这里补。 -->
       <section class="vp-sec">
         <h3 class="vp-h3">
           人物<span class="vp-h3n">{{ persons.length }}</span>
