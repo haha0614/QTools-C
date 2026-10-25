@@ -1,13 +1,17 @@
 /**
  * spriteCell.js —— 精灵图（thumbs/s/<hash>.jpg）取格几何：纯函数，无 Vue、无 DOM、无副作用
- * 产物与后端契约：build-thumbs.js --sprite 生成 10 列 × 10 行 = 100 格、每格 160×90 的拼图，
- *  站端经 GET /api/media/sprite/{id} 下发（qtools-media MediaFileController:117-118）。
+ * 产物与后端契约：build-thumbs.js --sprite 生成 20 列 × 20 行 = 400 格、每格 160×90 的拼图
+ *  （成品恒 3200×1800），站端经 GET /api/media/sprite/{id} 下发
+ *  （qtools-media MediaFileController:117-118）。
  * 口径来源（必须与播放器进度条 hover 预览完全一致，否则同一帧在两处会切出不同格子）：
- *  MediaPlayer.vue:478-481   SPRITE_COLS=10 / SPRITE_ROWS=10 / SPRITE_CELLS=100
- *  MediaPlayer.vue:554-566   cell = min(99, floor(clamp01(ratio) * 100))
- *                            col = cell % 10，row = floor(cell / 10)
- *                            background-size: 1000% 1000%
- *                            background-position: col/(10-1)*100% row/(10-1)*100%
+ *  MediaPlayer.vue:508-511  SPRITE_COLS=20 / SPRITE_ROWS=20 / SPRITE_CELLS=400
+ *  MediaPlayer.vue:607-618  cell = min(399, floor(clamp01(ratio) * 400))
+ *                           col = cell % 20，row = floor(cell / 20)
+ *                           background-size: 2000% 2000%
+ *                           background-position: col/(20-1)*100% row/(20-1)*100%
+ * P5.14：旧产物是 10×10（100 格）。文件名不变（s/<hash>.jpg），所以**旧 10×10 与新 20×20 不能混用**：
+ *  常量是 20 就必须整库重生成过精灵图，否则每格取到的画面整体错位（详见
+ *  docs/精灵图重采样与重生成.md）。
  *
  * 边界口径（本文件是这两条规则的唯一实现，抽屉里的标记缩略图直接用）：
  *   1. dur <= 0 / 非有限值（时长未知）：不参与比例计算，固定取第 0 格（首帧）；
@@ -17,9 +21,9 @@
  *      k = 9 时正好贴右边缘（MediaPlayer.vue:563-564 同口径，非本文件自创）。
  */
 
-/** 网格常量：与 build-thumbs.js / MediaPlayer.vue 同源，改动需三处同时改 */
-export const SPRITE_COLS = 10
-export const SPRITE_ROWS = 10
+/** 网格常量：与 build-thumbs.js SPRITE / MediaPlayer.vue 同源，改动需三处同时改 */
+export const SPRITE_COLS = 20
+export const SPRITE_ROWS = 20
 export const SPRITE_CELLS = SPRITE_COLS * SPRITE_ROWS
 /** 单格像素尺寸（只用于按比例给容器定宽高，不影响切格公式） */
 export const SPRITE_CELL_W = 160
@@ -48,7 +52,7 @@ export function spriteCellAt(timeSec, durSec) {
     return { cell: 0, col: 0, row: 0, ratio: 0 }
   }
   const ratio = clamp01((Number.isFinite(t) ? t : 0) / dur)
-  // 100 格铺满 [0,1]：1.0 会算出 100，必须夹到末格 99（MediaPlayer.vue:557 同）
+  // 400 格铺满 [0,1]：1.0 会算出 400，必须夹到末格 399（MediaPlayer.vue:609 同）
   const cell = Math.min(SPRITE_CELLS - 1, Math.max(0, Math.floor(ratio * SPRITE_CELLS)))
   return { cell, col: cell % SPRITE_COLS, row: Math.floor(cell / SPRITE_COLS), ratio }
 }

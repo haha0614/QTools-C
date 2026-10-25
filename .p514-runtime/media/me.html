@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>我的 · 媒体站</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="app.css?v=20261022b">
+<link rel="stylesheet" href="profile.css?v=20261022b">
+</head>
+<body class="me-body">
+
+<div class="me-wrap">
+  <header class="me-top">
+    <a class="me-back" href="index.html">‹ 视频站</a>
+    <a class="me-top-link" href="photos.html">图片站 ›</a>
+  </header>
+
+  <section class="me-head">
+    <span id="meAvatar"></span>
+    <div class="me-id">
+      <h1 id="meNick">我</h1>
+      <button id="meEdit" class="pf-edit" type="button">编辑</button>
+    </div>
+  </section>
+
+  <section class="me-sec" aria-labelledby="hRecent">
+    <h2 id="hRecent">最近浏览</h2>
+    <div id="recentGroups" class="me-groups"></div>
+  </section>
+
+  <section class="me-sec" aria-labelledby="hFav">
+    <h2 id="hFav">收藏</h2>
+    <div id="favGroups" class="me-groups"></div>
+  </section>
+</div>
+
+<nav class="tabbar" aria-label="站点切换">
+  <a class="tab" href="index.html">视频</a>
+  <a class="tab" href="photos.html">图片</a>
+  <a class="tab on" href="me.html">我的</a>
+</nav>
+
+<script src="profile.js?v=20261022b" defer></script>
+<script src="me.js?v=20261022b" defer></script>
+</body>
+</html>

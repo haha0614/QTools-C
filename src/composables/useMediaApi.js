@@ -475,7 +475,7 @@ export function photoThumbUrl(albumId, i) {
 }
 
 /**
- * 视频精灵图：10 列 × 10 行，每格 160×90（thumbs/s/<content_hash>.jpg）
+ * 视频精灵图：20 列 × 20 行（400 格），每格 160×90，成品 3200×1800（thumbs/s/<content_hash>.jpg）
  * 后端：GET /api/media/sprite/{id}，产物不存在即 404 —— 调用方先用 hasSprite 判断
  */
 export function spriteUrl(id) {
@@ -492,6 +492,29 @@ export function previewUrl(id) {
   // 加算法版本号做 cache buster：算法再变更时同步 +1 即可。
   const algo = 'v2'
   return API_BASE + '/media/preview/' + encodeURIComponent(String(id == null ? '' : id)) + '?algo=' + algo
+}
+
+/**
+ * 实时取帧（P5.15）：`GET /media/frame/{id}?t=<整秒>` → 该时刻 480 宽 jpeg 一帧
+ *
+ * 后端按整秒落盘永久缓存（thumbs/frames/<content_hash>/<秒>.jpg），响应带 immutable：
+ * 同一 URL 的字节永不变化，所以这里可以和 previewUrl 一样挂算法版本号做 cache buster ——
+ * 换取帧参数（宽度 / 质量）时 +1，浏览器才会重新取图。
+ *
+ * @param {string} id  视频 id
+ * @param {number} sec 整秒（调用方用 framePicker.frameSecond 取整，跨同一秒复用同一张图）
+ */
+export function frameUrl(id, sec) {
+  const algo = 'f1'
+  return (
+    API_BASE +
+    '/media/frame/' +
+    encodeURIComponent(String(id == null ? '' : id)) +
+    '?t=' +
+    Math.max(0, Math.floor(Number(sec) || 0)) +
+    '&algo=' +
+    algo
+  )
 }
 
 /** 图片预览图：photo.js:102 `MEDIA + '/preview/p/' + albumId + '/' + pad4(i)` */
@@ -589,6 +612,7 @@ const mediaApi = {
   videoThumbUrl,
   spriteUrl,
   previewUrl,
+  frameUrl,
   photoThumbUrl,
   photoPreviewUrl,
   thumbUrlFromRel,

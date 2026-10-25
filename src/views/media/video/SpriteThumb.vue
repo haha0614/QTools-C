@@ -1,8 +1,8 @@
 <!--
   SpriteThumb.vue —— 标记点缩略图（从视频精灵图里按时间切一格）
-  产物契约：thumbs/s/<content_hash>.jpg 是 10×10 = 100 格、每格 160×90 的拼图，
+  产物契约：thumbs/s/<content_hash>.jpg 是 20×20 = 400 格、每格 160×90 的拼图（成品 3200×1800），
            站端经 GET /api/media/sprite/{id} 下发；切格几何唯一实现在 spriteCell.js
-           （与播放器进度条 hover 预览同源，单测见 p5c-evidence/sprite-cell.test.mjs）。
+           （与播放器进度条 hover 预览同源，单测见 p514-evidence/sprite-cell.test.mjs）。
   无精灵图（视频没有 hasSprite / 地址为空）时渲染占位块，不发任何请求、不出现破图。
   纯展示组件：时长与位置都由调用方给，自己不请求数据。
 -->

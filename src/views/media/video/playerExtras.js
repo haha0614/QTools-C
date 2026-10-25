@@ -785,3 +785,214 @@ export function createThrottle(options) {
 
   return { run, cancel, isPending: () => pending != null, intervalMs: interval }
 }
+
+/* ================================ P5.16 帧栅格 / 时间码 / 精细拖动 ================================ */
+
+/**
+ * 帧率合理区间：超出这个区间说明数据不可信（老库未回填、探测失败、坏文件），
+ * 一律按「不知道帧率」处理 —— 前端退回 P5.15 的按秒拖动，不吸帧、不显示帧号。
+ */
+export const FPS_MIN = 1
+export const FPS_MAX = 240
+/** 精细拖动（Shift）的灵敏度分母：同一像素位移只前进 1/10 的时长 */
+export const FINE_DRAG_ZOOM = 10
+/** 帧级 seek 的合并上限：一帧落地一次 ≈ 60 次/秒（rAF 合并，见 createRafSeek） */
+export const SEEK_FRAME_MS = 16
+
+/**
+ * 帧率归一化：null / '' / 0 / 负数 / 超范围 → 0（= 不知道）。
+ * 为什么不用 FRAME_FALLBACK_SEC 兜成 30：拿 30 去吸 23.976 的片会越拖越错，
+ * 「不知道」比「猜错」好 —— 不知道时前端本来就会退回按秒拖动。
+ */
+export function normFps(fps) {
+  const f = num(fps)
+  if (f == null || f < FPS_MIN || f > FPS_MAX) return 0
+  return f
+}
+
+/** 时间（秒）→ 帧号：四舍五入到最近的一帧；帧率未知返回 null */
+export function frameOf(sec, fps) {
+  const f = normFps(fps)
+  if (!f) return null
+  const s = num(sec)
+  if (s == null) return null
+  return Math.max(0, Math.round(s * f))
+}
+
+/** 帧号 → 时间（秒）：frameOf 的逆运算；帧率未知返回 null */
+export function frameToSec(frame, fps) {
+  const f = normFps(fps)
+  if (!f) return null
+  const n = num(frame)
+  if (n == null) return null
+  return Math.max(0, n) / f
+}
+
+/** 半帧时长（秒）：snap 后与目标差小于它就算「同一帧」，用来避免同一帧上反复 seek */
+export function halfFrameSec(fps) {
+  const f = normFps(fps)
+  return f ? 0.5 / f : 0
+}
+
+/**
+ * 帧级吸附：t' = round(t × fps) / fps（P5.16 的核心公式）。
+ * - 帧率未知（0 / 空 / 越界）→ **原样返回**（前端行为退回按秒拖动）；
+ * - 负数夹到 0（进度条不会有负数，但转码流起点算错时会）；
+ * - 结果是**精确商**（不四舍五入到毫秒）：四舍五入会破坏「落在栅格上」这条性质
+ *   （fps=30 下 round 到 6 位小数后 s×fps 与整数帧差 1.5e-5，已经不是那一帧了），
+ *   而 double 的精度（≈1e-13s）比浏览器 currentTime 的实际分辨率细得多。
+ */
+export function snapToFrame(sec, fps) {
+  const s = num(sec)
+  const f = normFps(fps)
+  if (!f) return s == null ? 0 : Math.max(0, s)
+  const n = Math.max(0, Math.round((s == null ? 0 : s) * f))
+  return n / f
+}
+
+/**
+ * 两个时间是否落在同一帧上（容差 = 半帧）。
+ * 拖动时每次 mousemove 都算出一个落点，同一帧内的落点不该再写一次 currentTime
+ * （4K 片每次 seek 都要重解一个 GOP，白写一次就是一次卡顿）。
+ */
+export function sameFrame(a, b, fps) {
+  const x = num(a)
+  const y = num(b)
+  if (x == null || y == null) return false
+  const f = normFps(fps)
+  if (!f) return Math.abs(x - y) < 1e-3
+  return Math.round(x * f) === Math.round(y * f)
+}
+
+/**
+ * 时间码 hh:mm:ss:ff（帧号两位）。
+ *
+ * 口径（与 snapToFrame 同一张网格，只差一个 1e-3 帧的容差）：
+ *   k = floor(sec×fps + 1e-3)      —— 这一刻**所在**的帧号（floor 语义，落在哪一帧就显示哪一帧）
+ *   ss = floor(k / fps + 1e-9)     —— 该帧所在的整秒（时间码的秒位由帧号反推，不是 floor(sec)，
+ *                                     否则非整数帧率下秒位与帧位会各说各话）
+ *   ff = round(k - ss×fps)         —— 秒内帧位（0…fps-1）
+ *
+ * 为什么不是裸的 floor((sec×fps) % fps)：
+ *   Chrome 把 currentTime 截断到 6 位小数，snap 到第 188 帧（6.266666666…）后读回来是
+ *   6.266666，裸公式算出 187.99998 → ff=07，与实际显示的帧差 1 —— 每一帧边界都会闪。
+ *   +1e-3 帧（0.03ms）足以吸收浏览器的时间截断，又远小于半帧（0.5 帧），
+ *   所以真正落在两帧中间的位置（如 1.999s @30fps = 第 59 帧）仍然按 floor 取。
+ *   实测：1.999@30 → 00:00:01:29；2.0@30 → 00:00:02:00；6.266666@30 → 00:00:06:08。
+ *
+ * 帧率未知（0）时退化成 hh:mm:ss（没有帧位可写，不编一个假帧号）。
+ */
+export function timecode(sec, fps) {
+  const s = num(sec)
+  const t = s == null || s < 0 ? 0 : s
+  const f = normFps(fps)
+  if (!f) {
+    const whole = Math.floor(t)
+    const hh = Math.floor(whole / 3600)
+    const mm = Math.floor((whole % 3600) / 60)
+    const ss = whole % 60
+    return (hh < 10 ? '0' + hh : String(hh)) + ':' + pad2(mm) + ':' + pad2(ss)
+  }
+  /** 浏览器时间精度容差（帧）：1e-3 帧 ≈ 0.03ms，远小于半帧 */
+  const k = Math.floor(t * f + 1e-3)
+  const total = Math.floor(k / f + 1e-9)
+  const hh = Math.floor(total / 3600)
+  const mm = Math.floor((total % 3600) / 60)
+  const ss = total % 60
+  const head = (hh < 10 ? '0' + hh : String(hh)) + ':' + pad2(mm) + ':' + pad2(ss)
+  let ff = Math.round(k - total * f)
+  ff = Math.min(Math.max(0, ff), Math.ceil(f) - 1)
+  return head + ':' + pad2(ff)
+}
+
+/**
+ * 精细拖动的位移 → 内容时间增量（秒）。
+ * zoom = 1 → 常规灵敏度（整条轨道 = 整个时长）；zoom = 10 → 同一像素位移只前进 1/10 时长。
+ * 为什么需要它：2 小时片一个像素 ≈ 216 帧，不降灵敏度的话用户永远落不到某一帧。
+ * width 用**可视轨道宽**（容器宽 - thumb 宽，见 seekTrackGeom），否则两端会偏半个滑块。
+ */
+export function fineDelta(pxDelta, width, duration, zoom) {
+  const px = num(pxDelta)
+  const w = num(width)
+  const d = num(duration)
+  if (px == null || w == null || w <= 0 || d == null || d <= 0) return 0
+  const z = num(zoom)
+  const scale = z != null && z > 0 ? z : 1
+  return round((px / w) * d / scale, 6)
+}
+
+/**
+ * 帧级 seek 的合并器（requestAnimationFrame）：一帧最多落地一次（≈60 次/秒）。
+ * 为什么要它：input 事件率可达 100–1000Hz，逐个写 currentTime 会让 4K 片每次 seek
+ * 都重新解码一个 GOP —— 画面卡住、CPU 打满（P5.16 的性能约束）。
+ * 只保留**最后一次**落点（中间值对用户没有意义，画面只显示最后一帧）。
+ * 定时器可注入 → 可脱离浏览器单测（组件传 window.requestAnimationFrame）。
+ */
+export function createRafSeek(options) {
+  const opt = options || {}
+  const apply = typeof opt.apply === 'function' ? opt.apply : () => {}
+  const requestFrame = typeof opt.requestFrame === 'function'
+    ? opt.requestFrame
+    : (fn) => (typeof requestAnimationFrame === 'function' ? requestAnimationFrame(fn) : setTimeout(fn, SEEK_FRAME_MS))
+  const cancelFrame = typeof opt.cancelFrame === 'function'
+    ? opt.cancelFrame
+    : (id) => {
+        if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(id)
+        else clearTimeout(id)
+      }
+
+  let handle = null
+  let last = null
+  const stats = { applied: 0, coalesced: 0, cancelled: 0, flushed: 0 }
+
+  function fire() {
+    handle = null
+    if (last == null) return
+    const v = last
+    last = null
+    stats.applied += 1
+    apply(v)
+  }
+
+  /** 提交一个落点（覆盖式合并）；返回当前挂起的落点 */
+  function push(value) {
+    const v = num(value)
+    if (v == null) return null
+    if (last != null) stats.coalesced += 1
+    last = v
+    if (handle == null) handle = requestFrame(fire)
+    return last
+  }
+
+  /** 立即落地（松手 / 键盘）：不等下一帧，避免「松手后还差一帧才到位」 */
+  function flush() {
+    if (handle != null) {
+      cancelFrame(handle)
+      handle = null
+    }
+    if (last == null) return null
+    const v = last
+    last = null
+    stats.flushed += 1
+    apply(v)
+    return v
+  }
+
+  function cancel() {
+    if (handle != null) {
+      cancelFrame(handle)
+      handle = null
+      stats.cancelled += 1
+    }
+    last = null
+  }
+
+  return {
+    push,
+    flush,
+    cancel,
+    pending: () => last,
+    stats: () => Object.assign({}, stats)
+  }
+}
+

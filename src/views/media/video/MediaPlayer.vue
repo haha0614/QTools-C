@@ -111,18 +111,23 @@
               <input
                 ref="seekEl"
                 class="p-seek"
+                :class="{ 'is-frame': hasFps }"
                 type="range"
                 min="0"
                 :max="seekMax"
-                step="1"
+                :step="seekStep"
                 :value="seekPos"
                 :style="seekFillStyle"
+                :title="seekTipText || seekTitle"
                 aria-label="播放位置"
-                :aria-valuetext="fmtDur(seekPos) + ' / ' + fmtDur(seekDur)"
+                :aria-valuetext="seekAriaText"
+                @pointerdown="onSeekPointerDown"
                 @input="onSeekInput"
                 @change="onSeekCommit"
                 @keydown="onSeekKey"
               />
+              <!-- P5.16 精细拖动提示：pointer-events:none 不挡拖动 / hover 浮层；移动端无 Shift，整块不渲染 -->
+              <div v-if="seekTipText" class="p-fine-tip" :class="{ on: fineDragging }">{{ seekTipText }}</div>
               <!-- P4-B 标记刻度提示：hover 到刻度附近（单点 ±1.2%、区间整段）时在刻度上方显示 'mm:ss–mm:ss · 说明'。
                    刻度本身 pointer-events:none，所以不会挡 range 的 hover 预览与拖动 -->
               <div v-if="markerHover" class="p-marker-tip" :style="floatStyle(markerHover.left / 100)">
@@ -154,6 +159,12 @@
                   @seeked="onClipFrameReady"
                 ></video>
                 <div v-else class="p-hover-img" :style="spriteStyle"></div>
+                <!-- P5.15 精确帧：盖在上面的精灵图切片 / 预览片段之上。
+                     精灵图一格铺 400 格，2 小时片一格 ≈18 秒，只能当零延迟兜底；
+                     debounce 250ms 后向 /media/frame 取真帧，到了就盖上这里（右上角标「精确帧」）。
+                     失败（400/404/503）时这一层不渲染 → 用户看到的还是精灵图切片，不弹任何错。 -->
+                <div v-if="frameExact" class="p-hover-exact" :style="frameImgStyle"></div>
+                <span v-if="frameExact" class="p-preview-exact">精确帧</span>
                 <!-- 底部时间条：大字是**影片内容时间**（07:28），小字才是片段内部时间（片段 0:07 / 0:08） -->
                 <div class="p-preview-bar">
                   <span class="p-preview-t">{{ previewLabelText }}</span>
@@ -219,7 +230,8 @@
               </button>
             </div>
           </span>
-          <span class="p-seek-now">{{ fmtDur(seekPos) }} / {{ fmtDur(seekDur) }}</span>
+          <!-- P5.16：拖动中显示帧级时间码「位置 hh:mm:ss:ff / 总时长」，不拖动时保持原来的 mm:ss 简洁格式 -->
+          <span class="p-seek-now" :class="{ 'is-frame': seekDragging && hasFps }">{{ seekNowText }}</span>
         </div>
 
         <div class="p-ctrlline">
@@ -397,9 +409,19 @@ import {
   clipSeekStep,
   createCtrlAutoHide,
   createGainGraph,
+  createRafSeek,
   createThrottle,
+  fineDelta,
+  FINE_DRAG_ZOOM,
+  frameOf,
   frameStep,
   frameStepSize,
+  frameToSec,
+  halfFrameSec,
+  normFps,
+  sameFrame,
+  snapToFrame,
+  timecode,
   markJumpTarget,
   markerTicks as buildMarkerTicks,
   nextGain,
@@ -412,11 +434,14 @@ import {
   seekPreview,
   seekRatioCss,
   seekThumbPx,
+  seekTrackGeom,
   speedLabel,
   speedStep,
   writeGainLevel,
   writeSpeedLevel
 } from './playerExtras'
+// P5.15：hover 精确帧的调度（debounce 250ms / LRU 60 张 / 同秒去重 / 失败静默回退，纯逻辑可单测）
+import { createFramePicker, frameSecond } from './framePicker'
 
 const props = defineProps({
   /** 当前播放的视频对象 */
@@ -470,6 +495,16 @@ const qHintVisible = ref(false)
 const seekPos = ref(0)
 const seekDur = ref(0)
 const seekMax = ref(1)
+/**
+ * P5.16 帧率：来自 /api/media/index 的 media_video.fps（由 doc/media_fps.sql + enrich-meta.js 回填）。
+ * 0 = 不知道（老库未回填 / 探测失败）→ 全部行为退回 P5.15：按整秒拖动、不吸帧、不显示帧号。
+ */
+const frameFps = computed(() => normFps(props.video && props.video.fps))
+const hasFps = computed(() => frameFps.value > 0)
+/** 进度条步长：知道帧率就按「一帧」走（否则永远落不到某一帧），不知道时保持整秒 */
+const seekStep = computed(() => (hasFps.value ? 1 / frameFps.value : 1))
+/** 拖动中的响应式镜像（qSeekDragging 是给状态机用的普通变量，模板读不到它） */
+const seekDragging = ref(false)
 /** 自绘控制条用的状态镜像（真值仍以 <video> 为准，事件里同步） */
 const isPlaying = ref(false)
 const volume = ref(1)
@@ -495,23 +530,25 @@ let openedVideo = null
 /* 派生资源（精灵图 / 预览视频）默认不生成，后端 /media/index 给出 hasSprite / hasPreview，
    不可用时这里一律不发请求、不显示浮层，交互与原来完全一致。 */
 
-/** 精灵图固定 10 列 × 10 行、每格 160×90（build-thumbs.js SPRITE） */
-const SPRITE_COLS = 10
-const SPRITE_ROWS = 10
+/** 精灵图固定 20 列 × 20 行、每格 160×90（build-thumbs.js SPRITE，成品 3200×1800）
+    P5.14：10×10 → 20×20（一格覆盖的影片时长从 /100 压到 /400）。产物文件名不变，
+    所以常量改成 20 之后必须整库重生成过精灵图，旧 10×10 产物会整体切错帧。 */
+const SPRITE_COLS = 20
+const SPRITE_ROWS = 20
 const SPRITE_CELLS = SPRITE_COLS * SPRITE_ROWS
 
 const clipEl = ref(null)
 const seekEl = ref(null)
 /**
- * P5.2：悬停与拖动共用**一个**浮层，状态只有这一组（不再有 hover/clip 两套开关）。
+ * P5.14：浮层**只在悬停（未按下）时**出现，拖动中不再显示 —— 拖动时视频画面本身就跟手
+ * （原画档 onSeekInput 直接写 currentTime），浮层只是把同一件事再重复一遍，还挡住进度与时间码。
+ * 状态因此收敛成三个（原来的 previewSource：hover / drag 已不需要）：
  * - previewMode：'' 不显示 / 'clip' 预览片段（有 pv2）/ 'sprite' 精灵图切片（无 pv2 的降级）
  * - previewOn：显示开关（落到 v-show）；previewMode 为空时整块不进 DOM
- * - previewSource：'hover' 悬停（节流、移动端不显示）/ 'drag' 拖动（即时）
  * - previewRatio：浮层锚点比例（0–1），内容时间标签与片段 seek 都由它算（见 playerExtras.seekPreview）
  */
 const previewMode = ref('')
 const previewOn = ref(false)
-const previewSource = ref('')
 const previewRatio = ref(0)
 /** 预览片段自身时间（秒）：只喂给浮层底部的小字「片段 0:03 / 0:08」，不再当进度显示 */
 const clipTime = ref(0)
@@ -527,7 +564,7 @@ const hasPreview = computed(() => !!(props.video && props.video.hasPreview))
 /* hover 门槛只看断点，不看 (hover:hover)/(pointer:fine)：
    旧实现是一次性 matchMedia('(hover: hover) and (pointer: fine)')，在触屏笔记本 / 远程桌面 /
    主指针被识别成 coarse 的桌面浏览器上恒为 false —— 卡片因此永远不出现（修复的根因之一）。
-   现在桌面宽度一律允许，≤768px 断点只保留拖动预览（样式再兜一层 display:none）。 */
+   现在桌面宽度一律允许；≤768px 断点整块隐藏浮层（触屏没有 hover，拖动也不再显示，样式再兜一层）。 */
 const mobileMq =
   typeof window !== 'undefined' && typeof window.matchMedia === 'function'
     ? window.matchMedia('(max-width: 768px)')
@@ -550,19 +587,13 @@ const previewCaptionText = computed(() =>
   previewMode.value === 'clip' ? clipCaption(clipTime.value, previewInfo.value.clipDur) : ''
 )
 /** 是否真的显示浮层：悬停时若正好命中标记（要出标记提示条）就让位，避免两条浮层抢同一位置抖动 */
-const previewShown = computed(
-  () => previewOn.value && !(previewSource.value === 'hover' && !!markerHover.value)
-)
-const previewClass = computed(() => [
-  previewMode.value === 'clip' ? 'is-clip' : 'is-sprite',
-  previewSource.value === 'hover' ? 'is-hover' : 'is-drag'
-])
+const previewShown = computed(() => previewOn.value && !markerHover.value)
+/** 浮层只有悬停一种来源：is-hover 恒亮（≤768px 的样式靠它整块隐藏），is-clip / is-sprite 标注内容类型 */
+const previewClass = computed(() => [previewMode.value === 'clip' ? 'is-clip' : 'is-sprite', 'is-hover'])
 /** 是否具备浮层资源（有 pv2 或有精灵图）：两者都无时整块浮层不进 DOM，也不发任何请求 */
 const previewAvailable = computed(() => !!(hasPreview.value || hasSprite.value))
-/** 1px 指示线只在「指针在条上」时出现，拖动中也跟手 */
-const hoverLineVisible = computed(
-  () => previewShown.value && previewSource.value === 'hover' && canHover.value
-)
+/** 1px 指示线只在「指针在条上且能 hover」时出现（拖动中不出现：拖动不出浮层，划线只会干扰） */
+const hoverLineVisible = computed(() => previewShown.value && canHover.value)
 
 /* P4.4 进度条几何：thumb 直径由 playerExtras 的唯一常量决定（桌面 14px / 窄屏 10px），
    以 CSS 变量落到 .p-seek-col 上 —— 进度条、标记轨、刻度层、浮层锚点读的是同一组数字。
@@ -574,6 +605,34 @@ const seekVars = computed(() => ({
   '--seek-thumb': thumbPx.value + 'px',
   '--thumb-r': thumbPx.value / 2 + 'px'
 }))
+
+/**
+ * P5.16 进度条右侧时间码：
+ *   拖动中 → 「位置 hh:mm:ss:ff / 总时长」（帧号要两位，才看得出落在哪一帧）；
+ *   不拖动 → 保持原来的「mm:ss / mm:ss」（fmtDur 对未知时长仍返回 --:--，行为不变）；
+ *   fps 未知 → 一直用简洁格式（不知道帧率就不编帧号）。
+ */
+const seekNowText = computed(() => {
+  const fps = frameFps.value
+  if (fps && seekDragging.value) {
+    return '位置 ' + timecode(seekPos.value, fps) + ' / ' + timecode(seekDur.value || 0, fps)
+  }
+  return fmtDur(seekPos.value) + ' / ' + fmtDur(seekDur.value)
+})
+
+/** 进度条 title：无 fps 时不能承诺「精细」，如实说明按整秒拖动 */
+const seekTitle = computed(() =>
+  hasFps.value ? 'Shift+拖动 = 精细（落到帧）' : '播放位置（该片未探测到帧率，按整秒拖动）'
+)
+
+/** 无障碍文本：知道帧率时补上时间码与帧号（读屏用户也能知道落在哪一帧） */
+const seekAriaText = computed(() => {
+  const fps = frameFps.value
+  const base = fmtDur(seekPos.value) + ' / ' + fmtDur(seekDur.value)
+  if (!fps) return base
+  const n = frameOf(seekPos.value, fps)
+  return timecode(seekPos.value, fps) + '（第 ' + (n == null ? 0 : n) + ' 帧） / ' + fmtDur(seekDur.value)
+})
 
 /** 进度条已播放部分（CSS 渐变的断点）：原生 appearance 关掉后自己画填充，亮暗都跟 --accent */
 const seekFillStyle = computed(() => {
@@ -620,8 +679,81 @@ const hoverLineStyle = computed(() => ({
 
 /* P5.2：悬停节流。mousemove 几乎一帧一次，直接 seek 预览片段会疯狂抖动；
    80ms + 覆盖式尾部补发（createThrottle 在 playerExtras，可脱离浏览器单测）。
-   拖动**不**走节流：拖拽要跟手，且 input 事件本身频率有限。 */
+   P5.14 起拖动完全不碰浮层，所以拖拽不需要节流，也不必为它留后门。 */
 const hoverPreview = createThrottle({ intervalMs: HOVER_PREVIEW_MIN_MS })
+
+/* ------------------------------------------------- P5.15 hover 精确帧（按需实时取帧） */
+/* 为什么不是更密的精灵图：hover 要精确到 1 秒，2 小时片 = 7200 格，单图放不下；多图方案
+   磁盘 1-2GB、生成 10 小时。所以改成「精灵图零延迟兜底 + 250ms 后取真帧 + 按整秒永久缓存」。
+   请求侧五道闸全在 framePicker.js（debounce / 同秒去重 / LRU / in-flight / 失败记忆），
+   这里是纯胶水：拿到就盖上，失败就什么都不做。 */
+const frameExact = ref(false)
+const frameUrl = ref('')
+/** 当前「想要的」帧键（id:整秒）：迟到的响应按它过滤，避免鼠标已经移开还盖上旧帧 */
+const wantedFrameKey = ref('')
+
+const framePicker = createFramePicker({
+  urlOf: (id, sec) => api.frameUrl(id, sec),
+  // 用 <img> 预加载：图进了浏览器缓存，换成 background-image 时零延迟；失败（4xx/5xx）走 onerror
+  load: (url, key, done) => {
+    if (typeof Image !== 'function') {
+      done(false)
+      return
+    }
+    const img = new Image()
+    img.onload = () => done(true)
+    img.onerror = () => done(false)
+    img.src = url
+  },
+  onFrame: ({ key, url }) => {
+    if (key !== wantedFrameKey.value) return // 鼠标已经移到别的秒了，迟到的帧丢弃
+    frameUrl.value = url
+    frameExact.value = true
+  },
+  // 失败静默回退：精灵图切片已经在下面了，这里什么都不做（不弹错、不重试同一个键）
+  onFallback: ({ key }) => {
+    if (key !== wantedFrameKey.value) return
+    frameExact.value = false
+  }
+})
+
+/** 精确帧的图像层样式（480 宽 jpeg，160×90 的卡片里 cover 填满） */
+const frameImgStyle = computed(() => ({
+  backgroundImage: 'url("' + frameUrl.value + '")'
+}))
+
+/**
+ * 悬停到 ratio 处安排一次取帧
+ * 门槛与浮层完全一致（移动端 / 无派生资源 / 拖动中都不发请求，判据唯一实现在 canRequestFrame）
+ */
+function scheduleFrame(ratio) {
+  const id = props.video && props.video.id
+  const info = seekPreview(ratio, seekDur.value || 0, clipDur)
+  if (!id || info.labelSec == null) {
+    frameExact.value = false
+    return
+  }
+  const sec = frameSecond(info.labelSec, seekDur.value || 0)
+  wantedFrameKey.value = id + ':' + sec
+  const res = framePicker.schedule(id, sec, {
+    dragging: qSeekDragging,
+    mobile: isMobile.value,
+    available: previewAvailable.value
+  })
+  // 没命中缓存就先退回兜底内容（精灵图切片 / 预览片段），等帧到了再盖上
+  if (res.showed !== 'cache') frameExact.value = false
+}
+
+/* 换片：清空精确帧缓存与失败记忆（上一部片的图留着只是占内存，键里虽然带 id 也不会串味） */
+watch(
+  () => props.video && props.video.id,
+  () => {
+    framePicker.reset()
+    wantedFrameKey.value = ''
+    frameUrl.value = ''
+    frameExact.value = false
+  }
+)
 
 /** 这一部片能用哪种浮层：有 pv2 用预览片段，没有就降级精灵图切片，都没有就不显示 */
 function previewModeFor() {
@@ -659,10 +791,10 @@ function seekClip(ratio) {
 }
 
 /**
- * 显示（或更新）浮层：悬停与拖动都走这里，所以永远只有一个浮层。
- * source='hover' 只在桌面断点生效（移动端没有 hover，保持仅拖动显示）。
+ * 显示（或更新）浮层：只有悬停会调到它（P5.14 起拖动不出浮层），所以永远只有一个浮层。
+ * 移动端没有 hover，浮层在 ≤768px 一律不显示（样式再兜一层 display:none）。
  */
-function showPreview(ratio, source) {
+function showPreview(ratio) {
   const mode = previewModeFor()
   if (!mode) {
     hidePreview()
@@ -670,28 +802,33 @@ function showPreview(ratio, source) {
   }
   const r = Math.min(1, Math.max(0, Number(ratio) || 0))
   previewMode.value = mode
-  previewSource.value = source
   previewRatio.value = r
   previewOn.value = true
   if (mode === 'clip') seekClip(r)
+  scheduleFrame(r)
 }
 
 function hidePreview() {
   previewOn.value = false
-  previewSource.value = ''
+  // 浮层收起 = 这次 hover 结束了：撤掉待发取帧（已发出去的请求落回来也按 wantedFrameKey 丢弃）
+  framePicker.leave()
+  frameExact.value = false
 }
 
-/** 悬停进度条（不按下）：同样显示预览；节流到 80ms 一次，避免疯狂 seek */
+/** 悬停进度条（不按下）：显示预览；节流到 80ms 一次，避免疯狂 seek */
 function onSeekHover(e) {
+  // P5.16「Shift+拖动 = 精细」提示：只要指针在进度条区域就出，与有没有预览资源无关
+  seekTipOn.value = true
   if (!canHover.value || !previewAvailable.value) return
-  if (qSeekDragging) return // 拖动中由 onSeekInput 驱动，别互相抢
+  if (qSeekDragging) return // 拖动中由 onSeekInput 收掉浮层，别互相抢
   const ratio = ratioFromEvent(e)
-  hoverPreview.run(() => showPreview(ratio, 'hover'))
+  hoverPreview.run(() => showPreview(ratio))
 }
 
 function onSeekLeave() {
+  seekTipOn.value = false
   hoverPreview.cancel()
-  if (qSeekDragging) return // 拖动可能拖出条外，浮层跟着拖动而不是消失
+  if (qSeekDragging) return // 拖动中指针可能拖出条外：由 onSeekInput / onSeekCommit 管
   hidePreview()
 }
 
@@ -795,13 +932,23 @@ function beginQHint() {
 
 /* ---------------------------------------------------------------- 进度条 */
 
+/**
+ * 内容时间 → 进度条 value（P5.16）：知道帧率时保留帧栅格上的小数，
+ * 否则沿用原来的整秒（seekMax 也是整秒，两者口径必须一致，否则滑块会自己跳一下）。
+ */
+function seekPosOf(sec) {
+  const t = Number(sec) || 0
+  return hasFps.value ? snapToFrame(t, frameFps.value) : Math.round(t)
+}
+
 function updateSeekUi() {
   const dur = contentDur() || 0
-  if (dur > 0) seekMax.value = Math.round(dur)
+  // 上限沿用原来的整秒（round）：改成 ceil 会让滑块能拖到时长之外（画面已结束却还能前进）
+  if (dur > 0) seekMax.value = Math.max(1, Math.round(dur))
   seekDur.value = dur
   if (qSeekDragging) return
   const pos = absPos()
-  if (isFinite(pos) && pos >= 0) seekPos.value = Math.round(pos)
+  if (isFinite(pos) && pos >= 0) seekPos.value = seekPosOf(pos)
 }
 
 /** 原画模式 seek：直写 currentTime，浏览器按 Range 取新位置（不重开流、不动 streamStart） */
@@ -818,7 +965,7 @@ function seekOrigTo(sec) {
   } catch {
     /* 忽略：未就绪的流拒绝赋值 */
   }
-  seekPos.value = Math.round(t)
+  seekPos.value = seekPosOf(t)
 }
 
 /* ---------------------------------------------------------------- 换源 */
@@ -988,6 +1135,8 @@ onBeforeUnmount(() => {
   // P4-B：释放请求的帧回调与 WebAudio 图（不释放会一直占着 AudioContext，Chrome 上限 6 个）
   stopFrameSampling()
   closeAudioGraph()
+  // P5.15：撤掉取帧定时器并清空 LRU（不撤的话卸载后仍会补发一次请求、回调写到旧组件的 ref 上）
+  framePicker.reset()
   const el = videoEl.value
   const v = openedVideo || props.video
   if (v) savePosFor(v)
@@ -1017,31 +1166,138 @@ function onQualityChange(e) {
 
 /* ---------------------------------------------------------------- 拖动 */
 
+/**
+ * 帧级 seek 的落点合并：拖动期间的 seek 只按动画帧落地（≤60 次/秒）。
+ * 为什么必须合并：input 事件率随指针/系统而变（实测 120–1000Hz），逐个写 currentTime
+ * 会让 4K 片每次都重解一个 GOP —— 画面卡顿、CPU 打满（P5.16 的性能约束）。
+ */
+const seekRaf = createRafSeek({ apply: (t) => seekOrigTo(t) })
+
 function onSeekInput(e) {
+  // P5.16：Shift 精细拖动是「接管」手势，原生 range 的 value 变化一律忽略
+  if (fineDrag.active) return
   qSeekDragging = true
+  seekDragging.value = true
   syncCtrlState()
-  const target = Number(e.target.value) || 0
+  // P5.16 帧级：value 是连续值（step = 1/fps），这里再吸一次帧栅格，
+  // 保证 currentTime 恰好 = round(t*fps)/fps（浏览器对 step 的取整有浮点误差）。
+  const target = snapToFrame(Number(e.target.value) || 0, frameFps.value)
   seekPos.value = target
-  // 拖动即露浮层（不节流）：比例 = 当前进度 / 总时长（与松手后的 seek 目标同源）；
-  // 悬停的待发任务先取消，避免拖动结束后又补发一次悬停位置
+  // P5.14：拖动中**不显示**预览浮层 —— 原画档拖动即写 currentTime，视频画面本身就跟手，
+  // 浮层只是把同一帧再画一遍（还挡住进度条与时间码）。这里做两件事：
+  //   1. 取消悬停的待发任务，避免松手后又按旧位置补发一次；
+  //   2. 把拖动前 hover 出来的浮层立即收掉（拖动一开始画面就是预览，浮层必须让位）。
   hoverPreview.cancel()
-  showPreview(seekMax.value > 0 ? target / seekMax.value : 0, 'drag')
-  // 原画：拖动即写 currentTime；转码流只能松手后重开流（拖动中不动 currentTime，不动 offset）
-  if (!isTranscode.value) seekOrigTo(target)
+  hidePreview()
+  // 原画：拖动即写 currentTime（经 rAF 合并）；转码流只能松手后重开流（拖动中不动 offset）
+  if (!isTranscode.value) seekRaf.push(target)
 }
 
 function onSeekCommit(e) {
+  commitSeekTo(snapToFrame(Number(e.target.value) || 0, frameFps.value))
+}
+
+/**
+ * 松手落地（原生拖动 / Shift 精细拖动 / 键盘共用）。
+ * 先 cancel 掉挂起的合并落点再同步写最终位置：否则最后一帧的挂起值会在 commit 之后
+ * 才落地，覆盖掉这里的精确位置（表现为「松手后跳一下」）。
+ * 这里用 cancel 而不是 flush：flush 会先写一次旧位置，等于一次多余的 4K seek。
+ */
+function commitSeekTo(target) {
   qSeekDragging = false
+  seekDragging.value = false
   syncCtrlState()
   hidePreview()
-  const target = Number(e.target.value) || 0
+  // P5.14：松手即回到 hover 行为。指针通常还停在条上，下一次 mousemove 才会重新出图，
+  // 这里按松手位置直接补一次悬停浮层（不经过 hover 的节流窗口），免得「松手后画面没了」像卡住。
+  restoreHoverAt(target)
   if (!isTranscode.value) {
+    seekRaf.cancel()
     seekOrigTo(target)
     updateSeekUi()
     return
   }
+  seekRaf.cancel()
   applySource(props.video, target, 0)
   tryPlay()
+}
+
+/* ------------------------------------------------- P5.16 Shift 精细拖动 */
+
+/**
+ * 为什么原生 range 做不到「精细」：指针位置 → value 是浏览器内建的 1:1 映射
+ * （整条轨道 = 整个时长），JS 改不了灵敏度。所以按住 Shift 时**接管**这个手势：
+ * preventDefault 掉原生拖动，按相对位移 dt = fineDelta(dx, 轨道宽, 时长, 10) 算落点，
+ * 于是同一段像素位移只前进 1/10 的时长（2 小时片 1px 从 216 帧降到 ≈22 帧）。
+ * 移动端不启用（没有 Shift），知道帧率才启用（否则 step=1，落点本来就只能是整秒）。
+ */
+const fineDrag = { active: false, startX: 0, startTime: 0, trackW: 0, duration: 0 }
+const fineDragging = ref(false)
+/** 指针是否停在进度条区域（决定「Shift+拖动 = 精细」提示什么时候出现） */
+const seekTipOn = ref(false)
+
+/** 提示文案：画在进度条上方，不抢拖动与浮层（pointer-events:none） */
+const seekTipText = computed(() => {
+  if (isMobile.value || !hasFps.value) return ''
+  if (fineDragging.value) return '精细拖动 ×1/10（Shift）'
+  if (seekTipOn.value || qSeekDragging) return 'Shift+拖动 = 精细'
+  return ''
+})
+
+function onSeekPointerDown(e) {
+  if (!hasFps.value || isMobile.value) return
+  if (!e || !e.shiftKey) return // 普通拖动仍走原生 range：手感、点击跳转、无障碍全部沿用浏览器
+  if (!videoEl.value) return
+  const el = seekEl.value
+  const rect = el && typeof el.getBoundingClientRect === 'function' ? el.getBoundingClientRect() : null
+  const geom = seekTrackGeom(rect ? rect.width : 0, thumbPx.value)
+  const dur = contentDur() || seekMax.value || 0
+  if (!(geom.trackW > 0) || !(dur > 0)) return
+  e.preventDefault() // 掐掉原生拖动（否则 value 还会按 1:1 乱跳）
+  fineDrag.active = true
+  fineDrag.startX = e.clientX
+  fineDrag.startTime = Math.max(0, Math.min(dur, absPos()))
+  fineDrag.trackW = geom.trackW
+  fineDrag.duration = dur
+  fineDragging.value = true
+  qSeekDragging = true
+  seekDragging.value = true
+  syncCtrlState()
+  hoverPreview.cancel()
+  hidePreview()
+  window.addEventListener('pointermove', onFineDragMove)
+  window.addEventListener('pointerup', onFineDragEnd)
+  window.addEventListener('pointercancel', onFineDragEnd)
+}
+
+function onFineDragMove(e) {
+  if (!fineDrag.active) return
+  const dt = fineDelta(e.clientX - fineDrag.startX, fineDrag.trackW, fineDrag.duration, FINE_DRAG_ZOOM)
+  const target = snapToFrame(
+    Math.max(0, Math.min(fineDrag.duration, fineDrag.startTime + dt)),
+    frameFps.value
+  )
+  // 半帧容差：同一帧内的位移不再写一次 currentTime（4K 每次 seek 都要重解 GOP）
+  if (sameFrame(target, seekPos.value, frameFps.value)) return
+  seekPos.value = target
+  if (!isTranscode.value) seekRaf.push(target)
+}
+
+function onFineDragEnd() {
+  if (!fineDrag.active) return
+  fineDrag.active = false
+  fineDragging.value = false
+  window.removeEventListener('pointermove', onFineDragMove)
+  window.removeEventListener('pointerup', onFineDragEnd)
+  window.removeEventListener('pointercancel', onFineDragEnd)
+  commitSeekTo(seekPos.value)
+}
+
+/** 松手后恢复悬停浮层：移动端 / 无预览资源时什么都不做（与 hover 同一套门槛） */
+function restoreHoverAt(pos) {
+  if (!canHover.value || !previewAvailable.value) return
+  hoverPreview.cancel()
+  showPreview(seekMax.value > 0 ? Number(pos) / seekMax.value : 0)
 }
 
 /** 进度条键盘 ←/→：自己处理并阻断冒泡，避免与页面级快捷键重复跳一次 */
@@ -1050,8 +1306,10 @@ function onSeekKey(e) {
   e.preventDefault()
   e.stopPropagation()
   const step = e.shiftKey ? 15 : 5
+  // P5.16：键盘跳转同样落在帧栅格上（seekRel 内部已 snap），这里再按实际位置回读，
+  // 保证「跳 5 秒」之后滑块与画面在同一帧上（不四舍五入到整秒）。
   seekRel(e.key === 'ArrowLeft' ? -step : step)
-  if (!isTranscode.value) seekPos.value = Math.round(absPos())
+  if (!isTranscode.value) seekPos.value = seekPosOf(absPos())
 }
 
 /* ================================================================================
@@ -1066,6 +1324,7 @@ const SHORTCUTS = [
   { k: '空格', v: '播放 / 暂停' },
   { k: '← / →', v: '后退 / 前进 5 秒（进度条聚焦时仍是 5 秒，Shift 为 15 秒）' },
   { k: 'Shift+← / →', v: '上一帧 / 下一帧（暂停态单帧步进）' },
+  { k: 'Shift+拖动进度条', v: '精细拖动（灵敏度 1/10，落点吸附到帧）' },
   { k: ', / .', v: '上一帧 / 下一帧（与 Shift+← / → 等价，会自动先暂停）' },
   { k: 'A', v: '设 A 点（再按一次 A 清除 A 与 B）' },
   { k: 'B', v: '设 B 点（再按一次 B 只清终点）；播放到 B 自动回跳 A' },
@@ -1445,8 +1704,13 @@ function stepFrame(dir) {
   if (!el) return
   if (!el.paused) el.pause()
   const cur = absPos()
-  const next = frameStep(cur, dir, frameSec.value, contentDur())
-  if (Math.abs(next - cur) < 0.0005) return
+  // P5.16：知道帧率就按**帧号**步进（frameOf → ±1 → 帧时间），比 1/30 的近似步长精确：
+  // 帧率未知时沿用 P4-B 的近似（rvfc 实测 / 1/30 兜底）。
+  const fps = frameFps.value
+  const next = fps
+    ? snapToFrame(frameToSec(frameOf(cur, fps) + dir, fps), fps)
+    : frameStep(cur, dir, frameSec.value, contentDur())
+  if (fps ? sameFrame(next, cur, fps) : Math.abs(next - cur) < 0.0005) return
   seekAbsTo(next, false)
   sampleFrameDuration()
 }
@@ -1746,7 +2010,10 @@ function seekRel(delta) {
   }
   const d = el.duration
   const max = isFinite(d) && d > 0 ? d : 1e9
-  el.currentTime = Math.max(0, Math.min(max, (el.currentTime || 0) + delta))
+  // P5.16：←/→ 与页面级 5 秒跳转的落点也吸到帧栅格（fps 未知时 snapToFrame 原样返回）
+  const target = snapToFrame(Math.max(0, Math.min(max, (el.currentTime || 0) + delta)), frameFps.value)
+  el.currentTime = target
+  seekPos.value = seekPosOf(target)
 }
 
 function adjustVolume(delta) {
@@ -2117,7 +2384,7 @@ defineExpose({
   outline-offset: 3px;
 }
 
-/* P5.2 悬停 / 拖动**共用**的一个浮层（有 pv2 显示预览片段，无 pv2 降级精灵图切片）。
+/* P5.14 悬停浮层（只在 hover 时出现，拖动中不出；有 pv2 显示预览片段，无 pv2 降级精灵图切片）。
    160×90，贴在控制条上方；颜色只取 mediaTheme 变量（= --qt-* 映射），亮暗都可读。
    z-index 6 > 控制条 5（P4.6 的口径），全屏下也在控制条之上，父级都不裁剪（见 .p-seekwrap） */
 .p-preview {
@@ -2145,13 +2412,40 @@ defineExpose({
   z-index: 5;
 }
 
-/* 精灵图单格也是 160×90：background-size 1000% 1000% + background-position 百分比切格，
+/* 精灵图单格也是 160×90：background-size 2000% 2000%（20 列 × 20 行）+ background-position 百分比切格，
    不写死像素，卡片缩放时格子仍对齐 */
 .p-hover-img {
   width: 160px;
   height: 90px;
   background-repeat: no-repeat;
   background-color: var(--bg-3);
+}
+
+/* P5.15 精确帧层：绝对铺满浮层，盖在精灵图切片 / 预览片段之上（兜底先出、真帧后到）。
+   480 宽 jpeg 在 160×90 的卡片里按 cover 裁切，与精灵图单格同尺寸，布局不跳动。 */
+.p-hover-exact {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--bg-3);
+}
+
+/* 「精确帧」小标记：右上角，只在真帧已盖上时出现（用户能分辨这是真帧还是精灵图兜底） */
+.p-preview-exact {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 82%, transparent);
+  color: var(--bg);
+  font-size: 10px;
+  line-height: 1.5;
+  letter-spacing: 0.2px;
 }
 
 /* 预览片段：与精灵图单格同尺寸，画面比例不一致时裁切填满。
@@ -2179,6 +2473,8 @@ defineExpose({
   left: 0;
   right: 0;
   bottom: 0;
+  /* z-index 3 > 精确帧层 1：时间码永远压在画面之上 */
+  z-index: 3;
   display: flex;
   align-items: baseline;
   justify-content: center;
@@ -2205,6 +2501,36 @@ defineExpose({
   font-variant-numeric: tabular-nums;
   font-size: 12px;
   color: var(--fg-dim);
+}
+
+/* P5.16 拖动中的帧级时间码要更醒目一点：等宽数字 + 主文字色（位置是这一刻最重要的信息） */
+.p-seek-now.is-frame {
+  color: var(--fg);
+  letter-spacing: 0.2px;
+}
+
+/* P5.16「Shift+拖动 = 精细」提示：绝对贴在进度条上方，pointer-events:none 所以不挡拖动、不挡浮层。
+   宽度不够时（窄屏）样式兜底隐藏 —— 移动端本来也没有 Shift。 */
+.p-fine-tip {
+  position: absolute;
+  right: 0;
+  top: -16px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  line-height: 14px;
+  color: var(--fg-dim);
+  background: var(--bg-3);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 5;
+}
+
+/* 精细拖动进行中：提示变成「已生效」的强调色，用户能确认手势被接管了 */
+.p-fine-tip.on {
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 0 5px;
 }
 
 /* P4.3 全屏容器：包住 .p-stage（<video>）与 .p-ctrl（自绘控制栏）。
@@ -2405,8 +2731,10 @@ defineExpose({
     left: 10px;
   }
 
-  /* 触屏无 hover：只保留拖动时的浮层（.is-hover 是悬停态，拖动态是 .is-drag） */
-  .p-preview.is-hover,
+  /* 触屏无 hover，且 P5.14 起拖动也不出浮层：窄屏整块隐藏（.p-preview 恒带 .is-hover）。
+     P5.15 起窄屏也不取帧（framePicker 的 canRequestFrame 同一判据），这里只是兜底样式 */
+  .p-preview,
+  .p-preview-exact,
   .p-hover-line {
     display: none;
   }
@@ -2455,6 +2783,10 @@ defineExpose({
 
   .p-q {
     max-width: 96px;
+  }
+
+  .p-fine-tip {
+    display: none;
   }
 
   .p-seek-now {
