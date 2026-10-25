@@ -2043,6 +2043,17 @@ function onKey(e) {
       e.preventDefault()
       playerRef.value.stepFrame(1)
       break
+    /* ---------------- P4.1 新增：视频倍速 [ / ]（增益不再绑快捷键） ---------------- */
+    case '[':
+      if (typing) break
+      e.preventDefault()
+      playerRef.value.changeSpeed(-1)
+      break
+    case ']':
+      if (typing) break
+      e.preventDefault()
+      playerRef.value.changeSpeed(1)
+      break
     case '?':
       if (typing) break
       e.preventDefault()

@@ -9,6 +9,9 @@
  *      所以转码模式下 A/B 点、帧步进、标记刻度都会自动落到内容时间上。
  *
  * 约定：所有函数都不抛异常（存储 / AudioContext 失败降级返回），调用方不需要 try/catch。
+ *
+ * P4.1 新增：视频倍速档位与持久化、增益档位循环、标记轨（进度条下方独立一条）的几何与点击目标。
+ *           增益本身的 WebAudio 链路一行未改，只是入口从「三个按钮」收敛成「一个循环按钮」。
  */
 
 /** 拿不到 requestVideoFrameCallback 时单帧的近似时长（1/30 秒） */
@@ -151,6 +154,16 @@ export function gainText(level) {
   return String(normalizeGain(level)) + '×'
 }
 
+/**
+ * 下一档增益：1× → 1.5× → 2× → 1×。
+ * P4.1 起控制条上只有一个「增益 n×」循环按钮（位置挪到音量滑块旁），不再并排三个按钮。
+ */
+export function nextGain(level) {
+  const cur = normalizeGain(level)
+  const i = GAIN_LEVELS.indexOf(cur)
+  return GAIN_LEVELS[(i + 1) % GAIN_LEVELS.length]
+}
+
 /** 读持久化档位：storage 由调用方注入（window.localStorage / 测试替身），读不到就是 1× */
 export function readGainLevel(storage) {
   try {
@@ -217,7 +230,76 @@ export function volumeFromPercent(pct) {
   return round(clamp(p / 100, 0, 1), 3)
 }
 
+/* ------------------------------------------------------------ 视频倍速 */
+
+/** 倍速档位（视频 playbackRate；P4.1 起占用控制条上原来的「增益」位置） */
+export const SPEED_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2]
+/** 倍速持久化 key（与 ms.gain / ms.q / ms.pos.* 各自独立，互不覆盖） */
+export const SPEED_STORAGE_KEY = 'ms.speed'
+
+/** 档位归一化：落在最近的一档上（脏数据 / 未知值 / 越界值 → 1×） */
+export function normalizeSpeed(level) {
+  const n = num(level)
+  if (n == null) return 1
+  let best = SPEED_LEVELS[0]
+  for (let i = 0; i < SPEED_LEVELS.length; i++) {
+    const s = SPEED_LEVELS[i]
+    if (Math.abs(s - n) < Math.abs(best - n)) best = s
+  }
+  return best
+}
+
+/** 控制条文案：1 → "1.0×"、0.75 → "0.75×"、1.25 → "1.25×"（一位小数够用，两位只在必要时出现） */
+export function speedLabel(level) {
+  const s = normalizeSpeed(level)
+  return (Number.isInteger(s * 10) ? s.toFixed(1) : String(s)) + '×'
+}
+
+/**
+ * 快捷键 [ / ] 的单步：在档位表里前进 / 后退一档（两端夹在 0.5×–2×）。
+ * 档位表本身就是 0.25 网格，只有 1.5× → 2× 是半档；若按 0.25 硬加会出现 1.75× 这种
+ * 不在表里的值，归一化后又回落 1.5×，连按 ] 会卡住不动，所以这里按表走。
+ */
+export function speedStep(cur, dir) {
+  const i = SPEED_LEVELS.indexOf(normalizeSpeed(cur))
+  const sign = dir < 0 ? -1 : 1
+  const next = Math.min(SPEED_LEVELS.length - 1, Math.max(0, i + sign))
+  return SPEED_LEVELS[next]
+}
+
+/** 读持久化倍速：storage 由调用方注入（window.localStorage / 测试替身），读不到就是 1× */
+export function readSpeedLevel(storage) {
+  try {
+    if (!storage || typeof storage.getItem !== 'function') return 1
+    return normalizeSpeed(storage.getItem(SPEED_STORAGE_KEY))
+  } catch {
+    return 1
+  }
+}
+
+/** 写持久化倍速：返回是否写入成功（失败只影响记忆，不影响本次播放） */
+export function writeSpeedLevel(storage, level) {
+  try {
+    if (!storage || typeof storage.setItem !== 'function') return false
+    storage.setItem(SPEED_STORAGE_KEY, String(normalizeSpeed(level)))
+    return true
+  } catch {
+    return false
+  }
+}
+
 /* -------------------------------------------------------------- 标记 */
+
+/**
+ * 标记轨（P4.1：进度条下方那条独立轨道）的尺寸 —— 全工程唯一来源，
+ * 组件只消费这里的常量，别在 SCSS 里另写一套数字。
+ * 单点 3px 通高、区间左右各 2px 实心边、轨道 9px 高（窄屏 6px）、与进度条留 2px。
+ */
+export const LANE_PIN_PX = 3
+export const LANE_HEIGHT_PX = 9
+export const LANE_HEIGHT_PX_MOBILE = 6
+export const LANE_EDGE_PX = 2
+export const LANE_GAP_PX = 2
 
 /** 标记归一化：pos 必须可解析；endPos 只有严格晚于 pos（> AB_MIN_SPAN）才算区间 */
 export function markerSpan(marker) {
@@ -238,10 +320,12 @@ export function markerRangeText(marker, fmt) {
 }
 
 /**
- * 进度条刻度：把标记列表换算成 {key,left,width,title}（百分比，0–100）。
+ * 进度条刻度：把标记列表换算成 {key,left,width,...}（百分比，0–100）。
  * - 单点标记 width=0，区间标记 width>0（用于画一段浅色带）；
  * - title = "01:20–02:10 · 说明"，鼠标 hover 出原生提示，不需要额外的浮层组件；
  * - 时长未知（转码流还没拿到 dur）时返回空数组，不画任何刻度。
+ * P4.1 追加（纯新增字段，旧调用方不受影响）：startSec / endSec 是点击跳转要用的内容秒，
+ * isRange 让模板不必再判 width>0（单点 width 恒为 0，但语义上更好读）。
  */
 export function markerTicks(list, dur, fmt) {
   const d = num(dur)
@@ -261,8 +345,27 @@ export function markerTicks(list, dur, fmt) {
       color: (m && m.color) || '',
       label,
       text: markerRangeText(m, f),
-      title: markerRangeText(m, f) + (label ? ' · ' + label : '')
+      title: markerRangeText(m, f) + (label ? ' · ' + label : ''),
+      startSec: span.start,
+      endSec: span.end,
+      isRange: span.end != null
     })
   })
   return out.sort((x, y) => x.left - y.left)
+}
+
+/**
+ * 点击标记轨上的标记要跳到哪个内容时间（秒），以及下一次点击的「上一条」记忆。
+ * - 单点 → 跳 pos；区间 → 第一次点跳 pos，紧接着再点同一条跳 endPos（连点在同一条上来回）；
+ * - 点到别的标记 / 单点标记都会把记忆清空（next = ''），所以行为只取决于「上一条是不是它」。
+ * 返回 { sec, next }：sec 为 null 表示这条标记没有可用位置（调用方直接忽略）。
+ */
+export function markJumpTarget(item, lastKey) {
+  const start = num(item && item.startSec)
+  if (start == null) return { sec: null, next: '' }
+  const key = item && item.key != null ? String(item.key) : ''
+  const end = num(item && item.endSec)
+  if (end == null) return { sec: Math.max(0, start), next: '' }
+  if (key && lastKey && key === lastKey) return { sec: Math.max(0, end), next: key }
+  return { sec: Math.max(0, start), next: key }
 }
