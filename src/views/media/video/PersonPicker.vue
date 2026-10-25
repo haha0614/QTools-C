@@ -77,7 +77,7 @@
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { HINT_OFF } from '@/composables/useMediaEditPolicy'
-import { PERSON_ROLE_MAX, isAmateurName, isReusedPerson, normalizePersons, normalizeSelection } from './personRules'
+import { PERSON_ROLE_MAX, isReusedPerson, normalizePersons, normalizeSelection } from './personRules'
 import { PERSON_NOT_READY, createPerson, errorText, isNotReady } from './personApi'
 
 const ROLE_MAX = PERSON_ROLE_MAX
@@ -92,12 +92,14 @@ const props = defineProps({
   /** 编辑策略档位：off 只读 / local 只写本地 / full 走接口 */
   level: { type: String, default: 'full' },
   /** 演员接口未就绪（父级探测到 404 / 405）：整块只读 + 提示 */
-  unavailable: { type: Boolean, default: false }
+  unavailable: { type: Boolean, default: false },
+  /** 预填搜索词（深链 / SSR 证据脚本用；正常打开为空串） */
+  initialQuery: { type: String, default: '' }
 })
 
 const emit = defineEmits(['confirm', 'close', 'created', 'notify'])
 
-const q = ref('')
+const q = ref(props.initialQuery || '')
 const picked = ref(normalizePersons(props.selected))
 const creating = ref(false)
 const qEl = ref(null)

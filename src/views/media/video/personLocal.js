@@ -76,13 +76,12 @@ export function writeLocalPersons(id, persons) {
 
 /** 清掉本机全部演员覆盖（含其它 owner 遗留），返回清掉的条数 */
 export function clearAllLocalPersons() {
-  const mine = prefix()
   const doomed = []
   try {
+    // 前缀按全部 owner 清（换过设备标识的旧键也一并清掉），不只清当前 owner
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i)
-      if (!k) continue
-      if (k.indexOf(mine) === 0 || k.indexOf(PERSON_PREFIX) === 0) doomed.push(k)
+      if (k && k.indexOf(PERSON_PREFIX) === 0) doomed.push(k)
     }
   } catch {
     return 0
