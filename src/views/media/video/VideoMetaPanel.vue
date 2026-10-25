@@ -7,7 +7,8 @@
     local —— 只读写 localStorage（ms.org.<ownerKey>.<videoId>），不发任何请求，标题旁显示「本地」；
     full  —— 走接口（PUT /api/media/video/{id}/meta）。
   约定：不碰播放链路——所有请求 silent + try/catch，失败只 toast 提示，绝不阻塞播放；
-        标记新增用「手填 mm:ss + 说明 + 颜色」的最小实现，起点由播放器打开抽屉时的位置预填。
+        标记新增用「手填 mm:ss + 说明 + 颜色」的最小实现；P4.5 起打开抽屉就按当前内容时间
+        自动回填起点（区间再加 1 秒；接近片尾则整段贴到片尾），规则集中在 markFill.js。
 -->
 <template>
   <div class="vp-back" @click="emit('close')"></div>
@@ -164,6 +165,7 @@
             placeholder="mm:ss"
             :disabled="locked"
             aria-label="标记位置 mm:ss"
+            @input="atTouched = true"
           />
           <input
             v-model="markLabel"
@@ -185,9 +187,13 @@
               placeholder="终点 mm:ss"
               :disabled="locked"
               aria-label="标记区间终点 mm:ss"
+              @input="endTouched = true"
             />
             <button class="vp-mini" type="button" :disabled="locked" title="把终点设成此刻的播放位置" @click="fillEndCurrent">
               以当前位置为终点
+            </button>
+            <button class="vp-mini" type="button" :disabled="locked" title="把起点设成此刻的播放位置" @click="fillStartCurrent">
+              以当前位置为起点
             </button>
           </template>
           <button class="vp-mini vp-mini-ok" type="button" :disabled="locked" @click="addMarker">＋ 加标记</button>
@@ -207,6 +213,8 @@ import { readLocalMeta, writeLocalMeta } from '@/composables/useMediaLocalOrg'
 import TagPicker from './TagPicker.vue'
 // P4-B：标记区间（pos–endPos）的归一化与展示文本，与播放器进度条刻度共用同一份逻辑
 import { markerRangeText, markerSpan } from './playerExtras'
+// P4.5：抽屉打开 / 切换标记类型时「自动回填标记时间」的纯函数（单测见 markFill.js 头部说明）
+import { markFillAt } from './markFill'
 
 const props = defineProps({
   /** 当前播放的视频（只需要 id / title，评分与标签兜底取索引里的值） */
@@ -222,7 +230,9 @@ const props = defineProps({
   /** 人物（索引 videos[].persons = [{id,name,role}]）：只读展示，不参与这里的写接口 */
   persons: { type: Array, default: () => [] },
   /** P4-B：取「此刻」的播放位置（页面传 playerRef.getCurrentTime）；缺省回落到 atSec */
-  getCurrentSec: { type: Function, default: null }
+  getCurrentSec: { type: Function, default: null },
+  /** P4.5：取内容总时长（页面传 playerRef.getDuration）；缺省回落到索引里的 video.dur，都没有即 0 = 未知 */
+  getDurSec: { type: Function, default: null }
 })
 
 const emit = defineEmits(['close', 'updated', 'tag-created', 'notify', 'markers'])
@@ -279,6 +289,9 @@ const markColor = ref('#4f9cf9')
 /** P4-B：point = 单点（只写 pos）；range = 区间（pos + endPos） */
 const markMode = ref('point')
 const markEnd = ref('')
+/** P4.5：本次打开内用户手改过起点 / 终点就不再自动覆盖（切换标记类型时清零重填） */
+const atTouched = ref(false)
+const endTouched = ref(false)
 
 const atText = computed(() => fmtPos(props.atSec))
 
@@ -301,20 +314,36 @@ function fmtPos(pos) {
   return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s
 }
 
-/** mm:ss → 秒；接受 mm:ss / m:ss / 纯秒数，非法返回 null */
+/**
+ * P4.5：秒 → 输入框文本。整秒仍然是 mm:ss（与原格式一致）；
+ * 自动回填带小数时补 .t / .tt，避免「底层秒数」在显示时被舍掉（与 DECIMAL(10,2) 对齐）。
+ */
+function fmtInput(pos) {
+  const cs = Math.round(Math.max(0, Number(pos) || 0) * 100)
+  const m = Math.floor(cs / 6000)
+  const rem = cs - m * 6000
+  const ss = Math.floor(rem / 100)
+  const hun = rem - ss * 100
+  let fs = ''
+  if (hun) fs = '.' + (hun < 10 ? '0' + hun : String(hun)).replace(/0$/, '')
+  return (m < 10 ? '0' : '') + m + ':' + (ss < 10 ? '0' : '') + ss + fs
+}
+
+/** mm:ss → 秒；接受 mm:ss / m:ss / 纯秒数，非法返回 null（P4.5：保留 2 位小数，整数输入结果不变） */
 function parsePos(text) {
   const s = String(text == null ? '' : text).trim()
   if (!s) return null
+  const r2 = (v) => Math.round(v * 100) / 100
   const parts = s.split(':')
   if (parts.length === 1) {
     const n = Number(parts[0])
-    return isFinite(n) && n >= 0 ? Math.round(n) : null
+    return isFinite(n) && n >= 0 ? r2(n) : null
   }
   if (parts.length !== 2) return null
   const m = Number(parts[0])
   const sec = Number(parts[1])
   if (!isFinite(m) || !isFinite(sec) || m < 0 || sec < 0 || sec >= 60) return null
-  return Math.round(m * 60 + sec)
+  return r2(m * 60 + sec)
 }
 
 /** 应用（服务端）元信息到本地状态，并把展示所需的最小信息交还页面 */
@@ -471,9 +500,10 @@ function serverMarkers(list) {
   })
 }
 
-/** 用打开抽屉时的播放位置预填 mm:ss */
+/** 用此刻的播放位置填起点（P4.5：保留 2 位小数） */
 function fillCurrentTime() {
-  markAt.value = fmtPos(props.atSec)
+  markAt.value = fmtInput(currentSec())
+  atTouched.value = true
 }
 
 /** 此刻的播放位置：优先用页面给的实时取值（播放器还在播），拿不到就回落到打开抽屉时的位置 */
@@ -489,10 +519,53 @@ function currentSec() {
   return Number(props.atSec) || 0
 }
 
+/** P4.5：内容总时长（秒）；0 = 未知（不做片尾判定，也不夹取） */
+function currentDur() {
+  try {
+    if (typeof props.getDurSec === 'function') {
+      const d = Number(props.getDurSec())
+      if (isFinite(d) && d >= 0) return d
+    }
+  } catch {
+    /* 忽略：页面取值方法异常时按「时长未知」处理 */
+  }
+  const fallback = Number(props.video && props.video.dur)
+  return isFinite(fallback) && fallback > 0 ? fallback : 0
+}
+
+/**
+ * P4.5：打开信息抽屉 / 切换标记类型时自动回填标记时间。
+ * force=true 无视用户手改（切换「单点 ↔ 区间」走这条）；force=false 只补还没被改过的字段
+ * （onMounted 兜一次「元数据晚到才有 duration」的情况）。坐标口径见 markFill.js 头部。
+ */
+function fillTimeline(force) {
+  if (readOnly.value) return
+  if (!force && atTouched.value && endTouched.value) return
+  const fill = markFillAt(currentSec(), currentDur(), markMode.value)
+  if (force || !atTouched.value) {
+    markAt.value = fmtInput(fill.pos)
+    atTouched.value = false
+  }
+  if (force || !endTouched.value) {
+    markEnd.value = fill.endPos == null ? '' : fmtInput(fill.endPos)
+    endTouched.value = false
+  }
+}
+
+/* 切换「单点 ↔ 区间」→ 按新类型重新回填（sync：保证「先切类型、再精确填」的按钮顺序确定） */
+watch(markMode, () => fillTimeline(true), { flush: 'sync' })
+
 /** P4-B：区间标记的「以当前位置为终点」 */
 function fillEndCurrent() {
   markMode.value = 'range'
-  markEnd.value = fmtPos(currentSec())
+  markEnd.value = fmtInput(currentSec())
+  endTouched.value = true
+}
+
+/** P4.5：区间标记的「以当前位置为起点」 */
+function fillStartCurrent() {
+  markAt.value = fmtInput(currentSec())
+  atTouched.value = true
 }
 
 function addMarker() {
@@ -559,7 +632,12 @@ watch(
   { immediate: true }
 )
 
+/* P4.5：setup 期先按 props 回填一次（SSR / 首帧就能看到预填值） */
+fillTimeline(true)
+
 onMounted(() => {
+  // 元数据晚到：duration 打开抽屉时可能还是 0，挂载后按真实时长补/夹一次
+  fillTimeline(false)
   if (!isFull.value) {
     loading.value = false
     return

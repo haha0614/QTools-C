@@ -232,6 +232,7 @@
       :level="editLevel"
       :at-sec="metaAtSec"
       :get-current-sec="currentPlaySec"
+      :get-dur-sec="currentPlayDur"
       :persons="(curVideo && curVideo.persons) || []"
       @close="closeMeta"
       @updated="onMetaUpdated"
@@ -862,6 +863,17 @@ function onMetaMarkers(list, trusted) {
 function currentPlaySec() {
   const pl = playerRef.value
   return pl && typeof pl.getCurrentTime === 'function' ? pl.getCurrentTime() : metaAtSec.value
+}
+
+/** P4.5：内容总时长（秒），供抽屉做片尾判定与终点夹取；播放器没暴露时回落到索引里的 dur */
+function currentPlayDur() {
+  const pl = playerRef.value
+  if (pl && typeof pl.getDuration === 'function') {
+    const d = Number(pl.getDuration())
+    if (isFinite(d) && d >= 0) return d
+  }
+  const d = Number(curVideo.value && curVideo.value.dur)
+  return isFinite(d) && d > 0 ? d : 0
 }
 const toastMsg = ref('')
 let toastTimer = 0

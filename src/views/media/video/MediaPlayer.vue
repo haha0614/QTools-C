@@ -1704,7 +1704,9 @@ defineExpose({
   /** P4.1：页面级快捷键 [ / ] 的入口（dir<0 减速、dir>0 加速） */
   changeSpeed,
   /** 当前内容位置（秒）：信息抽屉「在当前时间加标记」的起点；转码流已加上流起点 */
-  getCurrentTime: absPos
+  getCurrentTime: absPos,
+  /** P4.5：内容总时长（秒）：信息抽屉回填标记「区间终点」与片尾夹取用；转码流取索引里的 dur */
+  getDuration: contentDur
 })
 </script>
 
@@ -1810,8 +1812,9 @@ defineExpose({
   border-top: 1px solid var(--line);
   min-width: 0;
   overflow: visible;
-  /* P4.4：全屏自动隐藏的淡出（200ms）；非全屏永远不会加 .is-ctrl-hidden，等同常驻 */
-  transition: opacity 0.2s ease;
+  /* P4.4：全屏自动隐藏的淡出（200ms）；非全屏永远不会加 .is-ctrl-hidden，等同常驻
+     P4.6：全屏隐藏态加了 transform 位移（覆盖层下沉自身高度），过渡同步扩到 transform */
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .p-ctrlline {
@@ -2087,9 +2090,11 @@ defineExpose({
   background: #000;
 }
 
-/* 全屏时浏览器只渲染被请求的那个元素：容器撑满屏幕、黑底、列布局，
-   控制栏因此在底部固定可见，进度条与上面的标记轨也都在屏幕内。
-   （旧实现把全屏请求发给只包 <video> 的 .p-stage，控制栏是它的兄弟节点，一进全屏就消失。） */
+/* 全屏时浏览器只渲染被请求的那个元素：容器撑满屏幕、黑底、列布局。
+   （P4.3：旧实现把全屏请求发给只包 <video> 的 .p-stage，控制栏是它的兄弟节点，一进全屏就消失。）
+   P4.6：控制栏不再留在流内 —— 它改成绝对覆盖层（见下面的 .p-ctrl 规则）。
+   原因：流内 + 只改 opacity 隐藏时，控制条**仍占高度**，视频区被压短、底部留一条
+   与控制条等高的黑边（用户全屏截图即此）。 */
 .p-fs-wrap:fullscreen,
 .p-fs-wrap:-webkit-full-screen {
   width: 100%;
@@ -2099,20 +2104,42 @@ defineExpose({
   background: #000;
 }
 
+/* 全屏舞台撑满整个全屏区域：唯一个流内子元素（控制条已 absolute），无 padding / 无兄弟占位，
+   视频按原比例 contain（比例不合时由 object-fit 自己 letterbox，属正常）。 */
 .p-fs-wrap:fullscreen .p-stage,
 .p-fs-wrap:-webkit-full-screen .p-stage {
-  flex: 1 1 auto;
+  flex: 1 1 100%;
+  height: 100%;
   min-height: 0;
 }
 
+/* P4.6 全屏控制条 = 覆盖层：脱离文档流、贴底、盖在视频上（z-index 5）。
+   底部渐变（透明 → 半透明黑）保证文字/按钮在亮画面上也可读，且不再挤压视频高度。
+   定位基准：:fullscreen 元素由 UA 样式表置为 position:fixed（顶层渲染），本身就是包含块，
+   所以这里不改 .p-fs-wrap 的 position（作者样式若覆盖成 relative 会破坏全屏尺寸）。 */
 .p-fs-wrap:fullscreen .p-ctrl,
 .p-fs-wrap:-webkit-full-screen .p-ctrl {
-  flex: 0 0 auto;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  padding-top: 10px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  border-top: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.86) 0%,
+    rgba(0, 0, 0, 0.62) 55%,
+    rgba(0, 0, 0, 0) 100%
+  );
 }
 
 /* P4.4 全屏控制条自动隐藏（判定规则见 playerExtras.ctrlCanHide）：
    只在「全屏 + 播放中 + 2.5s 无操作 + 不悬停/不拖动/无焦点/无浮层」时加 .is-ctrl-hidden。
-   淡出用 opacity，pointer-events:none 让点击穿到画面上（= 暂停/播放）；鼠标指针同时隐起，
+   P4.6：隐藏 = opacity:0 + 整体下沉自身高度（translateY(100%)），配合绝对定位，
+   既不留任何布局空间（无黑边），也不让渐变在半透明边缘透出暗影；
+   pointer-events:none 让点击穿到画面上（= 暂停/播放）；鼠标指针同时隐起，
    避免画面正中挂着一个箭头。悬停控制条区域会由 mousemove 立刻把类摘掉，所以点得到。 */
 .p-fs-wrap.is-ctrl-hidden {
   cursor: none;
@@ -2120,6 +2147,7 @@ defineExpose({
 
 .p-fs-wrap.is-ctrl-hidden .p-ctrl {
   opacity: 0;
+  transform: translateY(100%);
   pointer-events: none;
 }
 
