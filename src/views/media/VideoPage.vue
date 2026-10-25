@@ -129,6 +129,7 @@
             :rating="cardMeta(v).rating"
             :tags="cardMeta(v).tags"
             :local="!!cardMeta(v).local"
+            :persons="v.persons || []"
             @open="openPlayer"
             @toggle-fav="toggleFav"
             @select="onCardSelect"
@@ -161,7 +162,7 @@
         ref="sidebarRef"
         :cat-names="catNames"
         :cat-counts="catCounts"
-        :groups="facetGroups"
+        :groups="facetGroupsView"
         :selected-cats="state.cats"
         :selected-facets="state.facets"
         @toggle-cat="onToggleCat"
@@ -229,6 +230,7 @@
       :tags-loading="tagsLoading"
       :level="editLevel"
       :at-sec="metaAtSec"
+      :persons="(curVideo && curVideo.persons) || []"
       @close="closeMeta"
       @updated="onMetaUpdated"
       @tag-created="onTagCreated"
@@ -377,6 +379,26 @@ function matchesFacets(v, facets) {
         if (names.indexOf(a) >= 0) {
           hit = true
           break
+        }
+      }
+      if (!hit) return false
+    } else if (f === '人物') {
+      // 人物（P3-B）：优先匹配索引里的 persons（[{id,name,role}]）；
+      // 索引尚未产出该字段时（后端 P3-A 未就绪）回落到旧的 tags facet，筛选行为与改动前一致。
+      let hit = false
+      for (const p of v.persons || []) {
+        const nm = typeof p === 'string' ? p : p && p.name
+        if (nm != null && names.indexOf(String(nm)) >= 0) {
+          hit = true
+          break
+        }
+      }
+      if (!hit) {
+        for (const t of v.tags || []) {
+          if (t && t[0] === '人物' && names.indexOf(t[1]) >= 0) {
+            hit = true
+            break
+          }
         }
       }
       if (!hit) return false
@@ -695,6 +717,31 @@ const byId = computed(() => new Map(videos.value.map((v) => [v.id, v])))
 const catCounts = computed(() => folderCounts(videos.value))
 const catNames = computed(() => Object.keys(catCounts.value).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN')))
 const facetGroups = computed(() => facetValues(videos.value, facetOrder.value))
+
+/* ---------------------------------------------------------------- 人物 facet（P3-B） */
+/* 人物分组的数据源：以前由索引里的 tags / actors 现推（旧数据），现在优先用 GET /api/media/persons
+   的条目 + 服务端计数。接口未就绪（404 / 连不上）时 personList 保持 null，抽屉完全回落到旧推导，
+   筛选、计数、折叠、搜索框行为都不变 —— 只是「人物」这一组的来源换成了服务端。 */
+const PERSON_FACET = '人物'
+const personList = ref(null)
+
+const personFacetItems = computed(() => {
+  if (!personList.value) return null
+  const items = personList.value
+    .filter((p) => p && p.name)
+    .map((p) => [String(p.name), Number(p.videoCount != null ? p.videoCount : p.video_count) || 0])
+  items.sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'zh-Hans-CN'))
+  return items
+})
+
+/** 抽屉实际用的分组：接口就绪时用服务端「人物」，否则原样返回旧推导结果 */
+const facetGroupsView = computed(() => {
+  const items = personFacetItems.value
+  if (!items || !items.length) return facetGroups.value
+  const out = Object.assign({}, facetGroups.value)
+  out[PERSON_FACET] = items
+  return out
+})
 
 const quickGroups = [
   { field: 'durs', items: DUR_BUCKETS },
@@ -1862,6 +1909,21 @@ async function loadIndex() {
   }
 }
 
+/**
+ * 人物列表（P3-B）：给筛选抽屉的「人物」分组取服务端数据。
+ * 失败一律静默（silent + catch）：后端未部署时保持旧推导，用户不会看到任何报错。
+ */
+async function loadPersonsFacet() {
+  try {
+    const res = await api.listPersons({ silent: true })
+    const body = res && typeof res === 'object' && res.data && typeof res.data === 'object' ? res.data : res
+    const list = Array.isArray(body) ? body : (body && (body.rows || body.list || body.items)) || []
+    personList.value = Array.isArray(list) ? list : []
+  } catch (err) {
+    personList.value = null
+  }
+}
+
 /* =========================================================================
    键盘
    ========================================================================= */
@@ -1977,6 +2039,8 @@ onMounted(() => {
   // 启动时取一次编辑策略：失败回退 full 并在控制台 warn（旧后端行为不变）
   loadEditPolicy()
   loadTags(false)
+  // 人物（P3-B）：与首屏并行，失败不影响任何既有加载
+  loadPersonsFacet()
 })
 
 /** 策略晚于首屏到达（full → off/local）时补拉一次标签库：local 档要并入本机标签 */

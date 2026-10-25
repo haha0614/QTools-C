@@ -291,6 +291,45 @@ export function deleteFilter(id, options) {
   })
 }
 
+/* --------------------------------------------------------------- 人物（P3-B） */
+/* 契约：GET /api/media/persons → [{id,name,avatar?,videoCount,albumCount}]（站端匿名读）
+        GET /api/media/person/{id} → {id,name,...}
+        GET /api/media/person/{id}/videos|albums?page=&size= → { rows|list, total }（分页）
+   后端未部署人物接口时这几条统一 404：调用方一律 catch + 三态渲染，
+   不抛未捕获异常、不弹全局错误（与 /filters 等未就绪接口一致）。 */
+
+/** 人物列表（人物墙 / 筛选抽屉的人物分组） 后端：GET /api/media/persons */
+export function listPersons(options) {
+  const opt = options || {}
+  return mediaRequest({ url: '/persons', silent: opt.silent !== false })
+}
+
+/** 单个人物 后端：GET /api/media/person/{id} */
+export function getPerson(id, options) {
+  const opt = options || {}
+  return mediaRequest({ url: '/person/' + encodeURIComponent(String(id == null ? '' : id)), silent: opt.silent !== false })
+}
+
+/** 某人物名下的视频（分页） 后端：GET /api/media/person/{id}/videos?page=&size= */
+export function listPersonVideos(id, params, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/person/' + encodeURIComponent(String(id == null ? '' : id)) + '/videos',
+    params: params || {},
+    silent: opt.silent !== false
+  })
+}
+
+/** 某人物名下的相册（分页） 后端：GET /api/media/person/{id}/albums?page=&size= */
+export function listPersonAlbums(id, params, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/person/' + encodeURIComponent(String(id == null ? '' : id)) + '/albums',
+    params: params || {},
+    silent: opt.silent !== false
+  })
+}
+
 /* ------------------------------------------------------------- 资源 URL 构造 */
 /* 全部返回绝对路径（不含 origin），可直接给 <img src> / <video src> 使用。
    规则出处：app.js:862/978/1036/1037/1169，photo.js:99/101/102/103，profile.js:82-84。 */
@@ -400,6 +439,11 @@ const mediaApi = {
   listFilters,
   saveFilter,
   deleteFilter,
+  // 人物（P3-B）
+  listPersons,
+  getPerson,
+  listPersonVideos,
+  listPersonAlbums,
   // URL 构造
   videoThumbUrl,
   spriteUrl,

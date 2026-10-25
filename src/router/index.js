@@ -71,6 +71,20 @@ const routes = [
         component: () => import('../views/media/PhotosPage.vue'),
         meta: { title: '媒体站 · 图片站', bleed: true }
       },
+      // 人物（P3-B）：人物墙 + 人物详情（该人物的视频 / 相册网格）。
+      // 两条都标 bleed：人物墙是整幅网格，与视频库 / 图片站同一套贴边规则。
+      {
+        path: 'media/persons',
+        name: 'MediaPersons',
+        component: () => import('../views/media/PersonsPage.vue'),
+        meta: { title: '媒体站 · 人物', bleed: true }
+      },
+      {
+        path: 'media/person/:id',
+        name: 'MediaPersonDetail',
+        component: () => import('../views/media/PersonDetailPage.vue'),
+        meta: { title: '媒体站 · 人物详情', bleed: true }
+      },
       // 旧的媒体站「我的」已升级为全站个人中心 /me，旧链接不失效
       { path: 'media/me', redirect: '/me' },
 

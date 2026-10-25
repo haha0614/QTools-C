@@ -45,6 +45,17 @@
     <div class="card-body">
       <h3 :title="video.title">{{ video.title }}</h3>
       <div class="card-sub">{{ video.folder }} · {{ sizeText }}</div>
+      <!-- 人物（P3-B）：取索引里的 persons 字段，最多 2 个 chip，其余折叠成 +N -->
+      <div v-if="shownPersons.length" class="card-persons">
+        <span
+          v-for="pp in shownPersons"
+          :key="pp.id || pp.name"
+          class="cp-chip"
+          :title="pp.name + (pp.role ? ' · ' + pp.role : '')"
+          >{{ pp.name }}<i v-if="pp.role" class="cp-role">{{ pp.role }}</i></span
+        >
+        <span v-if="restPersonCount" class="cp-chip cp-more" :title="restPersonText">+{{ restPersonCount }}</span>
+      </div>
       <!-- 组织信息：有评分显示 ★N；标签最多 2 个 chip，其余折叠成 +N -->
       <div v-if="local || rating > 0 || shownTags.length" class="card-meta">
         <!-- local 档：这条组织信息只存在本浏览器（不落服务端），用人眼可见的徽标提示 -->
@@ -84,6 +95,8 @@ const props = defineProps({
   rating: { type: Number, default: 0 },
   /** 标签数组：[{id?,name,color?}] 或字符串名称数组（索引里是名称数组） */
   tags: { type: Array, default: () => [] },
+  /** 人物数组：[{id,name,role}]（索引 videos[].persons；也兼容退化成名字数组） */
+  persons: { type: Array, default: () => [] },
   /** 该条组织信息来自 localStorage（编辑策略 local 档）：显示「本地」徽标 */
   local: { type: Boolean, default: false }
 })
@@ -133,6 +146,17 @@ const normTags = computed(() =>
     // 同一名字可能同时挂在多个 facet 下（历史数据：ASMR 既属分类又属类型），按名称去重
     .filter((t, i, arr) => arr.findIndex((x) => x.name === t.name) === i)
 )
+
+/** 人物归一化：{id?,name,role?} 与纯名字两种形态都收，空名字丢掉 */
+const normPersons = computed(() =>
+  (props.persons || [])
+    .map((p) => (typeof p === 'string' ? { name: p, role: '' } : { id: p && p.id, name: (p && p.name) || '', role: (p && p.role) || '' }))
+    .filter((p) => p.name)
+)
+
+const shownPersons = computed(() => normPersons.value.slice(0, 2))
+const restPersonCount = computed(() => Math.max(0, normPersons.value.length - 2))
+const restPersonText = computed(() => normPersons.value.slice(2).map((p) => p.name + (p.role ? '（' + p.role + '）' : '')).join(' / '))
 
 const shownTags = computed(() => normTags.value.slice(0, 2))
 const restTagCount = computed(() => Math.max(0, normTags.value.length - 2))
@@ -342,6 +366,48 @@ function resBadge(w) {
   flex: 0 0 auto;
   max-width: none;
   border-style: dashed;
+}
+
+/* 人物行：与标签同一套 chip 语言，单独一行避免挤占标题宽度 */
+.card-persons {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cp-chip {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 96px;
+  padding: 0 5px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cp-role {
+  font-style: normal;
+  opacity: 0.75;
+  margin-left: 3px;
+}
+
+.cp-more {
+  flex: 0 0 auto;
+  max-width: none;
+  border-style: dashed;
+  color: var(--fg-dim);
+  border-color: var(--line-2);
+  background: transparent;
 }
 
 /* 选择模式：整卡描边高亮，复选框为纯视觉元素 */

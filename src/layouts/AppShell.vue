@@ -23,7 +23,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 // 图标按名显式导入（本项目没有 unplugin-auto-import，模板里不能凭空出现组件名）
-import { House, Menu, Moon, Picture, Sunny, User, VideoPlay } from '@element-plus/icons-vue'
+import { House, Menu, Moon, Picture, Sunny, User, UserFilled, VideoPlay } from '@element-plus/icons-vue'
 import { APP_INFO } from '@/utils/constants'
 import { useTheme } from '@/composables/useTheme'
 import { useAppAuth } from '@/composables/useAppAuth'
@@ -158,7 +158,9 @@ const NAV_GROUPS = [
     title: '媒体',
     items: [
       { to: '/media', label: '视频库', icon: VideoPlay },
-      { to: '/media/photos', label: '图片站', icon: Picture }
+      { to: '/media/photos', label: '图片站', icon: Picture },
+      // 人物墙（P3-B）：/media/person/:id 也走这条高亮（isActive 的前缀匹配已覆盖）
+      { to: '/media/persons', label: '人物', icon: UserFilled }
     ]
   }
 ]

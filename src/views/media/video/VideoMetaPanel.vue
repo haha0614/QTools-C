@@ -26,6 +26,26 @@
       <div v-if="loading" class="vp-hint">加载中…</div>
       <p v-if="readNote" class="vp-hint vp-note">{{ readNote }}</p>
 
+      <!-- 人物（P3-B）：只读，取索引 videos[].persons = [{id,name,role}]，最多 2 个 + N -->
+      <section v-if="namedPersons.length" class="vp-sec">
+        <h3 class="vp-h3">
+          人物<span class="vp-h3n">{{ namedPersons.length }}</span>
+        </h3>
+        <div class="vp-persons">
+          <span v-for="pp in visiblePersons" :key="pp.id || pp.name" class="vp-person" :title="pp.name + (pp.role ? ' · ' + pp.role : '')">
+            {{ pp.name }}<i v-if="pp.role" class="vp-person-role">{{ pp.role }}</i>
+          </span>
+          <button
+            v-if="namedPersons.length > 2"
+            class="vp-mini vp-person-more"
+            type="button"
+            @click="personsOpen = !personsOpen"
+          >
+            {{ personsOpen ? '收起' : '+' + (namedPersons.length - 2) }}
+          </button>
+        </div>
+      </section>
+
       <!-- 评分：0-10，0 表示未评分 -->
       <section class="vp-sec">
         <h3 class="vp-h3">评分</h3>
@@ -158,7 +178,9 @@ const props = defineProps({
   /** 编辑策略档位：off 只读 / local 只写本地 / full 走接口 */
   level: { type: String, default: 'full' },
   /** 打开抽屉那一刻的播放位置（秒）：「在当前时间加标记」的起点 */
-  atSec: { type: Number, default: 0 }
+  atSec: { type: Number, default: 0 },
+  /** 人物（索引 videos[].persons = [{id,name,role}]）：只读展示，不参与这里的写接口 */
+  persons: { type: Array, default: () => [] }
 })
 
 const emit = defineEmits(['close', 'updated', 'tag-created', 'notify'])
@@ -177,6 +199,17 @@ const saving = ref(false)
 /** 站端只有写接口（GET /video/{id}/meta 仅存在于 /admin/**，匿名访客 401）：读不到就只提示，不阻塞编辑 */
 const readNote = ref('')
 const pickerOpen = ref(false)
+/** 人物折叠：默认只给前 2 个，超出的点 +N 展开（只影响显示，不触发任何请求） */
+const personsOpen = ref(false)
+
+/** 人物归一化：兼容 {id,name,role} 与纯名字两种索引形态 */
+const namedPersons = computed(() =>
+  (props.persons || [])
+    .map((p) => (typeof p === 'string' ? { name: p, role: '' } : { id: p && p.id, name: (p && p.name) || '', role: (p && p.role) || '' }))
+    .filter((p) => p.name)
+)
+
+const visiblePersons = computed(() => (personsOpen.value ? namedPersons.value : namedPersons.value.slice(0, 2)))
 
 /** off 档不发请求也不允许任何写入：控件统一用 locked 置灰 */
 const locked = computed(() => readOnly.value || saving.value)
@@ -803,5 +836,33 @@ onMounted(() => {
 .vp-mark-add :disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+/* 人物 chips（P3-B）：与标签 chips 同一套语言，但只读（人物关系在媒体库里维护） */
+.vp-persons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vp-person {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.vp-person-role {
+  font-style: normal;
+  margin-left: 4px;
+  opacity: 0.75;
+}
+
+.vp-person-more {
+  border-style: dashed;
 }
 </style>
