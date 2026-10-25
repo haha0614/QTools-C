@@ -183,6 +183,16 @@
         </template>
       </FilterSidebar>
 
+      <SavedFilters
+        :items="savedFilters"
+        :loading="savedLoading"
+        :error="savedUnavailable"
+        :suggest-name="suggestSavedName"
+        @apply="onApplySavedFilter"
+        @save="onSaveFilter"
+        @remove="onDeleteSavedFilter"
+      />
+
       <footer class="drawer-foot">
         <button class="btn-ghost" type="button" @click="clearAll">清空全部筛选</button>
         <button class="btn-primary" type="button" @click="closeDrawer">查看 {{ view.length }} 个结果</button>
@@ -245,6 +255,7 @@ import {
   mergeCardMeta
 } from '@/composables/useMediaLocalOrg'
 import FilterSidebar from './video/FilterSidebar.vue'
+import SavedFilters from './video/SavedFilters.vue'
 import QuickFilters from './video/QuickFilters.vue'
 import VideoCard from './video/VideoCard.vue'
 import RecentStrip from './video/RecentStrip.vue'
@@ -1138,6 +1149,158 @@ function clearAll() {
 }
 
 /* =========================================================================
+   保存的筛选（P2-B）：GET / POST / DELETE /api/media/filters
+   降级约定：接口未就绪（后端 P2-A 未部署）时列表区只显示一句提示，
+   保存 / 删除失败仅 toast；筛选状态与列表本身完全不受影响。
+   ========================================================================= */
+
+const savedFilters = ref([])
+const savedLoading = ref(false)
+/** 非空时抽屉列表区显示该提示（读取失败 / 后端未就绪） */
+const savedUnavailable = ref('')
+
+/** 归一化服务端返回：裸数组或 { list | items }，条目只保留 id / name / params */
+function normalizeFilters(res) {
+  const list = Array.isArray(res) ? res : (res && (res.list || res.items)) || []
+  const out = []
+  for (const it of list) {
+    if (!it || it.id == null || !it.name) continue
+    const params = it.params && typeof it.params === 'object' && !Array.isArray(it.params) ? it.params : {}
+    out.push({ id: String(it.id), name: String(it.name), params })
+  }
+  return out
+}
+
+function loadSavedFilters() {
+  savedLoading.value = true
+  return api
+    .listFilters({ silent: true })
+    .then((res) => {
+      savedFilters.value = normalizeFilters(res)
+      savedUnavailable.value = ''
+    })
+    .catch(() => {
+      savedFilters.value = []
+      savedUnavailable.value = '保存筛选暂不可用'
+    })
+    .finally(() => {
+      savedLoading.value = false
+    })
+}
+
+/** 当前筛选状态 → 可存储的 params（字段与 URL hash 一一对应） */
+function currentFilterParams() {
+  const out = {}
+  if (state.q) out.q = state.q
+  if (state.cats.length) out.cats = state.cats.slice()
+  const facets = {}
+  for (const f of Object.keys(state.facets || {})) {
+    if ((state.facets[f] || []).length) facets[f] = state.facets[f].slice()
+  }
+  if (Object.keys(facets).length) out.facets = facets
+  if (state.durs.length) out.durs = state.durs.slice()
+  if (state.ress.length) out.ress = state.ress.slice()
+  if (state.sizes.length) out.sizes = state.sizes.slice()
+  if (state.unsafe) out.unsafe = true
+  if (state.sort) out.sort = state.sort
+  return out
+}
+
+/** 快捷筛选 key → 中文标签（与 QuickFilters 渲染的一致） */
+function bucketLabel(buckets, key) {
+  const hit = buckets.find((b) => b.key === key)
+  return hit ? hit.label : key
+}
+
+/** 默认名称：按当前条件自动拼，如「1080p · ASMR · 有进度优先」 */
+const suggestSavedName = computed(() => {
+  const parts = []
+  if (state.q) parts.push(state.q)
+  for (const c of state.cats) parts.push(c)
+  for (const k of state.ress) parts.push(bucketLabel(RES_TIERS, k))
+  for (const k of state.durs) parts.push(bucketLabel(DUR_BUCKETS, k))
+  for (const k of state.sizes) parts.push(bucketLabel(SIZE_BUCKETS, k))
+  for (const f of Object.keys(state.facets || {})) for (const n of state.facets[f] || []) parts.push(n)
+  if (state.unsafe) parts.push('可能无法播放')
+  if (state.sort && state.sortPinned) {
+    const s = SORTS.find((x) => x.key === state.sort)
+    if (s) parts.push(s.label)
+  }
+  if (!parts.length) return '全部视频'
+  const name = parts.join(' · ')
+  return name.length > 60 ? name.slice(0, 59) + '…' : name
+})
+
+/** 应用：把 params 还原到筛选状态。hash 改由既有的 watch(filterSig) → writeHash 完成，
+    列表重算 / 分块与滚动记忆重置也由既有 watch(filterSig) 负责，这里不重复实现。 */
+function onApplySavedFilter(item) {
+  if (!item) return
+  const p = item.params || {}
+  const play = state.play // 应用筛选不打断正在播放的深链
+  const next = defaultState()
+  if (typeof p.q === 'string') next.q = p.q
+  next.cats = Array.isArray(p.cats) ? p.cats.map(String) : []
+  const facets = {}
+  if (p.facets && typeof p.facets === 'object' && !Array.isArray(p.facets)) {
+    for (const k of Object.keys(p.facets)) {
+      const arr = Array.isArray(p.facets[k]) ? p.facets[k].map(String) : []
+      if (arr.length) facets[k] = arr
+    }
+  }
+  next.facets = facets
+  const pickKeys = (arr, buckets) => {
+    const allowed = buckets.map((b) => b.key)
+    return Array.isArray(arr) ? arr.map(String).filter((k) => allowed.indexOf(k) >= 0) : []
+  }
+  next.durs = pickKeys(p.durs, DUR_BUCKETS)
+  next.ress = pickKeys(p.ress, RES_TIERS)
+  next.sizes = pickKeys(p.sizes, SIZE_BUCKETS)
+  next.unsafe = !!p.unsafe
+  if (p.sort && SORTS.some((s) => s.key === p.sort)) {
+    next.sort = p.sort
+    next.sortPinned = true // 存下来的排序即用户选定，恢复后写进 hash
+  }
+  Object.assign(state, next)
+  state.play = play || ''
+  searchInput.value = state.q
+  showToast('已应用筛选「' + item.name + '」')
+  if (isMobile.value) closeDrawer()
+}
+
+/** 保存：同名覆盖时明确提示（后端按 name 去重） */
+function onSaveFilter(name) {
+  const text = String(name || '').trim()
+  if (!text) {
+    showToast('请填写筛选名称')
+    return
+  }
+  const existed = savedFilters.value.some((it) => it.name === text)
+  api
+    .saveFilter({ name: text, params: currentFilterParams() }, { silent: true })
+    .then(() => {
+      showToast(existed ? '已覆盖同名筛选「' + text + '」' : '已保存筛选「' + text + '」')
+      savedUnavailable.value = ''
+      loadSavedFilters()
+    })
+    .catch(() => {
+      showToast('保存筛选失败：' + (savedUnavailable.value || '请稍后重试'))
+    })
+}
+
+function onDeleteSavedFilter(item) {
+  if (!item || item.id == null) return
+  api
+    .deleteFilter(item.id, { silent: true })
+    .then(() => {
+      showToast('已删除筛选「' + item.name + '」')
+      loadSavedFilters()
+    })
+    .catch(() => {
+      showToast('删除筛选失败：' + (savedUnavailable.value || '请稍后重试'))
+    })
+}
+
+/* =========================================================================
    筛选抽屉（桌面与移动共用）
    滚动锁由下方 [curVideo, drawerOpen] 的 watch 统一处理；
    这里只管开关、焦点进出与 Tab 循环。
@@ -1157,6 +1320,7 @@ function openDrawer() {
   // 避免抽屉遮罩(200)压在全屏播放器之上、把播放器内部交互挡死
   if (curVideo.value) return
   drawerOpen.value = true
+  loadSavedFilters()
   nextTick(() => {
     const list = drawerFocusables()
     if (list.length) list[0].focus()

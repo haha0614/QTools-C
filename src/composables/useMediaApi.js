@@ -258,6 +258,39 @@ export function batchVideoMeta(payload, options) {
   })
 }
 
+/* ------------------------------------------------------- 保存筛选（P2-B） */
+/* 契约：GET /api/media/filters → [{id,name,params}]（站端匿名读）
+        POST /api/media/filters {name,params}（同名覆盖）
+        DELETE /api/media/filters/{id}
+   后端尚未部署（P2-A）时这里只会 reject：调用方一律 silent + catch，只 toast 不阻塞筛选。 */
+
+/** 保存的筛选列表 后端：GET /api/media/filters → [{id,name,params}] */
+export function listFilters(options) {
+  const opt = options || {}
+  return mediaRequest({ url: '/filters', silent: opt.silent !== false })
+}
+
+/**
+ * 保存筛选（同名覆盖，后端按 name 去重） 后端：POST /api/media/filters
+ * @param {{name:string, params:object}} payload
+ * @param {{silent?:boolean}} [options]
+ */
+export function saveFilter(payload, options) {
+  const opt = options || {}
+  const p = payload || {}
+  return mediaRequest({ url: '/filters', method: 'post', data: { name: p.name, params: p.params || {} }, silent: opt.silent !== false })
+}
+
+/** 删除筛选 后端：DELETE /api/media/filters/{id} */
+export function deleteFilter(id, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/filters/' + encodeURIComponent(String(id == null ? '' : id)),
+    method: 'delete',
+    silent: opt.silent !== false
+  })
+}
+
 /* ------------------------------------------------------------- 资源 URL 构造 */
 /* 全部返回绝对路径（不含 origin），可直接给 <img src> / <video src> 使用。
    规则出处：app.js:862/978/1036/1037/1169，photo.js:99/101/102/103，profile.js:82-84。 */
@@ -363,6 +396,10 @@ const mediaApi = {
   getVideoMeta,
   saveVideoMeta,
   batchVideoMeta,
+  // 保存筛选（P2-B）
+  listFilters,
+  saveFilter,
+  deleteFilter,
   // URL 构造
   videoThumbUrl,
   spriteUrl,
