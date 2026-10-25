@@ -6,7 +6,7 @@
 <template>
   <article
     class="card"
-    :class="{ 'is-select': selectMode, 'is-checked': selectMode && selected }"
+    :class="{ 'is-select': selectMode, 'is-checked': selectMode && selected, 'has-pl': playlistBtn }"
     tabindex="0"
     role="button"
     :aria-pressed="selectMode ? selected : undefined"
@@ -56,11 +56,16 @@
         >
         <span v-if="restPersonCount" class="cp-chip cp-more" :title="restPersonText">+{{ restPersonCount }}</span>
       </div>
-      <!-- 组织信息：有评分显示 ★N；标签最多 2 个 chip，其余折叠成 +N -->
+      <!-- 工作室（P5-A）：取索引 videos[].studios（名称数组），最多 1 个 chip，其余折叠成 +N -->
+      <div v-if="shownStudios.length" class="card-studios">
+        <span class="cs-chip" :title="studioText">{{ shownStudios[0] }}<i v-if="restStudioCount" class="cs-more">+{{ restStudioCount }}</i></span>
+      </div>
+      <!-- 组织信息：有评分显示 ★N/100；标签最多 2 个 chip，其余折叠成 +N -->
       <div v-if="local || rating > 0 || shownTags.length" class="card-meta">
         <!-- local 档：这条组织信息只存在本浏览器（不落服务端），用人眼可见的徽标提示 -->
         <span v-if="local" class="cm-local" title="本地编辑：仅保存在本浏览器，清除缓存即消失">本地</span>
-        <span v-if="rating > 0" class="cm-rate" :title="'评分 ' + rating">★{{ rating }}</span>
+        <!-- 评分域 0–100（P5-C）：0 = 未评分，其余显示 ★N/100，单位随数值一起给出，避免与旧 10 分制混淆 -->
+        <span v-if="rating > 0" class="cm-rate" :title="'评分 ' + rating + '/100'">★{{ rating }}<i class="cm-rate-u">/100</i></span>
         <span
           v-for="t in shownTags"
           :key="t.id || t.name"
@@ -72,13 +77,58 @@
         <span v-if="restTagCount" class="cm-tag cm-more" :title="restTagText">+{{ restTagCount }}</span>
       </div>
     </div>
+    <!-- P5.1：卡片右下角「加入播放列表」入口。整个入口 @keydown.stop，
+         按钮自己 @click.stop —— 点它不打开播放器、也不在选择模式下勾选（见 onPlaylistBtn） -->
+    <div v-if="playlistBtn" ref="plWrapEl" class="card-pl" :class="{ 'is-open': plOpen }" @keydown.stop>
+      <button
+        ref="plBtnEl"
+        class="card-pl-btn"
+        :class="{ on: plOpen }"
+        type="button"
+        aria-label="加入播放列表"
+        aria-haspopup="dialog"
+        :aria-expanded="plOpen ? 'true' : 'false'"
+        :title="plTitle"
+        @click.stop="onPlaylistBtn"
+      >
+        <!-- 列表图标：三行 + 行首点，12px 视觉尺寸与 11px 角标同级 -->
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false">
+          <path d="M6 4h8M6 8h8M6 12h8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          <circle cx="2.6" cy="4" r="1.1" fill="currentColor" />
+          <circle cx="2.6" cy="8" r="1.1" fill="currentColor" />
+          <circle cx="2.6" cy="12" r="1.1" fill="currentColor" />
+        </svg>
+      </button>
+      <PlaylistMenuPanel
+        :open="plOpen"
+        :items="plItems"
+        :loading="plLoading"
+        :unavailable="plUnavailable"
+        :blocked="plBlocked"
+        :busy-id="plBusy"
+        :creating="plCreating"
+        :new-name="plNewName"
+        :count="plCount"
+        :up="plUp"
+        :shift="plShift"
+        @close="closeMenu"
+        @pick="onPick"
+        @create="onCreate"
+        @toggle-create="onToggleCreate"
+        @update:new-name="onNameInput"
+      />
+    </div>
     <div v-if="progressPct > 0" class="card-prog"><i :style="{ width: progressPct + '%' }"></i></div>
   </article>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useMediaApi } from '@/composables/useMediaApi'
+import { HINT_OFF } from '@/composables/useMediaEditPolicy'
+// P5.1：卡片入口与工具栏 PlaylistPicker 共用同一份数据源 / 写入口（usePlaylistAdd）
+import PlaylistMenuPanel from './PlaylistMenuPanel.vue'
+import { addedMessage, createdMessage, usePlaylistAdd } from './usePlaylistAdd'
 
 const props = defineProps({
   /** 索引里的单个视频对象（id / title / folder / dur / w / h / size / browserOk） */
@@ -91,17 +141,23 @@ const props = defineProps({
   selectMode: { type: Boolean, default: false },
   /** 选择模式下是否已选中 */
   selected: { type: Boolean, default: false },
-  /** 评分（0 表示未评分，1-10） */
+  /** 评分（0 表示未评分，1–100；P5-C 起值域由 10 扩到 100） */
   rating: { type: Number, default: 0 },
+  /** 工作室名称数组（索引 videos[].studios:[name]；也兼容 [{id,name}] 形态） */
+  studios: { type: Array, default: () => [] },
   /** 标签数组：[{id?,name,color?}] 或字符串名称数组（索引里是名称数组） */
   tags: { type: Array, default: () => [] },
   /** 人物数组：[{id,name,role}]（索引 videos[].persons；也兼容退化成名字数组） */
   persons: { type: Array, default: () => [] },
   /** 该条组织信息来自 localStorage（编辑策略 local 档）：显示「本地」徽标 */
-  local: { type: Boolean, default: false }
+  local: { type: Boolean, default: false },
+  /** P5.1：是否显示右下角「加入播放列表」入口（视频库开；其它复用卡片的页面不开，行为零变化） */
+  playlistBtn: { type: Boolean, default: false },
+  /** 编辑策略档位（off 只提示 / local 由 PlaylistMenuPanel 出闸门文案 / full 正常） */
+  level: { type: String, default: 'full' }
 })
 
-const emit = defineEmits(['open', 'toggle-fav', 'select'])
+const emit = defineEmits(['open', 'toggle-fav', 'select', 'added', 'notify'])
 
 /**
  * 卡片主体点击：选择模式下只发 select（不触发 open），否则打开播放器。
@@ -125,6 +181,141 @@ function onCardKey(ev) {
 }
 
 const api = useMediaApi()
+
+/* ---------------------------------------------------------------- 加入播放列表（P5.1） */
+
+/**
+ * 卡片右下角入口的状态机：
+ *   off 档 —— 按钮可见但点击只提示「仅私有部署可编辑」（不打开菜单、不发请求）；
+ *   local 档 —— 菜单打开，顶部由 usePlaylistAdd 给统一闸门文案（播放列表只存在服务端，本地档不可写）；
+ *   full —— 正常列表 / 新建 / 已加入标记。
+ * 菜单本身（PlaylistMenuPanel）只管画，数据与写操作全部来自 usePlaylistAdd。
+ */
+const {
+  items: plItems,
+  loading: plLoading,
+  unavailable: plUnavailable,
+  busyId: plBusy,
+  newName: plNewName,
+  creating: plCreating,
+  blocked: plBlocked,
+  targetCount: plCount,
+  load: plLoad,
+  openCreate: plOpenCreate,
+  closeCreate: plCloseCreate,
+  addTo: plAddTo,
+  createAndAdd: plCreateAndAdd,
+  reset: plReset
+} = usePlaylistAdd({
+  level: () => props.level,
+  videoIds: () => [props.video.id].filter(Boolean),
+  notify: (msg) => emit('notify', msg)
+})
+
+const plOpen = ref(false)
+/** 向上展开（默认）；按钮上方空间不足时改为向下 —— 菜单不出屏 */
+const plUp = ref(true)
+/** 右对齐会超出视口左侧时的右移量（px） */
+const plShift = ref(0)
+const plWrapEl = ref(null)
+const plBtnEl = ref(null)
+
+const plTitle = computed(() => (props.level === 'off' ? HINT_OFF : '加入播放列表'))
+
+/** 量一次按钮位置，决定向上/向下与水平补正（SSR / 非浏览器环境直接跳过） */
+function measureAnchor() {
+  const el = plBtnEl.value
+  if (!el || typeof el.getBoundingClientRect !== 'function') return
+  const rect = el.getBoundingClientRect()
+  const panelH = 300
+  plUp.value = rect.top >= panelH + 20
+  const panelW = Math.min(248, (typeof window !== 'undefined' && window.innerWidth ? window.innerWidth : 1024) - 24)
+  const leftEdge = rect.right - panelW
+  plShift.value = leftEdge < 8 ? Math.round(8 - leftEdge) : 0
+}
+
+/** 菜单外点击 / Esc / 滚动 / 尺寸变化都关掉：位置是相对卡片算的，滚动后不留在错位状态 */
+function onDocPointer(ev) {
+  const wrap = plWrapEl.value
+  if (wrap && ev && ev.target && wrap.contains(ev.target)) return
+  closeMenu()
+}
+function onDocKey(ev) {
+  if (ev && (ev.key === 'Escape' || ev.key === 'Esc')) closeMenu()
+}
+function bindGlobal() {
+  if (typeof document === 'undefined' || !document.addEventListener) return
+  document.addEventListener('mousedown', onDocPointer, true)
+  document.addEventListener('touchstart', onDocPointer, true)
+  document.addEventListener('keydown', onDocKey, true)
+  window.addEventListener('scroll', closeMenu, true)
+  window.addEventListener('resize', closeMenu)
+}
+function unbindGlobal() {
+  if (typeof document === 'undefined' || !document.removeEventListener) return
+  document.removeEventListener('mousedown', onDocPointer, true)
+  document.removeEventListener('touchstart', onDocPointer, true)
+  document.removeEventListener('keydown', onDocKey, true)
+  window.removeEventListener('scroll', closeMenu, true)
+  window.removeEventListener('resize', closeMenu)
+}
+
+function openMenu() {
+  measureAnchor()
+  plOpen.value = true
+  bindGlobal()
+  plLoad()
+}
+
+function closeMenu() {
+  if (!plOpen.value) return
+  plOpen.value = false
+  plReset()
+  unbindGlobal()
+}
+
+/** 按钮点击：.stop 已在模板上，卡片不会收到事件（不打开播放器、不勾选） */
+function onPlaylistBtn() {
+  if (props.level === 'off') {
+    emit('notify', HINT_OFF)
+    return
+  }
+  if (plOpen.value) closeMenu()
+  else openMenu()
+}
+
+/** 选中一个已有列表：加入后菜单不关，可在同一菜单里继续加到别的列表 */
+async function onPick(p) {
+  const ok = await plAddTo(p)
+  if (ok) emit('added', addedMessage(p && p.name, plCount.value))
+}
+
+async function onCreate() {
+  const made = await plCreateAndAdd()
+  if (!made) return
+  plCloseCreate()
+  emit('added', createdMessage(made.name, plCount.value))
+}
+
+function onToggleCreate() {
+  if (plCreating.value) plCloseCreate()
+  else plOpenCreate()
+}
+
+/** 菜单里改新建名称（显式写 ref，避免模板里对解构 ref 直接赋值） */
+function onNameInput(v) {
+  plNewName.value = String(v == null ? '' : v)
+}
+
+/** off 档是「按钮可见但不可编辑」：档位回落到 off 时把已打开的菜单收掉 */
+watch(
+  () => props.level,
+  (v) => {
+    if (v === 'off') closeMenu()
+  }
+)
+
+onBeforeUnmount(unbindGlobal)
 
 /** 封面加载失败后置位：img 移除、容器加 .noimg 显示「无封面」占位（app.js:1408-1416 的等价行为） */
 const coverFailed = ref(false)
@@ -157,6 +348,17 @@ const normPersons = computed(() =>
 const shownPersons = computed(() => normPersons.value.slice(0, 2))
 const restPersonCount = computed(() => Math.max(0, normPersons.value.length - 2))
 const restPersonText = computed(() => normPersons.value.slice(2).map((p) => p.name + (p.role ? '（' + p.role + '）' : '')).join(' / '))
+
+/** 工作室归一化：索引给名称数组，管理端/详情接口可能给 [{id,name}]，两种都收 */
+const normStudios = computed(() =>
+  (props.studios || [])
+    .map((s) => (typeof s === 'string' ? s : (s && s.name) || ''))
+    .filter((s) => s)
+    .filter((s, i, arr) => arr.indexOf(s) === i)
+)
+const shownStudios = computed(() => normStudios.value.slice(0, 1))
+const restStudioCount = computed(() => Math.max(0, normStudios.value.length - 1))
+const studioText = computed(() => normStudios.value.join(' / '))
 
 const shownTags = computed(() => normTags.value.slice(0, 2))
 const restTagCount = computed(() => Math.max(0, normTags.value.length - 2))
@@ -204,7 +406,10 @@ function resBadge(w) {
   background: var(--bg-2);
   border: 1px solid var(--line);
   border-radius: var(--radius, 10px);
-  overflow: hidden;
+  /* P5.1：右下角「加入播放列表」菜单要能溢出卡片显示，因此不再用 overflow:hidden 裁切；
+     原本靠裁切得到的圆角改由 .thumb（上两角）与 .card-prog（下两角）自己承担，
+     半径取 radius - 1px（等于原先 padding box 的裁切半径），视觉与改动前一致 */
+  overflow: visible;
   cursor: pointer;
   transition: transform 0.12s, border-color 0.12s;
   outline: none;
@@ -223,6 +428,8 @@ function resBadge(w) {
   aspect-ratio: 16 / 10;
   min-height: 0;
   overflow: hidden;
+  /* .card 不再裁切，圆角由封面自己承担（与原先裁切半径对齐） */
+  border-radius: calc(var(--radius, 10px) - 1px) calc(var(--radius, 10px) - 1px) 0 0;
   background: var(--bg);
 }
 
@@ -310,6 +517,7 @@ function resBadge(w) {
   bottom: 0;
   height: 3px;
   background: var(--bg-3);
+  border-radius: 0 0 calc(var(--radius, 10px) - 1px) calc(var(--radius, 10px) - 1px);
 }
 
 .card-prog i {
@@ -345,6 +553,48 @@ function resBadge(w) {
   font-weight: 600;
   line-height: 1.4;
   color: var(--warn);
+  white-space: nowrap;
+}
+
+/* 评分单位：/100 用次级色 + 常规字重，数字本身仍然是主角 */
+.cm-rate-u {
+  margin-left: 1px;
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 400;
+  opacity: 0.72;
+}
+
+/* 工作室行：与人物 / 标签同一套 chip 语言（单行、可省略），最多 1 个 + N */
+.card-studios {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cs-chip {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0 5px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--fg-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cs-more {
+  margin-left: 3px;
+  font-style: normal;
+  opacity: 0.7;
 }
 
 .cm-tag {
@@ -475,9 +725,64 @@ function resBadge(w) {
   opacity: 1;
 }
 
+/* ---------------------------------------------------- 右下角「加入播放列表」（P5.1） */
+
+/* 锚点容器：卡片右下角。position:relative 让菜单（PlaylistMenuPanel 内部 absolute）贴着按钮上/下沿 */
+.card-pl {
+  position: absolute;
+  right: 6px;
+  bottom: 7px;
+  z-index: 8;
+  line-height: 0;
+}
+
+/* 图标按钮：与 11px 角标同级的 20px 圆角方块，半透明底 + hover 高亮；
+   触屏没有 hover，默认就是「常显但半透明」（opacity .8），按下时 .on 变实 */
+.card-pl-btn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bg-3) 86%, transparent);
+  color: var(--fg-dim);
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.12s, color 0.12s, border-color 0.12s, background 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.card-pl-btn:hover,
+.card-pl-btn:focus-visible {
+  opacity: 1;
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.card-pl-btn.on {
+  opacity: 1;
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* 按钮压在卡片右下角，给正文最后一行留出让位，标签 / 工作室 / 人物 chip 不会被按钮盖住 */
+.card.has-pl .card-body > *:last-child {
+  padding-right: 26px;
+}
+
 @media (max-width: 768px) {
   .card-body {
     padding: 6px 7px 7px;
+  }
+
+  /* 触屏：常显但更淡一点，命中区不变 */
+  .card-pl-btn {
+    opacity: 0.72;
   }
 
   .card-body h3 {

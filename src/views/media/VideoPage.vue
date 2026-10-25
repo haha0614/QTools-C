@@ -31,6 +31,16 @@
             <option v-for="s in SORTS" :key="s.key" :value="s.key">{{ s.label }}</option>
           </select>
           <button class="btn-ghost" type="button" @click="clearAll">清空</button>
+          <!-- 播放列表（P5-B）：把「正在播放的这一部」或「已选中的若干部」加入某个播放列表 -->
+          <button
+            class="icon-btn pl-add-btn"
+            type="button"
+            :disabled="readOnlyEdit"
+            :title="playlistAddTitle"
+            @click="openPlaylistPicker"
+          >
+            加入播放列表
+          </button>
           <button
             class="icon-btn sel-btn"
             type="button"
@@ -80,7 +90,7 @@
             @clear-local="onClearLocal"
             @add-tags="(ids) => applyBatchMeta({ addTagIds: ids }, '已加标签')"
             @remove-tags="(ids) => applyBatchMeta({ removeTagIds: ids }, '已移除标签')"
-            @rating="(n) => applyBatchMeta({ rating: n }, n > 0 ? '评分已设为 ' + n + ' 分' : '评分已清除')"
+            @rating="(n) => applyBatchMeta({ rating: n }, n > 0 ? '评分已设为 ' + n + ' 分（满分 100）' : '评分已清除')"
             @created="onTagCreated"
             @notify="showToast"
           />
@@ -107,6 +117,14 @@
             {{ x.label }}<span class="x">×</span>
           </button>
         </div>
+
+        <!-- 播放列表上下文：URL 带 ?playlist=<id> 时，播放器的上一个/下一个按该列表顺序走 -->
+        <div v-if="playlistCtx" class="chips chips-sm playlist-mode">
+          <span class="pl-tag" :title="playlistCtx.name">
+            播放列表：{{ playlistCtx.name }}（{{ playlistCtx.ids.length }} 个 · 按列表顺序）
+          </span>
+          <button class="chip chip-x" type="button" @click="exitPlaylistMode">退出<span class="x">×</span></button>
+        </div>
       </header>
 
       <main class="main">
@@ -130,9 +148,14 @@
             :tags="cardMeta(v).tags"
             :local="!!cardMeta(v).local"
             :persons="v.persons || []"
+            :studios="v.studios || []"
+            :playlist-btn="true"
+            :level="editLevel"
             @open="openPlayer"
             @toggle-fav="toggleFav"
             @select="onCardSelect"
+            @added="onPlaylistAdded"
+            @notify="showToast"
           />
           <div ref="sentinelEl" class="grid-sentinel"></div>
         </div>
@@ -165,8 +188,12 @@
         :groups="facetGroupsView"
         :selected-cats="state.cats"
         :selected-facets="state.facets"
+        :studios="studioItems"
+        :selected-studios="state.studios"
+        :studios-hint="studiosHint"
         @toggle-cat="onToggleCat"
         @toggle-facet="onFacetToggle"
+        @toggle-studio="onStudioToggle"
       >
         <template #quick>
           <div v-if="isMobile" class="quick-head">
@@ -234,10 +261,21 @@
       :get-current-sec="currentPlaySec"
       :get-dur-sec="currentPlayDur"
       :persons="(curVideo && curVideo.persons) || []"
+      :studios="(curVideo && curVideo.studios) || []"
       @close="closeMeta"
       @updated="onMetaUpdated"
       @markers="onMetaMarkers"
       @tag-created="onTagCreated"
+      @notify="showToast"
+    />
+
+    <!-- 加入播放列表（P5-B）：选择已有列表或新建，写入失败只提示，不影响库与播放 -->
+    <PlaylistPicker
+      :open="playlistPickerOpen"
+      :video-ids="playlistTargetIds"
+      :level="editLevel"
+      @close="playlistPickerOpen = false"
+      @added="onPlaylistAdded"
       @notify="showToast"
     />
 
@@ -248,6 +286,7 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useMediaApi } from '@/composables/useMediaApi'
 import { useMediaTrack } from '@/composables/useMediaTrack'
 import { useMediaEditPolicy, LEVEL_OFF, HINT_OFF, HINT_LOCAL } from '@/composables/useMediaEditPolicy'
@@ -270,6 +309,9 @@ import RecentStrip from './video/RecentStrip.vue'
 import MediaPlayer from './video/MediaPlayer.vue'
 import BatchBar from './video/BatchBar.vue'
 import VideoMetaPanel from './video/VideoMetaPanel.vue'
+// P5-B：加入播放列表弹层 + 播放列表顺序纯逻辑（归一化 / 保序重排 / 上一部下一部）
+import PlaylistPicker from './video/PlaylistPicker.vue'
+import { normalizePlaylistDetail, playlistNav } from './video/playlistOrder'
 
 const api = useMediaApi()
 const tk = useMediaTrack()
@@ -429,9 +471,22 @@ function filterVideos(videos, st) {
   const durs = s.durs && s.durs.length ? s.durs : null
   const ress = s.ress && s.ress.length ? s.ress : null
   const sizes = s.sizes && s.sizes.length ? s.sizes : null
+  const studios = s.studios && s.studios.length ? s.studios : null
   const out = []
   for (const v of videos) {
     if (cats && cats.indexOf(v.folder) < 0) continue
+    // 工作室（P5-A）：索引 videos[].studios 是名称数组，命中任意一个即可（同 facet 的「或」，组间「与」）
+    if (studios) {
+      const own = videoStudioNames(v)
+      let hit = false
+      for (const n of own) {
+        if (studios.indexOf(n) >= 0) {
+          hit = true
+          break
+        }
+      }
+      if (!hit) continue
+    }
     if (durs && durs.indexOf(durBucketOf(v.dur)) < 0) continue
     if (ress && ress.indexOf(resTierOf(v.w)) < 0) continue
     if (sizes && sizes.indexOf(sizeBucketOf(v.size)) < 0) continue
@@ -558,6 +613,8 @@ function defaultState() {
     durs: [],
     ress: [],
     sizes: [],
+    // 工作室筛选（P5-A）：名称数组，与分类 / facet 同为「与」关系
+    studios: [],
     unsafe: false,
     sort: 'added',
     sortPinned: false,
@@ -605,6 +662,8 @@ function parseHash(hash) {
     p.get('size'),
     SIZE_BUCKETS.map((b) => b.key)
   )
+  // 工作室（P5-A）：hash 段名 studio，JSON 名称数组
+  st.studios = readJsonList(p.get('studio'))
   if (p.get('unsafe') === '1') st.unsafe = true
   const play = p.get('play')
   if (play) st.play = play // 播放深链 /#play=<videoId>
@@ -638,6 +697,7 @@ function buildHash(st) {
     for (const k of fk) o[k] = s.facets[k]
     p.set('f', JSON.stringify(o))
   }
+  if (s.studios && s.studios.length) p.set('studio', JSON.stringify(s.studios))
   if (s.durs && s.durs.length) p.set('dur', s.durs.join(','))
   if (s.ress && s.ress.length) p.set('res', s.ress.join(','))
   if (s.sizes && s.sizes.length) p.set('size', s.sizes.join(','))
@@ -679,6 +739,21 @@ function folderCounts(videos) {
   const m = {}
   for (const v of videos) m[v.folder] = (m[v.folder] || 0) + 1
   return m
+}
+
+/**
+ * 视频的工作室名称数组（P5-A：索引 videos[].studios = [name]）
+ * 兼容两种形态：名称字符串数组 / [{id,name}]（详情接口形态），空值与重复项丢掉。
+ */
+function videoStudioNames(v) {
+  const arr = (v && v.studios) || []
+  if (!Array.isArray(arr)) return []
+  const out = []
+  for (const s of arr) {
+    const n = typeof s === 'string' ? s : (s && s.name) || ''
+    if (n && out.indexOf(n) < 0) out.push(n)
+  }
+  return out
 }
 
 /* =========================================================================
@@ -748,6 +823,96 @@ const facetGroupsView = computed(() => {
   out[PERSON_FACET] = items
   return out
 })
+
+/* ------------------------------------------------------------- 工作室（P5-A） */
+/* 数据源：GET /api/media/studios（服务端计数，匿名只读）。
+   降级：接口未就绪（404 / 连不上）时 studioList = null，分组回落到按索引 videos[].studios 现推，
+        并在分组底部写明「接口未就绪」；两者都没有时分组只剩这句提示，筛选与列表不受影响。 */
+const studioList = ref(null)
+const studiosUnavailable = ref('')
+
+const studioItems = computed(() => {
+  const server = studioList.value
+  if (server && server.length) {
+    const items = server
+      .filter((s) => s && s.name)
+      .map((s) => [String(s.name), Number(s.videoCount != null ? s.videoCount : s.count) || 0])
+    items.sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'zh-Hans-CN'))
+    return items
+  }
+  const counts = {}
+  for (const v of videos.value) for (const n of videoStudioNames(v)) counts[n] = (counts[n] || 0) + 1
+  return Object.keys(counts)
+    .sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'))
+    .map((n) => [n, counts[n]])
+})
+
+const studiosHint = computed(() => studiosUnavailable.value)
+
+/** 工作室勾选：与 facet 同理，组内或、组间与；切到「选中」才上报 tag_click */
+function onStudioToggle(name) {
+  const arr = state.studios || (state.studios = [])
+  toggleIn(arr, name)
+  if (arr.indexOf(name) >= 0) tk.track('tag_click', 'tag', ('工作室:' + name).slice(0, 64), 0, 0)
+}
+
+/* --------------------------------------------------------- 播放列表（P5-B） */
+
+const route = useRoute()
+const router = useRouter()
+
+/** 弹层开关 + 目标视频：正在播放的那一部优先，否则用多选集合 */
+const playlistPickerOpen = ref(false)
+const playlistTargetIds = computed(() => (curVideo.value ? [curVideo.value.id] : selectedIds.value.slice()))
+const playlistAddTitle = computed(() => {
+  if (readOnlyEdit.value) return HINT_OFF
+  const n = playlistTargetIds.value.length
+  if (!n) return '加入播放列表：先打开一部片，或用「选择」多选后再点'
+  return '加入播放列表（' + n + ' 个视频）'
+})
+
+/** URL ?playlist=<id>：播放器上下文来自某个播放列表时，上一部/下一部按该列表顺序走 */
+const playlistId = computed(() => {
+  const q = route && route.query ? route.query.playlist : ''
+  const v = Array.isArray(q) ? q[0] : q
+  return v == null ? '' : String(v)
+})
+/** { id, name, ids } —— ids 是服务端给的有序集合（顺序即播放顺序） */
+const playlistCtx = ref(null)
+
+/** 顺序里确实存在于索引的视频对象：缺索引的条目只跳过该条，不打断整条顺序 */
+const playlistVideos = computed(() => {
+  const ctx = playlistCtx.value
+  if (!ctx) return []
+  const map = byId.value
+  return ctx.ids.map((id) => map.get(id)).filter(Boolean)
+})
+
+function openPlaylistPicker() {
+  if (readOnlyEdit.value) {
+    showToast(HINT_OFF)
+    return
+  }
+  if (!playlistTargetIds.value.length) {
+    showToast('请先打开一部片，或用「选择」多选视频')
+    return
+  }
+  playlistPickerOpen.value = true
+}
+
+function onPlaylistAdded(msg) {
+  showToast(msg || '已加入播放列表')
+  // 已经在看这个播放列表：拉一次最新顺序，免得「下一个」还是旧的
+  if (playlistCtx.value && playlistId.value) loadPlaylistContext()
+}
+
+/** 退出播放列表上下文：只去掉 URL 上的 ?playlist，不影响筛选 hash 与当前播放位置 */
+function exitPlaylistMode() {
+  playlistCtx.value = null
+  const q = Object.assign({}, route.query)
+  delete q.playlist
+  router.replace({ path: route.path, query: q, hash: window.location.hash || undefined }).catch(() => {})
+}
 
 const quickGroups = [
   { field: 'durs', items: DUR_BUCKETS },
@@ -896,7 +1061,7 @@ const isMobile = ref(mq ? mq.matches : false)
 
 /** 「筛选」按钮角标：抽屉里所有已选项之和（分类 + facet + 快捷 + 异常码），搜索词不算 */
 const filterBadgeCount = computed(() => {
-  let n = state.cats.length + state.durs.length + state.ress.length + state.sizes.length
+  let n = state.cats.length + state.durs.length + state.ress.length + state.sizes.length + (state.studios || []).length
   if (state.unsafe) n += 1
   for (const f of Object.keys(state.facets || {})) n += (state.facets[f] || []).length
   return n
@@ -932,6 +1097,7 @@ const activeEntries = computed(() => {
     const x = arr.find((a) => a.key === k)
     return x ? x.label : k
   }
+  for (const n of state.studios || []) out.push({ kind: 'studio', name: n, key: '', label: '工作室：' + n })
   for (const k of state.durs) out.push({ kind: 'dur', key: k, label: '时长 ' + lab(DUR_BUCKETS, k) })
   for (const k of state.ress) out.push({ kind: 'res', key: k, label: lab(RES_TIERS, k) })
   for (const k of state.sizes) out.push({ kind: 'size', key: k, label: '体积 ' + lab(SIZE_BUCKETS, k) })
@@ -956,10 +1122,22 @@ const recentItems = computed(() => {
   return out
 })
 
-/** 上一部 / 下一部可用性：优先在「当前筛选结果」里走，找不到退回全库（app.js:1002-1007） */
+/**
+ * 上一部 / 下一部可用性
+ *   1) 当前视频来自播放列表（URL ?playlist=<id>）→ 严格按播放列表顺序走（P5-B）；
+ *   2) 否则照旧：优先在「当前筛选结果」里走，找不到退回全库（app.js:1002-1007）。
+ */
 const navState = computed(() => {
   const id = curVideo.value ? curVideo.value.id : ''
   if (!id) return { hasPrev: false, hasNext: false, list: [], i: -1 }
+  if (playlistCtx.value) {
+    const vids = playlistVideos.value
+    const nav = playlistNav(
+      vids.map((v) => v.id),
+      id
+    )
+    if (nav.i >= 0) return { hasPrev: nav.hasPrev, hasNext: nav.hasNext, list: vids, i: nav.i, source: 'playlist' }
+  }
   let list = view.value
   let i = list.findIndex((v) => v.id === id)
   if (i < 0) {
@@ -1243,6 +1421,9 @@ function removeActive(x) {
     const arr = state.facets[x.facet] || []
     toggleIn(arr, x.name)
     if (!arr.length) delete state.facets[x.facet]
+  } else if (x.kind === 'studio') {
+    const arr = state.studios || (state.studios = [])
+    toggleIn(arr, x.name)
   } else if (x.kind === 'dur') toggleIn(state.durs, x.key)
   else if (x.kind === 'res') toggleIn(state.ress, x.key)
   else if (x.kind === 'size') toggleIn(state.sizes, x.key)
@@ -1309,6 +1490,8 @@ function currentFilterParams() {
   if (state.durs.length) out.durs = state.durs.slice()
   if (state.ress.length) out.ress = state.ress.slice()
   if (state.sizes.length) out.sizes = state.sizes.slice()
+  // 工作室（P5-A）：与其它筛选一样进「保存筛选」的 params
+  if ((state.studios || []).length) out.studios = state.studios.slice()
   if (state.unsafe) out.unsafe = true
   if (state.sort) out.sort = state.sort
   return out
@@ -1328,6 +1511,7 @@ const suggestSavedName = computed(() => {
   for (const k of state.ress) parts.push(bucketLabel(RES_TIERS, k))
   for (const k of state.durs) parts.push(bucketLabel(DUR_BUCKETS, k))
   for (const k of state.sizes) parts.push(bucketLabel(SIZE_BUCKETS, k))
+  for (const n of state.studios || []) parts.push(n)
   for (const f of Object.keys(state.facets || {})) for (const n of state.facets[f] || []) parts.push(n)
   if (state.unsafe) parts.push('可能无法播放')
   if (state.sort && state.sortPinned) {
@@ -1363,6 +1547,7 @@ function onApplySavedFilter(item) {
   next.durs = pickKeys(p.durs, DUR_BUCKETS)
   next.ress = pickKeys(p.ress, RES_TIERS)
   next.sizes = pickKeys(p.sizes, SIZE_BUCKETS)
+  next.studios = Array.isArray(p.studios) ? p.studios.map(String) : []
   next.unsafe = !!p.unsafe
   if (p.sort && SORTS.some((s) => s.key === p.sort)) {
     next.sort = p.sort
@@ -1988,6 +2173,49 @@ async function loadPersonsFacet() {
   }
 }
 
+/**
+ * 工作室（P5-A）：GET /api/media/studios —— 抽屉「工作室」分组的服务端计数。
+ * 失败一律静默（silent + catch）：后端未部署时 studioList=null，分组回落到索引推导并写明提示。
+ */
+async function loadStudios() {
+  try {
+    const res = await api.listStudios({ silent: true })
+    const body = res && typeof res === 'object' && res.data && typeof res.data === 'object' ? res.data : res
+    const list = Array.isArray(body) ? body : (body && (body.rows || body.list || body.items || body.studios)) || []
+    studioList.value = Array.isArray(list) ? list.filter((s) => s && s.name) : []
+    studiosUnavailable.value = ''
+  } catch {
+    studioList.value = null
+    studiosUnavailable.value = '工作室接口未就绪（/api/media/studios）：分组按索引 videos[].studios 推导'
+  }
+}
+
+/**
+ * 播放列表上下文（P5-B）：GET /api/media/playlist/{id} 取有序集合。
+ * 失败只提示并退出上下文（播放与筛选完全不受影响，播放器仍按筛选结果走上一部/下一部）。
+ */
+async function loadPlaylistContext() {
+  const id = playlistId.value
+  if (!id) {
+    playlistCtx.value = null
+    return
+  }
+  try {
+    const res = await api.getPlaylist(id, { silent: true })
+    const detail = normalizePlaylistDetail(res)
+    playlistCtx.value = {
+      id: id,
+      name: detail.name || '#' + id,
+      ids: detail.ids
+    }
+  } catch {
+    playlistCtx.value = null
+    showToast('播放列表接口未就绪：无法按列表顺序播放')
+  }
+}
+
+watch(playlistId, () => loadPlaylistContext())
+
 /* =========================================================================
    键盘
    ========================================================================= */
@@ -2152,6 +2380,9 @@ onMounted(() => {
   loadTags(false)
   // 人物（P3-B）：与首屏并行，失败不影响任何既有加载
   loadPersonsFacet()
+  // 工作室（P5-A）与播放列表上下文（P5-B）：同样并行，失败只降级不阻塞
+  loadStudios()
+  loadPlaylistContext()
 })
 
 /** 策略晚于首屏到达（full → off/local）时补拉一次标签库：local 档要并入本机标签 */

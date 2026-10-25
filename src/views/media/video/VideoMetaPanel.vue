@@ -47,37 +47,50 @@
         </div>
       </section>
 
-      <!-- 评分：0-10，0 表示未评分 -->
+      <!-- 工作室（P5-A）：只读，取索引 videos[].studios（名称数组），
+           接口未就绪时该字段为空 → 整段不渲染，抽屉其余部分不受影响 -->
+      <section v-if="studioNames.length" class="vp-sec">
+        <h3 class="vp-h3">
+          工作室<span class="vp-h3n">{{ studioNames.length }}</span>
+        </h3>
+        <div class="vp-studios">
+          <span v-for="s in studioNames" :key="s" class="vp-studio" :title="s">{{ s }}</span>
+        </div>
+      </section>
+
+      <!-- 评分：0–100（P5-C 起值域由 10 扩到 100，0 仍表示未评分）。
+           10 颗星每颗 10 分（点第 n 颗 = n×10），滑条 0–100 步进 5：整十用星、精细值用滑条。 -->
       <section class="vp-sec">
         <h3 class="vp-h3">评分</h3>
         <div class="vp-rate">
-          <div class="vp-stars">
+          <div class="vp-stars" role="group" aria-label="评分（满分 100）">
             <button
               v-for="n in 10"
               :key="n"
               class="vp-star"
-              :class="{ on: n <= rating }"
+              :class="{ on: n * 10 <= rating }"
               type="button"
               :disabled="locked"
-              :aria-label="'评分 ' + n"
-              @click="setRating(n)"
+              :aria-label="'评分 ' + n * 10 + ' 分（满分 100）'"
+              :title="n * 10 + ' 分'"
+              @click="setRating(n * 10)"
             >
               ★
             </button>
           </div>
-          <span class="vp-rate-val">{{ rating > 0 ? rating + ' 分' : '未评分' }}</span>
+          <span class="vp-rate-val">{{ rating > 0 ? rating + ' 分 / 100' : '未评分' }}</span>
         </div>
         <div class="vp-rate-row">
           <input
             class="vp-slider"
             type="range"
             min="0"
-            max="10"
-            step="1"
+            max="100"
+            step="5"
             :value="rating"
             :disabled="locked"
-            aria-label="评分滑条"
-            @input="ratingDraft = Number($event.target.value) || 0"
+            aria-label="评分滑条（0–100，步进 5）"
+            @input="ratingDraft = clampRating($event.target.value)"
             @change="setRating(ratingDraft)"
           />
           <button class="vp-mini" type="button" :disabled="locked || rating === 0" @click="setRating(0)">清除</button>
@@ -121,6 +134,13 @@
         <ul v-if="markers.length" class="vp-marks">
           <li v-for="m in markers" :key="m.id" class="vp-mark">
             <i class="vp-dot" :style="{ background: m.color || 'transparent' }"></i>
+            <!-- 标记预览帧：用精灵图按 pos/dur 取格（几何见 spriteCell.js），无精灵图时是占位块 -->
+            <SpriteThumb
+              :src="spriteSrc"
+              :time="Number(m.pos) || 0"
+              :dur="markerDur"
+              :label="markerRangeText(m, fmtPos) + (m.label ? ' · ' + m.label : '')"
+            />
             <!-- P4-B：区间标记显示 pos–endPos，单点仍然只显示 pos（markerRangeText 两种合一） -->
             <span class="vp-mark-pos" :class="{ 'is-range': markerSpan(m).end != null }">{{ markerRangeText(m, fmtPos) }}</span>
             <span class="vp-mark-lab" :title="m.label">{{ m.label || '（无描述）' }}</span>
@@ -211,6 +231,8 @@ import { useMediaApi } from '@/composables/useMediaApi'
 import { HINT_OFF, HINT_LOCAL } from '@/composables/useMediaEditPolicy'
 import { readLocalMeta, writeLocalMeta } from '@/composables/useMediaLocalOrg'
 import TagPicker from './TagPicker.vue'
+// P5-C：标记预览帧（精灵图按时间取格，几何唯一实现在 spriteCell.js）
+import SpriteThumb from './SpriteThumb.vue'
 // P4-B：标记区间（pos–endPos）的归一化与展示文本，与播放器进度条刻度共用同一份逻辑
 import { markerRangeText, markerSpan } from './playerExtras'
 // P4.5：抽屉打开 / 切换标记类型时「自动回填标记时间」的纯函数（单测见 markFill.js 头部说明）
@@ -229,6 +251,8 @@ const props = defineProps({
   atSec: { type: Number, default: 0 },
   /** 人物（索引 videos[].persons = [{id,name,role}]）：只读展示，不参与这里的写接口 */
   persons: { type: Array, default: () => [] },
+  /** 工作室（索引 videos[].studios = [name]）：只读展示，接口未就绪时为空数组 */
+  studios: { type: Array, default: () => [] },
   /** P4-B：取「此刻」的播放位置（页面传 playerRef.getCurrentTime）；缺省回落到 atSec */
   getCurrentSec: { type: Function, default: null },
   /** P4.5：取内容总时长（页面传 playerRef.getDuration）；缺省回落到索引里的 video.dur，都没有即 0 = 未知 */
@@ -262,6 +286,23 @@ const namedPersons = computed(() =>
 )
 
 const visiblePersons = computed(() => (personsOpen.value ? namedPersons.value : namedPersons.value.slice(0, 2)))
+
+/** 工作室归一化：索引给名称数组，详情接口可能给 [{id,name}]，两种都收并去重 */
+const studioNames = computed(() =>
+  (props.studios || [])
+    .map((s) => (typeof s === 'string' ? s : (s && s.name) || ''))
+    .filter((s) => s)
+    .filter((s, i, arr) => arr.indexOf(s) === i)
+)
+
+/**
+ * 标记缩略图数据源：只有索引明确给了 hasSprite 才拼 URL（后端 /media/index 的派生资源标记），
+ * 否则传空串 —— SpriteThumb 走占位分支，不发一次必然 404 的请求。
+ */
+const spriteSrc = computed(() => (props.video && props.video.hasSprite ? api.spriteUrl(props.video.id) : ''))
+
+/** 标记取格用的时长（秒）：优先播放器实时时长 → 索引 dur → 0（未知则固定首帧） */
+const markerDur = computed(() => currentDur())
 
 /** off 档不发请求也不允许任何写入：控件统一用 locked 置灰 */
 const locked = computed(() => readOnly.value || saving.value)
@@ -428,8 +469,15 @@ function save(patch, optimistic, okMsg, localPatch) {
   saveServer(patch, optimistic, okMsg)
 }
 
+/** 评分夹取：值域 0–100（P5-C），顺手吃掉 NaN / 字符串 */
+function clampRating(n) {
+  const v = Number(n)
+  if (!Number.isFinite(v)) return 0
+  return Math.max(0, Math.min(100, Math.round(v)))
+}
+
 function setRating(n) {
-  const v = Math.max(0, Math.min(10, Number(n) || 0))
+  const v = clampRating(n)
   if (v === rating.value) {
     ratingDraft.value = v
     return
@@ -440,7 +488,7 @@ function setRating(n) {
       rating.value = v
       ratingDraft.value = v
     },
-    v > 0 ? '评分已设为 ' + v + ' 分' : '评分已清除',
+    v > 0 ? '评分已设为 ' + v + ' 分（满分 100）' : '评分已清除',
     { rating: v }
   )
 }
@@ -930,6 +978,26 @@ onMounted(() => {
 .vp-mark-lab {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 工作室 chips：只读展示，与标签同一套视觉语言但不可移除（没有 × 按钮） */
+.vp-studios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vp-studio {
+  max-width: 100%;
+  padding: 1px 8px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--fg-dim);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

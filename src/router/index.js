@@ -85,6 +85,14 @@ const routes = [
         component: () => import('../views/media/PersonDetailPage.vue'),
         meta: { title: '媒体站 · 人物详情', bleed: true }
       },
+      // 播放列表（P5-B）：列表 + 保序详情；接口未就绪时页面自己显示「接口未就绪」。
+      // 同样标 bleed：整幅左右分栏，与视频库 / 图片站同一套贴边规则。
+      {
+        path: 'media/playlists',
+        name: 'MediaPlaylists',
+        component: () => import('../views/media/PlaylistsPage.vue'),
+        meta: { title: '媒体站 · 播放列表', bleed: true }
+      },
       // 旧的媒体站「我的」已升级为全站个人中心 /me，旧链接不失效
       { path: 'media/me', redirect: '/me' },
 

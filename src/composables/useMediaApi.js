@@ -330,6 +330,131 @@ export function listPersonAlbums(id, params, options) {
   })
 }
 
+/* ------------------------------------------------------------- 工作室（P5-A） */
+/* 契约：站端 GET /api/media/studios → [{id,name,videoCount}]（匿名只读）、
+        GET /api/media/studio/{id} → {id,name,...}、
+        GET /api/media/studio/{id}/videos?page=&size= → { rows|list, total }；
+        索引侧 videos[].studios:[name] 是 Studio 名称数组（P5-A 在 /media/index 里补的字段）。
+   后端未部署 P5-A 时这几条统一 404：调用方一律 silent + catch，抽屉分组收起或就地提示，
+   与 /filters / /persons 的处理方式一致 —— 不抛未捕获异常、不弹全局错误。 */
+
+/** 工作室列表（筛选抽屉的工作室分组） 后端：GET /api/media/studios */
+export function listStudios(options) {
+  const opt = options || {}
+  return mediaRequest({ url: '/studios', silent: opt.silent !== false })
+}
+
+/** 单个工作室 后端：GET /api/media/studio/{id} */
+export function getStudio(id, options) {
+  const opt = options || {}
+  return mediaRequest({ url: '/studio/' + encodeURIComponent(String(id == null ? '' : id)), silent: opt.silent !== false })
+}
+
+/** 某工作室名下的视频（分页） 后端：GET /api/media/studio/{id}/videos?page=&size= */
+export function listStudioVideos(id, params, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/studio/' + encodeURIComponent(String(id == null ? '' : id)) + '/videos',
+    params: params || {},
+    silent: opt.silent !== false
+  })
+}
+
+/* ----------------------------------------------------------- 播放列表（P5-B） */
+/* 契约（与 /filters、/persons 同一套站端 REST 风格；顺序即播放顺序）：
+     GET    /api/media/playlists                        → [{id,name,count,videoIds?}]
+     POST   /api/media/playlists  {name, videoIds?}     → {id,name,count}
+     GET    /api/media/playlist/{id}                    → {id,name,videos:[…]} 或 {id,name,videoIds:[…]}
+     PUT    /api/media/playlist/{id} {name?, videoIds?} → 改名 / 排序 / 增删（每次提交完整有序集合）
+     DELETE /api/media/playlist/{id}
+     POST   /api/media/playlist/{id}/videos {videoIds}  → 追加（后端按 id 幂等去重）
+   写接口受编辑策略闸门（页面在 off 档直接禁用入口，不发请求）；
+   后端未就绪时全部 silent + catch，页面显示「接口未就绪」，不抛未捕获异常。 */
+
+/** 播放列表清单 后端：GET /api/media/playlists */
+export function listPlaylists(options) {
+  const opt = options || {}
+  return mediaRequest({ url: '/playlists', silent: opt.silent !== false })
+}
+
+/**
+ * 新建播放列表 后端：POST /api/media/playlists
+ * @param {{name:string, videoIds?:string[]}} payload
+ * @param {{silent?:boolean}} [options]
+ */
+export function createPlaylist(payload, options) {
+  const opt = options || {}
+  const p = payload || {}
+  return mediaRequest({
+    url: '/playlists',
+    method: 'post',
+    data: { name: p.name, videoIds: p.videoIds || [] },
+    silent: opt.silent !== false
+  })
+}
+
+/** 单个播放列表（含有序条目） 后端：GET /api/media/playlist/{id} */
+export function getPlaylist(id, options) {
+  const opt = options || {}
+  return mediaRequest({ url: '/playlist/' + encodeURIComponent(String(id == null ? '' : id)), silent: opt.silent !== false })
+}
+
+/**
+ * 更新播放列表（改名 / 改顺序 / 增删一次提交） 后端：PUT /api/media/playlist/{id}
+ * @param {string} id
+ * @param {{name?:string, videoIds?:string[]}} payload
+ * @param {{silent?:boolean}} [options]
+ */
+export function updatePlaylist(id, payload, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/playlist/' + encodeURIComponent(String(id == null ? '' : id)),
+    method: 'put',
+    data: payload || {},
+    silent: opt.silent !== false
+  })
+}
+
+/** 删除播放列表 后端：DELETE /api/media/playlist/{id} */
+export function deletePlaylist(id, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/playlist/' + encodeURIComponent(String(id == null ? '' : id)),
+    method: 'delete',
+    silent: opt.silent !== false
+  })
+}
+
+/**
+ * 追加视频到播放列表（幂等） 后端：POST /api/media/playlist/{id}/videos
+ * @param {string} id
+ * @param {string[]} videoIds
+ * @param {{silent?:boolean}} [options]
+ */
+export function addPlaylistVideos(id, videoIds, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/playlist/' + encodeURIComponent(String(id == null ? '' : id)) + '/videos',
+    method: 'post',
+    data: { videoIds: videoIds || [] },
+    silent: opt.silent !== false
+  })
+}
+
+/** 从播放列表移除一条 后端：DELETE /api/media/playlist/{id}/videos/{videoId} */
+export function removePlaylistVideo(id, videoId, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url:
+      '/playlist/' +
+      encodeURIComponent(String(id == null ? '' : id)) +
+      '/videos/' +
+      encodeURIComponent(String(videoId == null ? '' : videoId)),
+    method: 'delete',
+    silent: opt.silent !== false
+  })
+}
+
 /* ------------------------------------------------------------- 资源 URL 构造 */
 /* 全部返回绝对路径（不含 origin），可直接给 <img src> / <video src> 使用。
    规则出处：app.js:862/978/1036/1037/1169，photo.js:99/101/102/103，profile.js:82-84。 */
@@ -444,6 +569,18 @@ const mediaApi = {
   getPerson,
   listPersonVideos,
   listPersonAlbums,
+  // 工作室（P5-A）
+  listStudios,
+  getStudio,
+  listStudioVideos,
+  // 播放列表（P5-B）
+  listPlaylists,
+  createPlaylist,
+  getPlaylist,
+  updatePlaylist,
+  deletePlaylist,
+  addPlaylistVideos,
+  removePlaylistVideo,
   // URL 构造
   videoThumbUrl,
   spriteUrl,

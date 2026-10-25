@@ -28,6 +28,45 @@
         </div>
       </section>
 
+      <!-- 工作室（P5-A）：独立分组，数据源 GET /api/media/studios（服务端计数），
+           接口未就绪时回落到索引 videos[].studios 现推并给出提示；两者都没有则整组不渲染。 -->
+      <section v-if="studioItems.length || studiosHint" class="fgroup fgroup-studio">
+        <details class="fg" :open="isStudioOpen()" @toggle="onStudioToggle">
+          <summary>
+            <span class="fg-name">工作室</span>
+            <span class="fg-n">{{ studioCountText }}</span>
+            <span class="fg-caret"></span>
+          </summary>
+          <input
+            class="fg-search"
+            type="search"
+            placeholder="搜索工作室…"
+            autocomplete="off"
+            spellcheck="false"
+            :value="studioQuery"
+            @input="studioQuery = $event.target.value"
+          />
+          <div class="fg-list">
+            <label
+              v-for="it in visibleStudios"
+              :key="it[0]"
+              class="opt"
+              :class="{ on: selectedStudios.indexOf(it[0]) >= 0 }"
+            >
+              <input
+                type="checkbox"
+                :value="it[0]"
+                :checked="selectedStudios.indexOf(it[0]) >= 0"
+                @change="emit('toggle-studio', it[0])"
+              />
+              <span class="opt-t">{{ it[0] }}</span><em>{{ it[1] }}</em>
+            </label>
+          </div>
+          <div v-if="!visibleStudios.length" class="fg-none">无匹配</div>
+          <p v-if="studiosHint" class="fg-hint">{{ studiosHint }}</p>
+        </details>
+      </section>
+
       <div class="quick-slot"><slot name="quick"></slot></div>
 
       <div class="facet-groups">
@@ -87,10 +126,16 @@ const props = defineProps({
   /** facet → [[值, 计数], …] */
   groups: { type: Object, required: true },
   selectedCats: { type: Array, required: true },
-  selectedFacets: { type: Object, required: true }
+  selectedFacets: { type: Object, required: true },
+  /** 工作室分组：[[名称, 计数], …]（P5-A；服务端 GET /media/studios，未就绪时按索引推导） */
+  studios: { type: Array, default: () => [] },
+  /** 已选工作室名称 */
+  selectedStudios: { type: Array, default: () => [] },
+  /** 非空时在工作室分组底部显示该提示（接口未就绪 / 回落说明） */
+  studiosHint: { type: String, default: '' }
 })
 
-const emit = defineEmits(['toggle-cat', 'toggle-facet'])
+const emit = defineEmits(['toggle-cat', 'toggle-facet', 'toggle-studio'])
 
 const scrollEl = ref(null)
 
@@ -100,6 +145,29 @@ const openMap = reactive({})
 const searchMap = reactive({})
 
 const facetKeys = computed(() => Object.keys(props.groups || {}))
+
+/* ---------------------------------------------------- 工作室分组（P5-A） */
+const studioQuery = ref('')
+const studioItems = computed(() => (Array.isArray(props.studios) ? props.studios : []))
+const studioCountText = computed(() => {
+  const n = props.selectedStudios.length
+  const total = studioItems.value.length
+  return n ? '已选 ' + n + '/' + total : String(total)
+})
+const visibleStudios = computed(() => {
+  const q = String(studioQuery.value || '').trim().toLowerCase()
+  const all = studioItems.value
+  if (!q) return all
+  return all.filter((it) => String(it[0]).toLowerCase().indexOf(q) >= 0)
+})
+/** 折叠默认策略与 facet 组一致：有选中项就展开 */
+function isStudioOpen() {
+  if (openMap['工作室'] === undefined) return props.selectedStudios.length > 0
+  return openMap['工作室']
+}
+function onStudioToggle(event) {
+  openMap['工作室'] = event.target.open
+}
 
 function selectedCount(facet) {
   const arr = props.selectedFacets[facet]
@@ -368,6 +436,16 @@ details.fg[open] .fg-caret {
   padding: 4px 10px 8px;
   font-size: 12px;
   color: var(--fg-dim);
+}
+
+/* 工作室分组底部的降级提示（接口未就绪 / 数据来自索引推导） */
+.fg-hint {
+  margin: 0;
+  padding: 0 10px 8px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--fg-dim);
+  opacity: 0.9;
 }
 
 /* 抽屉在 ≤768px 占满全宽，内容体自身不再需要任何宽度/位移规则，只有组内留白略收紧 */

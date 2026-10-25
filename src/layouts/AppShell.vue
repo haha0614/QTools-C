@@ -23,7 +23,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 // 图标按名显式导入（本项目没有 unplugin-auto-import，模板里不能凭空出现组件名）
-import { House, Menu, Moon, Picture, Sunny, User, UserFilled, VideoPlay } from '@element-plus/icons-vue'
+import { House, List, Menu, Moon, Picture, Sunny, User, UserFilled, VideoPlay } from '@element-plus/icons-vue'
 import { APP_INFO } from '@/utils/constants'
 // P4.3：侧栏选中态的纯判定（首页精确、/media 精确、人物含 /media/person/:id）
 import { isNavActive } from '@/utils/navActive'
@@ -163,7 +163,9 @@ const NAV_GROUPS = [
       { to: '/media', label: '视频库', icon: VideoPlay, exact: true },
       { to: '/media/photos', label: '图片站', icon: Picture },
       // 人物墙（P3-B）：/media/person/:id 也走这条高亮（P4.3 起由 also 显式声明，不再靠 /media 前缀兜底）
-      { to: '/media/persons', label: '人物', icon: UserFilled, also: ['/media/person'] }
+      { to: '/media/persons', label: '人物', icon: UserFilled, also: ['/media/person'] },
+      // 播放列表（P5-B）：独立页 /media/playlists，与视频库 / 图片站并列在同一条目组下
+      { to: '/media/playlists', label: '播放列表', icon: List }
     ]
   }
 ]

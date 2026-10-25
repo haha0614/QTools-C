@@ -73,18 +73,19 @@
       />
     </div>
 
-    <!-- 评分：0-10 的滑条 + 直接点星落值，0 表示清除评分 -->
+    <!-- 评分（P5-C）：0–100 的滑条（步进 5）+ 直接点星落整十值，0 表示清除评分 -->
     <div v-if="panel === 'rating'" class="bb-pop bb-pop-rate">
-      <div class="br-head">设置评分</div>
-      <div class="br-stars">
+      <div class="br-head">设置评分<span class="br-head-u">满分 100</span></div>
+      <div class="br-stars" role="group" aria-label="评分（满分 100）">
         <button
           v-for="n in 10"
           :key="n"
           class="br-star"
-          :class="{ on: n <= ratingDraft }"
+          :class="{ on: n * 10 <= ratingDraft }"
           type="button"
-          :aria-label="'评分 ' + n"
-          @click="ratingDraft = n"
+          :aria-label="'评分 ' + n * 10 + ' 分（满分 100）'"
+          :title="n * 10 + ' 分'"
+          @click="ratingDraft = n * 10"
         >
           ★
         </button>
@@ -93,14 +94,14 @@
         class="br-slider"
         type="range"
         min="0"
-        max="10"
-        step="1"
+        max="100"
+        step="5"
         :value="ratingDraft"
-        aria-label="评分"
+        aria-label="评分（0–100，步进 5）"
         @input="onRatingInput"
       />
       <div class="br-foot">
-        <span class="br-val">{{ ratingDraft > 0 ? ratingDraft + ' 分' : '清除评分' }}</span>
+        <span class="br-val">{{ ratingDraft > 0 ? ratingDraft + ' 分 / 100' : '清除评分' }}</span>
         <button class="br-ok" type="button" :disabled="busy" @click="applyRating">应用</button>
       </div>
     </div>
@@ -149,8 +150,15 @@ function onTagsConfirm(ids) {
   panel.value = ''
 }
 
+/** 评分输入夹取：0–100（P5-C 值域），滑条与点星共用同一个夹取口径 */
+function clampRating(n) {
+  const v = Number(n)
+  if (!Number.isFinite(v)) return 0
+  return Math.max(0, Math.min(100, Math.round(v)))
+}
+
 function onRatingInput(e) {
-  ratingDraft.value = Number(e.target.value) || 0
+  ratingDraft.value = clampRating(e.target.value)
 }
 
 function applyRating() {
@@ -283,8 +291,18 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocDown))
 }
 
 .br-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
   font-size: 12.5px;
   color: var(--fg-dim);
+}
+
+/* 值域提示：100 分制与旧的 10 分制一眼可分 */
+.br-head-u {
+  font-size: 11px;
+  opacity: 0.75;
 }
 
 .br-stars {
