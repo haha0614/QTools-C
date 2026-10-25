@@ -454,24 +454,98 @@ export function seekRatioCss(ratio) {
 
 /** 全屏下无操作多久后隐藏控制条（ms） */
 export const CTRL_HIDE_DELAY_MS = 2500
+/** guard（指针仍在控制条上）驳回隐藏后，多久复查一次（ms） */
+export const CTRL_GUARD_RETRY_MS = 300
 
 /**
- * 允许隐藏的完整条件：全屏 + 播放中 + 不悬停控制条 + 控制条内无焦点 + 没在拖进度条 + 没有浮层。
+ * 允许隐藏的完整条件：全屏 + 播放中 + 不悬停控制条 + 没在拖进度条 + 没有浮层。
  * 任何一条不满足都必须保持可见（暂停时保留控制条更符合直觉）。
+ *
+ * P4.7：焦点**不再是**隐藏条件。旧实现要求「控制条内无焦点」，而点一下控制条里的任何按钮
+ * （尤其全屏按钮）焦点就留在那个 <button> 上，且点画面不会把焦点移走（<video> 不可聚焦），
+ * 于是「控制条内有焦点」恒真、控制条永不隐藏（用户报的回归就是这个）。焦点该不该留是
+ * 无障碍问题，用「隐藏前 blur」解决（见 blurActiveInCtrl），而不是拿它当隐藏条件。
  */
 export function ctrlCanHide(state) {
   const s = state || {}
-  return !!(s.fullscreen && s.playing && !s.hover && !s.focus && !s.dragging && !s.overlay)
+  return !!(s.fullscreen && s.playing && !s.hover && !s.dragging && !s.overlay)
+}
+
+/**
+ * 焦点是否落在某个容器内（doc 可注入，便于脱离浏览器单测）。
+ * body / documentElement 视为「没有焦点」，避免把页面本身当成控制条焦点。
+ */
+export function activeInCtrl(root, doc) {
+  const d = doc || (typeof document !== 'undefined' ? document : null)
+  const el = root
+  const a = d ? d.activeElement : null
+  if (!el || !a || a === d.body || a === d.documentElement) return false
+  if (typeof el.contains !== 'function') return false
+  return el === a || el.contains(a)
+}
+
+/**
+ * 隐藏控制条之前把焦点挪出去（P4.7）。
+ * 为什么必须做：隐藏态是 opacity:0 + transform + pointer-events:none，控件仍然存在且仍可被
+ * 键盘选中；焦点留在那里等于把键盘用户丢到一个看不见的按钮上。blur() 之后焦点回到 body。
+ * 返回是否真的 blur 了（单测据此断言「隐藏时焦点已离开控制条」）。
+ */
+export function blurActiveInCtrl(root, doc) {
+  const d = doc || (typeof document !== 'undefined' ? document : null)
+  if (!activeInCtrl(root, d)) return false
+  const a = d.activeElement
+  if (!a || typeof a.blur !== 'function') return false
+  a.blur()
+  return true
+}
+
+/**
+ * 控制条「占位区域」矩形（P4.7）：
+ * 隐藏态 .p-ctrl 是 transform:translateY(100%) + pointer-events:none，getBoundingClientRect()
+ * 会把它算到屏幕外、elementFromPoint 也命中不到，于是「指针是否在控制条上」永远判 false ——
+ * 隐藏后把指针移回控制条区域就再也唤不出来。用布局高度 offsetHeight（不受 transform 影响）
+ * + 容器底边反推区域：全屏覆盖层（absolute 贴底）与流内布局下，控制条都是容器底部的整宽一条。
+ * 容器 rect 不可用时回落到控制条自身的 rect。
+ */
+export function ctrlZoneRect(ctrlEl, wrapEl) {
+  if (!ctrlEl) return null
+  const h = typeof ctrlEl.offsetHeight === 'number' ? ctrlEl.offsetHeight : 0
+  const wr = wrapEl && typeof wrapEl.getBoundingClientRect === 'function' ? wrapEl.getBoundingClientRect() : null
+  if (h > 0 && wr) return { left: wr.left, right: wr.right, top: wr.bottom - h, bottom: wr.bottom }
+  if (typeof ctrlEl.getBoundingClientRect !== 'function') return null
+  const r = ctrlEl.getBoundingClientRect()
+  return { left: r.left, right: r.right, top: r.top, bottom: r.bottom }
+}
+
+/**
+ * 指针是否落在控制条上：以「坐标 + 矩形」为准（隐藏态也能判对），
+ * elementFromPoint 命中控制条自身/子孙时同样算命中（容器 rect 缺失时的补充）。
+ * 不能用它当唯一判据：隐藏态 ctrl 是 pointer-events:none，命中到的是画面。
+ */
+export function pointerInCtrlZone(ctrlEl, wrapEl, point, doc) {
+  const p = point || {}
+  const px = num(p.x)
+  const py = num(p.y)
+  if (px == null || py == null || px < 0 || py < 0) return false
+  const zone = ctrlZoneRect(ctrlEl, wrapEl)
+  if (zone && px >= zone.left && px <= zone.right && py >= zone.top && py <= zone.bottom) return true
+  const d = doc || (typeof document !== 'undefined' ? document : null)
+  const hit = d && typeof d.elementFromPoint === 'function' ? d.elementFromPoint(px, py) : null
+  if (!hit || !ctrlEl) return false
+  if (hit === ctrlEl) return true
+  return typeof ctrlEl.contains === 'function' && ctrlEl.contains(hit)
 }
 
 /**
  * 控制条自动隐藏状态机（无 DOM / 无 Vue）：
  *   - activity()：用户操作（mousemove / mousedown / keydown / touchstart）→ 立即显示并重置计时；
- *   - update(patch)：同步外部状态（fullscreen / playing / hover / focus / dragging / overlay），
+ *   - update(patch)：同步外部状态（fullscreen / playing / hover / dragging / overlay），
  *     只要条件不再满足就立刻显示并清掉计时器（退出全屏、暂停、悬停都走这条路径）；
  *   - 只有 ctrlCanHide(state) 为真、且 guard() 放行时才在 delay 后隐藏；
- *   - guard() 用于「指针其实还停在控制条上（事件没来）」这类兜底，返回 false 就不隐藏。
- * setTimeout / clearTimeout / onChange / guard 全部可注入，因此能脱离浏览器单测。
+ *   - guard() 用于「指针其实还停在控制条上（事件没来）」这类兜底，返回 false 就不隐藏，
+ *     但会按 retry 间隔继续复查（不会就此停摆）；
+ *   - willHide()：真正隐藏前的副作用（P4.7 用它把焦点 blur 出控制条），不参与判定。
+ * setTimeout / clearTimeout / onChange / guard / willHide / retry 全部可注入，因此能脱离浏览器单测。
  */
 export function createCtrlAutoHide(options) {
   const opt = options || {}
@@ -480,8 +554,13 @@ export function createCtrlAutoHide(options) {
   const clearTimer = typeof opt.clearTimeout === 'function' ? opt.clearTimeout : (id) => clearTimeout(id)
   const onChange = typeof opt.onChange === 'function' ? opt.onChange : () => {}
   const guard = typeof opt.guard === 'function' ? opt.guard : () => true
+  /** 隐藏前的副作用（把焦点挪出控制条）；无返回值，不参与判定 */
+  const willHide = typeof opt.willHide === 'function' ? opt.willHide : () => {}
+  /** guard 不通过后的复查间隔（ms）：短周期复查，而不是就此停摆 */
+  const retry = num(opt.retry) != null && num(opt.retry) >= 0 ? num(opt.retry) : CTRL_GUARD_RETRY_MS
 
-  const state = { fullscreen: false, playing: false, hover: false, focus: false, dragging: false, overlay: false }
+  // P4.7：state 里不再有 focus —— 焦点不参与「能不能隐藏」，只由 willHide 在隐藏前 blur
+  const state = { fullscreen: false, playing: false, hover: false, dragging: false, overlay: false }
   let hidden = false
   let timer = null
   let disposed = false
@@ -500,7 +579,11 @@ export function createCtrlAutoHide(options) {
     onChange(hidden)
   }
 
-  /** 计时到点：条件仍然成立且 guard 放行才隐藏；否则保持可见，等下一次操作重新计时 */
+  /**
+   * 计时到点：条件仍然成立且 guard 放行才隐藏。
+   * guard 不通过（指针其实还停在控制条上）时必须**重新排一次复查**：旧实现直接 return，
+   * 计时器已置空、状态仍是可见，状态机就此永久停摆 —— 那正是「控制条再也不隐藏」的另一种死法。
+   */
   function fire() {
     timer = null
     if (disposed) return
@@ -508,7 +591,12 @@ export function createCtrlAutoHide(options) {
       setHidden(false)
       return
     }
-    if (!guard()) return
+    if (hidden) return
+    if (!guard()) {
+      timer = setTimer(fire, retry)
+      return
+    }
+    willHide()
     setHidden(true)
   }
 

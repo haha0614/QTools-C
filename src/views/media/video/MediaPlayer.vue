@@ -82,7 +82,6 @@
         @mouseenter="onCtrlPointerEnter"
         @mouseleave="onCtrlPointerLeave"
         @focusin="onCtrlFocusIn"
-        @focusout="onCtrlFocusOut"
       >
         <div class="p-seekbar">
           <!-- P4.1：进度条 + 标记轨竖排成一列（.p-seekbar 仍是行布局，时间码在右侧）。
@@ -377,6 +376,7 @@ import {
   abPress,
   abTick,
   applyGain,
+  blurActiveInCtrl,
   createCtrlAutoHide,
   createGainGraph,
   frameStep,
@@ -386,6 +386,7 @@ import {
   nextGain,
   normalizeGain,
   normalizeSpeed,
+  pointerInCtrlZone,
   readGainLevel,
   readSpeedLevel,
   seekPxToRatio,
@@ -1179,23 +1180,26 @@ watch(
 
 /**
  * 判定规则（完整条件见 playerExtras 的 ctrlCanHide，单测覆盖）：
- *   全屏 + 播放中 + 指针不在控制条上 + 控制条内无焦点 + 没在拖进度条 + 没有浮层展开
+ *   全屏 + 播放中 + 指针不在控制条上 + 没在拖进度条 + 没有浮层展开
  *   → 2.5s 内没有任何操作（mousemove / mousedown / keydown / touchstart）就淡出。
  * 非全屏一律常驻：鼠标一离开就消失会让人以为控制条坏了。
+ * P4.7：「控制条内无焦点」已从条件里删掉 —— 点一下控制条按钮焦点就留在上面（点画面不会移走，
+ * <video> 不可聚焦），条件恒不满足 = 永不隐藏。焦点改由隐藏前的 willHide/blurActiveInCtrl 处理。
  */
 const ctrlHidden = ref(false)
-/** 指针是否停在控制条上（mouseenter / mouseleave） */
+/** 指针是否停在控制条上（mouseenter / mouseleave，并用坐标 + 矩形复核） */
 let ctrlHover = false
-/** 控制条内是否有焦点（focusin / focusout） */
-let ctrlFocus = false
 /** 最后一次指针位置：边界事件没来时用它兜底判断「指针其实还停在控制条上」 */
 let lastPointer = { x: -1, y: -1 }
 
+/**
+ * 指针是否在控制条上（几何判定见 playerExtras.pointerInCtrlZone，单测覆盖）：
+ * 以「坐标 + 矩形」为准，elementFromPoint 只作补充 —— 隐藏态 .p-ctrl 是
+ * translateY(100%) + pointer-events:none，getBoundingClientRect 把它算到屏幕外，
+ * 只靠 rect / 只靠 mouseenter-mouseleave 都会判错。
+ */
 function pointerOverCtrl() {
-  const el = ctrlEl.value
-  if (!el || lastPointer.x < 0 || typeof el.getBoundingClientRect !== 'function') return false
-  const r = el.getBoundingClientRect()
-  return lastPointer.x >= r.left && lastPointer.x <= r.right && lastPointer.y >= r.top && lastPointer.y <= r.bottom
+  return pointerInCtrlZone(ctrlEl.value, fsEl.value, lastPointer)
 }
 
 /** 浮层（hover 预览 / 拖动预览 / 标记提示 / 标记列表）展开时不隐藏：否则会留下一张没有控制条的浮卡片 */
@@ -1208,49 +1212,60 @@ const ctrlAuto = createCtrlAutoHide({
     ctrlHidden.value = hidden
   },
   // 隐藏时 .p-ctrl 是 pointer-events:none，边界事件未必补发：按矩形兜底，指针还在条上就不隐藏
-  guard: () => !pointerOverCtrl()
+  guard: () => !pointerOverCtrl(),
+  // 隐藏前把焦点挪出控制条：opacity:0 + pointer-events:none 上不该留着焦点
+  // （P4.7：焦点不再是隐藏条件，这就是它的替代保护 —— 不留焦点在看不见的控件上）
+  willHide: () => {
+    blurActiveInCtrl(ctrlEl.value)
+  }
 })
 
-/** 外部状态同步：只有这几个开关影响「能不能隐藏」，每变一次都重新计时 */
+/**
+ * 外部状态同步：只有这几个开关影响「能不能隐藏」，每变一次都重新计时。
+ * P4.7：不再上报 focus —— 焦点钳制隐藏正是「控制条再也不隐藏」的根因。
+ */
 function syncCtrlState() {
   ctrlAuto.update({
     fullscreen: fsActive.value,
     playing: isPlaying.value,
-    hover: ctrlHover,
-    focus: ctrlFocus,
+    hover: ctrlHover || pointerOverCtrl(),
     dragging: qSeekDragging,
     overlay: ctrlOverlayOpen.value
   })
 }
 
-/** 任意用户操作：立即显示并重置 2.5s 计时（非全屏直接返回，不产生无谓的计时器） */
+/**
+ * 任意用户操作：立即显示并重置 2.5s 计时（非全屏直接返回，不产生无谓的计时器）。
+ * 同时用坐标复核悬停态：隐藏态 .p-ctrl 没有指针事件，mouseenter / mouseleave 收不到，
+ * 只信边界事件会让 ctrlHover 卡在旧值（要么永不隐藏，要么唤不出来）。
+ */
 function onUserActivity(e) {
   if (e && typeof e.clientX === 'number') lastPointer = { x: e.clientX, y: e.clientY }
   if (!fsActive.value) return
   ctrlAuto.activity()
+  const over = pointerOverCtrl()
+  if (over !== ctrlHover) {
+    ctrlHover = over
+    syncCtrlState()
+  }
 }
 
-function onCtrlPointerEnter() {
+function onCtrlPointerEnter(e) {
+  if (e && typeof e.clientX === 'number') lastPointer = { x: e.clientX, y: e.clientY }
   ctrlHover = true
   syncCtrlState()
 }
 
-function onCtrlPointerLeave() {
-  ctrlHover = false
+function onCtrlPointerLeave(e) {
+  if (e && typeof e.clientX === 'number') lastPointer = { x: e.clientX, y: e.clientY }
+  ctrlHover = pointerOverCtrl()
   syncCtrlState()
 }
 
+/** 控制条内出现焦点（鼠标点按钮 / Tab 进入）→ 显示并重新计时；焦点本身不再阻止隐藏 */
 function onCtrlFocusIn() {
-  ctrlFocus = true
-  syncCtrlState()
-}
-
-/** 焦点仍在控制条内部（Tab 切换控件）时不算失去焦点 */
-function onCtrlFocusOut(e) {
-  const next = e && e.relatedTarget
-  const el = ctrlEl.value
-  if (el && next && typeof el.contains === 'function' && el.contains(next)) return
-  ctrlFocus = false
+  if (!fsActive.value) return
+  ctrlAuto.activity()
   syncCtrlState()
 }
 
@@ -1269,7 +1284,7 @@ watch(
   () => (props.video ? props.video.id : '') + '#' + props.openSeq,
   () => {
     ctrlHover = false
-    ctrlFocus = false
+    lastPointer = { x: -1, y: -1 }
     syncCtrlState()
   }
 )
@@ -2136,7 +2151,8 @@ defineExpose({
 }
 
 /* P4.4 全屏控制条自动隐藏（判定规则见 playerExtras.ctrlCanHide）：
-   只在「全屏 + 播放中 + 2.5s 无操作 + 不悬停/不拖动/无焦点/无浮层」时加 .is-ctrl-hidden。
+   只在「全屏 + 播放中 + 2.5s 无操作 + 不悬停/不拖动/无浮层」时加 .is-ctrl-hidden。
+   P4.7：焦点不再是隐藏条件（点控制条按钮留下的焦点曾让它永不隐藏），改为隐藏前 blur。
    P4.6：隐藏 = opacity:0 + 整体下沉自身高度（translateY(100%)），配合绝对定位，
    既不留任何布局空间（无黑边），也不让渐变在半透明边缘透出暗影；
    pointer-events:none 让点击穿到画面上（= 暂停/播放）；鼠标指针同时隐起，
