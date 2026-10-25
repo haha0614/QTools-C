@@ -2,7 +2,7 @@
   MediaPlayer.vue —— 播放层（app.js 播放器部分的等价实现）
   覆盖：进度记忆与续播、清晰度切换（原画直连 / 实时转码 + 内容偏移）、原画与转码统一的自绘控制条
         （播放/暂停 · 进度 · 时间 · 音量 · 画质 · 上一部/下一部 · 全屏，两种模式同一套 UI，不再使用原生 controls）、
-        进度条 hover 精灵图卡片 / 拖动预览片段、seek（转码重开流 + pendingSeek / 原画直写 currentTime）、
+        进度条悬停 / 拖动共用的预览浮层（pv2 片段，无则降级精灵图）、seek（转码重开流 + pendingSeek / 原画直写 currentTime）、
         上一个 / 下一个、收藏、字幕轨注入、异常编码回退、播放器会话式 play 埋点与 play_end 结算。
    P4.4：全屏下控制条 2.5s 无操作自动淡出（判定在 playerExtras.createCtrlAutoHide），
         进度条 / 标记轨 / 刻度层 / 浮层锚点统一按「轨道几何」（两端各半个 thumb）换算。
@@ -87,11 +87,14 @@
           <!-- P4.1：进度条 + 标记轨竖排成一列（.p-seekbar 仍是行布局，时间码在右侧）。
                 P4.4：两者都按半个 thumb 左右内缩（--thumb-r），所以「同宽」是逐像素意义上的同宽 -->
           <div class="p-seek-col" :style="seekVars">
-            <!-- mousemove 挂在 20px 高的容器上，命中带比 4px 轨道宽，指针略偏也能触发 -->
+            <!-- mousemove 挂在 20px 高的容器上，命中带比 4px 轨道宽，指针略偏也能触发。
+                 P5.2 修复：这里必须是「逗号表达式」而不是 [a, b] —— 数组字面量会被编译成
+                 ($event) => [onSeekHover, onMarkerHover]，即「一个返回数组的函数」，Vue 只调用它一次
+                 并丢弃返回值，两个处理器都不会执行（P4-B 起 hover 预览从未触发的真正原因）。 -->
             <div
               class="p-seekwrap"
-              @mousemove="[onSeekHover, onMarkerHover]"
-              @mouseleave="[onSeekLeave, onMarkerLeave]"
+              @mousemove="onSeekHover($event), onMarkerHover($event)"
+              @mouseleave="onSeekLeave($event), onMarkerLeave($event)"
             >
               <!-- P4-B 标记刻度：单点是 2px 竖线，区间是一段浅色带；hover 出 'mm:ss–mm:ss · 说明' 原生提示。
                    pointer-events:none 让鼠标照常落到下面的 range 上（既不挡 hover 预览，也不挡拖动） -->
@@ -125,25 +128,35 @@
               <div v-if="markerHover" class="p-marker-tip" :style="floatStyle(markerHover.left / 100)">
                 {{ markerHover.title }}
               </div>
-              <!-- 1px 指示线：与卡片同源比例，告诉用户这里能 hover；无 hasSprite 时不渲染 -->
-              <div v-if="hoverVisible" class="p-hover-line" :style="hoverLineStyle"></div>
-              <!-- hover 预览：精灵图整图 + background-position 切格（10×10，共 100 格）；无 hasSprite 时永不渲染 -->
-              <div v-if="hoverVisible" class="p-hover" :style="floatStyle(hoverRatio)">
-                <div class="p-hover-img" :style="spriteStyle"></div>
-                <span class="p-hover-t">{{ hoverTimeText }}</span>
-              </div>
-              <!-- 拖动预览：pv2 缩时视频，按拖动比例定位帧；无 hasPreview 时永不挂载（因此不发请求） -->
-              <div v-if="clipVisible" class="p-clip" :style="floatStyle(clipRatio)">
+              <!-- 1px 指示线：与浮层同源比例，告诉用户这里能 hover；无预览资源时不渲染 -->
+              <div v-if="hoverLineVisible" class="p-hover-line" :style="hoverLineStyle"></div>
+              <!-- P5.2 悬停 / 拖动共用的**同一个**浮层（不会出现两个浮层叠加）：
+                   有 pv2 → 预览片段视频；无 pv2 但有精灵图 → 精灵图切片（降级）；两者都无 → 整块不渲染。
+                   v-if 绑 previewMode：没资源时不进 DOM；v-show 绑预览开关：同一部片只创建一次 <video>，
+                   离开进度条只是隐藏，回到条上不会重新 load（preload="none"，第一次需要时才 load）。 -->
+              <div
+                v-if="previewMode"
+                v-show="previewShown"
+                class="p-preview"
+                :class="previewClass"
+                :style="floatStyle(previewRatio)"
+              >
                 <video
+                  v-if="previewMode === 'clip'"
                   ref="clipEl"
-                  class="p-clip-v"
+                  class="p-preview-v"
                   muted
                   playsinline
                   preload="none"
                   :src="previewSrc"
                   @loadedmetadata="onClipMetadata"
                 ></video>
-                <span class="p-clip-t">{{ clipTimeText }}</span>
+                <div v-else class="p-hover-img" :style="spriteStyle"></div>
+                <!-- 底部时间条：大字是**影片内容时间**（07:28），小字才是片段内部时间（片段 0:07 / 0:08） -->
+                <div class="p-preview-bar">
+                  <span class="p-preview-t">{{ previewLabelText }}</span>
+                  <span v-if="previewCaptionText" class="p-preview-sub">{{ previewCaptionText }}</span>
+                </div>
               </div>
             </div>
           <!-- P4.1 标记轨（marker lane）：进度条下方独立一条，间距 var(--lane-gap)=3px（P4.3 起的值）。
@@ -364,6 +377,7 @@ import { useMediaApi } from '@/composables/useMediaApi'
 // P4.1：+ 视频倍速档位与持久化、增益档位循环、标记轨尺寸与点击目标
 import {
   FRAME_FALLBACK_SEC,
+  HOVER_PREVIEW_MIN_MS,
   LANE_EDGE_PX,
   LANE_GAP_PX,
   LANE_HEIGHT_PX,
@@ -377,8 +391,10 @@ import {
   abTick,
   applyGain,
   blurActiveInCtrl,
+  clipCaption,
   createCtrlAutoHide,
   createGainGraph,
+  createThrottle,
   frameStep,
   frameStepSize,
   markJumpTarget,
@@ -390,6 +406,7 @@ import {
   readGainLevel,
   readSpeedLevel,
   seekPxToRatio,
+  seekPreview,
   seekRatioCss,
   seekThumbPx,
   speedLabel,
@@ -480,15 +497,20 @@ const SPRITE_COLS = 10
 const SPRITE_ROWS = 10
 const SPRITE_CELLS = SPRITE_COLS * SPRITE_ROWS
 
-/** 预览视频成片 5~8 秒（build-thumbs.js PV）：元数据没到时按 8 秒兜底 */
-const CLIP_FALLBACK_SEC = 8
-
 const clipEl = ref(null)
 const seekEl = ref(null)
-const hoverVisible = ref(false)
-const clipVisible = ref(false)
-const hoverRatio = ref(0)
-const clipRatio = ref(0)
+/**
+ * P5.2：悬停与拖动共用**一个**浮层，状态只有这一组（不再有 hover/clip 两套开关）。
+ * - previewMode：'' 不显示 / 'clip' 预览片段（有 pv2）/ 'sprite' 精灵图切片（无 pv2 的降级）
+ * - previewOn：显示开关（落到 v-show）；previewMode 为空时整块不进 DOM
+ * - previewSource：'hover' 悬停（节流、移动端不显示）/ 'drag' 拖动（即时）
+ * - previewRatio：浮层锚点比例（0–1），内容时间标签与片段 seek 都由它算（见 playerExtras.seekPreview）
+ */
+const previewMode = ref('')
+const previewOn = ref(false)
+const previewSource = ref('')
+const previewRatio = ref(0)
+/** 预览片段自身时间（秒）：只喂给浮层底部的小字「片段 0:03 / 0:08」，不再当进度显示 */
 const clipTime = ref(0)
 let clipDur = 0
 
@@ -513,8 +535,27 @@ function onMobileMqChange(e) {
 const spriteSrc = computed(() => (hasSprite.value ? api.spriteUrl(props.video.id) : ''))
 const previewSrc = computed(() => (hasPreview.value ? api.previewUrl(props.video.id) : ''))
 
-const hoverTimeText = computed(() => fmtDur(hoverRatio.value * (seekDur.value || 0)))
-const clipTimeText = computed(() => fmtDur(clipTime.value))
+/* P5.2：三处徽标都由 seekPreview 一处换算（纯函数，playerExtras 单测覆盖），
+   浮层大字 = 影片内容时间（ratio × 内容时长，mm:ss / h:mm:ss），不是 8 秒片段时长 */
+const previewInfo = computed(() => seekPreview(previewRatio.value, seekDur.value || 0, clipDur))
+const previewLabelText = computed(() => previewInfo.value.labelTime)
+const previewCaptionText = computed(() =>
+  previewMode.value === 'clip' ? clipCaption(clipTime.value, previewInfo.value.clipDur) : ''
+)
+/** 是否真的显示浮层：悬停时若正好命中标记（要出标记提示条）就让位，避免两条浮层抢同一位置抖动 */
+const previewShown = computed(
+  () => previewOn.value && !(previewSource.value === 'hover' && !!markerHover.value)
+)
+const previewClass = computed(() => [
+  previewMode.value === 'clip' ? 'is-clip' : 'is-sprite',
+  previewSource.value === 'hover' ? 'is-hover' : 'is-drag'
+])
+/** 是否具备浮层资源（有 pv2 或有精灵图）：两者都无时整块浮层不进 DOM，也不发任何请求 */
+const previewAvailable = computed(() => !!(hasPreview.value || hasSprite.value))
+/** 1px 指示线只在「指针在条上」时出现，拖动中也跟手 */
+const hoverLineVisible = computed(
+  () => previewShown.value && previewSource.value === 'hover' && canHover.value
+)
 
 /* P4.4 进度条几何：thumb 直径由 playerExtras 的唯一常量决定（桌面 14px / 窄屏 10px），
    以 CSS 变量落到 .p-seek-col 上 —— 进度条、标记轨、刻度层、浮层锚点读的是同一组数字。
@@ -553,7 +594,7 @@ function ratioFromEvent(e) {
 
 /** 比例 → 精灵图格号 → col/row，再用 background-position 百分比切格（不依赖固定像素） */
 const spriteStyle = computed(() => {
-  const ratio = Math.min(1, Math.max(0, hoverRatio.value))
+  const ratio = Math.min(1, Math.max(0, previewRatio.value))
   const cell = Math.min(SPRITE_CELLS - 1, Math.floor(ratio * SPRITE_CELLS))
   const col = cell % SPRITE_COLS
   const row = Math.floor(cell / SPRITE_COLS)
@@ -565,35 +606,31 @@ const spriteStyle = computed(() => {
   }
 })
 
-/** 1px 指示线位置：与卡片同源比例（同一套轨道几何），提示「这条轨道可以 hover 出预览」 */
+/** 1px 指示线位置：与浮层同源比例（同一套轨道几何），提示「这条轨道可以 hover 出预览」 */
 const hoverLineStyle = computed(() => ({
-  left: seekRatioCss(hoverRatio.value)
+  left: seekRatioCss(previewRatio.value)
 }))
 
-function onSeekHover(e) {
-  if (!canHover.value || !hasSprite.value) return
-  if (clipVisible.value) {
-    // 拖动中只显示预览视频：卡片与视频浮层同位置同尺寸，叠在一起看不清
-    hoverVisible.value = false
-    return
-  }
-  hoverRatio.value = ratioFromEvent(e)
-  hoverVisible.value = true
+/* P5.2：悬停节流。mousemove 几乎一帧一次，直接 seek 预览片段会疯狂抖动；
+   80ms + 覆盖式尾部补发（createThrottle 在 playerExtras，可脱离浏览器单测）。
+   拖动**不**走节流：拖拽要跟手，且 input 事件本身频率有限。 */
+const hoverPreview = createThrottle({ intervalMs: HOVER_PREVIEW_MIN_MS })
+
+/** 这一部片能用哪种浮层：有 pv2 用预览片段，没有就降级精灵图切片，都没有就不显示 */
+function previewModeFor() {
+  if (hasPreview.value) return 'clip'
+  if (hasSprite.value) return 'sprite'
+  return ''
 }
 
-function onSeekLeave() {
-  hoverVisible.value = false
-}
-
-/** 按拖动比例把预览视频定位到对应帧（元数据未到时先 load，loadedmetadata 再补定位） */
+/** 按拖动比例把预览片段定位到对应帧（元数据未到时先 load，loadedmetadata 再补定位） */
 function seekClip(ratio) {
-  const r = Math.min(1, Math.max(0, Number(ratio) || 0))
-  clipRatio.value = r
-  const dur = clipDur > 0 ? clipDur : CLIP_FALLBACK_SEC
-  clipTime.value = r * dur
+  const info = seekPreview(ratio, 0, clipDur)
+  clipTime.value = info.clipSeek
   const el = clipEl.value
   if (!el) return
   if (!el.readyState) {
+    // preload="none"：只有真的要看预览时才发这一次请求（每部片至多一次）
     try {
       el.load()
     } catch {
@@ -602,30 +639,54 @@ function seekClip(ratio) {
     return
   }
   try {
-    el.currentTime = Math.max(0, Math.min(dur - 0.04, clipTime.value))
+    el.currentTime = info.clipSeek
   } catch {
     /* 忽略：未就绪的流拒绝赋值 */
   }
+}
+
+/**
+ * 显示（或更新）浮层：悬停与拖动都走这里，所以永远只有一个浮层。
+ * source='hover' 只在桌面断点生效（移动端没有 hover，保持仅拖动显示）。
+ */
+function showPreview(ratio, source) {
+  const mode = previewModeFor()
+  if (!mode) {
+    hidePreview()
+    return
+  }
+  const r = Math.min(1, Math.max(0, Number(ratio) || 0))
+  previewMode.value = mode
+  previewSource.value = source
+  previewRatio.value = r
+  previewOn.value = true
+  if (mode === 'clip') seekClip(r)
+}
+
+function hidePreview() {
+  previewOn.value = false
+  previewSource.value = ''
+}
+
+/** 悬停进度条（不按下）：同样显示预览；节流到 80ms 一次，避免疯狂 seek */
+function onSeekHover(e) {
+  if (!canHover.value || !previewAvailable.value) return
+  if (qSeekDragging) return // 拖动中由 onSeekInput 驱动，别互相抢
+  const ratio = ratioFromEvent(e)
+  hoverPreview.run(() => showPreview(ratio, 'hover'))
+}
+
+function onSeekLeave() {
+  hoverPreview.cancel()
+  if (qSeekDragging) return // 拖动可能拖出条外，浮层跟着拖动而不是消失
+  hidePreview()
 }
 
 function onClipMetadata() {
   const el = clipEl.value
   const d = el && el.duration
   if (isFinite(d) && d > 0) clipDur = d
-  seekClip(clipRatio.value)
-}
-
-/** 拖动开始：露出预览视频（<video> 下一帧才挂载，定位放到 nextTick） */
-function showClip(ratio) {
-  if (!hasPreview.value) return
-  hoverVisible.value = false
-  clipVisible.value = true
-  seekClip(ratio)
-  nextTick(() => seekClip(clipRatio.value))
-}
-
-function hideClip() {
-  clipVisible.value = false
+  seekClip(previewRatio.value)
 }
 
 const subSrc = computed(() => (props.video && props.video.sub ? api.subUrl(props.video.sub) : ''))
@@ -846,8 +907,8 @@ function openVideo(v, resumePos) {
   isPlaying.value = false
   onVolumeChange()
   // 换片 / 重开：浮层不能残留上一部的格子与预览帧（clipDur 也要重测）
-  hoverVisible.value = false
-  hideClip()
+  hidePreview()
+  previewMode.value = ''
   clipDur = 0
   tryPlay()
 }
@@ -941,8 +1002,10 @@ function onSeekInput(e) {
   syncCtrlState()
   const target = Number(e.target.value) || 0
   seekPos.value = target
-  // 拖动中露预览视频：比例 = 当前进度 / 总时长（与松手后的 seek 目标同源）
-  if (hasPreview.value) showClip(seekMax.value > 0 ? target / seekMax.value : 0)
+  // 拖动即露浮层（不节流）：比例 = 当前进度 / 总时长（与松手后的 seek 目标同源）；
+  // 悬停的待发任务先取消，避免拖动结束后又补发一次悬停位置
+  hoverPreview.cancel()
+  showPreview(seekMax.value > 0 ? target / seekMax.value : 0, 'drag')
   // 原画：拖动即写 currentTime；转码流只能松手后重开流（拖动中不动 currentTime，不动 offset）
   if (!isTranscode.value) seekOrigTo(target)
 }
@@ -950,7 +1013,7 @@ function onSeekInput(e) {
 function onSeekCommit(e) {
   qSeekDragging = false
   syncCtrlState()
-  hideClip()
+  hidePreview()
   const target = Number(e.target.value) || 0
   if (!isTranscode.value) {
     seekOrigTo(target)
@@ -1056,6 +1119,11 @@ const markerHover = ref(null)
  * 注意：这里只读 markerTickList（已按位置排好序），不产生任何请求。
  */
 function onMarkerHover(e) {
+  // 拖动中不出标记提示：浮层归拖动位置所有，两条浮层抢同一位置会抖
+  if (qSeekDragging) {
+    markerHover.value = null
+    return
+  }
   if (!markerTickList.value.length) return
   const pct = ratioFromEvent(e) * 100
   let best = null
@@ -1204,7 +1272,7 @@ function pointerOverCtrl() {
 
 /** 浮层（hover 预览 / 拖动预览 / 标记提示 / 标记列表）展开时不隐藏：否则会留下一张没有控制条的浮卡片 */
 const ctrlOverlayOpen = computed(
-  () => !!(hoverVisible.value || clipVisible.value || markerHover.value || markerListOpen.value)
+  () => !!(previewShown.value || markerHover.value || markerListOpen.value)
 )
 
 const ctrlAuto = createCtrlAutoHide({
@@ -2029,10 +2097,10 @@ defineExpose({
   outline-offset: 3px;
 }
 
-/* hover 卡片 / 拖动预览：同为 160×90 浮层，颜色只取 mediaTheme 变量（= --qt-* 映射）。
-   卡片在控制条上方弹出（控制条在舞台下方），z-index 抬到浮层最高，父级都不裁剪 */
-.p-hover,
-.p-clip {
+/* P5.2 悬停 / 拖动**共用**的一个浮层（有 pv2 显示预览片段，无 pv2 降级精灵图切片）。
+   160×90，贴在控制条上方；颜色只取 mediaTheme 变量（= --qt-* 映射），亮暗都可读。
+   z-index 6 > 控制条 5（P4.6 的口径），全屏下也在控制条之上，父级都不裁剪（见 .p-seekwrap） */
+.p-preview {
   position: absolute;
   bottom: calc(100% + 8px);
   transform: translateX(-50%);
@@ -2045,7 +2113,7 @@ defineExpose({
   pointer-events: none;
 }
 
-/* 1px 指示线：hover 位置提示；只有 hasSprite 的片子会渲染，其它片子零浮层 */
+/* 1px 指示线：悬停位置提示；只有能出预览的片子才会渲染，其它片子零浮层 */
 .p-hover-line {
   position: absolute;
   top: -6px;
@@ -2066,7 +2134,8 @@ defineExpose({
   background-color: var(--bg-3);
 }
 
-.p-clip-v {
+/* 预览片段：与精灵图单格同尺寸，画面比例不一致时裁切填满 */
+.p-preview-v {
   display: block;
   width: 160px;
   height: 90px;
@@ -2074,18 +2143,33 @@ defineExpose({
   background: var(--bg-3);
 }
 
-.p-hover-t,
-.p-clip-t {
+/* 底部时间条（压在画面下沿的半透明条，不遮主体）：
+   大字 = **影片内容时间**（07:28），小字 = 片段内部时间（片段 0:07 / 0:08）。
+   两者分开标注，就是为了不再把 8 秒成片的时长误读成影片位置（P5.2 用户反馈）。 */
+.p-preview-bar {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
   padding: 2px 6px;
   background: color-mix(in srgb, var(--bg) 78%, transparent);
   color: var(--fg);
-  font-size: 11.5px;
   font-variant-numeric: tabular-nums;
-  text-align: center;
+  line-height: 1.3;
+}
+
+.p-preview-t {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.p-preview-sub {
+  font-size: 10.5px;
+  color: var(--fg-dim);
 }
 
 .p-seek-now {
@@ -2293,8 +2377,8 @@ defineExpose({
     left: 10px;
   }
 
-  /* 触屏无 hover：只保留拖动时的预览视频 */
-  .p-hover,
+  /* 触屏无 hover：只保留拖动时的浮层（.is-hover 是悬停态，拖动态是 .is-drag） */
+  .p-preview.is-hover,
   .p-hover-line {
     display: none;
   }

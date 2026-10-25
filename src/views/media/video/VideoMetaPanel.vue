@@ -27,24 +27,56 @@
       <div v-if="loading" class="vp-hint">加载中…</div>
       <p v-if="readNote" class="vp-hint vp-note">{{ readNote }}</p>
 
-      <!-- 人物（P3-B）：只读，取索引 videos[].persons = [{id,name,role}]，最多 2 个 + N -->
-      <section v-if="namedPersons.length" class="vp-sec">
+      <!-- 人物 / 演员（P3-B 只读 → P5.3-B 可编辑）：
+           「素人」是**真实人物**（后端把没有真演员的视频都绑给它），按普通人物 chip 渲染，
+           形状与真实人物一致、只把主色降为次级色；persons 与 actors 都为空时才用同一个 chip 兜底。
+           编辑：与标签同构 —— chips + 「＋ 加演员」打开 PersonPicker，写 PUT /video/{id}/persons。 -->
+      <section class="vp-sec">
         <h3 class="vp-h3">
-          人物<span class="vp-h3n">{{ namedPersons.length }}</span>
+          人物<span class="vp-h3n">{{ persons.length }}</span>
+          <!-- local 档：区块标题旁标「本地」（与标题右侧徽标同义，编辑控件只在本地生效） -->
+          <span v-if="isLocal" class="vp-h3-local" :title="HINT_LOCAL">本地</span>
         </h3>
         <div class="vp-persons">
-          <span v-for="pp in visiblePersons" :key="pp.id || pp.name" class="vp-person" :title="pp.name + (pp.role ? ' · ' + pp.role : '')">
-            {{ pp.name }}<i v-if="pp.role" class="vp-person-role">{{ pp.role }}</i>
-          </span>
-          <button
-            v-if="namedPersons.length > 2"
-            class="vp-mini vp-person-more"
-            type="button"
-            @click="personsOpen = !personsOpen"
+          <span
+            v-for="pp in persons"
+            :key="pp.id || pp.name"
+            class="vp-person"
+            :class="{ 'is-auto': isAmateurName(pp.name) }"
+            :title="pp.name + (pp.role ? ' · ' + pp.role : '')"
           >
-            {{ personsOpen ? '收起' : '+' + (namedPersons.length - 2) }}
-          </button>
+            {{ pp.name }}<i v-if="pp.role" class="vp-person-role">{{ pp.role }}</i>
+            <button class="vp-person-x" type="button" :disabled="locked" :aria-label="'移除演员 ' + pp.name" @click="removePerson(pp)">
+              ×
+            </button>
+          </span>
+          <!-- 兜底 A：persons 为空但旧 actors 有值 → 先显示真实演员名（只读，来源是旧 facet） -->
+          <span
+            v-for="a in orphanActorNames"
+            :key="'a-' + a"
+            class="vp-person is-auto"
+            :title="'演员索引（旧字段）· 只读 · ' + a"
+            >{{ a }}</span
+          >
+          <!-- 兜底 B：persons 与 actors 都为空 → 素人（后端就绪后这条只会命中旧索引缓存） -->
+          <span v-if="amateurFallback" class="vp-person is-auto" title="未收录演员：默认归类为「素人」">素人</span>
+          <button class="vp-add" type="button" :disabled="locked" @click="togglePersonPicker">＋ 加演员</button>
         </div>
+        <div v-if="personPickerOpen && !readOnly" class="vp-picker">
+          <PersonPicker
+            :all-persons="allPersons"
+            :selected="persons"
+            :loading="personsLoading"
+            :level="level"
+            :unavailable="personsUnavailable || personNotReady"
+            @confirm="applyPersons"
+            @close="personPickerOpen = false"
+            @created="(p) => emit('person-created', p)"
+            @notify="(m) => emit('notify', m)"
+          />
+        </div>
+        <!-- 演员接口未就绪（PUT 404/405/501）：只提示，不抛异常 -->
+        <p v-if="personNotReady" class="vp-hint">{{ PERSON_NOT_READY }}</p>
       </section>
 
       <!-- 工作室（P5-A）：只读，取索引 videos[].studios（名称数组），
@@ -231,6 +263,22 @@ import { useMediaApi } from '@/composables/useMediaApi'
 import { HINT_OFF, HINT_LOCAL } from '@/composables/useMediaEditPolicy'
 import { readLocalMeta, writeLocalMeta } from '@/composables/useMediaLocalOrg'
 import TagPicker from './TagPicker.vue'
+// P5.3-B：演员选择器（与 TagPicker 同构：搜索 + 多选 + 现场新建；另带每人角色）
+import PersonPicker from './PersonPicker.vue'
+// P5.3-B：人物规则（素人 / 真人互斥、提交体组装、兜底判定）—— 唯一实现在 personRules.js
+import {
+  buildPersonsPayload,
+  isAmateur,
+  isAmateurName,
+  normalizePersons,
+  normalizeSelection,
+  orphanActors,
+  samePersons
+} from './personRules'
+// P5.3-B：local 档的演员覆盖（ms.orgpersons.<owner>.<videoId>）
+import { readLocalPersons, writeLocalPersons } from './personLocal'
+// P5.3-B：站端演员接口（PUT /video/{id}/persons、POST /persons）；未就绪只提示
+import { PERSON_NOT_READY, errorText, isNotReady, saveVideoPersons } from './personApi'
 // P5-C：标记预览帧（精灵图按时间取格，几何唯一实现在 spriteCell.js）
 import SpriteThumb from './SpriteThumb.vue'
 // P4-B：标记区间（pos–endPos）的归一化与展示文本，与播放器进度条刻度共用同一份逻辑
@@ -249,8 +297,16 @@ const props = defineProps({
   level: { type: String, default: 'full' },
   /** 打开抽屉那一刻的播放位置（秒）：「在当前时间加标记」的起点 */
   atSec: { type: Number, default: 0 },
-  /** 人物（索引 videos[].persons = [{id,name,role}]）：只读展示，不参与这里的写接口 */
+  /** 人物（索引 / 本地覆盖 / 服务端写回 = [{id,name,role}]），含真实「素人」人物 */
   persons: { type: Array, default: () => [] },
+  /** 旧「演员」facet 名称数组（索引 videos[].actors）：persons 为空时兜底展示 */
+  actors: { type: Array, default: () => [] },
+  /** 人物库 [{id,name,alias?,useCount?}]（GET /api/media/persons）：PersonPicker 候选 + 素人 id 来源 */
+  allPersons: { type: Array, default: () => [] },
+  /** 人物库是否加载中 */
+  personsLoading: { type: Boolean, default: false },
+  /** 人物库接口未就绪（404/405）：演员区只读并提示 */
+  personsUnavailable: { type: Boolean, default: false },
   /** 工作室（索引 videos[].studios = [name]）：只读展示，接口未就绪时为空数组 */
   studios: { type: Array, default: () => [] },
   /** P4-B：取「此刻」的播放位置（页面传 playerRef.getCurrentTime）；缺省回落到 atSec */
@@ -259,7 +315,7 @@ const props = defineProps({
   getDurSec: { type: Function, default: null }
 })
 
-const emit = defineEmits(['close', 'updated', 'tag-created', 'notify', 'markers'])
+const emit = defineEmits(['close', 'updated', 'tag-created', 'person-created', 'notify', 'markers'])
 
 const api = useMediaApi()
 
@@ -275,17 +331,23 @@ const saving = ref(false)
 /** 站端只有写接口（GET /video/{id}/meta 仅存在于 /admin/**，匿名访客 401）：读不到就只提示，不阻塞编辑 */
 const readNote = ref('')
 const pickerOpen = ref(false)
-/** 人物折叠：默认只给前 2 个，超出的点 +N 展开（只影响显示，不触发任何请求） */
-const personsOpen = ref(false)
+/** 演员选择器开关（P5.3-B；与标签选择器并列，互不影响） */
+const personPickerOpen = ref(false)
+/** 演员接口未就绪：PUT 返回 404/405/501 后置位 → 只显示「暂只能查看」，不抛异常 */
+const personNotReady = ref(false)
 
-/** 人物归一化：兼容 {id,name,role} 与纯名字两种索引形态 */
-const namedPersons = computed(() =>
-  (props.persons || [])
-    .map((p) => (typeof p === 'string' ? { name: p, role: '' } : { id: p && p.id, name: (p && p.name) || '', role: (p && p.role) || '' }))
-    .filter((p) => p.name)
-)
+/**
+ * 人物状态（P5.3-B）：local 档先看本机覆盖（ms.orgpersons.<owner>.<videoId>），
+ * 其余用页面传下来的 persons（索引 / 服务端写回）。「素人」是真实人物，不做特殊剔除 ——
+ * 素人与真人的互斥由 normalizeSelection（选择器 / 移除 / 保存三处）统一负责。
+ */
+const personsSeed = isLocal.value ? readLocalPersons(props.video.id) : null
+const persons = ref(normalizePersons((personsSeed && personsSeed.persons) || props.persons))
 
-const visiblePersons = computed(() => (personsOpen.value ? namedPersons.value : namedPersons.value.slice(0, 2)))
+/** 兜底 A：persons 为空但旧 actors 有值 → 先显示真实演员名（只读，来源是旧 facet 字段） */
+const orphanActorNames = computed(() => (persons.value.length ? [] : orphanActors([], props.actors)))
+/** 兜底 B：persons 与 actors 都为空 → 素人 chip（后端就绪后这条只会命中旧索引缓存） */
+const amateurFallback = computed(() => !persons.value.length && isAmateur([], props.actors))
 
 /** 工作室归一化：索引给名称数组，详情接口可能给 [{id,name}]，两种都收并去重 */
 const studioNames = computed(() =>
@@ -668,6 +730,100 @@ function removeMarker(m) {
     { markers: rest }
   )
 }
+
+/* ------------------------------------------------- 演员编辑（P5.3-B，与标签编辑同构） */
+
+/** 「＋ 加演员」：开 / 关选择器（off 档按钮已 disabled，这里再兜一层） */
+function togglePersonPicker() {
+  if (readOnly.value) return
+  personPickerOpen.value = !personPickerOpen.value
+}
+
+/** 交还页面的最小快照：卡片要同时刷新评分 / 标签 / 人物 */
+function panelSnapshot() {
+  return { id: props.video.id, rating: rating.value, tags: tags.value, persons: persons.value }
+}
+
+/**
+ * 选择器确认：整份人物集合 + 各自角色。
+ * 素人 / 真人互斥在勾选时已做过（PersonPicker），这里再规整一次防御，然后走统一保存出口。
+ */
+function applyPersons(list) {
+  personPickerOpen.value = false
+  const norm = normalizeSelection(list, props.allPersons)
+  if (norm.removedAmateur) emit('notify', '已自动移除「素人」')
+  const n = norm.persons.length
+  savePersons(norm.persons, n > 1 ? '已保存演员：' + n + ' 人' : '已保存演员')
+}
+
+/** 逐个移除：把最后一位真人也移除时自动回到「素人」（normalizeSelection 补回库里那位素人） */
+function removePerson(pp) {
+  if (!pp || locked.value) return
+  const rest = persons.value.filter((x) => (pp.id != null ? String(x.id) !== String(pp.id) : x.name !== pp.name))
+  const norm = normalizeSelection(rest, props.allPersons)
+  const backToAmateur = !norm.persons.some((x) => !isAmateurName(x.name))
+  savePersons(norm.persons, '已移除「' + pp.name + '」' + (backToAmateur ? '，已回到「素人」' : ''))
+}
+
+/**
+ * 演员保存出口（提交时机与标签一致：改完立即提交）：
+ *   local 档 —— 只写 localStorage（ms.orgpersons.<owner>.<videoId>），不发任何请求；
+ *   full 档  —— PUT /api/media/video/{id}/persons body {personIds, roles}；
+ *               失败 toast 后端原文并回滚；404/405/501 → 「演员接口未就绪，暂只能查看」。
+ */
+async function savePersons(next, okMsg) {
+  if (readOnly.value || saving.value) return
+  const prev = persons.value
+  const normalized = normalizePersons(next)
+  if (samePersons(prev, normalized)) {
+    personPickerOpen.value = false
+    return
+  }
+  if (isLocal.value) {
+    writeLocalPersons(props.video.id, normalized)
+    persons.value = normalized
+    emit('updated', panelSnapshot())
+    emit('notify', (okMsg || '已保存演员') + '（仅本机）')
+    return
+  }
+  // full 档：没有可提交的 id（人物库未就绪、还不知道「素人」是谁）就不写，避免把绑定整体清空
+  if (!normalized.length) {
+    emit('notify', '人物库未就绪（缺少「素人」人物 id），暂不写入')
+    return
+  }
+  saving.value = true
+  persons.value = normalized // 乐观更新，失败回滚
+  try {
+    const body = await saveVideoPersons(props.video.id, buildPersonsPayload(normalized))
+    personNotReady.value = false
+    // 后端回 {persons:[{personId,name,role}]} 时以它为准（角色可能被后端裁剪）
+    const echoed = body && Array.isArray(body.persons) ? normalizePersons(body.persons) : []
+    if (echoed.length) persons.value = echoed
+    emit('updated', panelSnapshot())
+    emit('notify', okMsg || '已保存演员')
+  } catch (err) {
+    persons.value = prev // 回滚到提交前
+    if (isNotReady(err)) {
+      personNotReady.value = true
+      emit('notify', PERSON_NOT_READY)
+    } else {
+      emit('notify', '保存演员失败：' + errorText(err))
+    }
+  } finally {
+    saving.value = false
+  }
+}
+
+/** 页面侧人物被别处改动（服务端写回 / 切换视频）：同值不同步，避免与乐观更新互相覆盖 */
+watch(
+  () => props.persons,
+  (v) => {
+    if (saving.value) return
+    const next = normalizePersons(v)
+    if (samePersons(next, persons.value)) return
+    persons.value = next
+  }
+)
 
 /* P4-B：标记列表的任何变动（读接口 / 本地档 / 增删）都同步给页面，供播放器画进度条刻度；
    immediate 让打开抽屉时就能把已加载的标记推上去，不需要等用户操作。 */
@@ -1098,12 +1254,21 @@ onMounted(() => {
 .vp-person {
   display: inline-flex;
   align-items: center;
-  padding: 2px 9px;
+  gap: 4px;
+  max-width: 100%;
+  padding: 2px 4px 2px 9px;
   border: 1px solid var(--accent);
   border-radius: 999px;
   background: var(--accent-soft);
   font-size: 12px;
   color: var(--accent);
+}
+
+/* 素人 / 旧演员兜底 chip：与真实人物 chip 同形，只把主色降为次级色（不是空占位视觉） */
+.vp-person.is-auto {
+  border-color: var(--line-2);
+  background: transparent;
+  color: var(--fg-dim);
 }
 
 .vp-person-role {
@@ -1112,8 +1277,42 @@ onMounted(() => {
   opacity: 0.75;
 }
 
-.vp-person-more {
-  border-style: dashed;
+/* 移除演员的 ×：与标签 × 同一套尺寸 / hover 语义 */
+.vp-person-x {
+  flex: 0 0 auto;
+  width: 17px;
+  height: 17px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  line-height: 17px;
+  opacity: 0.75;
+  cursor: pointer;
+}
+
+.vp-person-x:hover {
+  color: var(--danger);
+  opacity: 1;
+}
+
+.vp-person-x:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* 区块标题旁的「本地」标记（local 档） */
+.vp-h3-local {
+  margin-left: 6px;
+  padding: 0 5px;
+  border: 1px dashed var(--accent);
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--accent);
 }
 
 /* ============================ P4-B 标记区间（单点 / 区间切换） ============================ */

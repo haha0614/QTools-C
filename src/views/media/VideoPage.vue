@@ -147,7 +147,8 @@
             :rating="cardMeta(v).rating"
             :tags="cardMeta(v).tags"
             :local="!!cardMeta(v).local"
-            :persons="v.persons || []"
+            :persons="cardPersons(v)"
+            :actors="v.actors || EMPTY_LIST"
             :studios="v.studios || []"
             :playlist-btn="true"
             :level="editLevel"
@@ -260,12 +261,17 @@
       :at-sec="metaAtSec"
       :get-current-sec="currentPlaySec"
       :get-dur-sec="currentPlayDur"
-      :persons="(curVideo && curVideo.persons) || []"
+      :persons="(curVideo && cardPersons(curVideo)) || EMPTY_LIST"
+      :actors="(curVideo && curVideo.actors) || EMPTY_LIST"
       :studios="(curVideo && curVideo.studios) || []"
+      :all-persons="personList || EMPTY_LIST"
+      :persons-loading="personsLoading"
+      :persons-unavailable="personsUnavailable"
       @close="closeMeta"
       @updated="onMetaUpdated"
       @markers="onMetaMarkers"
       @tag-created="onTagCreated"
+      @person-created="onPersonCreated"
       @notify="showToast"
     />
 
@@ -299,6 +305,8 @@ import {
   clearLocalOrg,
   mergeCardMeta
 } from '@/composables/useMediaLocalOrg'
+// P5.3-B：local 档的演员覆盖（卡片人物行 / 「清除本地修改」共用）
+import { clearAllLocalPersons, readLocalPersons } from './video/personLocal'
 // P4.3：标记按 videoId 的前端缓存（站端没有匿名读 meta 的接口时的替代方案）
 import { readMarkerCache, writeMarkerCache } from '@/composables/useMarkerCache'
 import FilterSidebar from './video/FilterSidebar.vue'
@@ -805,6 +813,9 @@ const facetGroups = computed(() => facetValues(videos.value, facetOrder.value))
    筛选、计数、折叠、搜索框行为都不变 —— 只是「人物」这一组的来源换成了服务端。 */
 const PERSON_FACET = '人物'
 const personList = ref(null)
+/** 人物库加载中 / 未就绪：演员选择器（PersonPicker）的三态数据源，null 列表 = 未就绪 */
+const personsLoading = ref(false)
+const personsUnavailable = computed(() => !personsLoading.value && personList.value == null)
 
 const personFacetItems = computed(() => {
   if (!personList.value) return null
@@ -1872,6 +1883,8 @@ function showToast(msg) {
 }
 
 const EMPTY_META = { rating: 0, tags: [] }
+/** 稳定空数组引用：人物 / 演员缺省时复用同一个，避免每帧给卡片新建 props */
+const EMPTY_LIST = []
 
 /**
  * 卡片展示用的组织信息：本地覆盖层优先，其次索引里带的 rating / tags。
@@ -1904,6 +1917,31 @@ function cardMeta(v) {
     if (names.length) return Object.assign({}, m, { tags: names.map((x) => ({ name: x, color: '' })) })
   }
   return m
+}
+
+/* ------------------------------------------------------------ 卡片人物（P5.3-B） */
+/* 优先级：local 覆盖（ms.orgpersons.*）→ 抽屉写回的覆盖（personsOverrides）→ 索引 videos[].persons。
+   「素人」是真实人物，不做特殊处理；索引里 persons 为空时卡片按 personRules.isAmateur 兜底。 */
+const personsOverrides = reactive({})
+
+const cardPersonsMap = computed(() => {
+  const out = {}
+  const localMode = isLocal.value
+  // 依赖版本号：本地演员覆盖写入后卡片要跟着变
+  if (localMode) void localOrgVersion.value
+  for (const v of videos.value) {
+    const localRec = localMode ? readLocalPersons(v.id) : null
+    out[v.id] = (localRec && localRec.persons) || personsOverrides[v.id] || v.persons || EMPTY_LIST
+  }
+  // 覆盖层里可能有不在当前筛选结果里的 id（抽屉改完再切筛选）：保证卡片照样拿到最新值
+  for (const id of Object.keys(personsOverrides)) {
+    if (!out[id]) out[id] = personsOverrides[id]
+  }
+  return out
+})
+
+function cardPersons(v) {
+  return cardPersonsMap.value[v.id] || EMPTY_LIST
 }
 
 /**
@@ -2070,8 +2108,10 @@ function applyLocalBatchStore(ids, patch) {
 
 /** 「清除本地修改」：清掉本机全部 ms.org.* 与本地标签 */
 function onClearLocal() {
-  const n = clearLocalOrg()
+  // P5.3-B：本机演员覆盖（ms.orgpersons.*）与 ms.org.* / 本地标签一起清
+  const n = clearLocalOrg() + clearAllLocalPersons()
   for (const id of Object.keys(metaOverrides)) delete metaOverrides[id]
+  for (const id of Object.keys(personsOverrides)) delete personsOverrides[id]
   showToast(n ? '已清除本地修改（' + n + ' 项）' : '没有本地修改')
 }
 
@@ -2117,6 +2157,8 @@ function openMeta() {
   metaAtSec.value = pl && typeof pl.getCurrentTime === 'function' ? pl.getCurrentTime() : 0
   metaOpen.value = true
   if (!allTags.value.length) loadTags(false)
+  // 演员编辑的候选库：与标签库同一策略，打开抽屉时按需拉一次（已有缓存 / 加载中不重复拉）
+  if (!personList.value && !personsLoading.value) loadPersonsFacet()
 }
 
 function closeMeta() {
@@ -2130,11 +2172,23 @@ function closeMeta() {
  */
 function onMetaUpdated(meta) {
   if (!meta || !meta.id) return
+  // P5.3-B：抽屉里改完演员，卡片人物行立即跟着变（full 档写回的服务端值 / local 档的本机值都走这里）
+  if (Array.isArray(meta.persons)) personsOverrides[meta.id] = meta.persons
   if (isLocal.value) {
     void localOrgVersion.value
     return
   }
   metaOverrides[meta.id] = { rating: Number(meta.rating) || 0, tags: meta.tags || [] }
+}
+
+/** 选择器里现场新建的人物 → 并入人物库缓存，下次打开选择器就能搜到（local 档的 lp- 条目不并进来） */
+function onPersonCreated(person) {
+  if (!person || !person.name || isLocal.value) return
+  const list = Array.isArray(personList.value) ? personList.value : []
+  const hit = list.some(
+    (x) => String(x.name) === String(person.name) || (x.id != null && person.id != null && String(x.id) === String(person.id))
+  )
+  if (!hit) personList.value = list.concat([person])
 }
 
 /* =========================================================================
@@ -2163,13 +2217,18 @@ async function loadIndex() {
  * 失败一律静默（silent + catch）：后端未部署时保持旧推导，用户不会看到任何报错。
  */
 async function loadPersonsFacet() {
+  if (personsLoading.value) return
+  personsLoading.value = true
   try {
     const res = await api.listPersons({ silent: true })
     const body = res && typeof res === 'object' && res.data && typeof res.data === 'object' ? res.data : res
     const list = Array.isArray(body) ? body : (body && (body.rows || body.list || body.items)) || []
     personList.value = Array.isArray(list) ? list : []
   } catch (err) {
+    // 未就绪：personList=null → personsUnavailable=true → 演员选择器整块只读并提示
     personList.value = null
+  } finally {
+    personsLoading.value = false
   }
 }
 

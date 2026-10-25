@@ -644,3 +644,126 @@ export function createCtrlAutoHide(options) {
     getState: () => Object.assign({}, state)
   }
 }
+
+/* ============================ P5.2 进度条悬停预览的纯计算（比例 ⇄ 内容时间 / 片段位置） ============================ */
+
+/** hover 预览的节流间隔（ms）：mousemove 几乎一帧一次，直接 seek 会让预览片段疯狂抖动 */
+export const HOVER_PREVIEW_MIN_MS = 80
+/** 预览片段 seek 时向后留的余量（秒）：等于 duration 时部分浏览器停在最后一帧不刷新 */
+export const CLIP_SEEK_GUARD_SEC = 0.04
+/** 预览片段没拿到元数据前的时长兜底（build-thumbs.js 成片 5~8 秒） */
+export const CLIP_FALLBACK_SEC = 8
+
+function pad2(n) {
+  return (n < 10 ? '0' : '') + n
+}
+
+/**
+ * 内容时间标签：<1 小时 → "mm:ss"，≥1 小时 → "h:mm:ss"（7:44 的片子拖到尾显示 07:44）。
+ * 0 是合法时间（"00:00"），只有 null / NaN / 负数才降级成 "--:--"：
+ * 播放器的 fmtDur 把 0 也当未知，浮层标签不能沿用它，否则拖到最左端会显示 "--:--"。
+ */
+export function previewTimeLabel(sec) {
+  const n = num(sec)
+  if (n == null || n < 0) return '--:--'
+  const t = Math.round(n)
+  const h = Math.floor(t / 3600)
+  const m = Math.floor((t % 3600) / 60)
+  const s = t % 60
+  return h > 0 ? h + ':' + pad2(m) + ':' + pad2(s) : pad2(m) + ':' + pad2(s)
+}
+
+/** 片段内部时间（不带小时位）：3.4 → "0:03"；未知 → "" */
+export function clipTimeLabel(sec) {
+  const n = num(sec)
+  if (n == null || n < 0) return ''
+  const t = Math.round(n)
+  return Math.floor(t / 60) + ':' + pad2(t % 60)
+}
+
+/**
+ * 浮层底部的小字「片段 0:03 / 0:08」：把片段内部时间与内容时间分开标注，
+ * 避免把 8 秒成片的时长误读成影片位置（P5.2 用户反馈之一）。
+ * 片段时长未知时返回 ""，调用方据此不渲染这行小字。
+ */
+export function clipCaption(sec, clipDur) {
+  const d = num(clipDur)
+  if (d == null || d <= 0) return ''
+  const total = clipTimeLabel(d)
+  const cur = clipTimeLabel(sec)
+  return cur ? '片段 ' + cur + ' / ' + total : '片段 / ' + total
+}
+
+/**
+ * 悬停 / 拖动浮层的唯一换算入口：比例 + 内容时长 + 片段时长 →
+ *   { ratio, hasDur, labelSec, labelTime, clipDur, clipSeek }
+ * - labelTime 是**影片内容时间**（ratio × 内容时长），不是片段时长；内容时长未知时降级 "--:--"；
+ * - clipSeek 是预览片段内部要 seek 到的位置 = ratio × 片段时长，夹在 [0, clipDur - 0.04]
+ *   （落在片段末尾时部分浏览器取不到帧，画面会停在黑帧）；
+ * - 内容时长未知不影响 clipSeek：预览片段照样能按比例定位帧。
+ */
+export function seekPreview(ratio, dur, clipDur, fallbackSec) {
+  const raw = num(ratio)
+  const r = round(clamp(raw == null ? 0 : raw, 0, 1), 6)
+  const d = num(dur)
+  const hasDur = d != null && d > 0
+  const labelSec = hasDur ? round(r * d, 3) : null
+  const cd = num(clipDur)
+  const fb = num(fallbackSec)
+  const clipTotal = cd != null && cd > 0 ? cd : fb != null && fb > 0 ? fb : CLIP_FALLBACK_SEC
+  const clipSeek = round(clamp(r * clipTotal, 0, Math.max(0, clipTotal - CLIP_SEEK_GUARD_SEC)), 3)
+  return { ratio: r, hasDur, labelSec, labelTime: previewTimeLabel(labelSec), clipDur: clipTotal, clipSeek }
+}
+
+/**
+ * 时间节流（leading + trailing，定时器与时钟可注入 → 可脱离浏览器单测）。
+ * run(fn)：距上次执行 ≥ intervalMs 就立即执行；否则只保留**最后一次**（覆盖式），到点补发。
+ * 只保留一个待发任务，所以 mousemove 连发既不会堆积也不会漏掉手感上的最后一帧。
+ */
+export function createThrottle(options) {
+  const opt = options || {}
+  const rawInterval = num(opt.intervalMs)
+  const interval = rawInterval != null && rawInterval >= 0 ? rawInterval : HOVER_PREVIEW_MIN_MS
+  const now = typeof opt.now === 'function' ? opt.now : () => Date.now()
+  const setTimer = typeof opt.setTimeout === 'function' ? opt.setTimeout : (fn, ms) => setTimeout(fn, ms)
+  const clearTimer = typeof opt.clearTimeout === 'function' ? opt.clearTimeout : (id) => clearTimeout(id)
+
+  let last = -Infinity
+  let timer = null
+  let pending = null
+
+  function fire() {
+    timer = null
+    const fn = pending
+    pending = null
+    if (typeof fn !== 'function') return
+    last = now()
+    fn()
+  }
+
+  function run(fn) {
+    if (typeof fn !== 'function') return false
+    const t = now()
+    if (t - last >= interval) {
+      last = t
+      pending = null
+      fn()
+      return true
+    }
+    pending = fn
+    if (timer == null) timer = setTimer(fire, Math.max(0, interval - (t - last)))
+    return false
+  }
+
+  /** 取消待发任务并复位计时（鼠标离开 / 开始拖动时用，下一次 run 立即生效） */
+  function cancel() {
+    if (timer != null) {
+      clearTimer(timer)
+      timer = null
+    }
+    pending = null
+    last = -Infinity
+  }
+
+  return { run, cancel, isPending: () => pending != null, intervalMs: interval }
+}

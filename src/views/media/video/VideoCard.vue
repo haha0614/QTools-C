@@ -45,23 +45,40 @@
     <div class="card-body">
       <h3 :title="video.title">{{ video.title }}</h3>
       <div class="card-sub">{{ video.folder }} · {{ sizeText }}</div>
-      <!-- 人物（P3-B）：取索引里的 persons 字段，最多 2 个 chip，其余折叠成 +N -->
-      <div v-if="shownPersons.length" class="card-persons">
-        <span
-          v-for="pp in shownPersons"
-          :key="pp.id || pp.name"
-          class="cp-chip"
-          :title="pp.name + (pp.role ? ' · ' + pp.role : '')"
-          >{{ pp.name }}<i v-if="pp.role" class="cp-role">{{ pp.role }}</i></span
-        >
-        <span v-if="restPersonCount" class="cp-chip cp-more" :title="restPersonText">+{{ restPersonCount }}</span>
+      <!-- 人物（P3-B / P5.3-B）：这一行**始终渲染**（固定行高），保证有人物 / 无人物的卡片等高。
+           persons 里含真实「素人」人物（后端把没有真演员的视频都绑给素人），按普通人物 chip 渲染；
+           persons 为空时先显示旧 actors 名字，两者都空才兜底显示素人（isAmateur 判定，见 personRules.js） -->
+      <div class="card-persons">
+        <template v-if="shownPersons.length">
+          <span
+            v-for="pp in shownPersons"
+            :key="pp.id || pp.name"
+            class="cp-chip"
+            :class="{ 'is-auto': isAmateurName(pp.name) }"
+            :title="pp.name + (pp.role ? ' · ' + pp.role : '')"
+            >{{ pp.name }}<i v-if="pp.role" class="cp-role">{{ pp.role }}</i></span
+          >
+          <span v-if="restPersonCount" class="cp-chip cp-more" :title="restPersonText">+{{ restPersonCount }}</span>
+        </template>
+        <template v-else-if="shownActors.length">
+          <span
+            v-for="a in shownActors"
+            :key="'a-' + a"
+            class="cp-chip is-auto"
+            :title="'演员索引（旧字段）· ' + a"
+            >{{ a }}</span
+          >
+          <span v-if="restActorCount" class="cp-chip cp-more" :title="restActorText">+{{ restActorCount }}</span>
+        </template>
+        <span v-else-if="amateurFallback" class="cp-chip is-auto" title="未收录演员：默认归类为「素人」">素人</span>
       </div>
-      <!-- 工作室（P5-A）：取索引 videos[].studios（名称数组），最多 1 个 chip，其余折叠成 +N -->
-      <div v-if="shownStudios.length" class="card-studios">
-        <span class="cs-chip" :title="studioText">{{ shownStudios[0] }}<i v-if="restStudioCount" class="cs-more">+{{ restStudioCount }}</i></span>
+      <!-- 工作室（P5-A）：取索引 videos[].studios（名称数组），最多 1 个 chip，其余折叠成 +N
+           行同样始终渲染（固定行高），空行不留文字，只占同一行高 -->
+      <div class="card-studios">
+        <span v-if="shownStudios.length" class="cs-chip" :title="studioText">{{ shownStudios[0] }}<i v-if="restStudioCount" class="cs-more">+{{ restStudioCount }}</i></span>
       </div>
-      <!-- 组织信息：有评分显示 ★N/100；标签最多 2 个 chip，其余折叠成 +N -->
-      <div v-if="local || rating > 0 || shownTags.length" class="card-meta">
+      <!-- 组织信息：有评分显示 ★N/100；标签最多 2 个 chip，其余折叠成 +N。行始终渲染（固定行高） -->
+      <div class="card-meta">
         <!-- local 档：这条组织信息只存在本浏览器（不落服务端），用人眼可见的徽标提示 -->
         <span v-if="local" class="cm-local" title="本地编辑：仅保存在本浏览器，清除缓存即消失">本地</span>
         <!-- 评分域 0–100（P5-C）：0 = 未评分，其余显示 ★N/100，单位随数值一起给出，避免与旧 10 分制混淆 -->
@@ -126,6 +143,8 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useMediaApi } from '@/composables/useMediaApi'
 import { HINT_OFF } from '@/composables/useMediaEditPolicy'
+// P5.3-B：素人 / 人物归一与「persons 为空」兜底判定（纯逻辑，单测见 personRules.test.mjs）
+import { isAmateur, isAmateurName, normalizePersons, orphanActors } from './personRules'
 // P5.1：卡片入口与工具栏 PlaylistPicker 共用同一份数据源 / 写入口（usePlaylistAdd）
 import PlaylistMenuPanel from './PlaylistMenuPanel.vue'
 import { addedMessage, createdMessage, usePlaylistAdd } from './usePlaylistAdd'
@@ -147,8 +166,10 @@ const props = defineProps({
   studios: { type: Array, default: () => [] },
   /** 标签数组：[{id?,name,color?}] 或字符串名称数组（索引里是名称数组） */
   tags: { type: Array, default: () => [] },
-  /** 人物数组：[{id,name,role}]（索引 videos[].persons；也兼容退化成名字数组） */
+  /** 人物数组：[{id,name,role}]（索引 videos[].persons；也兼容退化成名字数组；含真实「素人」人物） */
   persons: { type: Array, default: () => [] },
+  /** 旧「演员」facet 名称数组（索引 videos[].actors）：只在 persons 为空时兜底展示 */
+  actors: { type: Array, default: () => [] },
   /** 该条组织信息来自 localStorage（编辑策略 local 档）：显示「本地」徽标 */
   local: { type: Boolean, default: false },
   /** P5.1：是否显示右下角「加入播放列表」入口（视频库开；其它复用卡片的页面不开，行为零变化） */
@@ -338,16 +359,22 @@ const normTags = computed(() =>
     .filter((t, i, arr) => arr.findIndex((x) => x.name === t.name) === i)
 )
 
-/** 人物归一化：{id?,name,role?} 与纯名字两种形态都收，空名字丢掉 */
-const normPersons = computed(() =>
-  (props.persons || [])
-    .map((p) => (typeof p === 'string' ? { name: p, role: '' } : { id: p && p.id, name: (p && p.name) || '', role: (p && p.role) || '' }))
-    .filter((p) => p.name)
-)
+/** 人物归一化：{id?,name,role?} 与纯名字两种形态都收，空名字丢掉（实现见 personRules.normalizePersons） */
+const normPersons = computed(() => normalizePersons(props.persons))
 
 const shownPersons = computed(() => normPersons.value.slice(0, 2))
+/** +N 的口径：其余人物全部计入（素人也是真实人物，没被显示出来时要计入） */
 const restPersonCount = computed(() => Math.max(0, normPersons.value.length - 2))
 const restPersonText = computed(() => normPersons.value.slice(2).map((p) => p.name + (p.role ? '（' + p.role + '）' : '')).join(' / '))
+
+/** 兜底 A：persons 为空但旧 actors 有值 → 先显示真实演员名（persons=[] actors=[x] 不是素人） */
+const fallbackActors = computed(() => (normPersons.value.length ? [] : orphanActors([], props.actors)))
+const shownActors = computed(() => fallbackActors.value.slice(0, 2))
+const restActorCount = computed(() => Math.max(0, fallbackActors.value.length - 2))
+const restActorText = computed(() => fallbackActors.value.slice(2).join(' / '))
+
+/** 兜底 B：persons 与 actors 都为空 → 显示素人 chip（后端就绪后每个视频都应有 persons，这条只会命中旧缓存） */
+const amateurFallback = computed(() => isAmateur(normPersons.value, props.actors))
 
 /** 工作室归一化：索引给名称数组，管理端/详情接口可能给 [{id,name}]，两种都收 */
 const normStudios = computed(() =>
@@ -535,6 +562,8 @@ function resBadge(w) {
   margin-top: 2px;
   min-width: 0;
   overflow: hidden;
+  /* P5.3-B：行始终渲染 + 固定最小行高 —— 空行与有内容行同高，2/3/4 列网格上下左右都对得齐 */
+  min-height: 18px;
 }
 
 .cm-local {
@@ -574,6 +603,8 @@ function resBadge(w) {
   margin-top: 2px;
   min-width: 0;
   overflow: hidden;
+  /* 固定行高：没有工作室时这一行也占同一高度（不画占位文字，只留空气） */
+  min-height: 18px;
 }
 
 .cs-chip {
@@ -627,6 +658,8 @@ function resBadge(w) {
   margin-top: 2px;
   min-width: 0;
   overflow: hidden;
+  /* 固定行高：素人 / 真实人物 / 旧演员三种来源都占同一高度 */
+  min-height: 18px;
 }
 
 .cp-chip {
@@ -643,6 +676,14 @@ function resBadge(w) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 素人 / 旧演员兜底 chip：形状与真实人物 chip 完全一致（同字号、同 padding、同圆角），
+   只把主色调成次级色 + 透明底 —— 一眼能看出「不是具体某个人」，但不会被误读成空占位 */
+.cp-chip.is-auto {
+  border-color: var(--line-2);
+  background: transparent;
+  color: var(--fg-dim);
 }
 
 .cp-role {
