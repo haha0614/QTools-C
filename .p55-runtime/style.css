@@ -1,5 +1,5 @@
 @charset "UTF-8";
-.player[data-v-8d093e49] {
+.player[data-v-ec796ac8] {
   position: fixed;
   inset: 0;
   z-index: 100;
@@ -8,7 +8,7 @@
   background: var(--bg);
   color: var(--fg);
 }
-.p-head[data-v-8d093e49] {
+.p-head[data-v-ec796ac8] {
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -16,14 +16,14 @@
   background: var(--bg-2);
   border-bottom: 1px solid var(--line);
 }
-.p-info[data-v-8d093e49] {
+.p-info[data-v-ec796ac8] {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 3px;
 }
-.p-title[data-v-8d093e49] {
+.p-title[data-v-ec796ac8] {
   margin: 0;
   font-size: 15px;
   font-weight: 600;
@@ -31,19 +31,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.p-meta[data-v-8d093e49] {
+.p-meta[data-v-ec796ac8] {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 10px;
   font-size: 12px;
   color: var(--fg-dim);
 }
-.p-actions[data-v-8d093e49] {
+.p-actions[data-v-ec796ac8] {
   display: flex;
   gap: 8px;
   flex-shrink: 0;
 }
-.btn[data-v-8d093e49] {
+.btn[data-v-ec796ac8] {
   padding: 7px 11px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -53,24 +53,24 @@
   white-space: nowrap;
   transition: background 0.12s, border-color 0.12s;
 }
-.btn[data-v-8d093e49]:hover {
+.btn[data-v-ec796ac8]:hover {
   border-color: var(--line-2);
 }
-.btn[data-v-8d093e49]:disabled {
+.btn[data-v-ec796ac8]:disabled {
   opacity: 0.4;
   cursor: default;
 }
-.btn-primary[data-v-8d093e49] {
+.btn-primary[data-v-ec796ac8] {
   background: var(--accent-soft);
   border-color: var(--accent);
   color: var(--accent);
 }
-.p-fav.on[data-v-8d093e49] {
+.p-fav.on[data-v-ec796ac8] {
   color: var(--warn);
   border-color: var(--warn);
   background: rgba(255, 201, 119, 0.14);
 }
-.p-warn[data-v-8d093e49] {
+.p-warn[data-v-ec796ac8] {
   padding: 9px 14px;
   background: rgba(255, 93, 93, 0.18);
   border-bottom: 1px solid rgba(255, 93, 93, 0.45);
@@ -80,7 +80,7 @@
 }
 
 /* 自绘控制条：原画（直连）与转码共用一套；颜色只取 mediaTheme 变量（--bg/--fg/--line/--accent → --qt-*） */
-.p-ctrl[data-v-8d093e49] {
+.p-ctrl[data-v-ec796ac8] {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -93,7 +93,7 @@
      P4.6：全屏隐藏态加了 transform 位移（覆盖层下沉自身高度），过渡同步扩到 transform */
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
-.p-ctrlline[data-v-8d093e49] {
+.p-ctrlline[data-v-ec796ac8] {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -102,10 +102,10 @@
   font-size: 12.5px;
   color: var(--fg-dim);
 }
-.p-ctrl-gap[data-v-8d093e49] {
+.p-ctrl-gap[data-v-ec796ac8] {
   flex: 1 1 auto;
 }
-.p-btn[data-v-8d093e49] {
+.p-btn[data-v-ec796ac8] {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -123,35 +123,35 @@
   cursor: pointer;
   transition: background 0.12s, border-color 0.12s;
 }
-.p-btn[data-v-8d093e49]:hover {
+.p-btn[data-v-ec796ac8]:hover {
   border-color: var(--line-2);
 }
-.p-btn[data-v-8d093e49]:active {
+.p-btn[data-v-ec796ac8]:active {
   background: var(--accent-soft);
 }
-.p-btn[data-v-8d093e49]:focus-visible {
+.p-btn[data-v-ec796ac8]:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
-.p-btn-play[data-v-8d093e49] {
+.p-btn-play[data-v-ec796ac8] {
   min-width: 42px;
   color: var(--accent);
 }
-.p-vol[data-v-8d093e49] {
+.p-vol[data-v-ec796ac8] {
   flex-shrink: 0;
   width: 86px;
   height: 4px;
   accent-color: var(--accent);
   cursor: pointer;
 }
-.p-vol[data-v-8d093e49]:focus-visible {
+.p-vol[data-v-ec796ac8]:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
-.p-q-lab[data-v-8d093e49] {
+.p-q-lab[data-v-ec796ac8] {
   flex-shrink: 0;
 }
-.p-q[data-v-8d093e49] {
+.p-q[data-v-ec796ac8] {
   flex-shrink: 0;
   max-width: 140px;
   padding: 3px 6px;
@@ -163,16 +163,16 @@
   font-size: 12.5px;
   cursor: pointer;
 }
-.p-q[data-v-8d093e49]:focus {
+.p-q[data-v-ec796ac8]:focus {
   outline: none;
   border-color: var(--accent);
 }
-.p-q-now[data-v-8d093e49] {
+.p-q-now[data-v-ec796ac8] {
   flex-shrink: 0;
   color: var(--fg);
   font-weight: 600;
 }
-.p-q-hint[data-v-8d093e49] {
+.p-q-hint[data-v-ec796ac8] {
   flex-shrink: 0;
   padding: 1px 8px;
   border-radius: 999px;
@@ -183,7 +183,7 @@
 }
 
 /* 进度条行：原画直写 currentTime，转码重开流 + pendingSeek，UI 同一套 */
-.p-seekbar[data-v-8d093e49] {
+.p-seekbar[data-v-ec796ac8] {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -192,7 +192,7 @@
 }
 
 /* P4.1：进度条与标记轨竖排成一列；.p-seekbar 仍是行布局（时间码在右） */
-.p-seek-col[data-v-8d093e49] {
+.p-seek-col[data-v-ec796ac8] {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
@@ -203,7 +203,7 @@
    mousemove 挂在这一层（20px 命中带），而不是只有 4px 高的 range 轨道。
    P4.1：轨道改为贴底（align-items:flex-end）—— 20px 命中带下半部分空出来的位置正好给标记轨，
    标记轨与 4px 轨道之间才是真正的 2px 间距；hover 卡片仍锚在容器上方，定位不变 */
-.p-seekwrap[data-v-8d093e49] {
+.p-seekwrap[data-v-ec796ac8] {
   position: relative;
   flex: 0 0 auto;
   width: 100%;
@@ -221,7 +221,7 @@
    左右内缩即可与滑块中心逐像素对齐，不受各浏览器原生 thumb 尺寸影响（实测 Blink 原生 16px，
    比设计值大 2px，正是用户看到的两端错位）。
    轨道用渐变自绘填充：--p 是已播放百分比（seekFillStyle），亮暗主题都只读 mediaTheme 变量。 */
-.p-seek[data-v-8d093e49] {
+.p-seek[data-v-ec796ac8] {
   flex: 1;
   min-width: 0;
   height: 4px;
@@ -238,7 +238,7 @@
 
 /* thumb：直径 = --seek-thumb（桌面 14px / 窄屏 10px），压在 4px 轨道正中（4px 高的元素盒，
    thumb 允许溢出，Chrome / Edge / Safari 与 Gecko 都按轨道中心摆放） */
-.p-seek[data-v-8d093e49]::-webkit-slider-thumb {
+.p-seek[data-v-ec796ac8]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: var(--seek-thumb, 14px);
@@ -250,22 +250,22 @@
 }
 
 /* Gecko：轨道默认会盖住 input 自己的渐变，置空让填充透出来；thumb 同一尺寸 */
-.p-seek[data-v-8d093e49]::-moz-range-track {
+.p-seek[data-v-ec796ac8]::-moz-range-track {
   height: 4px;
   border-radius: 2px;
   background: transparent;
 }
-.p-seek[data-v-8d093e49]::-moz-range-progress {
+.p-seek[data-v-ec796ac8]::-moz-range-progress {
   background: transparent;
 }
-.p-seek[data-v-8d093e49]::-moz-range-thumb {
+.p-seek[data-v-ec796ac8]::-moz-range-thumb {
   width: var(--seek-thumb, 14px);
   height: var(--seek-thumb, 14px);
   border: 0;
   border-radius: 50%;
   background: var(--accent);
 }
-.p-seek[data-v-8d093e49]:focus-visible {
+.p-seek[data-v-ec796ac8]:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
@@ -273,7 +273,7 @@
 /* P5.2 悬停 / 拖动**共用**的一个浮层（有 pv2 显示预览片段，无 pv2 降级精灵图切片）。
    160×90，贴在控制条上方；颜色只取 mediaTheme 变量（= --qt-* 映射），亮暗都可读。
    z-index 6 > 控制条 5（P4.6 的口径），全屏下也在控制条之上，父级都不裁剪（见 .p-seekwrap） */
-.p-preview[data-v-8d093e49] {
+.p-preview[data-v-ec796ac8] {
   position: absolute;
   bottom: calc(100% + 8px);
   transform: translateX(-50%);
@@ -287,7 +287,7 @@
 }
 
 /* 1px 指示线：悬停位置提示；只有能出预览的片子才会渲染，其它片子零浮层 */
-.p-hover-line[data-v-8d093e49] {
+.p-hover-line[data-v-ec796ac8] {
   position: absolute;
   top: -6px;
   bottom: -6px;
@@ -300,26 +300,33 @@
 
 /* 精灵图单格也是 160×90：background-size 1000% 1000% + background-position 百分比切格，
    不写死像素，卡片缩放时格子仍对齐 */
-.p-hover-img[data-v-8d093e49] {
+.p-hover-img[data-v-ec796ac8] {
   width: 160px;
   height: 90px;
   background-repeat: no-repeat;
   background-color: var(--bg-3);
 }
 
-/* 预览片段：与精灵图单格同尺寸，画面比例不一致时裁切填满 */
-.p-preview-v[data-v-8d093e49] {
+/* 预览片段：与精灵图单格同尺寸，画面比例不一致时裁切填满。
+   is-frame-ready 之前整块先不着色（见 .p-preview-v 的 opacity）：片段刚 load 完、
+   seek 还没落地的那个空档浏览器没有任何可显示帧，过早显示就是一块黑帧（P5.5 用户反馈） */
+.p-preview-v[data-v-ec796ac8] {
   display: block;
   width: 160px;
   height: 90px;
   object-fit: cover;
   background: var(--bg-3);
+  opacity: 0;
+  transition: opacity 0.12s linear;
+}
+.p-preview.is-frame-ready .p-preview-v[data-v-ec796ac8] {
+  opacity: 1;
 }
 
 /* 底部时间条（压在画面下沿的半透明条，不遮主体）：
    大字 = **影片内容时间**（07:28），小字 = 片段内部时间（片段 0:07 / 0:08）。
    两者分开标注，就是为了不再把 8 秒成片的时长误读成影片位置（P5.2 用户反馈）。 */
-.p-preview-bar[data-v-8d093e49] {
+.p-preview-bar[data-v-ec796ac8] {
   position: absolute;
   left: 0;
   right: 0;
@@ -334,15 +341,15 @@
   font-variant-numeric: tabular-nums;
   line-height: 1.3;
 }
-.p-preview-t[data-v-8d093e49] {
+.p-preview-t[data-v-ec796ac8] {
   font-size: 12px;
   font-weight: 600;
 }
-.p-preview-sub[data-v-8d093e49] {
+.p-preview-sub[data-v-ec796ac8] {
   font-size: 10.5px;
   color: var(--fg-dim);
 }
-.p-seek-now[data-v-8d093e49] {
+.p-seek-now[data-v-ec796ac8] {
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
   font-size: 12px;
@@ -351,7 +358,7 @@
 
 /* P4.3 全屏容器：包住 .p-stage（<video>）与 .p-ctrl（自绘控制栏）。
    平时它就是 .player 里的弹性列（顶替原来 .p-stage 占的那一格），视觉与改动前一致。 */
-.p-fs-wrap[data-v-8d093e49] {
+.p-fs-wrap[data-v-ec796ac8] {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
@@ -364,8 +371,8 @@
    P4.6：控制栏不再留在流内 —— 它改成绝对覆盖层（见下面的 .p-ctrl 规则）。
    原因：流内 + 只改 opacity 隐藏时，控制条**仍占高度**，视频区被压短、底部留一条
    与控制条等高的黑边（用户全屏截图即此）。 */
-.p-fs-wrap[data-v-8d093e49]:fullscreen,
-.p-fs-wrap[data-v-8d093e49]:-webkit-full-screen {
+.p-fs-wrap[data-v-ec796ac8]:fullscreen,
+.p-fs-wrap[data-v-ec796ac8]:-webkit-full-screen {
   width: 100%;
   height: 100%;
   display: flex;
@@ -375,8 +382,8 @@
 
 /* 全屏舞台撑满整个全屏区域：唯一个流内子元素（控制条已 absolute），无 padding / 无兄弟占位，
    视频按原比例 contain（比例不合时由 object-fit 自己 letterbox，属正常）。 */
-.p-fs-wrap:fullscreen .p-stage[data-v-8d093e49],
-.p-fs-wrap:-webkit-full-screen .p-stage[data-v-8d093e49] {
+.p-fs-wrap:fullscreen .p-stage[data-v-ec796ac8],
+.p-fs-wrap:-webkit-full-screen .p-stage[data-v-ec796ac8] {
   flex: 1 1 100%;
   height: 100%;
   min-height: 0;
@@ -386,8 +393,8 @@
    底部渐变（透明 → 半透明黑）保证文字/按钮在亮画面上也可读，且不再挤压视频高度。
    定位基准：:fullscreen 元素由 UA 样式表置为 position:fixed（顶层渲染），本身就是包含块，
    所以这里不改 .p-fs-wrap 的 position（作者样式若覆盖成 relative 会破坏全屏尺寸）。 */
-.p-fs-wrap:fullscreen .p-ctrl[data-v-8d093e49],
-.p-fs-wrap:-webkit-full-screen .p-ctrl[data-v-8d093e49] {
+.p-fs-wrap:fullscreen .p-ctrl[data-v-ec796ac8],
+.p-fs-wrap:-webkit-full-screen .p-ctrl[data-v-ec796ac8] {
   position: absolute;
   left: 0;
   right: 0;
@@ -406,15 +413,15 @@
    既不留任何布局空间（无黑边），也不让渐变在半透明边缘透出暗影；
    pointer-events:none 让点击穿到画面上（= 暂停/播放）；鼠标指针同时隐起，
    避免画面正中挂着一个箭头。悬停控制条区域会由 mousemove 立刻把类摘掉，所以点得到。 */
-.p-fs-wrap.is-ctrl-hidden[data-v-8d093e49] {
+.p-fs-wrap.is-ctrl-hidden[data-v-ec796ac8] {
   cursor: none;
 }
-.p-fs-wrap.is-ctrl-hidden .p-ctrl[data-v-8d093e49] {
+.p-fs-wrap.is-ctrl-hidden .p-ctrl[data-v-ec796ac8] {
   opacity: 0;
   transform: translateY(100%);
   pointer-events: none;
 }
-.p-stage[data-v-8d093e49] {
+.p-stage[data-v-ec796ac8] {
   position: relative;
   flex: 1;
   min-height: 0;
@@ -423,7 +430,7 @@
   justify-content: center;
   background: #000;
 }
-.p-stage video[data-v-8d093e49] {
+.p-stage video[data-v-ec796ac8] {
   width: 100%;
   height: 100%;
   max-width: 100%;
@@ -431,7 +438,7 @@
   object-fit: contain;
   background: #000;
 }
-.p-restart[data-v-8d093e49] {
+.p-restart[data-v-ec796ac8] {
   position: absolute;
   left: 14px;
   bottom: 64px;
@@ -443,11 +450,11 @@
   font-size: 12.5px;
   cursor: pointer;
 }
-.p-restart[data-v-8d093e49]:hover {
+.p-restart[data-v-ec796ac8]:hover {
   background: var(--accent-soft);
   border-color: var(--accent);
 }
-.p-tap[data-v-8d093e49] {
+.p-tap[data-v-ec796ac8] {
   position: absolute;
   left: 50%;
   top: 50%;
@@ -462,10 +469,10 @@
   font-weight: 600;
   cursor: pointer;
 }
-.p-tap[data-v-8d093e49]:hover {
+.p-tap[data-v-ec796ac8]:hover {
   border-color: var(--accent);
 }
-.p-tags[data-v-8d093e49] {
+.p-tags[data-v-ec796ac8] {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -475,7 +482,7 @@
   background: var(--bg-2);
   border-top: 1px solid var(--line);
 }
-.ptag[data-v-8d093e49] {
+.ptag[data-v-ec796ac8] {
   display: inline-flex;
   gap: 5px;
   padding: 2px 8px;
@@ -484,93 +491,93 @@
   font-size: 12px;
   color: var(--fg-dim);
 }
-.ptag b[data-v-8d093e49] {
+.ptag b[data-v-ec796ac8] {
   font-weight: 600;
   color: var(--accent);
 }
-.ptag-actor b[data-v-8d093e49] {
+.ptag-actor b[data-v-ec796ac8] {
   color: var(--warn);
 }
-.ptag-empty[data-v-8d093e49] {
+.ptag-empty[data-v-ec796ac8] {
   color: var(--fg-dim);
 }
 @media (max-width: 768px) {
-.p-head[data-v-8d093e49] {
+.p-head[data-v-ec796ac8] {
     flex-direction: column;
     gap: 8px;
     padding: 8px 10px;
 }
-.p-q[data-v-8d093e49] {
+.p-q[data-v-ec796ac8] {
     max-width: 118px;
 }
-.p-title[data-v-8d093e49] {
+.p-title[data-v-ec796ac8] {
     font-size: 13.5px;
     white-space: normal;
 }
-.p-actions[data-v-8d093e49] {
+.p-actions[data-v-ec796ac8] {
     width: 100%;
 }
-.p-actions .btn[data-v-8d093e49] {
+.p-actions .btn[data-v-ec796ac8] {
     flex: 1;
     padding: 6px 8px;
     font-size: 12.5px;
 }
-.p-tags[data-v-8d093e49] {
+.p-tags[data-v-ec796ac8] {
     max-height: 26vh;
 }
-.p-restart[data-v-8d093e49] {
+.p-restart[data-v-ec796ac8] {
     bottom: 56px;
     left: 10px;
 }
   /* 触屏无 hover：只保留拖动时的浮层（.is-hover 是悬停态，拖动态是 .is-drag） */
-.p-preview.is-hover[data-v-8d093e49],
-  .p-hover-line[data-v-8d093e49] {
+.p-preview.is-hover[data-v-ec796ac8],
+  .p-hover-line[data-v-ec796ac8] {
     display: none;
 }
   /* 移动端控制条：按钮加大到可点尺寸，音量滑块让位给静音按钮 */
-.p-ctrl[data-v-8d093e49] {
+.p-ctrl[data-v-ec796ac8] {
     padding: 6px 10px 10px;
     gap: 6px;
 }
-.p-seekbar[data-v-8d093e49] {
+.p-seekbar[data-v-ec796ac8] {
     gap: 8px;
 }
-.p-seekwrap[data-v-8d093e49] {
+.p-seekwrap[data-v-ec796ac8] {
     min-height: 26px;
 }
-.p-seek[data-v-8d093e49] {
+.p-seek[data-v-ec796ac8] {
     height: 6px;
 }
-.p-ctrlline[data-v-8d093e49] {
+.p-ctrlline[data-v-ec796ac8] {
     gap: 6px;
 }
-.p-btn[data-v-8d093e49] {
+.p-btn[data-v-ec796ac8] {
     min-width: 40px;
     height: 38px;
     font-size: 15px;
 }
-.p-btn-play[data-v-8d093e49] {
+.p-btn-play[data-v-ec796ac8] {
     min-width: 54px;
 }
-.p-vol[data-v-8d093e49] {
+.p-vol[data-v-ec796ac8] {
     display: none;
 }
   /* 画质行只留下拉，省出横向空间给按钮 */
-.p-q-lab[data-v-8d093e49],
-  .p-q-now[data-v-8d093e49] {
+.p-q-lab[data-v-ec796ac8],
+  .p-q-now[data-v-ec796ac8] {
     display: none;
 }
-.p-q[data-v-8d093e49] {
+.p-q[data-v-ec796ac8] {
     max-width: 96px;
 }
-.p-seek-now[data-v-8d093e49] {
+.p-seek-now[data-v-ec796ac8] {
     font-size: 12.5px;
 }
 }
 /* ============================ P4-B 新增控件（颜色只取 mediaTheme 变量） ============================ */
 /* 标记刻度：绝对铺在 .p-seekwrap（position:relative）上，pointer-events:none 不挡 hover 与拖动。
    P4.4：左右各内缩半个 thumb，与 range 的可视轨道同源（否则两端各偏 8px） */
-.p-marks[data-v-8d093e49] {
+.p-marks[data-v-ec796ac8] {
   position: absolute;
   left: var(--thumb-r, 7px);
   right: var(--thumb-r, 7px);
@@ -580,7 +587,7 @@
   pointer-events: none;
   z-index: 2;
 }
-.p-mark[data-v-8d093e49] {
+.p-mark[data-v-ec796ac8] {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -592,7 +599,7 @@
 }
 
 /* 区间标记：一段浅色带（半透明），两端不用额外描边，避免和 4px 轨道抢视线 */
-.p-mark.is-range[data-v-8d093e49] {
+.p-mark.is-range[data-v-ec796ac8] {
   opacity: 0.28;
   width: auto;
   margin-left: 0;
@@ -600,7 +607,7 @@
 }
 
 /* 刻度提示：与 hover 卡片同样贴着进度条上方，宽度自适应文案 */
-.p-marker-tip[data-v-8d093e49] {
+.p-marker-tip[data-v-ec796ac8] {
   position: absolute;
   bottom: calc(100% + 6px);
   transform: translateX(-50%);
@@ -623,7 +630,7 @@
    P4.3：高度 / 间距 / 边宽 / 探出量改读 JS 侧的 CSS 变量（值来自 playerExtras 的 LANE_* 常量，
    见 MediaPlayer 的 laneVars），SCSS 不再另写一套数字；窄屏高度用 --lane-h-sm。
    轨道加一层淡背景 + 内描边，让它是一条看得见的「带子」，而不是飘在空白里的细线。 */
-.p-marklane[data-v-8d093e49] {
+.p-marklane[data-v-ec796ac8] {
   position: relative;
   height: var(--lane-h, 12px);
   /* P4.4：左右内缩半个 thumb（var(--thumb-r)），与进度条的可视轨道同宽同起点 ——
@@ -635,7 +642,7 @@
   pointer-events: none;
   z-index: 2;
 }
-.p-lane-mark[data-v-8d093e49] {
+.p-lane-mark[data-v-ec796ac8] {
   position: absolute;
   /* P4.3：向上探出 1px（--lane-raise），让单点竖条与 4px 进度条在视觉上连成一体 */
   top: calc(-1 * var(--lane-raise, 1px));
@@ -651,7 +658,7 @@
   cursor: pointer;
   pointer-events: auto;
 }
-.p-lane-mark.is-range[data-v-8d093e49] {
+.p-lane-mark.is-range[data-v-ec796ac8] {
   /* 区间是一条带子，不向上探出（探出会与进度条叠成一块色斑） */
   top: 0;
   box-sizing: border-box;
@@ -660,8 +667,8 @@
   border-right: var(--lane-edge, 3px) solid;
   border-radius: 1px;
 }
-.p-lane-mark[data-v-8d093e49]:hover,
-.p-lane-mark[data-v-8d093e49]:focus-visible {
+.p-lane-mark[data-v-ec796ac8]:hover,
+.p-lane-mark[data-v-ec796ac8]:focus-visible {
   outline: none;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 0 0 3px var(--accent-soft);
 }
@@ -669,11 +676,11 @@
 /* ================== P4.3 标记数量徽标（进度条右端 / 时间码左侧）+ 标记列表 ================== */
 /* 用户两次反馈「刻度看不出来」：刻度尺寸已经加到 12px/4px，但细线本身有上限，
    于是再给一个数字入口 —— 「🚩 N」一眼看出有没有标记，点开直接跳到某条。 */
-.p-mk-badge-wrap[data-v-8d093e49] {
+.p-mk-badge-wrap[data-v-ec796ac8] {
   position: relative;
   flex: 0 0 auto;
 }
-.p-mk-badge[data-v-8d093e49] {
+.p-mk-badge[data-v-ec796ac8] {
   display: inline-flex;
   align-items: center;
   gap: 2px;
@@ -689,15 +696,15 @@
   white-space: nowrap;
   cursor: pointer;
 }
-.p-mk-badge[data-v-8d093e49]:hover,
-.p-mk-badge[aria-expanded=true][data-v-8d093e49] {
+.p-mk-badge[data-v-ec796ac8]:hover,
+.p-mk-badge[aria-expanded=true][data-v-ec796ac8] {
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent);
 }
 
 /* 列表贴着徽标向上展开（与控制条上方其它浮层同一方向），可滚动，最长 240px */
-.p-mk-list[data-v-8d093e49] {
+.p-mk-list[data-v-ec796ac8] {
   position: absolute;
   right: 0;
   bottom: calc(100% + 8px);
@@ -715,7 +722,7 @@
   background: var(--bg-2);
   box-shadow: 0 8px 22px var(--accent-soft);
 }
-.p-mk-item[data-v-8d093e49] {
+.p-mk-item[data-v-ec796ac8] {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -728,26 +735,26 @@
   text-align: left;
   cursor: pointer;
 }
-.p-mk-item[data-v-8d093e49]:hover,
-.p-mk-item[data-v-8d093e49]:focus-visible {
+.p-mk-item[data-v-ec796ac8]:hover,
+.p-mk-item[data-v-ec796ac8]:focus-visible {
   background: var(--accent-soft);
   color: var(--accent);
   outline: none;
 }
 
 /* 小方块用标记自己的颜色（与轨道上的刻度同色，列表与刻度对得上） */
-.p-mk-dot[data-v-8d093e49] {
+.p-mk-dot[data-v-ec796ac8] {
   flex: 0 0 auto;
   width: 8px;
   height: 8px;
   border-radius: 2px;
 }
-.p-mk-item-t[data-v-8d093e49] {
+.p-mk-item-t[data-v-ec796ac8] {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.p-gain-btn[data-v-8d093e49] {
+.p-gain-btn[data-v-ec796ac8] {
   flex-shrink: 0;
   min-width: 62px;
   padding: 0 6px;
@@ -755,7 +762,7 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.p-gain-note[data-v-8d093e49] {
+.p-gain-note[data-v-ec796ac8] {
   padding: 1px 6px;
   border: 1px solid var(--warn);
   border-radius: 999px;
@@ -764,7 +771,7 @@
   white-space: nowrap;
   cursor: help;
 }
-.p-gain-btn.on[data-v-8d093e49] {
+.p-gain-btn.on[data-v-ec796ac8] {
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent);
@@ -772,18 +779,18 @@
 }
 
 /* P4.1 视频倍速：占用原来 1×/1.5×/2× 增益按钮的位置，下拉选择 0.5×–2× */
-.p-speed[data-v-8d093e49] {
+.p-speed[data-v-ec796ac8] {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
 }
-.p-speed-lab[data-v-8d093e49] {
+.p-speed-lab[data-v-ec796ac8] {
   font-size: 12px;
   color: var(--fg-dim);
   white-space: nowrap;
 }
-.p-speed-sel[data-v-8d093e49] {
+.p-speed-sel[data-v-ec796ac8] {
   min-width: 68px;
   padding: 3px 6px;
   border: 1px solid var(--line);
@@ -795,51 +802,51 @@
   font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
-.p-speed-sel[data-v-8d093e49]:focus {
+.p-speed-sel[data-v-ec796ac8]:focus {
   outline: none;
   border-color: var(--accent);
 }
-.p-ab[data-v-8d093e49] {
+.p-ab[data-v-ec796ac8] {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
 }
-.p-ab-btn[data-v-8d093e49] {
+.p-ab-btn[data-v-ec796ac8] {
   min-width: 30px;
   padding: 0 6px;
   font-size: 12px;
   font-weight: 600;
 }
-.p-ab-btn.on[data-v-8d093e49] {
+.p-ab-btn.on[data-v-ec796ac8] {
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent);
 }
-.p-ab-text[data-v-8d093e49] {
+.p-ab-text[data-v-ec796ac8] {
   min-width: 86px;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   color: var(--fg-dim);
   white-space: nowrap;
 }
-.p-ab-text.on[data-v-8d093e49] {
+.p-ab-text.on[data-v-ec796ac8] {
   color: var(--accent);
   font-weight: 600;
 }
-.p-frame[data-v-8d093e49] {
+.p-frame[data-v-ec796ac8] {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
 }
-.p-help-btn[data-v-8d093e49] {
+.p-help-btn[data-v-ec796ac8] {
   font-weight: 700;
   color: var(--accent);
 }
 
 /* 快捷键浮层：压在播放器之上（播放器自身 z-index:100） */
-.p-help[data-v-8d093e49] {
+.p-help[data-v-ec796ac8] {
   position: fixed;
   inset: 0;
   z-index: 120;
@@ -849,7 +856,7 @@
   padding: 16px;
   background: rgba(0, 0, 0, 0.5);
 }
-.p-help-box[data-v-8d093e49] {
+.p-help-box[data-v-ec796ac8] {
   width: min(520px, 100%);
   max-height: 82vh;
   overflow: auto;
@@ -860,12 +867,12 @@
   color: var(--fg);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
 }
-.p-help-h[data-v-8d093e49] {
+.p-help-h[data-v-ec796ac8] {
   margin: 0 0 10px;
   font-size: 14px;
   font-weight: 600;
 }
-.p-help-list[data-v-8d093e49] {
+.p-help-list[data-v-ec796ac8] {
   margin: 0 0 10px;
   padding: 0;
   list-style: none;
@@ -873,14 +880,14 @@
   flex-direction: column;
   gap: 6px;
 }
-.p-help-list li[data-v-8d093e49] {
+.p-help-list li[data-v-ec796ac8] {
   display: flex;
   gap: 10px;
   align-items: baseline;
   font-size: 12.5px;
   line-height: 1.55;
 }
-.p-help-key[data-v-8d093e49] {
+.p-help-key[data-v-ec796ac8] {
   flex: 0 0 108px;
   padding: 1px 6px;
   border: 1px solid var(--line);
@@ -891,12 +898,12 @@
   text-align: center;
   white-space: nowrap;
 }
-.p-help-val[data-v-8d093e49] {
+.p-help-val[data-v-ec796ac8] {
   flex: 1;
   min-width: 0;
   color: var(--fg-dim);
 }
-.p-help-note[data-v-8d093e49] {
+.p-help-note[data-v-ec796ac8] {
   margin: 0 0 12px;
   font-size: 12px;
   line-height: 1.6;
@@ -904,50 +911,50 @@
 }
 @media (max-width: 768px) {
   /* 移动端：增益 / AB / 逐帧按钮跟着 .p-btn 的加大尺寸走，只是文案更短 */
-.p-gain-btn[data-v-8d093e49] {
+.p-gain-btn[data-v-ec796ac8] {
     min-width: 0;
     padding: 0 6px;
     font-size: 12px;
 }
-.p-ab-btn[data-v-8d093e49] {
+.p-ab-btn[data-v-ec796ac8] {
     min-width: 38px;
     font-size: 13px;
 }
   /* P4.1：窄屏标记轨保留（它是状态指示，不是浮层）；P4.3 起窄屏 12px → 8px，间距仍 3px */
-.p-marklane[data-v-8d093e49] {
+.p-marklane[data-v-ec796ac8] {
     height: var(--lane-h-sm, 8px);
     margin-top: var(--lane-gap, 3px);
 }
   /* P4.3：触屏上徽标加大到可点尺寸（刻度太细看不见时它是主要入口） */
-.p-mk-badge[data-v-8d093e49] {
+.p-mk-badge[data-v-ec796ac8] {
     height: 26px;
     padding: 0 9px;
     font-size: 13px;
 }
-.p-speed-lab[data-v-8d093e49] {
+.p-speed-lab[data-v-ec796ac8] {
     display: none;
 }
-.p-speed-sel[data-v-8d093e49] {
+.p-speed-sel[data-v-ec796ac8] {
     min-width: 58px;
     padding: 3px 4px;
 }
-.p-ab-text[data-v-8d093e49] {
+.p-ab-text[data-v-ec796ac8] {
     min-width: 0;
     font-size: 11.5px;
 }
   /* 触屏没有 hover：刻度仍显示（它是状态不是浮层），但隐藏 hover 才有的提示卡 */
-.p-marks[data-v-8d093e49] {
+.p-marks[data-v-ec796ac8] {
     height: 16px;
 }
-.p-help-key[data-v-8d093e49] {
+.p-help-key[data-v-ec796ac8] {
     flex-basis: 88px;
 }
 }
 /* 暗色主题：标记在深底上靠一圈 1px 深色描边勾出边界（亮色下是同位置的浅描边） */
-html.dark .p-lane-mark[data-v-8d093e49] {
+html.dark .p-lane-mark[data-v-ec796ac8] {
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.75);
 }
-html.dark .p-lane-mark[data-v-8d093e49]:hover,
-html.dark .p-lane-mark[data-v-8d093e49]:focus-visible {
+html.dark .p-lane-mark[data-v-ec796ac8]:hover,
+html.dark .p-lane-mark[data-v-ec796ac8]:focus-visible {
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.85), 0 0 0 3px var(--accent-soft);
 }

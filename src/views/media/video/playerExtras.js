@@ -716,6 +716,24 @@ export function seekPreview(ratio, dur, clipDur, fallbackSec) {
 }
 
 /**
+ * 预览片段 seek 的时序决策（纯函数，可脱离浏览器单测）。
+ *
+ * 背景（P5.5 实测）：preload="none" 的元素 readyState 恒为 0，旧逻辑「readyState 为 0 就 load()」
+ * 会在鼠标横扫时每 80ms 重新 load() 一次 —— 每次 load() 都会掐断上一次取片，
+ * 后端稍慢（首包 600ms）时 10 次 mousemove 触发 9 次 load()，元数据一直不来、浮层始终是空的。
+ * 因此「取片」只能发起一次，之后一律等 loadedmetadata 回调再定位。
+ *
+ * @param {{readyState?:number, loadStarted?:boolean}} state
+ * @returns {'load'|'wait'|'seek'} load=发起（仅一次）/ wait=正在取片，别动 / seek=可以定位
+ */
+export function clipSeekStep(state) {
+  const s = state || {}
+  const rs = num(s.readyState)
+  if (rs != null && rs >= 1) return 'seek'
+  return s.loadStarted ? 'wait' : 'load'
+}
+
+/**
  * 时间节流（leading + trailing，定时器与时钟可注入 → 可脱离浏览器单测）。
  * run(fn)：距上次执行 ≥ intervalMs 就立即执行；否则只保留**最后一次**（覆盖式），到点补发。
  * 只保留一个待发任务，所以 mousemove 连发既不会堆积也不会漏掉手感上的最后一帧。

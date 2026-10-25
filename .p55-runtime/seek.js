@@ -87142,6 +87142,24 @@ usage: app.provide(ZINDEX_INJECTION_KEY, { current: 0 })`);
   }
 
   /**
+   * 预览片段 seek 的时序决策（纯函数，可脱离浏览器单测）。
+   *
+   * 背景（P5.5 实测）：preload="none" 的元素 readyState 恒为 0，旧逻辑「readyState 为 0 就 load()」
+   * 会在鼠标横扫时每 80ms 重新 load() 一次 —— 每次 load() 都会掐断上一次取片，
+   * 后端稍慢（首包 600ms）时 10 次 mousemove 触发 9 次 load()，元数据一直不来、浮层始终是空的。
+   * 因此「取片」只能发起一次，之后一律等 loadedmetadata 回调再定位。
+   *
+   * @param {{readyState?:number, loadStarted?:boolean}} state
+   * @returns {'load'|'wait'|'seek'} load=发起（仅一次）/ wait=正在取片，别动 / seek=可以定位
+   */
+  function clipSeekStep(state) {
+    const s = state || {};
+    const rs = num(s.readyState);
+    if (rs != null && rs >= 1) return 'seek'
+    return s.loadStarted ? 'wait' : 'load'
+  }
+
+  /**
    * 时间节流（leading + trailing，定时器与时钟可注入 → 可脱离浏览器单测）。
    * run(fn)：距上次执行 ≥ intervalMs 就立即执行；否则只保留**最后一次**（覆盖式），到点补发。
    * 只保留一个待发任务，所以 mousemove 连发既不会堆积也不会漏掉手感上的最后一帧。
@@ -87384,6 +87402,10 @@ usage: app.provide(ZINDEX_INJECTION_KEY, { current: 0 })`);
   /** 预览片段自身时间（秒）：只喂给浮层底部的小字「片段 0:03 / 0:08」，不再当进度显示 */
   const clipTime = ref(0);
   let clipDur = 0;
+  /** 片段取片是否已经发起过：preload="none" 下 readyState 恒为 0，只允许 load() 一次（见 playerExtras.clipSeekStep） */
+  let clipLoadStarted = false;
+  /** 片段是否已经有可显示的帧：seek 完成（seeked / loadeddata）前不显示，避免露出黑帧/首帧 */
+  const clipFrameReady = ref(false);
 
   const hasSprite = computed(() => !!(props.video && props.video.hasSprite));
   const hasPreview = computed(() => !!(props.video && props.video.hasPreview));
@@ -87500,8 +87522,11 @@ usage: app.provide(ZINDEX_INJECTION_KEY, { current: 0 })`);
     clipTime.value = info.clipSeek;
     const el = clipEl.value;
     if (!el) return
-    if (!el.readyState) {
+    const step = clipSeekStep({ readyState: el.readyState, loadStarted: clipLoadStarted });
+    if (step === 'load') {
       // preload="none"：只有真的要看预览时才发这一次请求（每部片至多一次）
+      clipLoadStarted = true;
+      clipFrameReady.value = false;
       try {
         el.load();
       } catch {
@@ -87509,6 +87534,9 @@ usage: app.provide(ZINDEX_INJECTION_KEY, { current: 0 })`);
       }
       return
     }
+    if (step === 'wait') return // 正在取片：不能重复 load()，否则每次都掐断上一次
+    // 元数据到手但还没解出画面：先不显示（否则露出黑帧），等 loadeddata / seeked
+    if (el.readyState < 2) clipFrameReady.value = false;
     try {
       el.currentTime = info.clipSeek;
     } catch {
@@ -87558,6 +87586,11 @@ usage: app.provide(ZINDEX_INJECTION_KEY, { current: 0 })`);
     const d = el && el.duration;
     if (isFinite(d) && d > 0) clipDur = d;
     seekClip(previewRatio.value);
+  }
+
+  /** 片段已经解出画面（loadeddata / seeked）：这时候显示出来的才是「真的那一帧」 */
+  function onClipFrameReady() {
+    clipFrameReady.value = true;
   }
 
   const subSrc = computed(() => (props.video && props.video.sub ? api.subUrl(props.video.sub) : ''));
@@ -87781,6 +87814,8 @@ usage: app.provide(ZINDEX_INJECTION_KEY, { current: 0 })`);
     hidePreview();
     previewMode.value = '';
     clipDur = 0;
+    clipLoadStarted = false;
+    clipFrameReady.value = false;
     tryPlay();
   }
 
@@ -88845,7 +88880,7 @@ usage: app.provide(ZINDEX_INJECTION_KEY, { current: 0 })`);
                 (previewMode.value)
                   ? withDirectives((openBlock(), createElementBlock("div", {
                       key: 3,
-                      class: normalizeClass(["p-preview", previewClass.value]),
+                      class: normalizeClass(["p-preview", [previewClass.value, { 'is-frame-ready': clipFrameReady.value }]]),
                       style: normalizeStyle(floatStyle(previewRatio.value))
                     }, [
                       (previewMode.value === 'clip')
@@ -88858,7 +88893,9 @@ usage: app.provide(ZINDEX_INJECTION_KEY, { current: 0 })`);
                             playsinline: "",
                             preload: "none",
                             src: previewSrc.value,
-                            onLoadedmetadata: onClipMetadata
+                            onLoadedmetadata: onClipMetadata,
+                            onLoadeddata: onClipFrameReady,
+                            onSeeked: onClipFrameReady
                           }, null, 40 /* PROPS, NEED_HYDRATION */, _hoisted_16))
                         : (openBlock(), createElementBlock("div", {
                             key: 1,
@@ -89164,7 +89201,7 @@ usage: app.provide(ZINDEX_INJECTION_KEY, { current: 0 })`);
   }
 
   };
-  const MediaPlayer = /*#__PURE__*/_export_sfc(_sfc_main, [['__scopeId',"data-v-8d093e49"]]);
+  const MediaPlayer = /*#__PURE__*/_export_sfc(_sfc_main, [['__scopeId',"data-v-ec796ac8"]]);
 
   /**
    * p55-evidence/entry-seek.mjs —— 真实浏览器里跑真实 MediaPlayer 的预览片段 seek 链路。

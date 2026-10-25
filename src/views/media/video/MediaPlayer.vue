@@ -138,7 +138,7 @@
                 v-if="previewMode"
                 v-show="previewShown"
                 class="p-preview"
-                :class="previewClass"
+                :class="[previewClass, { 'is-frame-ready': clipFrameReady }]"
                 :style="floatStyle(previewRatio)"
               >
                 <video
@@ -150,6 +150,8 @@
                   preload="none"
                   :src="previewSrc"
                   @loadedmetadata="onClipMetadata"
+                  @loadeddata="onClipFrameReady"
+                  @seeked="onClipFrameReady"
                 ></video>
                 <div v-else class="p-hover-img" :style="spriteStyle"></div>
                 <!-- 底部时间条：大字是**影片内容时间**（07:28），小字才是片段内部时间（片段 0:07 / 0:08） -->
@@ -392,6 +394,7 @@ import {
   applyGain,
   blurActiveInCtrl,
   clipCaption,
+  clipSeekStep,
   createCtrlAutoHide,
   createGainGraph,
   createThrottle,
@@ -513,6 +516,10 @@ const previewRatio = ref(0)
 /** 预览片段自身时间（秒）：只喂给浮层底部的小字「片段 0:03 / 0:08」，不再当进度显示 */
 const clipTime = ref(0)
 let clipDur = 0
+/** 片段取片是否已经发起过：preload="none" 下 readyState 恒为 0，只允许 load() 一次（见 playerExtras.clipSeekStep） */
+let clipLoadStarted = false
+/** 片段是否已经有可显示的帧：seek 完成（seeked / loadeddata）前不显示，避免露出黑帧/首帧 */
+const clipFrameReady = ref(false)
 
 const hasSprite = computed(() => !!(props.video && props.video.hasSprite))
 const hasPreview = computed(() => !!(props.video && props.video.hasPreview))
@@ -629,8 +636,11 @@ function seekClip(ratio) {
   clipTime.value = info.clipSeek
   const el = clipEl.value
   if (!el) return
-  if (!el.readyState) {
+  const step = clipSeekStep({ readyState: el.readyState, loadStarted: clipLoadStarted })
+  if (step === 'load') {
     // preload="none"：只有真的要看预览时才发这一次请求（每部片至多一次）
+    clipLoadStarted = true
+    clipFrameReady.value = false
     try {
       el.load()
     } catch {
@@ -638,6 +648,9 @@ function seekClip(ratio) {
     }
     return
   }
+  if (step === 'wait') return // 正在取片：不能重复 load()，否则每次都掐断上一次
+  // 元数据到手但还没解出画面：先不显示（否则露出黑帧），等 loadeddata / seeked
+  if (el.readyState < 2) clipFrameReady.value = false
   try {
     el.currentTime = info.clipSeek
   } catch {
@@ -687,6 +700,11 @@ function onClipMetadata() {
   const d = el && el.duration
   if (isFinite(d) && d > 0) clipDur = d
   seekClip(previewRatio.value)
+}
+
+/** 片段已经解出画面（loadeddata / seeked）：这时候显示出来的才是「真的那一帧」 */
+function onClipFrameReady() {
+  clipFrameReady.value = true
 }
 
 const subSrc = computed(() => (props.video && props.video.sub ? api.subUrl(props.video.sub) : ''))
@@ -910,6 +928,8 @@ function openVideo(v, resumePos) {
   hidePreview()
   previewMode.value = ''
   clipDur = 0
+  clipLoadStarted = false
+  clipFrameReady.value = false
   tryPlay()
 }
 
@@ -2134,13 +2154,21 @@ defineExpose({
   background-color: var(--bg-3);
 }
 
-/* 预览片段：与精灵图单格同尺寸，画面比例不一致时裁切填满 */
+/* 预览片段：与精灵图单格同尺寸，画面比例不一致时裁切填满。
+   is-frame-ready 之前整块先不着色（见 .p-preview-v 的 opacity）：片段刚 load 完、
+   seek 还没落地的那个空档浏览器没有任何可显示帧，过早显示就是一块黑帧（P5.5 用户反馈） */
 .p-preview-v {
   display: block;
   width: 160px;
   height: 90px;
   object-fit: cover;
   background: var(--bg-3);
+  opacity: 0;
+  transition: opacity 0.12s linear;
+}
+
+.p-preview.is-frame-ready .p-preview-v {
+  opacity: 1;
 }
 
 /* 底部时间条（压在画面下沿的半透明条，不遮主体）：
