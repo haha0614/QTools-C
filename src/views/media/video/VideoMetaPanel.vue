@@ -120,7 +120,8 @@
         <ul v-if="markers.length" class="vp-marks">
           <li v-for="m in markers" :key="m.id" class="vp-mark">
             <i class="vp-dot" :style="{ background: m.color || 'transparent' }"></i>
-            <span class="vp-mark-pos">{{ fmtPos(m.pos) }}</span>
+            <!-- P4-B：区间标记显示 pos–endPos，单点仍然只显示 pos（markerRangeText 两种合一） -->
+            <span class="vp-mark-pos" :class="{ 'is-range': markerSpan(m).end != null }">{{ markerRangeText(m, fmtPos) }}</span>
             <span class="vp-mark-lab" :title="m.label">{{ m.label || '（无描述）' }}</span>
             <button class="vp-tag-x" type="button" :disabled="locked" aria-label="删除标记" @click="removeMarker(m)">
               ×
@@ -130,8 +131,30 @@
         <div v-else class="vp-hint">暂无标记</div>
 
         <div v-if="!readOnly" class="vp-mark-add">
+          <!-- P4-B：单点 / 区间二选一；区间模式的终点可以手填，也可以点按钮取「此刻」的播放位置 -->
+          <span class="vp-mark-mode" role="group" aria-label="标记类型">
+            <button
+              class="vp-mini"
+              type="button"
+              :class="{ on: markMode === 'point' }"
+              :disabled="locked"
+              @click="markMode = 'point'"
+            >
+              单点
+            </button>
+            <button
+              class="vp-mini"
+              type="button"
+              :class="{ on: markMode === 'range' }"
+              :disabled="locked"
+              title="设一段区间：起点 + 终点（都按 mm:ss）"
+              @click="markMode = 'range'"
+            >
+              区间
+            </button>
+          </span>
           <button class="vp-mini" type="button" :disabled="locked" :title="'用打开抽屉时的播放位置 ' + atText" @click="fillCurrentTime">
-            当前时间 {{ atText }}
+            {{ markMode === 'range' ? '起点' : '当前时间' }} {{ atText }}
           </button>
           <input
             v-model="markAt"
@@ -152,6 +175,21 @@
             aria-label="标记说明"
           />
           <input v-model="markColor" class="vp-mark-color" type="color" :disabled="locked" aria-label="标记颜色" />
+          <template v-if="markMode === 'range'">
+            <span class="vp-mark-dash">–</span>
+            <input
+              v-model="markEnd"
+              class="vp-mark-mmss"
+              type="text"
+              inputmode="numeric"
+              placeholder="终点 mm:ss"
+              :disabled="locked"
+              aria-label="标记区间终点 mm:ss"
+            />
+            <button class="vp-mini" type="button" :disabled="locked" title="把终点设成此刻的播放位置" @click="fillEndCurrent">
+              以当前位置为终点
+            </button>
+          </template>
           <button class="vp-mini vp-mini-ok" type="button" :disabled="locked" @click="addMarker">＋ 加标记</button>
         </div>
       </section>
@@ -162,11 +200,13 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useMediaApi } from '@/composables/useMediaApi'
 import { HINT_OFF, HINT_LOCAL } from '@/composables/useMediaEditPolicy'
 import { readLocalMeta, writeLocalMeta } from '@/composables/useMediaLocalOrg'
 import TagPicker from './TagPicker.vue'
+// P4-B：标记区间（pos–endPos）的归一化与展示文本，与播放器进度条刻度共用同一份逻辑
+import { markerRangeText, markerSpan } from './playerExtras'
 
 const props = defineProps({
   /** 当前播放的视频（只需要 id / title，评分与标签兜底取索引里的值） */
@@ -180,10 +220,12 @@ const props = defineProps({
   /** 打开抽屉那一刻的播放位置（秒）：「在当前时间加标记」的起点 */
   atSec: { type: Number, default: 0 },
   /** 人物（索引 videos[].persons = [{id,name,role}]）：只读展示，不参与这里的写接口 */
-  persons: { type: Array, default: () => [] }
+  persons: { type: Array, default: () => [] },
+  /** P4-B：取「此刻」的播放位置（页面传 playerRef.getCurrentTime）；缺省回落到 atSec */
+  getCurrentSec: { type: Function, default: null }
 })
 
-const emit = defineEmits(['close', 'updated', 'tag-created', 'notify'])
+const emit = defineEmits(['close', 'updated', 'tag-created', 'notify', 'markers'])
 
 const api = useMediaApi()
 
@@ -226,6 +268,9 @@ const markers = ref(seed && Array.isArray(seed.markers) ? seed.markers.filter((m
 const markAt = ref('')
 const markLabel = ref('')
 const markColor = ref('#4f9cf9')
+/** P4-B：point = 单点（只写 pos）；range = 区间（pos + endPos） */
+const markMode = ref('point')
+const markEnd = ref('')
 
 const atText = computed(() => fmtPos(props.atSec))
 
@@ -409,6 +454,9 @@ function serverMarkers(list) {
   return (list || []).map((m) => {
     const out = { pos: Number(m.pos) || 0, label: m.label || '', color: m.color || '' }
     if (m.id != null && String(m.id).indexOf('m-') !== 0) out.id = m.id
+    // P4-B：区间标记才带 endPos（后端的 markers[] 会原样回写；单点标记 body 与旧版完全一致）
+    const span = markerSpan(m)
+    if (span.end != null) out.endPos = span.end
     return out
   })
 }
@@ -418,11 +466,44 @@ function fillCurrentTime() {
   markAt.value = fmtPos(props.atSec)
 }
 
+/** 此刻的播放位置：优先用页面给的实时取值（播放器还在播），拿不到就回落到打开抽屉时的位置 */
+function currentSec() {
+  try {
+    if (typeof props.getCurrentSec === 'function') {
+      const v = Number(props.getCurrentSec())
+      if (isFinite(v) && v >= 0) return v
+    }
+  } catch {
+    /* 忽略：页面取值方法异常不影响手填 */
+  }
+  return Number(props.atSec) || 0
+}
+
+/** P4-B：区间标记的「以当前位置为终点」 */
+function fillEndCurrent() {
+  markMode.value = 'range'
+  markEnd.value = fmtPos(currentSec())
+}
+
 function addMarker() {
   const pos = parsePos(markAt.value)
   if (pos == null) {
     emit('notify', '标记位置请填 mm:ss')
     return
+  }
+  // P4-B：区间模式必须先拿到合法终点（严格晚于起点，与播放器 A/B 的判定同源）
+  let endPos = null
+  if (markMode.value === 'range') {
+    const end = parsePos(markEnd.value)
+    if (end == null) {
+      emit('notify', '区间终点请填 mm:ss，或点「以当前位置为终点」')
+      return
+    }
+    if (markerSpan({ pos, endPos: end }).end == null) {
+      emit('notify', '区间终点必须晚于起点')
+      return
+    }
+    endPos = end
   }
   const marker = {
     id: 'm-' + Date.now().toString(36),
@@ -430,17 +511,19 @@ function addMarker() {
     label: String(markLabel.value || '').trim().slice(0, 32),
     color: markColor.value || ''
   }
+  if (endPos != null) marker.endPos = endPos
   const next = markers.value.concat([marker])
   save(
     { markers: serverMarkers(next) },
     () => {
       markers.value = next
     },
-    '已加标记 ' + fmtPos(pos),
+    '已加标记 ' + markerRangeText(marker, fmtPos),
     { markers: next }
   )
   markAt.value = ''
   markLabel.value = ''
+  markEnd.value = ''
 }
 
 function removeMarker(m) {
@@ -454,6 +537,16 @@ function removeMarker(m) {
     { markers: rest }
   )
 }
+
+/* P4-B：标记列表的任何变动（读接口 / 本地档 / 增删）都同步给页面，供播放器画进度条刻度；
+   immediate 让打开抽屉时就能把已加载的标记推上去，不需要等用户操作。 */
+watch(
+  markers,
+  (list) => {
+    emit('markers', Array.isArray(list) ? list.slice() : [])
+  },
+  { immediate: true }
+)
 
 onMounted(() => {
   if (!isFull.value) {
@@ -864,5 +957,38 @@ onMounted(() => {
 
 .vp-person-more {
   border-style: dashed;
+}
+
+/* ============================ P4-B 标记区间（单点 / 区间切换） ============================ */
+.vp-mark-mode {
+  display: inline-flex;
+  gap: 0;
+}
+
+/* 两个紧邻按钮拼成一组：左圆右角，中间不重复描边 */
+.vp-mark-mode .vp-mini:first-child {
+  border-radius: 999px 0 0 999px;
+}
+
+.vp-mark-mode .vp-mini:last-child {
+  border-radius: 0 999px 999px 0;
+  border-left: none;
+}
+
+.vp-mark-mode .vp-mini.on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* 区间标记的位置文案比单点宽（01:20–02:10），用等宽数字撑住对齐 */
+.vp-mark-pos.is-range {
+  min-width: 92px;
+  font-variant-numeric: tabular-nums;
+}
+
+.vp-mark-dash {
+  color: var(--fg-dim);
 }
 </style>

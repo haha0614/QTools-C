@@ -65,7 +65,23 @@
     <div class="p-ctrl">
       <div class="p-seekbar">
         <!-- mousemove 挂在 20px 高的容器上，命中带比 4px 轨道宽，指针略偏也能触发 -->
-        <div class="p-seekwrap" @mousemove="onSeekHover" @mouseleave="onSeekLeave">
+        <div
+          class="p-seekwrap"
+          @mousemove="[onSeekHover, onMarkerHover]"
+          @mouseleave="[onSeekLeave, onMarkerLeave]"
+        >
+          <!-- P4-B 标记刻度：单点是 2px 竖线，区间是一段浅色带；hover 出 'mm:ss–mm:ss · 说明' 原生提示。
+               pointer-events:none 让鼠标照常落到下面的 range 上（既不挡 hover 预览，也不挡拖动） -->
+          <div v-if="markerTickList.length" class="p-marks" aria-hidden="true">
+            <span
+              v-for="t in markerTickList"
+              :key="t.key"
+              class="p-mark"
+              :class="{ 'is-range': t.width > 0 }"
+              :style="markerTickStyle(t)"
+              :title="t.title"
+            ></span>
+          </div>
           <input
             ref="seekEl"
             class="p-seek"
@@ -80,6 +96,11 @@
             @change="onSeekCommit"
             @keydown="onSeekKey"
           />
+          <!-- P4-B 标记刻度提示：hover 到刻度附近（单点 ±1.2%、区间整段）时在刻度上方显示 'mm:ss–mm:ss · 说明'。
+               刻度本身 pointer-events:none，所以不会挡 range 的 hover 预览与拖动 -->
+          <div v-if="markerHover" class="p-marker-tip" :style="floatStyle(markerHover.left / 100)">
+            {{ markerHover.title }}
+          </div>
           <!-- 1px 指示线：与卡片同源比例，告诉用户这里能 hover；无 hasSprite 时不渲染 -->
           <div v-if="hoverVisible" class="p-hover-line" :style="hoverLineStyle"></div>
           <!-- hover 预览：精灵图整图 + background-position 切格（10×10，共 100 格）；无 hasSprite 时永不渲染 -->
@@ -131,6 +152,69 @@
           aria-label="音量"
           @input="onVolumeInput"
         />
+        <!-- P4-B 音量增益：100% 之上用 WebAudio GainNode 放大；浏览器不允许时按钮仍在，
+             但只会把音量顶到 100% 并显示「降级」说明（详见 setGain / gainNote） -->
+        <span class="p-gain">
+          <button
+            v-for="g in GAIN_LEVELS"
+            :key="'g' + g"
+            class="p-btn p-gain-btn"
+            :class="{ on: gainLevel === g }"
+            type="button"
+            :aria-pressed="gainLevel === g"
+            :title="'音量增益 ' + g + '×' + (gainFallback && g > 1 ? '（浏览器不支持 WebAudio，已降级为音量映射）' : '')"
+            @click="setGain(g)"
+          >
+            {{ g }}×
+          </button>
+          <!-- 降级说明：只在浏览器不给 WebAudio 时出现，hover 出完整原因 -->
+          <span v-if="gainFallback" class="p-gain-note" :title="gainNote">增益降级</span>
+        </span>
+        <!-- P4-B AB 循环：A 设起点、B 设终点（再按各自清除），播放到 B 自动回跳 A -->
+        <span class="p-ab">
+          <button
+            class="p-btn p-ab-btn"
+            :class="{ on: abA != null }"
+            type="button"
+            title="设 A 点（再按 A 清除）快捷键 A"
+            @click="setAbPoint('a')"
+          >
+            A
+          </button>
+          <button
+            class="p-btn p-ab-btn"
+            :class="{ on: abB != null }"
+            type="button"
+            title="设 B 点（再按 B 清除）快捷键 B"
+            @click="setAbPoint('b')"
+          >
+            B
+          </button>
+          <button
+            class="p-btn p-ab-btn"
+            type="button"
+            :disabled="abA == null && abB == null"
+            title="清除 A/B"
+            @click="clearAb"
+          >
+            清
+          </button>
+          <span class="p-ab-text" :class="{ on: abOn }" :title="abTitle">{{ abText }}</span>
+        </span>
+        <!-- P4-B 逐帧：暂停态单帧步进（1/30 近似，有 requestVideoFrameCallback 时按实测帧间隔） -->
+        <span class="p-frame">
+          <button class="p-btn" type="button" title="上一帧（快捷键 , 或 Shift+←）" @click="stepFrame(-1)">⏴</button>
+          <button class="p-btn" type="button" title="下一帧（快捷键 . 或 Shift+→）" @click="stepFrame(1)">⏵</button>
+        </span>
+        <button
+          class="p-btn p-help-btn"
+          type="button"
+          :aria-expanded="helpVisible"
+          title="快捷键说明（?）"
+          @click="toggleHelp"
+        >
+          ?
+        </button>
         <span class="p-ctrl-gap"></span>
         <label class="p-q-lab" for="msVideoQ">画质</label>
         <select id="msVideoQ" class="p-q" :value="curQ" @change="onQualityChange">
@@ -157,12 +241,45 @@
       <span v-for="(a, i) in actorList" :key="'a' + i" class="ptag ptag-actor"><b>演员</b>{{ a }}</span>
       <span v-if="!tagList.length && !actorList.length" class="ptag ptag-empty">无标签</span>
     </div>
+
+    <!-- P4-B 快捷键总表：控制条上的 ? 按钮或键盘 ? 打开；Esc 先关浮层（见 VideoPage.onKey 的 Escape 分支） -->
+    <div v-if="helpVisible" class="p-help" role="dialog" aria-modal="false" aria-label="快捷键说明" @click.self="helpVisible = false">
+      <div class="p-help-box">
+        <h3 class="p-help-h">快捷键 / 操作</h3>
+        <ul class="p-help-list">
+          <li v-for="row in SHORTCUTS" :key="row.k">
+            <b class="p-help-key">{{ row.k }}</b>
+            <span class="p-help-val">{{ row.v }}</span>
+          </li>
+        </ul>
+        <p class="p-help-note">
+          A/B 循环与逐帧都在「内容时间」上工作：转码模式会自动换算上流起点，与进度记忆、画质切换互不影响。
+        </p>
+        <button class="btn" type="button" @click="helpVisible = false">关闭</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useMediaApi } from '@/composables/useMediaApi'
+// P4-B：AB 循环 / 逐帧 / 增益 / 标记刻度的纯逻辑（无 DOM，可单独单测）
+import {
+  FRAME_FALLBACK_SEC,
+  GAIN_LEVELS,
+  abActive,
+  abPress,
+  abTick,
+  applyGain,
+  createGainGraph,
+  frameStep,
+  frameStepSize,
+  markerTicks as buildMarkerTicks,
+  normalizeGain,
+  readGainLevel,
+  writeGainLevel
+} from './playerExtras'
 
 const props = defineProps({
   /** 当前播放的视频对象 */
@@ -181,7 +298,9 @@ const props = defineProps({
    * { openPlaySession, trackPlayStart, trackPlayEnd }。
    * 播放层不自己调 useMediaTrack()——那样会在播放器卸载时 dispose 页面级的 pagehide 监听。
    */
-  tracker: { type: Object, required: true }
+  tracker: { type: Object, required: true },
+  /** P4-B：该片的标记列表（信息抽屉 emit 上来），用于进度条刻度；空数组 = 不画刻度 */
+  markers: { type: Array, default: () => [] }
 })
 
 const emit = defineEmits([
@@ -563,6 +682,10 @@ function openVideo(v, resumePos) {
   const el = videoEl.value
   if (!el || !v) return
   openedVideo = v
+  // P4-B：AB 点与帧取样都是「这一部」的状态，换片/重开必须清空（增益与帮助浮层是用户偏好，保留）
+  abA.value = null
+  abB.value = null
+  stopFrameSampling()
   props.tracker.openPlaySession(v.id) // 新的播放器会话：本会话只报一次 play
   const pos = Math.max(0, Number(resumePos) || 0)
   const total = v.dur || 0
@@ -619,6 +742,9 @@ onBeforeUnmount(() => {
   document.removeEventListener('fullscreenchange', onFsChange)
   document.removeEventListener('webkitfullscreenchange', onFsChange)
   endQHint()
+  // P4-B：释放请求的帧回调与 WebAudio 图（不释放会一直占着 AudioContext，Chrome 上限 6 个）
+  stopFrameSampling()
+  closeAudioGraph()
   const el = videoEl.value
   const v = openedVideo || props.video
   if (v) savePosFor(v)
@@ -679,6 +805,261 @@ function onSeekKey(e) {
   const step = e.shiftKey ? 15 : 5
   seekRel(e.key === 'ArrowLeft' ? -step : step)
   if (!isTranscode.value) seekPos.value = Math.round(absPos())
+}
+
+/* ================================================================================
+   P4-B：AB 循环 / 逐帧 / 音量增益 / 标记刻度 / 快捷键浮层
+   全部按「内容时间」工作（absPos / contentDur 已处理转码流起点），因此与进度记忆、
+   清晰度切换、埋点口径完全一致；下面除了 onTimeUpdate 里新增的一行回跳判定外，
+   没有改动任何既有函数体。
+   ================================================================================ */
+
+/** 快捷键总表：帮助浮层与控制条 title 共用同一份文案（避免两处写死不同步） */
+const SHORTCUTS = [
+  { k: '空格', v: '播放 / 暂停' },
+  { k: '← / →', v: '后退 / 前进 5 秒（进度条聚焦时仍是 5 秒，Shift 为 15 秒）' },
+  { k: 'Shift+← / →', v: '上一帧 / 下一帧（暂停态单帧步进）' },
+  { k: ', / .', v: '上一帧 / 下一帧（与 Shift+← / → 等价，会自动先暂停）' },
+  { k: 'A', v: '设 A 点（再按一次 A 清除 A 与 B）' },
+  { k: 'B', v: '设 B 点（再按一次 B 只清终点）；播放到 B 自动回跳 A' },
+  { k: '↑ / ↓', v: '音量 ±10%（0–100%；100% 以上用 1×/1.5×/2× 增益按钮）' },
+  { k: 'F', v: '全屏 / 退出全屏' },
+  { k: 'N / P', v: '下一部 / 上一部' },
+  { k: '?', v: '打开 / 关闭本浮层' },
+  { k: 'Esc', v: '先关本浮层，再关播放器' }
+]
+
+const helpVisible = ref(false)
+
+/** AB 点：绝对内容秒；null = 未设 */
+const abA = ref(null)
+const abB = ref(null)
+const abState = computed(() => ({ a: abA.value, b: abB.value }))
+const abOn = computed(() => abActive(abState.value))
+const abTitle = computed(() =>
+  abOn.value ? 'A/B 循环中：播放到 B 自动回跳 A（再按 A 或 B 清除）' : 'A 设起点、B 设终点；两点都设好后循环生效'
+)
+const abText = computed(() => {
+  if (abA.value == null && abB.value == null) return 'A/B'
+  const a = abA.value == null ? '--:--' : fmtMark(abA.value)
+  const b = abB.value == null ? '--:--' : fmtMark(abB.value)
+  return (abOn.value ? '↻ ' : '') + 'A ' + a + ' · B ' + b
+})
+
+/** 逐帧：帧间隔沿用 1/30，拿到 requestVideoFrameCallback 后按实测值校正 */
+const frameSec = ref(FRAME_FALLBACK_SEC)
+let frameSamples = []
+let rvfcHandle = 0
+
+/** 增益档位（持久化在 localStorage['ms.gain']，是本组件唯一自己读写的存储键） */
+const gainLevel = ref(readGainLevel(safeStorage()))
+const gainFallback = ref(false)
+let audioGraph = null
+
+const gainNote = computed(() =>
+  gainFallback.value ? '浏览器不支持 WebAudio 增益，已降级为 0–200% 音量映射（100% 封顶）' : ''
+)
+
+// 依赖 seekDur（响应式）而不是 contentDur()（读 videoEl.duration，非响应式）：元数据晚到时刻度也能补画
+const markerTickList = computed(() => buildMarkerTicks(props.markers, seekDur.value || contentDur(), fmtMark))
+
+/** hover 命中的刻度（null = 没命中）；提示文案直接用刻度自带的 title */
+const markerHover = ref(null)
+
+/**
+ * 命中判定：单点用 ±1.2% 的容差（2px 竖线太细），区间用整段宽度；
+ * 距离取到刻度中心，离得最近的优先。鼠标离开进度条时清空。
+ * 注意：这里只读 markerTickList（已按位置排好序），不产生任何请求。
+ */
+function onMarkerHover(e) {
+  if (!markerTickList.value.length) return
+  const pct = ratioFromEvent(e) * 100
+  let best = null
+  for (const t of markerTickList.value) {
+    const mid = t.width > 0 ? t.left + t.width / 2 : t.left
+    const half = Math.max(1.2, t.width / 2)
+    const d = Math.abs(pct - mid)
+    if (d <= half + 0.6 && (best == null || d < best.d)) best = { d, t }
+  }
+  markerHover.value = best ? best.t : null
+}
+
+function onMarkerLeave() {
+  markerHover.value = null
+}
+
+function markerTickStyle(t) {
+  const style = { left: t.left + '%', background: t.color || 'var(--accent)' }
+  if (t.width > 0) style.width = t.width + '%'
+  return style
+}
+
+/** 标记 / AB 文案用的时间格式：0 秒要显示 00:00（fmtDur 对 0 返回 --:--，是给「未知时长」用的） */
+function fmtMark(sec) {
+  const n = Number(sec)
+  const t = Math.max(0, Math.round(isFinite(n) ? n : 0))
+  const m = Math.floor(t / 60)
+  const s = t % 60
+  return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s
+}
+
+function safeStorage() {
+  try {
+    return typeof window !== 'undefined' ? window.localStorage : null
+  } catch {
+    return null
+  }
+}
+
+/* ------------------------------------------------------------ AB 循环 */
+
+/** A / B 按钮与快捷键的唯一入口：按下即设点，再按一次清除（规则在 playerExtras.abPress 里） */
+function setAbPoint(edge) {
+  const next = abPress(abState.value, edge, absPos())
+  abA.value = next.a
+  abB.value = next.b
+}
+
+function clearAb() {
+  abA.value = null
+  abB.value = null
+}
+
+/**
+ * 播放推进时的循环判定：到/过 B 就回跳 A。
+ * 返回 true 表示这一帧已经发生回跳（调用方跳过存盘，避免把 A 点前的进度当成本次进度写库）。
+ */
+function abLoopJump() {
+  const target = abTick(abState.value, absPos())
+  if (target == null) return false
+  seekAbsTo(target, true)
+  return true
+}
+
+/** 跳转到绝对内容时间（转码 = 重开流，原画 = 直写 currentTime）——AB 回跳与逐帧共用 */
+function seekAbsTo(abs, keepPlaying) {
+  const el = videoEl.value
+  if (!el || !props.video) return
+  const dur = contentDur()
+  let target = Number(abs) || 0
+  if (dur > 0) target = Math.min(target, Math.max(0, dur - 0.05))
+  target = Math.max(0, Math.round(target * 1000) / 1000)
+  if (!isTranscode.value) {
+    seekOrigTo(target)
+    updateSeekUi()
+    return
+  }
+  const wasPlaying = keepPlaying === true || (!el.paused && !el.ended)
+  applySource(props.video, target, 0)
+  if (wasPlaying) tryPlay()
+}
+
+/* -------------------------------------------------------------- 逐帧 */
+
+/** 单帧步进：暂停态才有意义，播放中先暂停；转码模式按内容时间重开流（与 seekRel 同一条路径） */
+function stepFrame(dir) {
+  const el = videoEl.value
+  if (!el) return
+  if (!el.paused) el.pause()
+  const cur = absPos()
+  const next = frameStep(cur, dir, frameSec.value, contentDur())
+  if (Math.abs(next - cur) < 0.0005) return
+  seekAbsTo(next, false)
+  sampleFrameDuration()
+}
+
+/**
+ * 用 requestVideoFrameCallback 的 mediaTime 校正帧间隔：
+ * 暂停态每 seek 一帧回调一次，攒够两帧就能算出真实间隔；两帧的差值异常则保留 1/30。
+ */
+function sampleFrameDuration() {
+  const el = videoEl.value
+  if (!el || typeof el.requestVideoFrameCallback !== 'function' || rvfcHandle) return
+  const onFrame = (now, meta) => {
+    rvfcHandle = 0
+    if (!meta || !isFinite(meta.mediaTime)) return
+    frameSamples.push(meta.mediaTime)
+    if (frameSamples.length > 4) frameSamples.shift()
+    if (frameSamples.length >= 2) frameSec.value = frameStepSize(frameSamples, FRAME_FALLBACK_SEC)
+  }
+  rvfcHandle = el.requestVideoFrameCallback(onFrame)
+}
+
+function stopFrameSampling() {
+  const el = videoEl.value
+  if (rvfcHandle && el && typeof el.cancelVideoFrameCallback === 'function') {
+    el.cancelVideoFrameCallback(rvfcHandle)
+  }
+  rvfcHandle = 0
+  frameSamples = []
+}
+
+/* ------------------------------------------------------------ 音量增益 */
+
+function audioCtor() {
+  if (typeof window === 'undefined') return null
+  return window.AudioContext || window.webkitAudioContext || null
+}
+
+/** 增益档位：>1 才需要 WebAudio；浏览器拒绝时置 gainFallback 并说明（音量仍走 <video>.volume） */
+function setGain(level) {
+  const next = normalizeGain(level)
+  gainLevel.value = next
+  writeGainLevel(safeStorage(), next)
+  if (next <= 1) {
+    applyGain(audioGraph, 1)
+    return
+  }
+  if (!audioGraph) {
+    audioGraph = createGainGraph(audioCtor(), videoEl.value, next)
+    if (!audioGraph.ok) {
+      audioGraph = null
+      gainFallback.value = true
+      const el = videoEl.value
+      if (el) {
+        el.volume = 1
+        el.muted = false
+      }
+      onVolumeChange()
+      return
+    }
+  }
+  if (!applyGain(audioGraph, next)) {
+    gainFallback.value = true
+    return
+  }
+  const el = videoEl.value
+  if (el && el.muted) el.muted = false
+  onVolumeChange()
+}
+
+function closeAudioGraph() {
+  const graph = audioGraph
+  audioGraph = null
+  if (!graph) return
+  try {
+    if (graph.source && typeof graph.source.disconnect === 'function') graph.source.disconnect()
+    if (graph.node && typeof graph.node.disconnect === 'function') graph.node.disconnect()
+    if (graph.ctx && typeof graph.ctx.close === 'function') {
+      const p = graph.ctx.close()
+      if (p && typeof p.catch === 'function') p.catch(() => {})
+    }
+  } catch {
+    /* 忽略：关闭失败只影响下一次创建，不影响音频输出 */
+  }
+}
+
+/* -------------------------------------------------------------- 帮助 */
+
+function toggleHelp() {
+  helpVisible.value = !helpVisible.value
+}
+
+/** 供页面级 Esc 使用：浮层开着时先关它，返回 true 表示这次 Esc 已被消费 */
+function closeHelp() {
+  if (!helpVisible.value) return false
+  helpVisible.value = false
+  return true
 }
 
 /* ---------------------------------------------------------------- video 事件 */
@@ -752,6 +1133,8 @@ function onLoadedMetadata() {
 
 function onTimeUpdate() {
   updateSeekUi()
+  // P4-B：到/过 B 立即回跳 A，这一帧不再走存盘（A 点前的位置不该被当成观看进度）
+  if (abLoopJump()) return
   const now = Date.now()
   if (now - lastPosWrite >= 3000) {
     lastPosWrite = now
@@ -885,6 +1268,12 @@ defineExpose({
   adjustVolume,
   toggleFullscreen,
   settle,
+  /* ---- P4-B：页面级快捷键（A / B / , . / Shift+方向 / ? / Esc）走这几个入口 ---- */
+  setAbPoint,
+  clearAb,
+  stepFrame,
+  toggleHelp,
+  closeHelp,
   /** 当前内容位置（秒）：信息抽屉「在当前时间加标记」的起点；转码流已加上流起点 */
   getCurrentTime: absPos
 })
@@ -1377,6 +1766,228 @@ defineExpose({
 
   .p-seek-now {
     font-size: 12.5px;
+  }
+}
+
+/* ============================ P4-B 新增控件（颜色只取 mediaTheme 变量） ============================ */
+
+/* 标记刻度：绝对铺在 .p-seekwrap（position:relative）上，pointer-events:none 不挡 hover 与拖动 */
+.p-marks {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 14px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.p-mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--accent);
+  opacity: 0.85;
+}
+
+/* 区间标记：一段浅色带（半透明），两端不用额外描边，避免和 4px 轨道抢视线 */
+.p-mark.is-range {
+  opacity: 0.28;
+  width: auto;
+  margin-left: 0;
+  border-radius: 2px;
+}
+
+/* 刻度提示：与 hover 卡片同样贴着进度条上方，宽度自适应文案 */
+.p-marker-tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  transform: translateX(-50%);
+  max-width: 260px;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-3);
+  color: var(--fg);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.p-gain {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.p-gain-btn {
+  min-width: 34px;
+  padding: 0 6px;
+  font-size: 12px;
+}
+
+.p-gain-note {
+  padding: 1px 6px;
+  border: 1px solid var(--warn);
+  border-radius: 999px;
+  color: var(--warn);
+  font-size: 11.5px;
+  white-space: nowrap;
+  cursor: help;
+}
+
+.p-gain-btn.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.p-ab {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.p-ab-btn {
+  min-width: 30px;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.p-ab-btn.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.p-ab-text {
+  min-width: 86px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-dim);
+  white-space: nowrap;
+}
+
+.p-ab-text.on {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.p-frame {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.p-help-btn {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* 快捷键浮层：压在播放器之上（播放器自身 z-index:100） */
+.p-help {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.p-help-box {
+  width: min(520px, 100%);
+  max-height: 82vh;
+  overflow: auto;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  color: var(--fg);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+}
+
+.p-help-h {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.p-help-list {
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.p-help-list li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.p-help-key {
+  flex: 0 0 108px;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-3);
+  color: var(--accent);
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.p-help-val {
+  flex: 1;
+  min-width: 0;
+  color: var(--fg-dim);
+}
+
+.p-help-note {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--fg-dim);
+}
+
+@media (max-width: 768px) {
+  /* 移动端：增益 / AB / 逐帧按钮跟着 .p-btn 的加大尺寸走，只是文案更短 */
+  .p-gain-btn,
+  .p-ab-btn {
+    min-width: 38px;
+    font-size: 13px;
+  }
+
+  .p-ab-text {
+    min-width: 0;
+    font-size: 11.5px;
+  }
+
+  /* 触屏没有 hover：刻度仍显示（它是状态不是浮层），但隐藏 hover 才有的提示卡 */
+  .p-marks {
+    height: 16px;
+  }
+
+  .p-help-key {
+    flex-basis: 88px;
   }
 }
 </style>

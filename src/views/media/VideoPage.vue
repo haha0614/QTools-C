@@ -211,6 +211,7 @@
       :fav="curFav"
       :quality="quality"
       :tracker="tracker"
+      :markers="playerMarkers"
       @close="closePlayer"
       @prev="step(-1)"
       @next="step(1)"
@@ -230,9 +231,11 @@
       :tags-loading="tagsLoading"
       :level="editLevel"
       :at-sec="metaAtSec"
+      :get-current-sec="currentPlaySec"
       :persons="(curVideo && curVideo.persons) || []"
       @close="closeMeta"
       @updated="onMetaUpdated"
+      @markers="onMetaMarkers"
       @tag-created="onTagCreated"
       @notify="showToast"
     />
@@ -814,6 +817,19 @@ const localEditedCount = computed(() => {
 })
 /** 信息抽屉「在当前时间加标记」用的起手位置：打开抽屉那一刻从播放器取 */
 const metaAtSec = ref(0)
+/** P4-B：抽屉里当前这部片的标记（抽屉 emit 上来），只给播放器画进度条刻度用 */
+const playerMarkers = ref([])
+
+/** 信息抽屉的标记变动 → 进度条刻度；不参与筛选/排序，也不写任何存储 */
+function onMetaMarkers(list) {
+  playerMarkers.value = Array.isArray(list) ? list.slice() : []
+}
+
+/** P4-B：抽屉「以当前位置为终点」取的是此刻（播放器仍在播放），而不是打开抽屉时的位置 */
+function currentPlaySec() {
+  const pl = playerRef.value
+  return pl && typeof pl.getCurrentTime === 'function' ? pl.getCurrentTime() : metaAtSec.value
+}
 const toastMsg = ref('')
 let toastTimer = 0
 /** 播放层只借用播放会话相关的三个方法（不能让它自己调 useMediaTrack，否则卸载时会 dispose 页面级监听） */
@@ -1484,6 +1500,8 @@ function openPlayer(id) {
   const v = byId.value.get(id)
   if (!v) return
   startPos.value = readPos(v.id)
+  // P4-B：换片先清刻度，抽屉重新打开后会 emit 新片的标记（抽屉关着时进度条不显示旧刻度）
+  playerMarkers.value = []
   curVideo.value = v
   openSeq.value += 1
   state.play = v.id
@@ -1934,6 +1952,11 @@ function onKey(e) {
   const typing = tag === 'input' || tag === 'textarea' || tag === 'select' || (t && t.isContentEditable)
 
   if (e.key === 'Escape') {
+    // P4-B：帮助浮层开着时 Esc 只关浮层，不顺手把播放器一起关掉
+    if (playerRef.value && typeof playerRef.value.closeHelp === 'function' && playerRef.value.closeHelp()) {
+      e.preventDefault()
+      return
+    }
     if (curVideo.value) {
       e.preventDefault()
       closePlayer()
@@ -1965,11 +1988,14 @@ function onKey(e) {
       break
     case 'ArrowLeft':
       e.preventDefault()
-      playerRef.value.seekRel(-5)
+      // P4-B：Shift+方向 = 单帧步进（不带 Shift 的 5 秒跳转保持不变）
+      if (e.shiftKey) playerRef.value.stepFrame(-1)
+      else playerRef.value.seekRel(-5)
       break
     case 'ArrowRight':
       e.preventDefault()
-      playerRef.value.seekRel(5)
+      if (e.shiftKey) playerRef.value.stepFrame(1)
+      else playerRef.value.seekRel(5)
       break
     case 'ArrowUp':
       e.preventDefault()
@@ -1993,6 +2019,34 @@ function onKey(e) {
     case 'P':
       e.preventDefault()
       step(-1)
+      break
+    /* ---------------- P4-B 新增：AB 循环 / 单帧 / 帮助（输入框聚焦时不抢键） ---------------- */
+    case 'a':
+    case 'A':
+      if (typing) break
+      e.preventDefault()
+      playerRef.value.setAbPoint('a')
+      break
+    case 'b':
+    case 'B':
+      if (typing) break
+      e.preventDefault()
+      playerRef.value.setAbPoint('b')
+      break
+    case ',':
+      if (typing) break
+      e.preventDefault()
+      playerRef.value.stepFrame(-1)
+      break
+    case '.':
+      if (typing) break
+      e.preventDefault()
+      playerRef.value.stepFrame(1)
+      break
+    case '?':
+      if (typing) break
+      e.preventDefault()
+      playerRef.value.toggleHelp()
       break
     default:
       break
