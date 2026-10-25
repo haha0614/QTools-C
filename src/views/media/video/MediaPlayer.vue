@@ -35,242 +35,282 @@
 
     <div v-if="warnVisible" class="p-warn">该片为 HEVC/异常编码，浏览器可能无法播放</div>
 
-    <div ref="stageEl" class="p-stage">
-      <!-- 原画与转码都不再挂原生 controls：控制条统一用下方自绘 .p-ctrl -->
-      <video
-        ref="videoEl"
-        autoplay
-        playsinline
-        preload="metadata"
-        @click="onVideoClick"
-        @play="onPlay"
-        @playing="onPlaying"
-        @loadeddata="onLoadedData"
-        @loadedmetadata="onLoadedMetadata"
-        @durationchange="onDurationChange"
-        @volumechange="onVolumeChange"
-        @timeupdate="onTimeUpdate"
-        @pause="onPause"
-        @ended="onEnded"
-        @seeking="onSeeking"
-        @error="onError"
-      >
-        <track v-if="subSrc" :key="subSrc" kind="subtitles" label="字幕" srclang="zh" default :src="subSrc" />
-      </video>
-      <button v-if="tapVisible" class="p-tap" type="button" @click="onTapPlay">▶ 点击播放</button>
-      <button v-if="restartVisible" class="p-restart" type="button" @click="onRestart">从头播放</button>
-    </div>
-
-    <!-- 自绘控制条：原画（直连）与转码共用一套 UI，原画模式不再使用浏览器原生 controls -->
-    <div class="p-ctrl">
-      <div class="p-seekbar">
-        <!-- P4.1：进度条 + 标记轨竖排成一列，标记轨与进度条同宽（.p-seekbar 仍是行布局，时间码在右侧） -->
-        <div class="p-seek-col">
-          <!-- mousemove 挂在 20px 高的容器上，命中带比 4px 轨道宽，指针略偏也能触发 -->
-          <div
-            class="p-seekwrap"
-            @mousemove="[onSeekHover, onMarkerHover]"
-            @mouseleave="[onSeekLeave, onMarkerLeave]"
-          >
-            <!-- P4-B 标记刻度：单点是 2px 竖线，区间是一段浅色带；hover 出 'mm:ss–mm:ss · 说明' 原生提示。
-                 pointer-events:none 让鼠标照常落到下面的 range 上（既不挡 hover 预览，也不挡拖动） -->
-            <div v-if="markerTickList.length" class="p-marks" aria-hidden="true">
-              <span
-                v-for="t in markerTickList"
-                :key="t.key"
-                class="p-mark"
-                :class="{ 'is-range': t.width > 0 }"
-                :style="markerTickStyle(t)"
-                :title="t.title"
-              ></span>
-            </div>
-            <input
-              ref="seekEl"
-              class="p-seek"
-              type="range"
-              min="0"
-              :max="seekMax"
-              step="1"
-              :value="seekPos"
-              aria-label="播放位置"
-              :aria-valuetext="fmtDur(seekPos) + ' / ' + fmtDur(seekDur)"
-              @input="onSeekInput"
-              @change="onSeekCommit"
-              @keydown="onSeekKey"
-            />
-            <!-- P4-B 标记刻度提示：hover 到刻度附近（单点 ±1.2%、区间整段）时在刻度上方显示 'mm:ss–mm:ss · 说明'。
-                 刻度本身 pointer-events:none，所以不会挡 range 的 hover 预览与拖动 -->
-            <div v-if="markerHover" class="p-marker-tip" :style="floatStyle(markerHover.left / 100)">
-              {{ markerHover.title }}
-            </div>
-            <!-- 1px 指示线：与卡片同源比例，告诉用户这里能 hover；无 hasSprite 时不渲染 -->
-            <div v-if="hoverVisible" class="p-hover-line" :style="hoverLineStyle"></div>
-            <!-- hover 预览：精灵图整图 + background-position 切格（10×10，共 100 格）；无 hasSprite 时永不渲染 -->
-            <div v-if="hoverVisible" class="p-hover" :style="floatStyle(hoverRatio)">
-              <div class="p-hover-img" :style="spriteStyle"></div>
-              <span class="p-hover-t">{{ hoverTimeText }}</span>
-            </div>
-            <!-- 拖动预览：pv2 缩时视频，按拖动比例定位帧；无 hasPreview 时永不挂载（因此不发请求） -->
-            <div v-if="clipVisible" class="p-clip" :style="floatStyle(clipRatio)">
-              <video
-                ref="clipEl"
-                class="p-clip-v"
-                muted
-                playsinline
-                preload="none"
-                :src="previewSrc"
-                @loadedmetadata="onClipMetadata"
-              ></video>
-              <span class="p-clip-t">{{ clipTimeText }}</span>
-            </div>
-          </div>
-        <!-- P4.1 标记轨（marker lane）：进度条下方独立一条，与进度条同宽、间距 2px。
-             单点 = 3px 通高竖条；区间 = 半透明色带 + 左右各 2px 实心边。
-             轨道本身 pointer-events:none（不挡拖动与 hover 预览），只有标记可点：
-             点一下跳到 pos，区间再点一下跳到 endPos；hover/focus 复用 .p-marker-tip 提示。
-             无标记时整条不渲染（v-if），不留空白。 -->
-        <div v-if="markerTickList.length" class="p-marklane" role="group" aria-label="进度标记">
-          <button
-            v-for="t in markerTickList"
-            :key="'ln' + t.key"
-            class="p-lane-mark"
-            :class="{ 'is-range': t.isRange }"
-            type="button"
-            :style="laneMarkStyle(t)"
-            :title="t.title"
-            :aria-label="'跳到 ' + t.title"
-            @mouseenter="onLaneHover(t)"
-            @mouseleave="onLaneLeave"
-            @focus="onLaneHover(t)"
-            @blur="onLaneLeave"
-            @click.stop="onLaneClick(t)"
-          ></button>
-        </div>
-        </div>
-        <span class="p-seek-now">{{ fmtDur(seekPos) }} / {{ fmtDur(seekDur) }}</span>
+    <!-- P4.3 全屏容器：把 <video>（.p-stage）与自绘控制栏（.p-ctrl）包在一起，
+         全屏请求发到这一层 —— 只对 .p-stage 全屏时控制栏是兄弟节点，会被挡在屏幕外。 -->
+    <div ref="fsEl" class="p-fs-wrap">
+      <div ref="stageEl" class="p-stage">
+        <!-- 原画与转码都不再挂原生 controls：控制条统一用下方自绘 .p-ctrl -->
+        <video
+          ref="videoEl"
+          autoplay
+          playsinline
+          preload="metadata"
+          @click="onVideoClick"
+          @play="onPlay"
+          @playing="onPlaying"
+          @loadeddata="onLoadedData"
+          @loadedmetadata="onLoadedMetadata"
+          @durationchange="onDurationChange"
+          @volumechange="onVolumeChange"
+          @timeupdate="onTimeUpdate"
+          @webkitbeginfullscreen="onIosFsIn"
+          @webkitendfullscreen="onIosFsOut"
+          @pause="onPause"
+          @ended="onEnded"
+          @seeking="onSeeking"
+          @error="onError"
+        >
+          <track v-if="subSrc" :key="subSrc" kind="subtitles" label="字幕" srclang="zh" default :src="subSrc" />
+        </video>
+        <button v-if="tapVisible" class="p-tap" type="button" @click="onTapPlay">▶ 点击播放</button>
+        <button v-if="restartVisible" class="p-restart" type="button" @click="onRestart">从头播放</button>
       </div>
 
-      <div class="p-ctrlline">
-        <button
-          class="p-btn p-btn-play"
-          type="button"
-          :aria-label="isPlaying ? '暂停' : '播放'"
-          @click="togglePlay"
-        >
-          {{ isPlaying ? '⏸' : '▶' }}
-        </button>
-        <button
-          class="p-btn"
-          type="button"
-          :aria-label="muted || volume === 0 ? '取消静音' : '静音'"
-          @click="toggleMute"
-        >
-          {{ muted || volume === 0 ? '🔇' : '🔊' }}
-        </button>
-        <input
-          class="p-vol"
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          :value="muted ? 0 : volume"
-          aria-label="音量"
-          @input="onVolumeInput"
-        />
-        <!-- P4.1：音量增益从控制条中部挪到音量滑块旁，三个按钮收敛成一个循环按钮
-             （1×→1.5×→2×→1×）；WebAudio GainNode / 降级为音量映射的行为一行未改（见 setGain） -->
-        <button
-          class="p-btn p-gain-btn"
-          :class="{ on: gainLevel > 1 }"
-          type="button"
-          :aria-pressed="gainLevel > 1"
-          :title="gainTitle"
-          @click="cycleGain"
-        >
-          增益 {{ gainLevel }}×
-        </button>
-        <!-- 降级说明：只在浏览器不给 WebAudio 时出现，hover 出完整原因 -->
-        <span v-if="gainFallback" class="p-gain-note" :title="gainNote">增益降级</span>
-        <!-- P4.1：原来 1×/1.5×/2× 增益按钮的位置改成真正的「视频倍速」（用户一直把它误认成倍速） -->
-        <span class="p-speed">
-          <label class="p-speed-lab" for="msVideoSpeed">倍速</label>
-          <select
-            id="msVideoSpeed"
-            class="p-speed-sel"
-            :value="speedLevel"
-            :title="speedTitle"
-            aria-label="视频倍速"
-            @change="onSpeedChange"
+      <!-- 自绘控制条：原画（直连）与转码共用一套 UI，原画模式不再使用浏览器原生 controls -->
+      <div class="p-ctrl">
+        <div class="p-seekbar">
+          <!-- P4.1：进度条 + 标记轨竖排成一列，标记轨与进度条同宽（.p-seekbar 仍是行布局，时间码在右侧） -->
+          <div class="p-seek-col">
+            <!-- mousemove 挂在 20px 高的容器上，命中带比 4px 轨道宽，指针略偏也能触发 -->
+            <div
+              class="p-seekwrap"
+              @mousemove="[onSeekHover, onMarkerHover]"
+              @mouseleave="[onSeekLeave, onMarkerLeave]"
+            >
+              <!-- P4-B 标记刻度：单点是 2px 竖线，区间是一段浅色带；hover 出 'mm:ss–mm:ss · 说明' 原生提示。
+                   pointer-events:none 让鼠标照常落到下面的 range 上（既不挡 hover 预览，也不挡拖动） -->
+              <div v-if="markerTickList.length" class="p-marks" aria-hidden="true">
+                <span
+                  v-for="t in markerTickList"
+                  :key="t.key"
+                  class="p-mark"
+                  :class="{ 'is-range': t.width > 0 }"
+                  :style="markerTickStyle(t)"
+                  :title="t.title"
+                ></span>
+              </div>
+              <input
+                ref="seekEl"
+                class="p-seek"
+                type="range"
+                min="0"
+                :max="seekMax"
+                step="1"
+                :value="seekPos"
+                aria-label="播放位置"
+                :aria-valuetext="fmtDur(seekPos) + ' / ' + fmtDur(seekDur)"
+                @input="onSeekInput"
+                @change="onSeekCommit"
+                @keydown="onSeekKey"
+              />
+              <!-- P4-B 标记刻度提示：hover 到刻度附近（单点 ±1.2%、区间整段）时在刻度上方显示 'mm:ss–mm:ss · 说明'。
+                   刻度本身 pointer-events:none，所以不会挡 range 的 hover 预览与拖动 -->
+              <div v-if="markerHover" class="p-marker-tip" :style="floatStyle(markerHover.left / 100)">
+                {{ markerHover.title }}
+              </div>
+              <!-- 1px 指示线：与卡片同源比例，告诉用户这里能 hover；无 hasSprite 时不渲染 -->
+              <div v-if="hoverVisible" class="p-hover-line" :style="hoverLineStyle"></div>
+              <!-- hover 预览：精灵图整图 + background-position 切格（10×10，共 100 格）；无 hasSprite 时永不渲染 -->
+              <div v-if="hoverVisible" class="p-hover" :style="floatStyle(hoverRatio)">
+                <div class="p-hover-img" :style="spriteStyle"></div>
+                <span class="p-hover-t">{{ hoverTimeText }}</span>
+              </div>
+              <!-- 拖动预览：pv2 缩时视频，按拖动比例定位帧；无 hasPreview 时永不挂载（因此不发请求） -->
+              <div v-if="clipVisible" class="p-clip" :style="floatStyle(clipRatio)">
+                <video
+                  ref="clipEl"
+                  class="p-clip-v"
+                  muted
+                  playsinline
+                  preload="none"
+                  :src="previewSrc"
+                  @loadedmetadata="onClipMetadata"
+                ></video>
+                <span class="p-clip-t">{{ clipTimeText }}</span>
+              </div>
+            </div>
+          <!-- P4.1 标记轨（marker lane）：进度条下方独立一条，与进度条同宽、间距 2px。
+               单点 = 3px 通高竖条；区间 = 半透明色带 + 左右各 2px 实心边。
+               轨道本身 pointer-events:none（不挡拖动与 hover 预览），只有标记可点：
+               点一下跳到 pos，区间再点一下跳到 endPos；hover/focus 复用 .p-marker-tip 提示。
+               无标记时整条不渲染（v-if），不留空白。 -->
+          <div
+            v-if="markerTickList.length"
+            class="p-marklane"
+            role="group"
+            aria-label="进度标记"
+            :style="laneVars"
           >
-            <!-- :selected 让首屏（含 SSR 证据）就显示当前档位，而不是浏览器默认的第一项 -->
-            <option v-for="s in SPEED_LEVELS" :key="'sp' + s" :value="s" :selected="s === speedLevel">
-              {{ speedLabel(s) }}
-            </option>
+            <button
+              v-for="t in markerTickList"
+              :key="'ln' + t.key"
+              class="p-lane-mark"
+              :class="{ 'is-range': t.isRange }"
+              type="button"
+              :style="laneMarkStyle(t)"
+              :title="t.title"
+              :aria-label="'跳到 ' + t.title"
+              @mouseenter="onLaneHover(t)"
+              @mouseleave="onLaneLeave"
+              @focus="onLaneHover(t)"
+              @blur="onLaneLeave"
+              @click.stop="onLaneClick(t)"
+            ></button>
+          </div>
+          </div>
+          <!-- P4.3 标记数量徽标：刻度太细看不见时的根本解法 —— 数字一目了然，点开就是可跳转的列表。
+               位置在进度条右端、时间码左侧；无标记时整块不渲染（与标记轨同一条件）。 -->
+          <span v-if="markerTickList.length" ref="mkBadgeEl" class="p-mk-badge-wrap">
+            <button
+              class="p-mk-badge"
+              type="button"
+              :aria-expanded="markerListOpen"
+              :title="markerBadgeTitle"
+              :aria-label="markerBadgeTitle"
+              @click.stop="toggleMarkerList"
+            >
+              🚩 {{ markerTickList.length }}
+            </button>
+            <div v-if="markerListOpen" class="p-mk-list" role="menu" aria-label="标记列表">
+              <button
+                v-for="t in markerTickList"
+                :key="'ml' + t.key"
+                class="p-mk-item"
+                type="button"
+                role="menuitem"
+                :title="'跳到 ' + t.title"
+                @click.stop="onMarkPick(t)"
+              >
+                <span class="p-mk-dot" :style="{ background: t.color || 'var(--accent)' }"></span>
+                <span class="p-mk-item-t">{{ t.title }}</span>
+              </button>
+            </div>
+          </span>
+          <span class="p-seek-now">{{ fmtDur(seekPos) }} / {{ fmtDur(seekDur) }}</span>
+        </div>
+
+        <div class="p-ctrlline">
+          <button
+            class="p-btn p-btn-play"
+            type="button"
+            :aria-label="isPlaying ? '暂停' : '播放'"
+            @click="togglePlay"
+          >
+            {{ isPlaying ? '⏸' : '▶' }}
+          </button>
+          <button
+            class="p-btn"
+            type="button"
+            :aria-label="muted || volume === 0 ? '取消静音' : '静音'"
+            @click="toggleMute"
+          >
+            {{ muted || volume === 0 ? '🔇' : '🔊' }}
+          </button>
+          <input
+            class="p-vol"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            :value="muted ? 0 : volume"
+            aria-label="音量"
+            @input="onVolumeInput"
+          />
+          <!-- P4.1：音量增益从控制条中部挪到音量滑块旁，三个按钮收敛成一个循环按钮
+               （1×→1.5×→2×→1×）；WebAudio GainNode / 降级为音量映射的行为一行未改（见 setGain） -->
+          <button
+            class="p-btn p-gain-btn"
+            :class="{ on: gainLevel > 1 }"
+            type="button"
+            :aria-pressed="gainLevel > 1"
+            :title="gainTitle"
+            @click="cycleGain"
+          >
+            增益 {{ gainLevel }}×
+          </button>
+          <!-- 降级说明：只在浏览器不给 WebAudio 时出现，hover 出完整原因 -->
+          <span v-if="gainFallback" class="p-gain-note" :title="gainNote">增益降级</span>
+          <!-- P4.1：原来 1×/1.5×/2× 增益按钮的位置改成真正的「视频倍速」（用户一直把它误认成倍速） -->
+          <span class="p-speed">
+            <label class="p-speed-lab" for="msVideoSpeed">倍速</label>
+            <select
+              id="msVideoSpeed"
+              class="p-speed-sel"
+              :value="speedLevel"
+              :title="speedTitle"
+              aria-label="视频倍速"
+              @change="onSpeedChange"
+            >
+              <!-- :selected 让首屏（含 SSR 证据）就显示当前档位，而不是浏览器默认的第一项 -->
+              <option v-for="s in SPEED_LEVELS" :key="'sp' + s" :value="s" :selected="s === speedLevel">
+                {{ speedLabel(s) }}
+              </option>
+            </select>
+          </span>
+          <!-- P4-B AB 循环：A 设起点、B 设终点（再按各自清除），播放到 B 自动回跳 A -->
+          <span class="p-ab">
+            <button
+              class="p-btn p-ab-btn"
+              :class="{ on: abA != null }"
+              type="button"
+              title="设 A 点（再按 A 清除）快捷键 A"
+              @click="setAbPoint('a')"
+            >
+              A
+            </button>
+            <button
+              class="p-btn p-ab-btn"
+              :class="{ on: abB != null }"
+              type="button"
+              title="设 B 点（再按 B 清除）快捷键 B"
+              @click="setAbPoint('b')"
+            >
+              B
+            </button>
+            <button
+              class="p-btn p-ab-btn"
+              type="button"
+              :disabled="abA == null && abB == null"
+              title="清除 A/B"
+              @click="clearAb"
+            >
+              清
+            </button>
+            <span class="p-ab-text" :class="{ on: abOn }" :title="abTitle">{{ abText }}</span>
+          </span>
+          <!-- P4-B 逐帧：暂停态单帧步进（1/30 近似，有 requestVideoFrameCallback 时按实测帧间隔） -->
+          <span class="p-frame">
+            <button class="p-btn" type="button" title="上一帧（快捷键 , 或 Shift+←）" @click="stepFrame(-1)">⏴</button>
+            <button class="p-btn" type="button" title="下一帧（快捷键 . 或 Shift+→）" @click="stepFrame(1)">⏵</button>
+          </span>
+          <button
+            class="p-btn p-help-btn"
+            type="button"
+            :aria-expanded="helpVisible"
+            title="快捷键说明（?）"
+            @click="toggleHelp"
+          >
+            ?
+          </button>
+          <span class="p-ctrl-gap"></span>
+          <label class="p-q-lab" for="msVideoQ">画质</label>
+          <select id="msVideoQ" class="p-q" :value="curQ" @change="onQualityChange">
+            <option v-for="q in Q_VALUES" :key="q" :value="q">{{ q === 'orig' ? '原画（直连）' : Q_LABELS[q] }}</option>
           </select>
-        </span>
-        <!-- P4-B AB 循环：A 设起点、B 设终点（再按各自清除），播放到 B 自动回跳 A -->
-        <span class="p-ab">
+          <span class="p-q-now">{{ qLabel(curQ) }}</span>
+          <span v-if="qHintVisible" class="p-q-hint">转码中…</span>
+          <span class="p-ctrl-gap"></span>
+          <button v-if="hasPrev" class="p-btn" type="button" aria-label="上一部" @click="emit('prev')">⏮</button>
+          <button v-if="hasNext" class="p-btn" type="button" aria-label="下一部" @click="emit('next')">⏭</button>
           <button
-            class="p-btn p-ab-btn"
-            :class="{ on: abA != null }"
+            class="p-btn"
             type="button"
-            title="设 A 点（再按 A 清除）快捷键 A"
-            @click="setAbPoint('a')"
+            :aria-label="fsActive ? '退出全屏' : '全屏'"
+            @click="toggleFullscreen"
           >
-            A
+            {{ fsActive ? '⤢' : '⛶' }}
           </button>
-          <button
-            class="p-btn p-ab-btn"
-            :class="{ on: abB != null }"
-            type="button"
-            title="设 B 点（再按 B 清除）快捷键 B"
-            @click="setAbPoint('b')"
-          >
-            B
-          </button>
-          <button
-            class="p-btn p-ab-btn"
-            type="button"
-            :disabled="abA == null && abB == null"
-            title="清除 A/B"
-            @click="clearAb"
-          >
-            清
-          </button>
-          <span class="p-ab-text" :class="{ on: abOn }" :title="abTitle">{{ abText }}</span>
-        </span>
-        <!-- P4-B 逐帧：暂停态单帧步进（1/30 近似，有 requestVideoFrameCallback 时按实测帧间隔） -->
-        <span class="p-frame">
-          <button class="p-btn" type="button" title="上一帧（快捷键 , 或 Shift+←）" @click="stepFrame(-1)">⏴</button>
-          <button class="p-btn" type="button" title="下一帧（快捷键 . 或 Shift+→）" @click="stepFrame(1)">⏵</button>
-        </span>
-        <button
-          class="p-btn p-help-btn"
-          type="button"
-          :aria-expanded="helpVisible"
-          title="快捷键说明（?）"
-          @click="toggleHelp"
-        >
-          ?
-        </button>
-        <span class="p-ctrl-gap"></span>
-        <label class="p-q-lab" for="msVideoQ">画质</label>
-        <select id="msVideoQ" class="p-q" :value="curQ" @change="onQualityChange">
-          <option v-for="q in Q_VALUES" :key="q" :value="q">{{ q === 'orig' ? '原画（直连）' : Q_LABELS[q] }}</option>
-        </select>
-        <span class="p-q-now">{{ qLabel(curQ) }}</span>
-        <span v-if="qHintVisible" class="p-q-hint">转码中…</span>
-        <span class="p-ctrl-gap"></span>
-        <button v-if="hasPrev" class="p-btn" type="button" aria-label="上一部" @click="emit('prev')">⏮</button>
-        <button v-if="hasNext" class="p-btn" type="button" aria-label="下一部" @click="emit('next')">⏭</button>
-        <button
-          class="p-btn"
-          type="button"
-          :aria-label="fsActive ? '退出全屏' : '全屏'"
-          @click="toggleFullscreen"
-        >
-          {{ fsActive ? '⤢' : '⛶' }}
-        </button>
+        </div>
       </div>
     </div>
 
@@ -307,7 +347,12 @@ import { useMediaApi } from '@/composables/useMediaApi'
 import {
   FRAME_FALLBACK_SEC,
   LANE_EDGE_PX,
+  LANE_GAP_PX,
+  LANE_HEIGHT_PX,
+  LANE_HEIGHT_PX_MOBILE,
   LANE_PIN_PX,
+  LANE_RANGE_MIX_PCT,
+  LANE_RAISE_PX,
   SPEED_LEVELS,
   abActive,
   abPress,
@@ -370,6 +415,8 @@ const Q_LABELS = { orig: '原画', 720: '720p', 480: '480p', 360: '360p' }
 
 const videoEl = ref(null)
 const stageEl = ref(null)
+/** P4.3：全屏元素 = 包裹 <video> + 自绘控制栏的容器（只对 .p-stage 全屏会让控制栏消失） */
+const fsEl = ref(null)
 const tapVisible = ref(false)
 const warnVisible = ref(false)
 const restartVisible = ref(false)
@@ -780,10 +827,22 @@ function onFsChange() {
   fsActive.value = !!(d.fullscreenElement || d.webkitFullscreenElement)
 }
 
+/* iOS 视频元素全屏（webkitEnterFullscreen）不触发 document 的 fullscreenchange，
+   靠元素自身的 webkitbegin/endfullscreen 同步按钮图标；桌面端这两个事件永不触发。 */
+function onIosFsIn() {
+  fsActive.value = true
+}
+
+function onIosFsOut() {
+  fsActive.value = false
+}
+
 onMounted(() => {
   if (mobileMq && mobileMq.addEventListener) mobileMq.addEventListener('change', onMobileMqChange)
   document.addEventListener('fullscreenchange', onFsChange)
   document.addEventListener('webkitfullscreenchange', onFsChange)
+  // P4.3：标记列表浮层的「点外部收起」（capture，先于按钮 click）
+  document.addEventListener('pointerdown', onDocPointerDown, true)
   openVideo(props.video, props.startPos)
 })
 
@@ -793,6 +852,7 @@ onBeforeUnmount(() => {
   }
   document.removeEventListener('fullscreenchange', onFsChange)
   document.removeEventListener('webkitfullscreenchange', onFsChange)
+  document.removeEventListener('pointerdown', onDocPointerDown, true)
   endQHint()
   // P4-B：释放请求的帧回调与 WebAudio 图（不释放会一直占着 AudioContext，Chrome 上限 6 个）
   stopFrameSampling()
@@ -968,8 +1028,8 @@ function markerTickStyle(t) {
 
 /**
  * 标记轨上单个标记的内联样式（尺寸常量来自 playerExtras，SCSS 里不再另写一套数字）：
- * - 单点：3px 宽通高竖条，left% 居中（margin-left 拉回半宽）；
- * - 区间：色带按 width% 铺开 + 左右各 2px 实心边（border-box，边框不额外加宽）；
+ * - 单点：4px 宽通高竖条（P4.3 由 3px 加粗），left% 居中（margin-left 拉回半宽）；
+ * - 区间：色带按 width% 铺开 + 左右各 3px 实心边（P4.3 由 2px 加粗，border-box，边框不额外加宽）；
  * - 颜色一律用标记自带的 color，没有 color 用主题强调色（--accent），亮暗主题都跟随。
  */
 function laneMarkStyle(t) {
@@ -980,8 +1040,8 @@ function laneMarkStyle(t) {
   }
   if (t.isRange) {
     style.width = t.width + '%'
-    // 半透明色带 + 实心边：单点用实心色，区间用 34% 混色（亮暗底上都看得出边界）
-    style.background = 'color-mix(in srgb, ' + color + ' 34%, transparent)'
+    // 半透明色带 + 实心边：单点用实心色，区间用 45% 混色（P4.3 由 34% 提高，亮暗底上都看得出边界）
+    style.background = 'color-mix(in srgb, ' + color + ' ' + LANE_RANGE_MIX_PCT + '%, transparent)'
   } else {
     style.width = LANE_PIN_PX + 'px'
     style.marginLeft = -(LANE_PIN_PX / 2) + 'px'
@@ -1007,6 +1067,62 @@ function onLaneClick(t) {
   if (jump.sec == null) return
   seekAbsTo(jump.sec, undefined)
 }
+
+/* ================= P4.3 标记轨尺寸变量 + 标记数量徽标 ================= */
+
+/**
+ * 标记轨的尺寸只由 playerExtras 的 LANE_* 常量决定，这里把它们落到 CSS 变量，
+ * 让 SCSS 里的 height / margin-top / 边宽 / 探出量都读同一份数字（窄屏高度用 --lane-h-sm）。
+ */
+const laneVars = {
+  '--lane-h': LANE_HEIGHT_PX + 'px',
+  '--lane-h-sm': LANE_HEIGHT_PX_MOBILE + 'px',
+  '--lane-gap': LANE_GAP_PX + 'px',
+  '--lane-edge': LANE_EDGE_PX + 'px',
+  '--lane-raise': LANE_RAISE_PX + 'px'
+}
+
+/** 徽标文案：hover 提示「N 个标记」（点击展开可跳转列表） */
+const markerBadgeTitle = computed(() => markerTickList.value.length + ' 个标记 · 点击展开列表')
+
+/** 徽标列表是否展开（只在有标记时才有意义；换片 / 点外部都会收起） */
+const markerListOpen = ref(false)
+const mkBadgeEl = ref(null)
+
+function toggleMarkerList() {
+  if (!markerTickList.value.length) return
+  markerListOpen.value = !markerListOpen.value
+}
+
+function closeMarkerList() {
+  markerListOpen.value = false
+}
+
+/**
+ * 列表里点一条：跳到该标记的起点（区间 = 起点；起点→终点的连点语义仍由标记轨上的 markJumpTarget 提供）。
+ * 点完立即收起，避免浮层压住进度条。
+ */
+function onMarkPick(t) {
+  markerListOpen.value = false
+  if (!t || t.startSec == null) return
+  seekAbsTo(t.startSec, undefined)
+}
+
+/** 点浮层外部收起：capture 阶段监听，先于任何按钮的 click 执行，不干扰播放器其它点击 */
+function onDocPointerDown(e) {
+  if (!markerListOpen.value) return
+  const el = mkBadgeEl.value
+  if (el && e.target && typeof el.contains === 'function' && el.contains(e.target)) return
+  markerListOpen.value = false
+}
+
+/** 换片时收起列表（新片的标记还没到，列表留着的旧条目会跳错位置） */
+watch(
+  () => (props.video ? props.video.id : ''),
+  () => {
+    markerListOpen.value = false
+  }
+)
 
 /** 标记 / AB 文案用的时间格式：0 秒要显示 00:00（fmtDur 对 0 返回 --:--，是给「未知时长」用的） */
 function fmtMark(sec) {
@@ -1385,6 +1501,14 @@ function adjustVolume(delta) {
   if (el) el.volume = Math.max(0, Math.min(1, el.volume + delta))
 }
 
+/**
+ * 全屏（P4.3 修复「全屏后没有控制栏」）：
+ *   旧实现请求的是 .p-stage —— 它**只包 <video>**，自绘控制栏 .p-ctrl 是它的兄弟节点，
+ *   一进全屏浏览器只显示被请求的那个元素，控制栏于是被挡在屏幕外（这就是病症）。
+ *   现在请求的是 .p-fs-wrap（包 video + 控制栏），并给它 :fullscreen 下 display:flex / column / 黑底，
+ *   控制栏固定在底部，进度条与其中的标记轨都可见。退出（F / Esc / 浏览器手势）由
+ *   fullscreenchange → onFsChange 同步按钮图标，:fullscreen 样式失效后布局自动恢复。
+ */
 function toggleFullscreen() {
   const d = document
   const exit = d.exitFullscreen || d.webkitExitFullscreen
@@ -1395,14 +1519,17 @@ function toggleFullscreen() {
     }
     return
   }
-  const stage = stageEl.value
-  if (!stage) return
-  const req = stage.requestFullscreen || stage.webkitRequestFullscreen
+  const wrap = fsEl.value || stageEl.value
+  if (!wrap) return
+  const req = wrap.requestFullscreen || wrap.webkitRequestFullscreen
   if (req) {
-    const p = req.call(stage)
+    const p = req.call(wrap)
     if (p && p.catch) p.catch(() => {})
   } else if (videoEl.value && videoEl.value.webkitEnterFullscreen) {
-    videoEl.value.webkitEnterFullscreen() // iOS Safari 只支持视频元素全屏
+    // iOS Safari：不支持元素全屏（requestFullscreen 在 div 上不可用），退化为「视频本身全屏」，
+    // 此时控制栏由系统播放器提供（含系统进度条），自绘控制栏不参与；退出后按钮图标由
+    // video 的 webkitbegin/endfullscreen 事件同步（见 onIosFsIn / onIosFsOut）。
+    videoEl.value.webkitEnterFullscreen()
   }
 }
 
@@ -1749,6 +1876,39 @@ defineExpose({
   color: var(--fg-dim);
 }
 
+/* P4.3 全屏容器：包住 .p-stage（<video>）与 .p-ctrl（自绘控制栏）。
+   平时它就是 .player 里的弹性列（顶替原来 .p-stage 占的那一格），视觉与改动前一致。 */
+.p-fs-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+}
+
+/* 全屏时浏览器只渲染被请求的那个元素：容器撑满屏幕、黑底、列布局，
+   控制栏因此在底部固定可见，进度条与上面的标记轨也都在屏幕内。
+   （旧实现把全屏请求发给只包 <video> 的 .p-stage，控制栏是它的兄弟节点，一进全屏就消失。） */
+.p-fs-wrap:fullscreen,
+.p-fs-wrap:-webkit-full-screen {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+}
+
+.p-fs-wrap:fullscreen .p-stage,
+.p-fs-wrap:-webkit-full-screen .p-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.p-fs-wrap:fullscreen .p-ctrl,
+.p-fs-wrap:-webkit-full-screen .p-ctrl {
+  flex: 0 0 auto;
+}
+
 .p-stage {
   position: relative;
   flex: 1;
@@ -1986,18 +2146,24 @@ defineExpose({
 
 /* ====================== P4.1 标记轨（进度条下方独立一条） ====================== */
 /* 轨道本身 pointer-events:none：不挡进度条拖动，也不挡 hover 预览；只有 .p-lane-mark 吃事件。
-   高度 / 单点宽度 / 边宽全部来自 playerExtras 的 LANE_* 常量（9px / 3px / 2px），此处只做视觉加成。 */
+   P4.3：高度 / 间距 / 边宽 / 探出量改读 JS 侧的 CSS 变量（值来自 playerExtras 的 LANE_* 常量，
+   见 MediaPlayer 的 laneVars），SCSS 不再另写一套数字；窄屏高度用 --lane-h-sm。
+   轨道加一层淡背景 + 内描边，让它是一条看得见的「带子」，而不是飘在空白里的细线。 */
 .p-marklane {
   position: relative;
-  height: 9px;
-  margin-top: 2px;
+  height: var(--lane-h, 12px);
+  margin-top: var(--lane-gap, 3px);
+  background: color-mix(in srgb, var(--bg-3) 88%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent);
+  border-radius: 2px;
   pointer-events: none;
   z-index: 2;
 }
 
 .p-lane-mark {
   position: absolute;
-  top: 0;
+  /* P4.3：向上探出 1px（--lane-raise），让单点竖条与 4px 进度条在视觉上连成一体 */
+  top: calc(-1 * var(--lane-raise, 1px));
   bottom: 0;
   padding: 0;
   border: 0;
@@ -2012,10 +2178,12 @@ defineExpose({
 }
 
 .p-lane-mark.is-range {
+  /* 区间是一条带子，不向上探出（探出会与进度条叠成一块色斑） */
+  top: 0;
   box-sizing: border-box;
   min-width: 6px;
-  border-left: 2px solid;
-  border-right: 2px solid;
+  border-left: var(--lane-edge, 3px) solid;
+  border-right: var(--lane-edge, 3px) solid;
   border-radius: 1px;
 }
 
@@ -2023,6 +2191,93 @@ defineExpose({
 .p-lane-mark:focus-visible {
   outline: none;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 0 0 3px var(--accent-soft);
+}
+
+/* ================== P4.3 标记数量徽标（进度条右端 / 时间码左侧）+ 标记列表 ================== */
+/* 用户两次反馈「刻度看不出来」：刻度尺寸已经加到 12px/4px，但细线本身有上限，
+   于是再给一个数字入口 —— 「🚩 N」一眼看出有没有标记，点开直接跳到某条。 */
+.p-mk-badge-wrap {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.p-mk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 20px;
+  padding: 0 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-3);
+  color: var(--fg);
+  font-size: 12px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.p-mk-badge:hover,
+.p-mk-badge[aria-expanded='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* 列表贴着徽标向上展开（与控制条上方其它浮层同一方向），可滚动，最长 240px */
+.p-mk-list {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 7;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 168px;
+  max-width: min(300px, 70vw);
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  box-shadow: 0 8px 22px var(--accent-soft);
+}
+
+.p-mk-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg);
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.p-mk-item:hover,
+.p-mk-item:focus-visible {
+  background: var(--accent-soft);
+  color: var(--accent);
+  outline: none;
+}
+
+/* 小方块用标记自己的颜色（与轨道上的刻度同色，列表与刻度对得上） */
+.p-mk-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.p-mk-item-t {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .p-gain-btn {
@@ -2213,10 +2468,17 @@ defineExpose({
     font-size: 13px;
   }
 
-  /* P4.1：窄屏标记轨保留（它是状态指示，不是浮层），最小高度 6px */
+  /* P4.1：窄屏标记轨保留（它是状态指示，不是浮层）；P4.3 起窄屏 12px → 8px，间距仍 3px */
   .p-marklane {
-    height: 6px;
-    margin-top: 2px;
+    height: var(--lane-h-sm, 8px);
+    margin-top: var(--lane-gap, 3px);
+  }
+
+  /* P4.3：触屏上徽标加大到可点尺寸（刻度太细看不见时它是主要入口） */
+  .p-mk-badge {
+    height: 26px;
+    padding: 0 9px;
+    font-size: 13px;
   }
 
   .p-speed-lab {

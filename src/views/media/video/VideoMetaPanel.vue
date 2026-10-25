@@ -263,6 +263,14 @@ const rating = ref(seedRating)
 const ratingDraft = ref(seedRating)
 const tags = ref(normalizeTags(seed && Array.isArray(seed.tags) ? seed.tags : props.video.tags))
 const markers = ref(seed && Array.isArray(seed.markers) ? seed.markers.filter((m) => m && m.id != null) : [])
+/**
+ * P4.3：当前这份 markers 是否「权威」（可以写进前端按 videoId 的标记缓存）。
+ *   - local 档：markers 来自本机 localStorage 组织覆盖，本身就是权威值 → 初始 true；
+ *   - full/off 档：初始 false —— 站端没有匿名读元信息的接口，读失败时 markers 只是空种子，
+ *     若把这种「读不到」当成「没有标记」写进缓存，就会把播放器已有的刻度擦掉。
+ *     只有 applyMeta（读接口成功 / 写接口回读成功）与 saveLocal 之后才置 true。
+ */
+const markersTrusted = ref(isLocal.value)
 
 /** 新增标记的最小表单：mm:ss + 说明 + 颜色 */
 const markAt = ref('')
@@ -316,6 +324,7 @@ function applyMeta(body, quiet) {
   ratingDraft.value = rating.value
   tags.value = normalizeTags(body.tags)
   markers.value = Array.isArray(body.markers) ? body.markers.filter((m) => m && m.id != null) : []
+  markersTrusted.value = true
   if (!quiet) readNote.value = ''
   emit('updated', { id: props.video.id, rating: rating.value, tags: tags.value })
 }
@@ -369,6 +378,7 @@ function saveLocal(patch, optimistic, okMsg) {
   ratingDraft.value = rating.value
   if (Array.isArray(merged.tags)) tags.value = normalizeTags(merged.tags)
   if (Array.isArray(merged.markers)) markers.value = merged.markers
+  markersTrusted.value = true
   emit('updated', { id: props.video.id, rating: rating.value, tags: tags.value })
   emit('notify', (okMsg || '已保存') + '（仅本机）')
 }
@@ -543,7 +553,8 @@ function removeMarker(m) {
 watch(
   markers,
   (list) => {
-    emit('markers', Array.isArray(list) ? list.slice() : [])
+    // P4.3：第二个参数是「这份列表是否权威」——页面据此决定要不要更新该 videoId 的标记缓存
+    emit('markers', Array.isArray(list) ? list.slice() : [], markersTrusted.value)
   },
   { immediate: true }
 )

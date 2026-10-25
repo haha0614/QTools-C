@@ -293,13 +293,20 @@ export function writeSpeedLevel(storage, level) {
 /**
  * 标记轨（P4.1：进度条下方那条独立轨道）的尺寸 —— 全工程唯一来源，
  * 组件只消费这里的常量，别在 SCSS 里另写一套数字。
- * 单点 3px 通高、区间左右各 2px 实心边、轨道 9px 高（窄屏 6px）、与进度条留 2px。
+ * P4.3 全套加大一号（用户第二次反馈「看不出来」）：
+ *   轨道 9px → 12px（窄屏 6px → 8px）、与进度条间距 2px → 3px、
+ *   单点竖条 3px → 4px 且向上探出 1px（与进度条做视觉连接）、
+ *   区间左右实心边 2px → 3px、区间底色 34% → 45%。
  */
-export const LANE_PIN_PX = 3
-export const LANE_HEIGHT_PX = 9
-export const LANE_HEIGHT_PX_MOBILE = 6
-export const LANE_EDGE_PX = 2
-export const LANE_GAP_PX = 2
+export const LANE_PIN_PX = 4
+export const LANE_HEIGHT_PX = 12
+export const LANE_HEIGHT_PX_MOBILE = 8
+export const LANE_EDGE_PX = 3
+export const LANE_GAP_PX = 3
+/** 单点竖条向上探出轨道的像素数（让刻度与 4px 进度条在视觉上连起来） */
+export const LANE_RAISE_PX = 1
+/** 区间标记底色的混色比例（%）：34 → 45，亮暗底上都更像一条「带子」而不是一根淡影 */
+export const LANE_RANGE_MIX_PCT = 45
 
 /** 标记归一化：pos 必须可解析；endPos 只有严格晚于 pos（> AB_MIN_SPAN）才算区间 */
 export function markerSpan(marker) {

@@ -259,6 +259,8 @@ import {
   clearLocalOrg,
   mergeCardMeta
 } from '@/composables/useMediaLocalOrg'
+// P4.3：标记按 videoId 的前端缓存（站端没有匿名读 meta 的接口时的替代方案）
+import { readMarkerCache, writeMarkerCache } from '@/composables/useMarkerCache'
 import FilterSidebar from './video/FilterSidebar.vue'
 import SavedFilters from './video/SavedFilters.vue'
 import QuickFilters from './video/QuickFilters.vue'
@@ -820,9 +822,40 @@ const metaAtSec = ref(0)
 /** P4-B：抽屉里当前这部片的标记（抽屉 emit 上来），只给播放器画进度条刻度用 */
 const playerMarkers = ref([])
 
-/** 信息抽屉的标记变动 → 进度条刻度；不参与筛选/排序，也不写任何存储 */
-function onMetaMarkers(list) {
-  playerMarkers.value = Array.isArray(list) ? list.slice() : []
+/**
+ * P4.3 标记缓存策略（取舍见 composables/useMarkerCache.js 头注释）：
+ *   站端没有匿名读元信息的接口（MediaEditController 只有 PUT /video/{id}/meta，
+ *   管理端 GET /api/media/admin/video/{id}/meta 带 @PreAuthorize，匿名 401），
+ *   而本轮不许改后端 —— 所以抽屉仍是唯一真实数据源，但抽屉拿到的标记按 videoId 落到
+ *   localStorage，下次打开播放器（同一浏览器、同一视频）直接从缓存画刻度，不必先开抽屉。
+ *   代价：换浏览器 / 清缓存 / 从没开过抽屉的访客第一次仍然没有刻度；抽屉每次读成功后
+ *   都会用权威值覆盖缓存，删光标记时缓存被清空，所以最多短暂过期。
+ */
+function markerStorage() {
+  try {
+    return typeof window !== 'undefined' && window.localStorage ? window.localStorage : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 信息抽屉的标记变动 → 进度条刻度；不参与筛选/排序，也不写服务端。
+ * P4.3：trusted=true（抽屉读到/写回权威值、或本地档的本机覆盖）时才更新该 videoId 的缓存，
+ * 读失败时的空列表绝不清缓存（否则会把播放器已经画出来的刻度擦掉）。
+ */
+function onMetaMarkers(list, trusted) {
+  const next = Array.isArray(list) ? list.slice() : []
+  if (!trusted) {
+    // 读接口失败（站端匿名 401）时抽屉只会 emit 一个空列表：不能拿它擦掉缓存画出来的刻度，
+    // 否则「打开抽屉 → 刻度消失」会比原来更糟。非空但不可信的数据照常显示，只是不写缓存。
+    if (!next.length) return
+    playerMarkers.value = next
+    return
+  }
+  playerMarkers.value = next
+  const id = curVideo.value && curVideo.value.id
+  if (id) writeMarkerCache(markerStorage(), id, next)
 }
 
 /** P4-B：抽屉「以当前位置为终点」取的是此刻（播放器仍在播放），而不是打开抽屉时的位置 */
@@ -1500,8 +1533,9 @@ function openPlayer(id) {
   const v = byId.value.get(id)
   if (!v) return
   startPos.value = readPos(v.id)
-  // P4-B：换片先清刻度，抽屉重新打开后会 emit 新片的标记（抽屉关着时进度条不显示旧刻度）
-  playerMarkers.value = []
+  // P4.3：换片先取该 videoId 的标记缓存（抽屉曾经读到过的标记），有缓存就能立刻画刻度；
+  // 没缓存就是空数组（不画刻度），等抽屉读到后再回填 —— 绝不显示上一部片的刻度。
+  playerMarkers.value = readMarkerCache(markerStorage(), v.id)
   curVideo.value = v
   openSeq.value += 1
   state.play = v.id

@@ -25,6 +25,8 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 // 图标按名显式导入（本项目没有 unplugin-auto-import，模板里不能凭空出现组件名）
 import { House, Menu, Moon, Picture, Sunny, User, UserFilled, VideoPlay } from '@element-plus/icons-vue'
 import { APP_INFO } from '@/utils/constants'
+// P4.3：侧栏选中态的纯判定（首页精确、/media 精确、人物含 /media/person/:id）
+import { isNavActive } from '@/utils/navActive'
 import { useTheme } from '@/composables/useTheme'
 import { useAppAuth } from '@/composables/useAppAuth'
 
@@ -157,10 +159,11 @@ const NAV_GROUPS = [
   {
     title: '媒体',
     items: [
-      { to: '/media', label: '视频库', icon: VideoPlay },
+      // P4.3：/media 只做精确匹配（exact），否则它会把 /media/photos、/media/persons 一起点亮
+      { to: '/media', label: '视频库', icon: VideoPlay, exact: true },
       { to: '/media/photos', label: '图片站', icon: Picture },
-      // 人物墙（P3-B）：/media/person/:id 也走这条高亮（isActive 的前缀匹配已覆盖）
-      { to: '/media/persons', label: '人物', icon: UserFilled }
+      // 人物墙（P3-B）：/media/person/:id 也走这条高亮（P4.3 起由 also 显式声明，不再靠 /media 前缀兜底）
+      { to: '/media/persons', label: '人物', icon: UserFilled, also: ['/media/person'] }
     ]
   }
 ]
@@ -171,12 +174,12 @@ const normalizedPath = computed(() => {
   return path === '' ? '/' : path
 })
 
-// 选中态：首页只认 '/'（hash 不参与判断），其余精确匹配或子路径匹配
-// （/tools 命中「全部工具」，与「首页」互不误判；/media 不做前缀匹配，否则会吞掉 /media/photos）
+// 选中态：判定逻辑抽到 src/utils/navActive.js（纯函数，可单测）。
+//   首页只认 '/'；/media 用 exact（不再吞掉 /media/photos、/media/persons）；
+//   人物用 also: ['/media/person'] 让 /media/person/:id 归「人物」；
+//   其余仍是「自身或子路径」匹配（/tools 命中「全部工具」，与「首页」互不误判）。
 function isActive(item) {
-  const path = normalizedPath.value
-  if (item.to === '/') return path === '/'
-  return path === item.to || path.startsWith(item.to + '/')
+  return isNavActive(item, normalizedPath.value)
 }
 
 // 底部个人入口：已登录进个人中心，未登录进登录页
