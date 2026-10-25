@@ -4,6 +4,8 @@
         （播放/暂停 · 进度 · 时间 · 音量 · 画质 · 上一部/下一部 · 全屏，两种模式同一套 UI，不再使用原生 controls）、
         进度条 hover 精灵图卡片 / 拖动预览片段、seek（转码重开流 + pendingSeek / 原画直写 currentTime）、
         上一个 / 下一个、收藏、字幕轨注入、异常编码回退、播放器会话式 play 埋点与 play_end 结算。
+   P4.4：全屏下控制条 2.5s 无操作自动淡出（判定在 playerExtras.createCtrlAutoHide），
+        进度条 / 标记轨 / 刻度层 / 浮层锚点统一按「轨道几何」（两端各半个 thumb）换算。
   约定：面板状态（当前视频 / 上一部下一个可用性 / 收藏 / 清晰度）由 VideoPage 持有，本组件通过 props 接收、
         emit 回传，不直接读写 localStorage 与服务端。
   事件监听全部通过模板绑定，组件卸载时由 Vue 自动解绑，不会残留 <video> 监听（原页手动管理 el.video）。
@@ -37,7 +39,14 @@
 
     <!-- P4.3 全屏容器：把 <video>（.p-stage）与自绘控制栏（.p-ctrl）包在一起，
          全屏请求发到这一层 —— 只对 .p-stage 全屏时控制栏是兄弟节点，会被挡在屏幕外。 -->
-    <div ref="fsEl" class="p-fs-wrap">
+    <div
+      ref="fsEl"
+      class="p-fs-wrap"
+      :class="{ 'is-ctrl-hidden': ctrlHidden }"
+      @mousemove="onUserActivity"
+      @mousedown="onUserActivity"
+      @touchstart.passive="onUserActivity"
+    >
       <div ref="stageEl" class="p-stage">
         <!-- 原画与转码都不再挂原生 controls：控制条统一用下方自绘 .p-ctrl -->
         <video
@@ -67,10 +76,18 @@
       </div>
 
       <!-- 自绘控制条：原画（直连）与转码共用一套 UI，原画模式不再使用浏览器原生 controls -->
-      <div class="p-ctrl">
+      <div
+        ref="ctrlEl"
+        class="p-ctrl"
+        @mouseenter="onCtrlPointerEnter"
+        @mouseleave="onCtrlPointerLeave"
+        @focusin="onCtrlFocusIn"
+        @focusout="onCtrlFocusOut"
+      >
         <div class="p-seekbar">
-          <!-- P4.1：进度条 + 标记轨竖排成一列，标记轨与进度条同宽（.p-seekbar 仍是行布局，时间码在右侧） -->
-          <div class="p-seek-col">
+          <!-- P4.1：进度条 + 标记轨竖排成一列（.p-seekbar 仍是行布局，时间码在右侧）。
+                P4.4：两者都按半个 thumb 左右内缩（--thumb-r），所以「同宽」是逐像素意义上的同宽 -->
+          <div class="p-seek-col" :style="seekVars">
             <!-- mousemove 挂在 20px 高的容器上，命中带比 4px 轨道宽，指针略偏也能触发 -->
             <div
               class="p-seekwrap"
@@ -97,6 +114,7 @@
                 :max="seekMax"
                 step="1"
                 :value="seekPos"
+                :style="seekFillStyle"
                 aria-label="播放位置"
                 :aria-valuetext="fmtDur(seekPos) + ' / ' + fmtDur(seekDur)"
                 @input="onSeekInput"
@@ -129,7 +147,8 @@
                 <span class="p-clip-t">{{ clipTimeText }}</span>
               </div>
             </div>
-          <!-- P4.1 标记轨（marker lane）：进度条下方独立一条，与进度条同宽、间距 2px。
+          <!-- P4.1 标记轨（marker lane）：进度条下方独立一条，间距 var(--lane-gap)=3px（P4.3 起的值）。
+                P4.4：左右内缩半个 thumb 后与进度条的可视轨道同宽，标记 left% 与滑块中心同源。
                单点 = 3px 通高竖条；区间 = 半透明色带 + 左右各 2px 实心边。
                轨道本身 pointer-events:none（不挡拖动与 hover 预览），只有标记可点：
                点一下跳到 pos，区间再点一下跳到 endPos；hover/focus 复用 .p-marker-tip 提示。
@@ -358,6 +377,7 @@ import {
   abPress,
   abTick,
   applyGain,
+  createCtrlAutoHide,
   createGainGraph,
   frameStep,
   frameStepSize,
@@ -368,6 +388,9 @@ import {
   normalizeSpeed,
   readGainLevel,
   readSpeedLevel,
+  seekPxToRatio,
+  seekRatioCss,
+  seekThumbPx,
   speedLabel,
   speedStep,
   writeGainLevel,
@@ -417,6 +440,8 @@ const videoEl = ref(null)
 const stageEl = ref(null)
 /** P4.3：全屏元素 = 包裹 <video> + 自绘控制栏的容器（只对 .p-stage 全屏会让控制栏消失） */
 const fsEl = ref(null)
+/** P4.4：控制条元素（自动隐藏的「指针是否还停在控制条上」兜底判定用） */
+const ctrlEl = ref(null)
 const tapVisible = ref(false)
 const warnVisible = ref(false)
 const restartVisible = ref(false)
@@ -490,20 +515,39 @@ const previewSrc = computed(() => (hasPreview.value ? api.previewUrl(props.video
 const hoverTimeText = computed(() => fmtDur(hoverRatio.value * (seekDur.value || 0)))
 const clipTimeText = computed(() => fmtDur(clipTime.value))
 
-/** 浮层水平位置：跟进度条比例走，两侧留半宽避免出界（卡片宽 160，半宽 80） */
+/* P4.4 进度条几何：thumb 直径由 playerExtras 的唯一常量决定（桌面 14px / 窄屏 10px），
+   以 CSS 变量落到 .p-seek-col 上 —— 进度条、标记轨、刻度层、浮层锚点读的是同一组数字。
+   原生 range 的可视轨道 = 元素宽 - thumb 宽（两端各留半个 thumb），所以「比例 → 像素」必须带上这个内缩，
+   否则标记轨按容器全宽铺开，两端各偏半个 thumb（用户看到的「进度条和刻度没有对齐」）。 */
+const thumbPx = computed(() => seekThumbPx(isMobile.value))
+
+const seekVars = computed(() => ({
+  '--seek-thumb': thumbPx.value + 'px',
+  '--thumb-r': thumbPx.value / 2 + 'px'
+}))
+
+/** 进度条已播放部分（CSS 渐变的断点）：原生 appearance 关掉后自己画填充，亮暗都跟 --accent */
+const seekFillStyle = computed(() => {
+  const dur = seekDur.value || 0
+  const pos = seekPos.value || 0
+  const pct = dur > 0 ? Math.min(100, Math.max(0, (pos / dur) * 100)) : 0
+  return { '--p': pct.toFixed(3) + '%' }
+})
+
+/** 浮层水平位置：跟进度条比例走（与滑块中心同源，见 seekRatioCss），两侧留半宽避免出界（卡片宽 160，半宽 80） */
 function floatStyle(ratio) {
-  const pct = Math.min(100, Math.max(0, (Number(ratio) || 0) * 100))
-  return { left: 'clamp(80px, ' + pct.toFixed(3) + '%, calc(100% - 80px))' }
+  return { left: 'clamp(80px, ' + seekRatioCss(ratio) + ', calc(100% - 80px))' }
 }
 
-/** 指针位置 → 0~1 比例：优先取 range 自身 rect（mousemove 挂在高 20px 的 .p-seekwrap 上，
-    否则只有 4px 轨道能命中，指针稍偏就收不到事件 —— 修复的根因之二） */
+/** 指针位置 → 0~1 比例：先取 range 自身 rect（mousemove 挂在高 20px 的 .p-seekwrap 上，
+    否则只有 4px 轨道能命中，指针稍偏就收不到事件），再按轨道几何（两端各半个 thumb）反解，
+    hover 预览与标记命中的比例因此和滑块真实位置一致 */
 function ratioFromEvent(e) {
   const el = seekEl.value || (e && e.currentTarget)
   if (!el || typeof el.getBoundingClientRect !== 'function') return 0
   const rect = el.getBoundingClientRect()
   if (!rect || !rect.width) return 0
-  return Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width))
+  return seekPxToRatio(e.clientX - rect.left, rect.width, thumbPx.value)
 }
 
 /** 比例 → 精灵图格号 → col/row，再用 background-position 百分比切格（不依赖固定像素） */
@@ -520,9 +564,9 @@ const spriteStyle = computed(() => {
   }
 })
 
-/** 1px 指示线位置：与卡片同源比例，提示「这条轨道可以 hover 出预览」 */
+/** 1px 指示线位置：与卡片同源比例（同一套轨道几何），提示「这条轨道可以 hover 出预览」 */
 const hoverLineStyle = computed(() => ({
-  left: (Math.min(1, Math.max(0, hoverRatio.value)) * 100).toFixed(3) + '%'
+  left: seekRatioCss(hoverRatio.value)
 }))
 
 function onSeekHover(e) {
@@ -843,6 +887,8 @@ onMounted(() => {
   document.addEventListener('webkitfullscreenchange', onFsChange)
   // P4.3：标记列表浮层的「点外部收起」（capture，先于按钮 click）
   document.addEventListener('pointerdown', onDocPointerDown, true)
+  // P4.4：页面级快捷键也算「有操作」，全屏下控制条据此重新计时
+  document.addEventListener('keydown', onDocKeydown)
   openVideo(props.video, props.startPos)
 })
 
@@ -853,6 +899,9 @@ onBeforeUnmount(() => {
   document.removeEventListener('fullscreenchange', onFsChange)
   document.removeEventListener('webkitfullscreenchange', onFsChange)
   document.removeEventListener('pointerdown', onDocPointerDown, true)
+  document.removeEventListener('keydown', onDocKeydown)
+  // P4.4：清掉自动隐藏计时器（否则卸载后仍会回调一次 onChange）
+  ctrlAuto.dispose()
   endQHint()
   // P4-B：释放请求的帧回调与 WebAudio 图（不释放会一直占着 AudioContext，Chrome 上限 6 个）
   stopFrameSampling()
@@ -888,6 +937,7 @@ function onQualityChange(e) {
 
 function onSeekInput(e) {
   qSeekDragging = true
+  syncCtrlState()
   const target = Number(e.target.value) || 0
   seekPos.value = target
   // 拖动中露预览视频：比例 = 当前进度 / 总时长（与松手后的 seek 目标同源）
@@ -898,6 +948,7 @@ function onSeekInput(e) {
 
 function onSeekCommit(e) {
   qSeekDragging = false
+  syncCtrlState()
   hideClip()
   const target = Number(e.target.value) || 0
   if (!isTranscode.value) {
@@ -1121,6 +1172,105 @@ watch(
   () => (props.video ? props.video.id : ''),
   () => {
     markerListOpen.value = false
+  }
+)
+
+/* ============================================ P4.4 全屏控制条自动隐藏 ============================================ */
+
+/**
+ * 判定规则（完整条件见 playerExtras 的 ctrlCanHide，单测覆盖）：
+ *   全屏 + 播放中 + 指针不在控制条上 + 控制条内无焦点 + 没在拖进度条 + 没有浮层展开
+ *   → 2.5s 内没有任何操作（mousemove / mousedown / keydown / touchstart）就淡出。
+ * 非全屏一律常驻：鼠标一离开就消失会让人以为控制条坏了。
+ */
+const ctrlHidden = ref(false)
+/** 指针是否停在控制条上（mouseenter / mouseleave） */
+let ctrlHover = false
+/** 控制条内是否有焦点（focusin / focusout） */
+let ctrlFocus = false
+/** 最后一次指针位置：边界事件没来时用它兜底判断「指针其实还停在控制条上」 */
+let lastPointer = { x: -1, y: -1 }
+
+function pointerOverCtrl() {
+  const el = ctrlEl.value
+  if (!el || lastPointer.x < 0 || typeof el.getBoundingClientRect !== 'function') return false
+  const r = el.getBoundingClientRect()
+  return lastPointer.x >= r.left && lastPointer.x <= r.right && lastPointer.y >= r.top && lastPointer.y <= r.bottom
+}
+
+/** 浮层（hover 预览 / 拖动预览 / 标记提示 / 标记列表）展开时不隐藏：否则会留下一张没有控制条的浮卡片 */
+const ctrlOverlayOpen = computed(
+  () => !!(hoverVisible.value || clipVisible.value || markerHover.value || markerListOpen.value)
+)
+
+const ctrlAuto = createCtrlAutoHide({
+  onChange: (hidden) => {
+    ctrlHidden.value = hidden
+  },
+  // 隐藏时 .p-ctrl 是 pointer-events:none，边界事件未必补发：按矩形兜底，指针还在条上就不隐藏
+  guard: () => !pointerOverCtrl()
+})
+
+/** 外部状态同步：只有这几个开关影响「能不能隐藏」，每变一次都重新计时 */
+function syncCtrlState() {
+  ctrlAuto.update({
+    fullscreen: fsActive.value,
+    playing: isPlaying.value,
+    hover: ctrlHover,
+    focus: ctrlFocus,
+    dragging: qSeekDragging,
+    overlay: ctrlOverlayOpen.value
+  })
+}
+
+/** 任意用户操作：立即显示并重置 2.5s 计时（非全屏直接返回，不产生无谓的计时器） */
+function onUserActivity(e) {
+  if (e && typeof e.clientX === 'number') lastPointer = { x: e.clientX, y: e.clientY }
+  if (!fsActive.value) return
+  ctrlAuto.activity()
+}
+
+function onCtrlPointerEnter() {
+  ctrlHover = true
+  syncCtrlState()
+}
+
+function onCtrlPointerLeave() {
+  ctrlHover = false
+  syncCtrlState()
+}
+
+function onCtrlFocusIn() {
+  ctrlFocus = true
+  syncCtrlState()
+}
+
+/** 焦点仍在控制条内部（Tab 切换控件）时不算失去焦点 */
+function onCtrlFocusOut(e) {
+  const next = e && e.relatedTarget
+  const el = ctrlEl.value
+  if (el && next && typeof el.contains === 'function' && el.contains(next)) return
+  ctrlFocus = false
+  syncCtrlState()
+}
+
+/** 页面级快捷键（空格 / A / B / [ ] / F …）不经过播放器 DOM：文档级 keydown 也算「有操作」 */
+function onDocKeydown() {
+  if (!fsActive.value) return
+  onUserActivity()
+}
+
+watch(fsActive, syncCtrlState)
+watch(isPlaying, syncCtrlState)
+watch(ctrlOverlayOpen, syncCtrlState)
+
+/* 换片 / 同片重开：控制条恢复常驻，不把上一部的隐藏状态带过来 */
+watch(
+  () => (props.video ? props.video.id : '') + '#' + props.openSeq,
+  () => {
+    ctrlHover = false
+    ctrlFocus = false
+    syncCtrlState()
   }
 )
 
@@ -1660,6 +1810,8 @@ defineExpose({
   border-top: 1px solid var(--line);
   min-width: 0;
   overflow: visible;
+  /* P4.4：全屏自动隐藏的淡出（200ms）；非全屏永远不会加 .is-ctrl-hidden，等同常驻 */
+  transition: opacity 0.2s ease;
 }
 
 .p-ctrlline {
@@ -1797,12 +1949,61 @@ defineExpose({
   overflow: visible;
 }
 
+/* P4.4 进度条：thumb 尺寸改由 --seek-thumb 决定（值来自 playerExtras.SEEK_THUMB_PX，
+   MediaPlayer 注入到 .p-seek-col），并自己接管 thumb / 轨道绘制。
+   这样「可视轨道 = 元素宽 - thumb 宽（两端各半个 thumb）」是确定值 —— 标记轨按 var(--thumb-r)
+   左右内缩即可与滑块中心逐像素对齐，不受各浏览器原生 thumb 尺寸影响（实测 Blink 原生 16px，
+   比设计值大 2px，正是用户看到的两端错位）。
+   轨道用渐变自绘填充：--p 是已播放百分比（seekFillStyle），亮暗主题都只读 mediaTheme 变量。 */
 .p-seek {
   flex: 1;
   min-width: 0;
   height: 4px;
-  accent-color: var(--accent);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: visible;
+  border-radius: 2px;
   cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(
+    to right,
+    var(--accent) 0 var(--p, 0%),
+    color-mix(in srgb, var(--fg-dim) 38%, transparent) var(--p, 0%) 100%
+  );
+}
+
+/* thumb：直径 = --seek-thumb（桌面 14px / 窄屏 10px），压在 4px 轨道正中（4px 高的元素盒，
+   thumb 允许溢出，Chrome / Edge / Safari 与 Gecko 都按轨道中心摆放） */
+.p-seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: var(--seek-thumb, 14px);
+  height: var(--seek-thumb, 14px);
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28);
+}
+
+/* Gecko：轨道默认会盖住 input 自己的渐变，置空让填充透出来；thumb 同一尺寸 */
+.p-seek::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: transparent;
+}
+
+.p-seek::-moz-range-progress {
+  background: transparent;
+}
+
+.p-seek::-moz-range-thumb {
+  width: var(--seek-thumb, 14px);
+  height: var(--seek-thumb, 14px);
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
 }
 
 .p-seek:focus-visible {
@@ -1907,6 +2108,19 @@ defineExpose({
 .p-fs-wrap:fullscreen .p-ctrl,
 .p-fs-wrap:-webkit-full-screen .p-ctrl {
   flex: 0 0 auto;
+}
+
+/* P4.4 全屏控制条自动隐藏（判定规则见 playerExtras.ctrlCanHide）：
+   只在「全屏 + 播放中 + 2.5s 无操作 + 不悬停/不拖动/无焦点/无浮层」时加 .is-ctrl-hidden。
+   淡出用 opacity，pointer-events:none 让点击穿到画面上（= 暂停/播放）；鼠标指针同时隐起，
+   避免画面正中挂着一个箭头。悬停控制条区域会由 mousemove 立刻把类摘掉，所以点得到。 */
+.p-fs-wrap.is-ctrl-hidden {
+  cursor: none;
+}
+
+.p-fs-wrap.is-ctrl-hidden .p-ctrl {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .p-stage {
@@ -2094,11 +2308,12 @@ defineExpose({
 
 /* ============================ P4-B 新增控件（颜色只取 mediaTheme 变量） ============================ */
 
-/* 标记刻度：绝对铺在 .p-seekwrap（position:relative）上，pointer-events:none 不挡 hover 与拖动 */
+/* 标记刻度：绝对铺在 .p-seekwrap（position:relative）上，pointer-events:none 不挡 hover 与拖动。
+   P4.4：左右各内缩半个 thumb，与 range 的可视轨道同源（否则两端各偏 8px） */
 .p-marks {
   position: absolute;
-  left: 0;
-  right: 0;
+  left: var(--thumb-r, 7px);
+  right: var(--thumb-r, 7px);
   top: 50%;
   height: 14px;
   transform: translateY(-50%);
@@ -2152,7 +2367,9 @@ defineExpose({
 .p-marklane {
   position: relative;
   height: var(--lane-h, 12px);
-  margin-top: var(--lane-gap, 3px);
+  /* P4.4：左右内缩半个 thumb（var(--thumb-r)），与进度条的可视轨道同宽同起点 ——
+     标记 left% 与滑块中心走同一套「比例 → 像素」换算（playerExtras.seekRatioToPx） */
+  margin: var(--lane-gap, 3px) var(--thumb-r, 7px) 0;
   background: color-mix(in srgb, var(--bg-3) 88%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent);
   border-radius: 2px;

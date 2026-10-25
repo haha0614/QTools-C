@@ -376,3 +376,183 @@ export function markJumpTarget(item, lastKey) {
   if (key && lastKey && key === lastKey) return { sec: Math.max(0, end), next: key }
   return { sec: Math.max(0, start), next: key }
 }
+
+/* ======================================== P4.4 进度条几何（比例 ⇄ 像素，唯一换算源） ======================================== */
+
+/**
+ * 进度条 thumb 的直径（px）—— 全工程唯一来源，SCSS 里不再写死数字：
+ * MediaPlayer 把这两个常量以 CSS 变量 --seek-thumb / --thumb-r 落到 .p-seek-col 上，
+ * 进度条、标记轨、刻度层、浮层锚点全部读同一组变量。
+ *
+ * 为什么由我们接管 thumb 的绘制（appearance:none + ::-webkit-slider-thumb）：
+ * 浏览器给 <input type=range> 的可视轨道不是元素全宽 —— 滑块走到两端时只露出半个，
+ * 于是 trackW = containerW - thumbPx；要按这个关系内缩标记轨，就必须知道 thumb 的确切宽度。
+ * 原生 thumb 的宽度随引擎而变（实测本机 Blink 为 16px，Gecko 更大），所以先把尺寸定死在这里，
+ * 再由 SCSS 按同一数字绘制 —— 对齐关系与引擎无关，亮暗 / 窄屏都成立。
+ */
+export const SEEK_THUMB_PX = 14
+export const SEEK_THUMB_PX_SM = 10
+
+/** 当前断点用哪一档 thumb 直径（≤768px 走窄屏档，与 MediaPlayer 的 isMobile 同一判定） */
+export function seekThumbPx(isNarrow) {
+  return isNarrow ? SEEK_THUMB_PX_SM : SEEK_THUMB_PX
+}
+
+/** 轨道几何：两端各留半个 thumb（insetPx），可视轨道宽度 trackW = containerW - thumbPx */
+export function seekTrackGeom(containerW, thumbPx) {
+  const cw = num(containerW)
+  const w = Math.max(0, cw == null ? 0 : cw)
+  const rawThumb = num(thumbPx)
+  const t = clamp(rawThumb == null ? SEEK_THUMB_PX : rawThumb, 0, w)
+  return { containerW: w, thumbPx: t, insetPx: t / 2, trackW: Math.max(0, w - t) }
+}
+
+/**
+ * 比例（0–1）→ 容器内像素：滑块中心 / 刻度中心都走这一处。
+ * 滑块中心 = thumbPx/2 + ratio × (containerW - thumbPx)，这正是浏览器摆放 thumb 的位置。
+ */
+export function seekRatioToPx(ratio, containerW, thumbPx) {
+  const g = seekTrackGeom(containerW, thumbPx)
+  const r = clamp(num(ratio) == null ? 0 : num(ratio), 0, 1)
+  return round(g.insetPx + r * g.trackW, 4)
+}
+
+/** 指针像素 → 比例：seekRatioToPx 的严格逆函数（hover 预览 / 标记命中都走这里，别各自再算一遍） */
+export function seekPxToRatio(px, containerW, thumbPx) {
+  const g = seekTrackGeom(containerW, thumbPx)
+  if (!g.trackW) return 0
+  const x = num(px) == null ? 0 : num(px)
+  return round(clamp((x - g.insetPx) / g.trackW, 0, 1), 6)
+}
+
+/** 标记轨 / 刻度层的左右内缩量（px）：与轨道两端同源，容器宽为 0 时也保持 thumbPx/2 */
+export function seekLaneInsetPx(thumbPx) {
+  const rawThumb = num(thumbPx)
+  return Math.max(0, rawThumb == null ? SEEK_THUMB_PX : rawThumb) / 2
+}
+
+/**
+ * 比例 → CSS calc 表达式（浮层 / 提示 / 指示线用）：
+ * 与 seekRatioToPx 同一公式，只是把「比例 × 轨道宽」交给浏览器算，
+ * 这样浮层不必每次读 DOM 矩形，也仍然锚在滑块/刻度的同一位置上。
+ * 兜底值取同一份常量，SCSS 里若忘了注入变量也不会退回「按容器全宽」的旧口径。
+ */
+export function seekRatioCss(ratio) {
+  const r = round(clamp(num(ratio) == null ? 0 : num(ratio), 0, 1), 6)
+  return (
+    'calc(var(--thumb-r, ' +
+    SEEK_THUMB_PX / 2 +
+    'px) + ' +
+    r +
+    ' * (100% - var(--seek-thumb, ' +
+    SEEK_THUMB_PX +
+    'px)))'
+  )
+}
+
+/* ================================ P4.4 全屏控制条自动隐藏（纯状态机，定时器可注入） ================================ */
+
+/** 全屏下无操作多久后隐藏控制条（ms） */
+export const CTRL_HIDE_DELAY_MS = 2500
+
+/**
+ * 允许隐藏的完整条件：全屏 + 播放中 + 不悬停控制条 + 控制条内无焦点 + 没在拖进度条 + 没有浮层。
+ * 任何一条不满足都必须保持可见（暂停时保留控制条更符合直觉）。
+ */
+export function ctrlCanHide(state) {
+  const s = state || {}
+  return !!(s.fullscreen && s.playing && !s.hover && !s.focus && !s.dragging && !s.overlay)
+}
+
+/**
+ * 控制条自动隐藏状态机（无 DOM / 无 Vue）：
+ *   - activity()：用户操作（mousemove / mousedown / keydown / touchstart）→ 立即显示并重置计时；
+ *   - update(patch)：同步外部状态（fullscreen / playing / hover / focus / dragging / overlay），
+ *     只要条件不再满足就立刻显示并清掉计时器（退出全屏、暂停、悬停都走这条路径）；
+ *   - 只有 ctrlCanHide(state) 为真、且 guard() 放行时才在 delay 后隐藏；
+ *   - guard() 用于「指针其实还停在控制条上（事件没来）」这类兜底，返回 false 就不隐藏。
+ * setTimeout / clearTimeout / onChange / guard 全部可注入，因此能脱离浏览器单测。
+ */
+export function createCtrlAutoHide(options) {
+  const opt = options || {}
+  const delay = num(opt.delay) != null && num(opt.delay) >= 0 ? num(opt.delay) : CTRL_HIDE_DELAY_MS
+  const setTimer = typeof opt.setTimeout === 'function' ? opt.setTimeout : (fn, ms) => setTimeout(fn, ms)
+  const clearTimer = typeof opt.clearTimeout === 'function' ? opt.clearTimeout : (id) => clearTimeout(id)
+  const onChange = typeof opt.onChange === 'function' ? opt.onChange : () => {}
+  const guard = typeof opt.guard === 'function' ? opt.guard : () => true
+
+  const state = { fullscreen: false, playing: false, hover: false, focus: false, dragging: false, overlay: false }
+  let hidden = false
+  let timer = null
+  let disposed = false
+
+  function cancel() {
+    if (timer != null) {
+      clearTimer(timer)
+      timer = null
+    }
+  }
+
+  function setHidden(next) {
+    const v = !!next
+    if (v === hidden) return
+    hidden = v
+    onChange(hidden)
+  }
+
+  /** 计时到点：条件仍然成立且 guard 放行才隐藏；否则保持可见，等下一次操作重新计时 */
+  function fire() {
+    timer = null
+    if (disposed) return
+    if (!ctrlCanHide(state)) {
+      setHidden(false)
+      return
+    }
+    if (!guard()) return
+    setHidden(true)
+  }
+
+  /** 条件成立就起计时（已经隐藏的不重起），不成立就立刻显示 */
+  function apply() {
+    cancel()
+    if (disposed) return
+    if (!ctrlCanHide(state)) {
+      setHidden(false)
+      return
+    }
+    if (hidden) return
+    timer = setTimer(fire, delay)
+  }
+
+  function activity() {
+    if (disposed) return
+    setHidden(false)
+    apply()
+  }
+
+  function update(patch) {
+    if (disposed) return
+    if (patch && typeof patch === 'object') {
+      const keys = Object.keys(state)
+      for (let i = 0; i < keys.length; i++) {
+        const k = keys[i]
+        if (k in patch) state[k] = !!patch[k]
+      }
+    }
+    apply()
+  }
+
+  function dispose() {
+    cancel()
+    disposed = true
+    hidden = false
+  }
+
+  return {
+    activity,
+    update,
+    dispose,
+    isHidden: () => hidden,
+    getState: () => Object.assign({}, state)
+  }
+}
