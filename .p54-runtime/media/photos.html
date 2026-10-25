@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111318">
+<title>图片站 · 相册</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="profile.css?v=20261022b">
+<link rel="stylesheet" href="photo.css?v=20261022b">
+</head>
+<body>
+
+<main id="wallView">
+  <header class="topbar">
+    <h1 class="brand">图片站<span class="brandSub">相册</span></h1>
+    <div class="tools">
+      <input id="q" class="search" type="search" placeholder="搜索相册标题…" autocomplete="off" spellcheck="false">
+      <label class="sel"><span>排序</span>
+        <select id="sort">
+          <option value="photos-desc">张数多→少</option>
+          <option value="photos-asc">张数少→多</option>
+          <option value="bytes-desc">体积大→小</option>
+          <option value="bytes-asc">体积小→大</option>
+          <option value="title-asc">标题 A→Z</option>
+          <option value="title-desc">标题 Z→A</option>
+          <option value="random">🎲 随机</option>
+        </select>
+      </label>
+    </div>
+    <div class="seg" id="seg" role="group" aria-label="视图切换">
+      <button type="button" class="segBtn on" id="segGroup" data-view="group" aria-pressed="true">分组</button>
+      <button type="button" class="segBtn" id="segFlat" data-view="flat" aria-pressed="false">全部图片</button>
+    </div>
+    <a class="topLink" href="index.html">视频站 &rsaquo;</a>
+    <div id="profileSlot"></div>
+  </header>
+  <div class="chipRow">
+    <nav class="chips" id="chips"></nav>
+    <label class="sel psel"><span>人物</span>
+      <select id="psort">
+        <option value="albums-desc">套数多→少</option>
+        <option value="albums-asc">套数少→多</option>
+        <option value="name-asc">人物名 A→Z</option>
+        <option value="name-desc">人物名 Z→A</option>
+        <option value="random">🎲 随机</option>
+      </select>
+    </label>
+  </div>
+  <p class="stat" id="wallStat"></p>
+  <div class="wall" id="wall"></div>
+  <div class="flat" id="flat" hidden></div>
+  <div class="sentinel" id="flatSentinel" hidden aria-hidden="true"></div>
+  <p class="empty" id="wallEmpty" hidden>没有匹配的相册</p>
+</main>
+
+<section id="albumView" hidden>
+  <header class="albumbar" id="albumBar">
+    <a class="back" id="backBtn" href="#/">&lsaquo; 相册墙</a>
+    <div class="albumMeta">
+      <h2 id="albumTitle"></h2>
+      <span class="crumb" id="albumCrumb"></span>
+    </div>
+    <span class="counter" id="albumCounter">0 / 0</span>
+    <label class="jump">第 <input id="jumpInput" type="text" inputmode="numeric" placeholder="N" autocomplete="off"> 张
+      <button id="jumpBtn" type="button">定位</button>
+    </label>
+    <a class="topLink" href="index.html">视频站 &rsaquo;</a>
+  </header>
+  <div class="grid" id="grid"></div>
+  <div class="sentinel" id="sentinel" aria-hidden="true"></div>
+  <p class="stat" id="gridStat"></p>
+</section>
+
+<div class="lb" id="lb" hidden>
+  <div class="lbTop">
+    <span class="lbCount" id="lbCount">0 / 0</span>
+    <span class="lbName" id="lbName"></span>
+    <button class="lbClose" id="lbClose" type="button" aria-label="关闭">&times;</button>
+  </div>
+  <div class="lbStage" id="lbStage">
+    <img class="lbImg" id="lbImg" alt="" draggable="false">
+    <div class="lbLoading" id="lbLoading" hidden><span class="spin"></span><span id="lbLoadMsg">加载中…</span></div>
+    <div class="lbError" id="lbError" hidden>
+      <p id="lbErrMsg">图片加载失败</p>
+      <button id="lbRetry" type="button">重试</button>
+    </div>
+  </div>
+  <button class="lbNav prev" id="lbPrev" type="button" aria-label="上一张">&lsaquo;</button>
+  <button class="lbNav next" id="lbNext" type="button" aria-label="下一张">&rsaquo;</button>
+  <div class="lbBottom">
+    <button class="lbFav" id="lbFav" type="button" aria-label="收藏这张">★</button>
+    <button class="origBtn" id="origBtn" type="button" hidden>原图</button>
+    <span class="zoomInfo" id="zoomInfo">100%</span>
+  </div>
+</div>
+
+<div class="fatal" id="fatal" hidden></div>
+
+<nav class="tabbar" aria-label="站点切换">
+  <a class="tab" href="index.html">视频</a>
+  <a class="tab on" href="photos.html">图片</a>
+  <a class="tab" href="me.html">我的</a>
+</nav>
+
+<script src="profile.js?v=20261022b" defer></script>
+<script src="photo.js?v=20261022b" defer></script>
+</body>
+</html>

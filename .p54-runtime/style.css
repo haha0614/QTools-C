@@ -1,0 +1,636 @@
+@charset "UTF-8";
+/* P5.7：菜单由 VideoCard teleport 到 body，是 body 的直接子节点。
+   position: fixed 在这里是「类默认」（坐标由内联 style 下发的 left/top|bottom/width/max-height 给出）：
+   节点不在卡片里 → 不受任何卡片的堆叠上下文 / overflow / hover transform 影响，
+   fixed 的包含块就是视口（body/html/#app 都没有 transform / filter / perspective / will-change / contain）。
+   z-index 3000：高于卡片内角标（3/4/8）与卡片自身，也高于抽屉层；
+   因为节点在 body 下，这个值不再受各卡片堆叠上下文的相互顺序影响。 */
+.pl-menu[data-v-93452d51] {
+  position: fixed;
+  z-index: 3000;
+  width: min(248px, 100vw - 24px);
+  max-height: min(300px, 62vh);
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius, 10px);
+  background: var(--bg-2);
+  color: var(--fg);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.38);
+  text-align: left;
+  cursor: default;
+}
+.pl-head[data-v-93452d51] {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 2px 6px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 6px;
+}
+.pl-title[data-v-93452d51] {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.pl-n[data-v-93452d51] {
+  font-size: 11px;
+  color: var(--fg-dim);
+}
+.pl-x[data-v-93452d51] {
+  margin-left: auto;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--bg-3);
+  color: var(--fg-dim);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.pl-x[data-v-93452d51]:hover {
+  color: var(--fg);
+  border-color: var(--line-2);
+}
+.pl-hint[data-v-93452d51] {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--fg-dim);
+}
+.pl-warn[data-v-93452d51],
+.pl-blocked[data-v-93452d51] {
+  color: var(--warn);
+}
+
+/* 列表很多时内部滚动（max-height 在 .pl-menu 上，这里再兜一层） */
+.pl-list[data-v-93452d51] {
+  flex: 1;
+  min-height: 0;
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.pl-item[data-v-93452d51] {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+.pl-item[data-v-93452d51]:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.pl-item[data-v-93452d51]:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* 已加入：描边 + 绿色系文字，仍然可点（可以再加到别的列表） */
+.pl-item.on[data-v-93452d51] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.pl-name[data-v-93452d51] {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pl-count[data-v-93452d51] {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--fg-dim);
+}
+.pl-joined[data-v-93452d51] {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 600;
+}
+.pl-busy[data-v-93452d51] {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--fg-dim);
+}
+.pl-new[data-v-93452d51] {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  padding-top: 6px;
+  border-top: 1px dashed var(--line);
+}
+.pl-newbtn[data-v-93452d51] {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px dashed var(--line-2);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.pl-newbtn[data-v-93452d51]:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.pl-newbtn[data-v-93452d51]:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.pl-input[data-v-93452d51] {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 12px;
+  outline: none;
+}
+.pl-input[data-v-93452d51]:focus {
+  border-color: var(--accent);
+}
+.pl-ok[data-v-93452d51] {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.pl-ok[data-v-93452d51]:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* 窄屏（<768px，含 <400px）：这里的 width / max-height 只是没有内联坐标时的兜底 ——
+   正常路径由 computeMenuPosition 给出「宽度 = min(期望宽, 视口宽 - 16)」与「高度 = min(期望高, 这一侧可用空间)」，
+   所以窄屏下菜单一定收在视口内，列表内部滚动（.pl-list 的 overflow-y: auto） */
+@media (max-width: 768px) {
+.pl-menu[data-v-93452d51] {
+    width: min(260px, 100vw - 16px);
+    max-height: 56vh;
+}
+}
+.card[data-v-91828d3b] {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius, 10px);
+  /* P5.1 起不再用 overflow:hidden 裁切（原本靠裁切得到的圆角改由 .thumb 上两角与 .card-prog 下两角承担，
+     半径取 radius - 1px，视觉与改动前一致）。
+     P5.7 说明：菜单已 teleport 到 body，是否裁切与菜单无关了 —— 这里保持 visible 只是为了圆角的现有画法不变 */
+  overflow: visible;
+  cursor: pointer;
+  transition: transform 0.12s, border-color 0.12s;
+  outline: none;
+}
+
+/* hover 只做 1px 上浮 + 描边加深，不加阴影（与相册卡保持同一套交互语言） */
+.card[data-v-91828d3b]:hover,
+.card[data-v-91828d3b]:focus-visible {
+  transform: translateY(-1px);
+  border-color: var(--line-2);
+}
+
+/* 绝对定位：img 不参与在流高度计算，竖屏封面撑不高卡片（app.css:285-287） */
+.thumb[data-v-91828d3b] {
+  position: relative;
+  aspect-ratio: 16/10;
+  /* P5.6：网格把行拉高时只让 .card-body 吸收多余高度，封面比例保持不变 */
+  flex: 0 0 auto;
+  min-height: 0;
+  overflow: hidden;
+  /* .card 不再裁切，圆角由封面自己承担（与原先裁切半径对齐） */
+  border-radius: calc(var(--radius, 10px) - 1px) calc(var(--radius, 10px) - 1px) 0 0;
+  background: var(--bg);
+}
+.thumb img[data-v-91828d3b] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.thumb.noimg[data-v-91828d3b]::after {
+  content: "无封面";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--fg-dim);
+}
+
+/* 角标压在封面图上，需要固定深色蒙层才在亮/暗两套主题下都可读：
+   这里保留半透明黑（非主题色），文字用 --accent-on（恒为白）维持对比度 */
+.badge[data-v-91828d3b] {
+  position: absolute;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1.5;
+  background: rgba(0, 0, 0, 0.74);
+  color: var(--accent-on);
+}
+.badge-dur[data-v-91828d3b] {
+  right: 6px;
+  bottom: 6px;
+}
+.badge-res[data-v-91828d3b] {
+  left: 6px;
+  bottom: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+.badge-warn[data-v-91828d3b] {
+  left: 6px;
+  top: 6px;
+  background: var(--danger);
+  color: var(--accent-on);
+}
+
+/* P5.6：卡片等高改由「正文最小高度」承担 —— P5.3-B 原来把 persons / studios / meta 三行恒定渲染，
+   没有工作室的视频就在演员与标签之间多出一条空行（用户反馈的问题）；现在工作室并入人物行（见 .cp-sep/.cp-studio），
+   纵向只剩三块：标题+副标题 / 人物+工作室行 / 标签行（按内容渲染），高度差由这里的最小高度 + 网格 stretch 吞掉
+   （.card 是 flex column，.card-body 吃掉多余高度 → 同一行卡片底部对齐）。
+   min-height 取值依据（桌面，全部为确定性数值，见 .card-sub 的 line-height 1.4）：
+     padding-top 7 + 标题 14.5×1.35=19.6 + gap 2 + 副标题 12.5×1.4=17.5 + gap 2
+     + 人物/工作室行 18（行内最小行高）+ gap 2 + 标签行 18 + padding-bottom 9 = 95.1 → 取 96px。
+   因为「内容最多的组合」也只有 95.1px < 96px，所以无工作室 / 无标签 / 无评分三种组合的 .card-body 实测高度完全相同（96px）。 */
+.card-body[data-v-91828d3b] {
+  padding: 7px 9px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-height: 96px;
+}
+.card-body h3[data-v-91828d3b] {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-sub[data-v-91828d3b] {
+  font-size: 12.5px;
+  /* P5.6：显式行高（12.5×1.4 = 17.5px）让 .card-body 的 min-height 计算是确定值，不再依赖字体默认 normal */
+  line-height: 1.4;
+  color: var(--fg-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-prog[data-v-91828d3b] {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--bg-3);
+  border-radius: 0 0 calc(var(--radius, 10px) - 1px) calc(var(--radius, 10px) - 1px);
+}
+.card-prog i[data-v-91828d3b] {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+/* 组织信息行：评分 + 标签 chip（最多 2 个 + N）。字号比副标题更小，避免挤占标题宽度 */
+.card-meta[data-v-91828d3b] {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  min-width: 0;
+  overflow: hidden;
+  /* P5.6：本行只在有内容时渲染；有内容时仍取固定最小行高 18px，
+     让评分 / 标签 chip 行在 2/3/4 列网格里高度一致 */
+  min-height: 18px;
+}
+.cm-local[data-v-91828d3b] {
+  flex: 0 0 auto;
+  padding: 0 5px;
+  border: 1px dashed var(--accent);
+  border-radius: 999px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--accent);
+}
+.cm-rate[data-v-91828d3b] {
+  flex: 0 0 auto;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--warn);
+  white-space: nowrap;
+}
+
+/* 评分单位：/100 用次级色 + 常规字重，数字本身仍然是主角 */
+.cm-rate-u[data-v-91828d3b] {
+  margin-left: 1px;
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 400;
+  opacity: 0.72;
+}
+
+/* P5.6：工作室不再是独立一行 —— 它跟在人物 chips 后面，用一条「淡竖线」分隔（见模板里
+   「人物 → 分隔 → 工作室」的固定顺序；两侧都靠 .card-persons 的 gap:4px + 这里 margin:0 3px = 7px 间距）
+   竖线：1px 宽 / 13px 高（在一条 18px 高的 chip 行里视觉上不抢眼），颜色取当前主题的次级文字色
+   + 42% 透明度 —— 亮暗两套主题都来自 --fg-dim，所以两边都是「淡而可见」 */
+.cp-sep[data-v-91828d3b] {
+  flex: 0 0 auto;
+  width: 1px;
+  height: 13px;
+  margin: 0 3px;
+  border-radius: 1px;
+  background: var(--fg-dim);
+  opacity: 0.42;
+}
+
+/* 工作室 chip：单行、可省略号（title 里始终是全部工作室名 studioText）
+   窄卡片（2 列 / 移动端）时选方案 a：工作室 chip 允许收缩到最小宽度并省略号，
+   上限 45% 是为了不让它把人物 chip 挤没 —— 人物 chip 自己也是 flex:0 1 auto + 省略号，
+   而「+N」计数 chip 是 flex:0 0 auto，永远保留 */
+.cp-studio[data-v-91828d3b] {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 45%;
+  padding: 0 5px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--fg-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cp-studio-more[data-v-91828d3b] {
+  margin-left: 3px;
+  font-style: normal;
+  opacity: 0.7;
+}
+.cm-tag[data-v-91828d3b] {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 84px;
+  padding: 0 5px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--fg-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cm-more[data-v-91828d3b] {
+  flex: 0 0 auto;
+  max-width: none;
+  border-style: dashed;
+}
+
+/* 人物行：与标签同一套 chip 语言，单独一行避免挤占标题宽度 */
+.card-persons[data-v-91828d3b] {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  min-width: 0;
+  overflow: hidden;
+  /* P5.6：素人 / 真实人物 / 旧演员三种来源都占同一最小高度（行本身按内容渲染） */
+  min-height: 18px;
+}
+.cp-chip[data-v-91828d3b] {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 96px;
+  padding: 0 5px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 素人 / 旧演员兜底 chip：形状与真实人物 chip 完全一致（同字号、同 padding、同圆角），
+   只把主色调成次级色 + 透明底 —— 一眼能看出「不是具体某个人」，但不会被误读成空占位 */
+.cp-chip.is-auto[data-v-91828d3b] {
+  border-color: var(--line-2);
+  background: transparent;
+  color: var(--fg-dim);
+}
+
+/* P5.4：可点的人物 chip（button）—— 复位 button 的默认外观，只保留 chip 视觉；
+   常显下划线（currentColor，亮暗两套主题都看得见）提示「这个不是纯文字」 */
+button.cp-chip.is-link[data-v-91828d3b] {
+  font: inherit;
+  font-size: 11px;
+  appearance: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* hover / 键盘聚焦：描边与文字一起提到强调色，下划线加粗 —— 与右下角入口同一套反馈语言 */
+button.cp-chip.is-link[data-v-91828d3b]:hover,
+button.cp-chip.is-link[data-v-91828d3b]:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  text-decoration-thickness: 2px;
+  outline: none;
+}
+
+/* 素人 chip 的可点态：静态保持次级色（不是具体某个人），hover / 聚焦时才提亮 */
+button.cp-chip.is-link.is-auto[data-v-91828d3b] {
+  color: var(--fg-dim);
+}
+button.cp-chip.is-link.is-auto[data-v-91828d3b]:hover,
+button.cp-chip.is-link.is-auto[data-v-91828d3b]:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.cp-role[data-v-91828d3b] {
+  font-style: normal;
+  opacity: 0.75;
+  margin-left: 3px;
+}
+.cp-more[data-v-91828d3b] {
+  flex: 0 0 auto;
+  max-width: none;
+  border-style: dashed;
+  color: var(--fg-dim);
+  border-color: var(--line-2);
+  background: transparent;
+}
+
+/* 选择模式：整卡描边高亮，复选框为纯视觉元素 */
+.card.is-select[data-v-91828d3b] {
+  cursor: pointer;
+}
+.card.is-checked[data-v-91828d3b] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.card-check[data-v-91828d3b] {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  z-index: 4;
+  width: 17px;
+  height: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--accent-on);
+  border-radius: 4px;
+  /* 封面深浅不定：半透明黑底 + 恒白勾选，亮暗两套都能看清 */
+  background: rgba(0, 0, 0, 0.62);
+  color: var(--accent-on);
+  transition: background 0.12s, border-color 0.12s;
+}
+.card-check.on[data-v-91828d3b] {
+  background: var(--accent-btn);
+  border-color: var(--accent-btn);
+}
+
+/* 收藏星：卡片右上角，绝对定位不参与布局 */
+.card-fav[data-v-91828d3b] {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  z-index: 3;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.52);
+  color: var(--accent-on);
+  font-size: 14px;
+  line-height: 24px;
+  cursor: pointer;
+  opacity: 0.82;
+  transition: opacity 0.12s, color 0.12s, background 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.card-fav[data-v-91828d3b]:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.74);
+  color: var(--accent-on);
+}
+.card-fav.on[data-v-91828d3b] {
+  color: var(--warn);
+  opacity: 1;
+}
+
+/* ---------------------------------------------------- 右下角「加入播放列表」（P5.1） */
+/* 锚点容器：卡片右下角，只负责给按钮定位。
+   P5.7：菜单已 teleport 到 body（不再在这里），所以这里的 position:relative / z-index 只作用于加号按钮本身 */
+.card-pl[data-v-91828d3b] {
+  position: absolute;
+  right: 6px;
+  bottom: 7px;
+  z-index: 8;
+  line-height: 0;
+}
+
+/* 图标按钮：与 11px 角标同级的 20px 圆角方块，半透明底 + hover 高亮；
+   触屏没有 hover，默认就是「常显但半透明」（opacity .8），按下时 .on 变实 */
+.card-pl-btn[data-v-91828d3b] {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bg-3) 86%, transparent);
+  color: var(--fg-dim);
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.12s, color 0.12s, border-color 0.12s, background 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.card-pl-btn[data-v-91828d3b]:hover,
+.card-pl-btn[data-v-91828d3b]:focus-visible {
+  opacity: 1;
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.card-pl-btn.on[data-v-91828d3b] {
+  opacity: 1;
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* 按钮压在卡片右下角，给正文最后一行留出让位，标签 / 工作室 / 人物 chip 不会被按钮盖住 */
+.card.has-pl .card-body[data-v-91828d3b] > *:last-child {
+  padding-right: 26px;
+}
+@media (max-width: 768px) {
+.card-body[data-v-91828d3b] {
+    padding: 6px 7px 7px;
+    /* 窄屏隐藏了副标题（见下 .card-sub { display:none }），正文最小高度同步减掉一行：
+       6 + 标题 14×1.35=18.9 + gap 2 + 人物/工作室行 18 + gap 2 + 标签行 18 + 7 = 71.9 → 取 72px
+       （同样大于「内容最多的组合」，所以 2/3/4 列下三块结构的所有组合高度都等于 72px） */
+    min-height: 72px;
+}
+  /* 触屏：常显但更淡一点，命中区不变 */
+.card-pl-btn[data-v-91828d3b] {
+    opacity: 0.72;
+}
+.card-body h3[data-v-91828d3b] {
+    font-size: 14px;
+}
+.card-sub[data-v-91828d3b] {
+    display: none;
+}
+.badge[data-v-91828d3b] {
+    font-size: 10px;
+}
+}

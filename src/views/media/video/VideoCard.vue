@@ -135,28 +135,84 @@
           <path d="M8 3.4v9.2M3.4 8h9.2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
         </svg>
       </button>
-      <PlaylistMenuPanel
-        :open="plOpen"
-        :items="plItems"
-        :loading="plLoading"
-        :unavailable="plUnavailable"
-        :blocked="plBlocked"
-        :busy-id="plBusy"
-        :creating="plCreating"
-        :new-name="plNewName"
-        :count="plCount"
-        :up="plUp"
-        :shift="plShift"
-        @close="closeMenu"
-        @pick="onPick"
-        @create="onCreate"
-        @toggle-create="onToggleCreate"
-        @update:new-name="onNameInput"
-      />
+      <!-- P5.7：菜单 teleport 到 body 并在菜单一侧用 position: fixed 定位。
+           为什么必须搬出卡片：菜单原来是 .card 内部的绝对定位子元素，网格里每张 .card 自己就是一个
+           堆叠上下文，而后面那张卡在文档流里更晚 → 绘制在上层，于是把本卡弹出的菜单下半截盖住。
+           teleport 到 body 后菜单不再是任何 .card 的后代：既不受卡片的堆叠上下文影响，
+           也不受 .card:hover 的 transform（会让 fixed 退化成相对该祖先定位）与父级 overflow 影响。 -->
+      <Teleport :to="teleportTarget" :disabled="!canTeleport">
+        <PlaylistMenuPanel
+          :open="plOpen"
+          :items="plItems"
+          :loading="plLoading"
+          :unavailable="plUnavailable"
+          :blocked="plBlocked"
+          :busy-id="plBusy"
+          :creating="plCreating"
+          :new-name="plNewName"
+          :count="plCount"
+          :pos="plPos"
+          @close="closeMenu"
+          @pick="onPick"
+          @create="onCreate"
+          @toggle-create="onToggleCreate"
+          @update:new-name="onNameInput"
+        />
+      </Teleport>
     </div>
     <div v-if="progressPct > 0" class="card-prog"><i :style="{ width: progressPct + '%' }"></i></div>
   </article>
 </template>
+
+<script>
+/**
+ * P5.7：播放列表菜单的定位算法（纯函数：不读 DOM、不依赖 window，证据脚本可直接调用）。
+ *
+ * 坐标系是「视口」（菜单已经 teleport 到 body 且 position: fixed），因此：
+ *   - 纵向：默认贴按钮上方 —— bottom = 视口高 - 按钮上沿 + 间距；上方放不下就翻到按钮下方（top = 按钮下沿 + 间距）
+ *   - 横向：右对齐按钮（left = 按钮右沿 - 菜单宽），出屏则往左推并夹在 [margin, 视口宽 - margin - 菜单宽]
+ *   - 高度：maxHeight 取「这一侧可用空间」与期望高度的小值 —— 菜单不会顶出视口，内部列表自己滚动
+ *
+ * @param {{top:number,bottom:number,left:number,right:number}} btnRect getBoundingClientRect() 的结果
+ * @param {{width:number,height:number}} viewport 视口尺寸
+ * @param {{panelWidth?:number,maxHeight?:number,gap?:number,margin?:number}} [options]
+ * @returns {{up:boolean,left:number,width:number,maxHeight:number,top:number|null,bottom:number|null}}
+ *          up=true 时用 bottom（距视口底），up=false 时用 top（距视口顶）；另一个字段为 null
+ */
+export function computeMenuPosition(btnRect, viewport, options) {
+  const opts = options || {}
+  const num = (v, d) => (typeof v === 'number' && isFinite(v) ? v : d)
+  const gap = Math.max(0, num(opts.gap, 8)) // 菜单与按钮之间的间距
+  const margin = Math.max(0, num(opts.margin, 8)) // 菜单与视口边缘的最小留白
+  const vw = Math.max(0, num(viewport && viewport.width, 1024))
+  const vh = Math.max(0, num(viewport && viewport.height, 768))
+  const btn = btnRect || {}
+  const btnTop = num(btn.top, 0)
+  const btnBottom = num(btn.bottom, btnTop)
+  const btnRight = num(btn.right, num(btn.left, 0))
+
+  // 横向：宽度先夹进视口（窄屏 <400px 时菜单自然收敛到 视口宽-2×margin）
+  const width = Math.round(Math.max(0, Math.min(Math.max(0, num(opts.panelWidth, 248)), vw - margin * 2)))
+  const maxLeft = Math.max(margin, vw - margin - width)
+  const left = Math.round(Math.min(Math.max(btnRight - width, margin), maxLeft))
+
+  // 纵向：上方空间够就向上（默认），不够才向下；两侧都不够时选空间更大的一侧
+  const spaceUp = btnTop - gap - margin
+  const spaceDown = vh - btnBottom - gap - margin
+  const wantH = Math.min(Math.max(0, num(opts.maxHeight, 300)), Math.max(0, vh - margin * 2))
+  const up = spaceUp > 0 && (spaceUp >= wantH || spaceUp >= spaceDown)
+  const avail = Math.max(0, up ? spaceUp : spaceDown)
+
+  return {
+    up,
+    left,
+    width,
+    maxHeight: Math.round(Math.min(wantH, avail)),
+    top: up ? null : Math.round(btnBottom + gap),
+    bottom: up ? Math.round(vh - btnTop + gap) : null
+  }
+}
+</script>
 
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
@@ -253,31 +309,58 @@ const {
 })
 
 const plOpen = ref(false)
-/** 向上展开（默认）；按钮上方空间不足时改为向下 —— 菜单不出屏 */
-const plUp = ref(true)
-/** 右对齐会超出视口左侧时的右移量（px） */
-const plShift = ref(0)
+/** 菜单坐标（computeMenuPosition 的返回值；null = 还没量到 / 非浏览器环境） */
+const plPos = ref(null)
 const plWrapEl = ref(null)
 const plBtnEl = ref(null)
 
+/**
+ * P5.7 teleport 目标与降级：
+ *   - 浏览器里直接给 body 元素本身（不用字符串 'body'，避免依赖 document.querySelector）
+ *   - 没有 document / document.body 的环境（SSR、证据脚本的内存 DOM）→ disabled：
+ *     菜单原地渲染，SSR 输出与改动前完全一致
+ */
+const canTeleport = typeof document !== 'undefined' && !!document.body
+const teleportTarget = canTeleport ? document.body : 'body'
+
 const plTitle = computed(() => (props.level === 'off' ? HINT_OFF : '加入播放列表'))
 
-/** 量一次按钮位置，决定向上/向下与水平补正（SSR / 非浏览器环境直接跳过） */
+/** 量一次按钮位置 → 算菜单坐标（SSR / 非浏览器环境没有 rect，直接跳过，由 CSS 兜底样式接管） */
 function measureAnchor() {
   const el = plBtnEl.value
+  plPos.value = null
   if (!el || typeof el.getBoundingClientRect !== 'function') return
   const rect = el.getBoundingClientRect()
-  const panelH = 300
-  plUp.value = rect.top >= panelH + 20
-  const panelW = Math.min(248, (typeof window !== 'undefined' && window.innerWidth ? window.innerWidth : 1024) - 24)
-  const leftEdge = rect.right - panelW
-  plShift.value = leftEdge < 8 ? Math.round(8 - leftEdge) : 0
+  const vw = (typeof window !== 'undefined' && window.innerWidth) || 0
+  const vh = (typeof window !== 'undefined' && window.innerHeight) || 0
+  const narrow = vw > 0 && vw <= 768
+  plPos.value = computeMenuPosition(
+    rect,
+    { width: vw || 1024, height: vh || 768 },
+    {
+      panelWidth: narrow ? 260 : 248,
+      // 与 PlaylistMenuPanel 的 max-height 取值对齐（桌面 300px / 窄屏 62vh、56vh），
+      // 真正的上限还会被「这一侧可用空间」再夹一次
+      maxHeight: narrow ? Math.round((vh || 768) * 0.56) : 300
+    }
+  )
 }
 
-/** 菜单外点击 / Esc / 滚动 / 尺寸变化都关掉：位置是相对卡片算的，滚动后不留在错位状态 */
+/** 点击是否落在菜单内部（菜单已 teleport 到 body，用最近的 .pl-menu 祖先判定） */
+function insideMenu(node) {
+  return !!(node && typeof node.closest === 'function' && node.closest('.pl-menu'))
+}
+
+/**
+ * 菜单外点击 → 关闭。
+ * 菜单已 teleport 到 body，所以「内部」有两个：.card-pl 锚点容器（含加号按钮），以及 body 下的菜单根节点。
+ * Esc / 滚动 / resize 见下方 bindGlobal（fixed 坐标在滚动后会与按钮错位，这里选择直接关闭，简单可靠）。
+ */
 function onDocPointer(ev) {
+  const target = ev && ev.target
   const wrap = plWrapEl.value
-  if (wrap && ev && ev.target && wrap.contains(ev.target)) return
+  if (wrap && target && wrap.contains(target)) return
+  if (insideMenu(target)) return
   closeMenu()
 }
 function onDocKey(ev) {
@@ -487,9 +570,9 @@ function resBadge(w) {
   background: var(--bg-2);
   border: 1px solid var(--line);
   border-radius: var(--radius, 10px);
-  /* P5.1：右下角「加入播放列表」菜单要能溢出卡片显示，因此不再用 overflow:hidden 裁切；
-     原本靠裁切得到的圆角改由 .thumb（上两角）与 .card-prog（下两角）自己承担，
-     半径取 radius - 1px（等于原先 padding box 的裁切半径），视觉与改动前一致 */
+  /* P5.1 起不再用 overflow:hidden 裁切（原本靠裁切得到的圆角改由 .thumb 上两角与 .card-prog 下两角承担，
+     半径取 radius - 1px，视觉与改动前一致）。
+     P5.7 说明：菜单已 teleport 到 body，是否裁切与菜单无关了 —— 这里保持 visible 只是为了圆角的现有画法不变 */
   overflow: visible;
   cursor: pointer;
   transition: transform 0.12s, border-color 0.12s;
@@ -876,7 +959,8 @@ button.cp-chip.is-link.is-auto:focus-visible {
 
 /* ---------------------------------------------------- 右下角「加入播放列表」（P5.1） */
 
-/* 锚点容器：卡片右下角。position:relative 让菜单（PlaylistMenuPanel 内部 absolute）贴着按钮上/下沿 */
+/* 锚点容器：卡片右下角，只负责给按钮定位。
+   P5.7：菜单已 teleport 到 body（不再在这里），所以这里的 position:relative / z-index 只作用于加号按钮本身 */
 .card-pl {
   position: absolute;
   right: 6px;

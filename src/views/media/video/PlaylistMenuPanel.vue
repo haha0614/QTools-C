@@ -2,7 +2,8 @@
   PlaylistMenuPanel.vue —— 卡片右下角「加入播放列表」的轻量菜单（P5.1）
   职责：只做「画」：已有列表（名称 + 数量 + 已加入态）/ 空态 / 新建输入态 / 接口未就绪 / 编辑策略闸门提示。
         数据与写操作全部来自 usePlaylistAdd.js（与工具栏 PlaylistPicker.vue 同一份），这里不 import 任何接口。
-  边界：锚在卡片右下角按钮上方（up=true）或下方（up=false，由 VideoCard 量空间后决定），本身不做定位计算；
+  边界：P5.7 起由 VideoCard 把本组件 teleport 到 body，并用 position: fixed + 视口坐标（pos prop）定位，
+        自身不做任何定位计算（也算不出：它已经不在卡片里了）；
         点击不冒泡到卡片（@click.stop），避免误触「打开播放器 / 选择模式勾选」。
   样式：mediaTheme 的 --bg/--bg-2/--line/--fg/--accent（由 --qt-* 映射），亮暗通用。
 -->
@@ -10,8 +11,8 @@
   <div
     v-if="open"
     class="pl-menu"
-    :class="{ 'is-down': !up }"
-    :style="shift ? { right: -shift + 'px' } : null"
+    :data-dir="pos ? (pos.up ? 'up' : 'down') : undefined"
+    :style="posStyle"
     role="dialog"
     aria-label="加入播放列表"
     @click.stop
@@ -93,15 +94,38 @@ const props = defineProps({
   newName: { type: String, default: '' },
   /** 目标视频数量（标题右侧） */
   count: { type: Number, default: 1 },
-  /** 向上展开（默认）；空间不足时 VideoCard 传 false 改为向下 */
-  up: { type: Boolean, default: true },
-  /** 右对齐会超出视口左侧时的右移量（px，0 = 不动） */
-  shift: { type: Number, default: 0 }
+  /**
+   * P5.7：菜单坐标（由 VideoCard 用 getBoundingClientRect + computeMenuPosition 算好后下发）。
+   * 视口坐标系：{ up, left, width, maxHeight, top, bottom }；up=true 用 bottom，否则用 top。
+   * null = 没量到（非浏览器环境）→ 回落 CSS 里的兜底定位。
+   */
+  pos: { type: Object, default: null }
 })
 
 const emit = defineEmits(['close', 'pick', 'create', 'toggle-create', 'update:newName'])
 
 const inputEl = ref(null)
+
+/**
+ * 坐标 → 内联样式。菜单挂在 body 下，position: fixed 相对**视口**定位，
+ * 所以坐标可以直接用视口值：不受卡片堆叠上下文 / overflow / hover transform 影响。
+ * z-index 3000 也在这里下发（样式表里也有一份，拿不到坐标时同样比卡片和抽屉层高）。
+ */
+const posStyle = computed(() => {
+  const p = props.pos
+  if (!p) return null
+  const s = {
+    position: 'fixed',
+    right: 'auto',
+    left: Math.round(p.left || 0) + 'px',
+    width: Math.round(p.width || 0) + 'px',
+    maxHeight: Math.round(p.maxHeight || 0) + 'px',
+    zIndex: 3000
+  }
+  if (p.up) s.bottom = Math.round(p.bottom || 0) + 'px'
+  else s.top = Math.round(p.top || 0) + 'px'
+  return s
+})
 
 const canCreate = computed(() => !!String(props.newName || '').trim() && !props.busyId && !props.unavailable)
 
@@ -119,13 +143,15 @@ watch(
 </script>
 
 <style lang="scss" scoped>
-/* 锚点：本组件放在 .card-pl（卡片右下角、position:relative）内部，
-   默认贴按钮上沿（bottom:100%+8px），.is-down 翻到按钮下方 —— 两种都不出卡片所在的滚动视口 */
+/* P5.7：菜单由 VideoCard teleport 到 body，是 body 的直接子节点。
+   position: fixed 在这里是「类默认」（坐标由内联 style 下发的 left/top|bottom/width/max-height 给出）：
+   节点不在卡片里 → 不受任何卡片的堆叠上下文 / overflow / hover transform 影响，
+   fixed 的包含块就是视口（body/html/#app 都没有 transform / filter / perspective / will-change / contain）。
+   z-index 3000：高于卡片内角标（3/4/8）与卡片自身，也高于抽屉层；
+   因为节点在 body 下，这个值不再受各卡片堆叠上下文的相互顺序影响。 */
 .pl-menu {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 8px);
-  z-index: 12;
+  position: fixed;
+  z-index: 3000;
   width: min(248px, calc(100vw - 24px));
   max-height: min(300px, 62vh);
   display: flex;
@@ -138,11 +164,6 @@ watch(
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.38);
   text-align: left;
   cursor: default;
-}
-
-.pl-menu.is-down {
-  top: calc(100% + 8px);
-  bottom: auto;
 }
 
 .pl-head {
@@ -330,9 +351,12 @@ watch(
   cursor: default;
 }
 
+/* 窄屏（<768px，含 <400px）：这里的 width / max-height 只是没有内联坐标时的兜底 ——
+   正常路径由 computeMenuPosition 给出「宽度 = min(期望宽, 视口宽 - 16)」与「高度 = min(期望高, 这一侧可用空间)」，
+   所以窄屏下菜单一定收在视口内，列表内部滚动（.pl-list 的 overflow-y: auto） */
 @media (max-width: 768px) {
   .pl-menu {
-    width: min(260px, calc(100vw - 20px));
+    width: min(260px, calc(100vw - 16px));
     max-height: 56vh;
   }
 }
