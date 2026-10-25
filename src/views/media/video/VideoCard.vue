@@ -45,10 +45,11 @@
     <div class="card-body">
       <h3 :title="video.title">{{ video.title }}</h3>
       <div class="card-sub">{{ video.folder }} · {{ sizeText }}</div>
-      <!-- 人物（P3-B / P5.3-B）：这一行**始终渲染**（固定行高），保证有人物 / 无人物的卡片等高。
+      <!-- 人物 + 工作室行（P3-B / P5.6）：**有内容才渲染**（不再保留空行占位；卡片等高由 .card-body 的最小高度承担）。
            persons 里含真实「素人」人物（后端把没有真演员的视频都绑给素人），按普通人物 chip 渲染；
-           persons 为空时先显示旧 actors 名字，两者都空才兜底显示素人（isAmateur 判定，见 personRules.js） -->
-      <div class="card-persons">
+           persons 为空时先显示旧 actors 名字，两者都空才兜底显示素人（isAmateur 判定，见 personRules.js），
+           所以这一行实际上总有内容（hasPersonsRow 覆盖三种来源）。 -->
+      <div v-if="hasPersonsRow" class="card-persons">
         <template v-if="shownPersons.length">
           <!-- P5.4：人物 chip（含「素人」）可点进人物页 —— 只有带 id 的人物可点，纯名字形态降级为 span。
                防误触与右下角播放列表入口同一套：@click.stop + @keydown.stop，点 chip 既不打开播放器，
@@ -87,14 +88,18 @@
           <span v-if="restActorCount" class="cp-chip cp-more" :title="restActorText">+{{ restActorCount }}</span>
         </template>
         <span v-else-if="amateurFallback" class="cp-chip is-auto" title="未收录演员：默认归类为「素人」">素人</span>
+        <!-- 工作室（P5-A → P5.6 改位置）：不再独占一行（那正是用户嫌的空行），改为同一个 flex 行里
+             排在人物 chips 右侧，中间用一条淡竖线分隔 —— 工作室一般只有一个，占不满一行。
+             顺序固定为「人物 → 分隔 → 工作室」，没有工作室时竖线与 chip 一起不渲染。
+             多个工作室只显示第一个 + 折叠 N，title 列全部（studioText）。 -->
+        <i v-if="shownStudios.length" class="cp-sep" aria-hidden="true"></i>
+        <span v-if="shownStudios.length" class="cp-studio" :title="studioText"
+          >{{ shownStudios[0] }}<i v-if="restStudioCount" class="cp-studio-more">+{{ restStudioCount }}</i></span
+        >
       </div>
-      <!-- 工作室（P5-A）：取索引 videos[].studios（名称数组），最多 1 个 chip，其余折叠成 +N
-           行同样始终渲染（固定行高），空行不留文字，只占同一行高 -->
-      <div class="card-studios">
-        <span v-if="shownStudios.length" class="cs-chip" :title="studioText">{{ shownStudios[0] }}<i v-if="restStudioCount" class="cs-more">+{{ restStudioCount }}</i></span>
-      </div>
-      <!-- 组织信息：有评分显示 ★N/100；标签最多 2 个 chip，其余折叠成 +N。行始终渲染（固定行高） -->
-      <div class="card-meta">
+      <!-- 组织信息：有评分显示 ★N/100；标签最多 2 个 chip，其余折叠成 +N。
+           同样按需渲染：本地徽标 / 评分 / 标签三者全无时这一行不出现（不留空行，高度差由 .card-body 最小高度吞掉） -->
+      <div v-if="hasMetaRow" class="card-meta">
         <!-- local 档：这条组织信息只存在本浏览器（不落服务端），用人眼可见的徽标提示 -->
         <span v-if="local" class="cm-local" title="本地编辑：仅保存在本浏览器，清除缓存即消失">本地</span>
         <!-- 评分域 0–100（P5-C）：0 = 未评分，其余显示 ★N/100，单位随数值一起给出，避免与旧 10 分制混淆 -->
@@ -124,12 +129,10 @@
         :title="plTitle"
         @click.stop="onPlaylistBtn"
       >
-        <!-- 列表图标：三行 + 行首点，12px 视觉尺寸与 11px 角标同级 -->
+        <!-- P5.6：图标改为加号（「加到列表」的直觉符号，取代原来的三横列表图标）。
+             语义仍由 aria-label / title「加入播放列表」承担，图标本身 aria-hidden；12px 视觉尺寸与 11px 角标同级 -->
         <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false">
-          <path d="M6 4h8M6 8h8M6 12h8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-          <circle cx="2.6" cy="4" r="1.1" fill="currentColor" />
-          <circle cx="2.6" cy="8" r="1.1" fill="currentColor" />
-          <circle cx="2.6" cy="12" r="1.1" fill="currentColor" />
+          <path d="M8 3.4v9.2M3.4 8h9.2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
         </svg>
       </button>
       <PlaylistMenuPanel
@@ -392,6 +395,15 @@ const restActorText = computed(() => fallbackActors.value.slice(2).join(' / '))
 /** 兜底 B：persons 与 actors 都为空 → 显示素人 chip（后端就绪后每个视频都应有 persons，这条只会命中旧缓存） */
 const amateurFallback = computed(() => isAmateur(normPersons.value, props.actors))
 
+/**
+ * P5.6：人物行是否渲染 —— 人物 chip / 旧演员名 / 素人兜底三选一有内容就渲染。
+ * 后端把没有真演员的视频都绑给「素人」人物，所以正常数据下这一行恒有内容；
+ * 只有当三者同时为空（理论上不会发生）时这一行才整行不出，避免留下一条空行。
+ */
+const hasPersonsRow = computed(
+  () => shownPersons.value.length > 0 || shownActors.value.length > 0 || amateurFallback.value || shownStudios.value.length > 0
+)
+
 /* ------------------------------------------------------------------ 人物 chip（P5.4） */
 
 /** chip 的可点判定：索引 persons 自带 id；纯名字形态（历史数据 / 旧 actors）没有 id → 不可点 */
@@ -428,6 +440,9 @@ const studioText = computed(() => normStudios.value.join(' / '))
 
 const shownTags = computed(() => normTags.value.slice(0, 2))
 const restTagCount = computed(() => Math.max(0, normTags.value.length - 2))
+
+/** P5.6：组织信息行是否渲染 —— 本地徽标 / 评分 / 标签任一存在才渲染（都没有时不留空行） */
+const hasMetaRow = computed(() => props.local || props.rating > 0 || shownTags.value.length > 0)
 const restTagText = computed(() => normTags.value.slice(2).map((t) => t.name).join(' / '))
 
 const durText = computed(() => fmtDur(props.video.dur))
@@ -492,6 +507,8 @@ function resBadge(w) {
 .thumb {
   position: relative;
   aspect-ratio: 16 / 10;
+  /* P5.6：网格把行拉高时只让 .card-body 吸收多余高度，封面比例保持不变 */
+  flex: 0 0 auto;
   min-height: 0;
   overflow: hidden;
   /* .card 不再裁切，圆角由封面自己承担（与原先裁切半径对齐） */
@@ -551,11 +568,21 @@ function resBadge(w) {
   color: var(--accent-on);
 }
 
+/* P5.6：卡片等高改由「正文最小高度」承担 —— P5.3-B 原来把 persons / studios / meta 三行恒定渲染，
+   没有工作室的视频就在演员与标签之间多出一条空行（用户反馈的问题）；现在工作室并入人物行（见 .cp-sep/.cp-studio），
+   纵向只剩三块：标题+副标题 / 人物+工作室行 / 标签行（按内容渲染），高度差由这里的最小高度 + 网格 stretch 吞掉
+   （.card 是 flex column，.card-body 吃掉多余高度 → 同一行卡片底部对齐）。
+   min-height 取值依据（桌面，全部为确定性数值，见 .card-sub 的 line-height 1.4）：
+     padding-top 7 + 标题 14.5×1.35=19.6 + gap 2 + 副标题 12.5×1.4=17.5 + gap 2
+     + 人物/工作室行 18（行内最小行高）+ gap 2 + 标签行 18 + padding-bottom 9 = 95.1 → 取 96px。
+   因为「内容最多的组合」也只有 95.1px < 96px，所以无工作室 / 无标签 / 无评分三种组合的 .card-body 实测高度完全相同（96px）。 */
 .card-body {
   padding: 7px 9px 9px;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex: 1 1 auto;
+  min-height: 96px;
 }
 
 .card-body h3 {
@@ -570,6 +597,8 @@ function resBadge(w) {
 
 .card-sub {
   font-size: 12.5px;
+  /* P5.6：显式行高（12.5×1.4 = 17.5px）让 .card-body 的 min-height 计算是确定值，不再依赖字体默认 normal */
+  line-height: 1.4;
   color: var(--fg-dim);
   white-space: nowrap;
   overflow: hidden;
@@ -601,7 +630,8 @@ function resBadge(w) {
   margin-top: 2px;
   min-width: 0;
   overflow: hidden;
-  /* P5.3-B：行始终渲染 + 固定最小行高 —— 空行与有内容行同高，2/3/4 列网格上下左右都对得齐 */
+  /* P5.6：本行只在有内容时渲染；有内容时仍取固定最小行高 18px，
+     让评分 / 标签 chip 行在 2/3/4 列网格里高度一致 */
   min-height: 18px;
 }
 
@@ -633,23 +663,28 @@ function resBadge(w) {
   opacity: 0.72;
 }
 
-/* 工作室行：与人物 / 标签同一套 chip 语言（单行、可省略），最多 1 个 + N */
-.card-studios {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 4px;
-  margin-top: 2px;
-  min-width: 0;
-  overflow: hidden;
-  /* 固定行高：没有工作室时这一行也占同一高度（不画占位文字，只留空气） */
-  min-height: 18px;
+/* P5.6：工作室不再是独立一行 —— 它跟在人物 chips 后面，用一条「淡竖线」分隔（见模板里
+   「人物 → 分隔 → 工作室」的固定顺序；两侧都靠 .card-persons 的 gap:4px + 这里 margin:0 3px = 7px 间距）
+   竖线：1px 宽 / 13px 高（在一条 18px 高的 chip 行里视觉上不抢眼），颜色取当前主题的次级文字色
+   + 42% 透明度 —— 亮暗两套主题都来自 --fg-dim，所以两边都是「淡而可见」 */
+.cp-sep {
+  flex: 0 0 auto;
+  width: 1px;
+  height: 13px;
+  margin: 0 3px;
+  border-radius: 1px;
+  background: var(--fg-dim);
+  opacity: 0.42;
 }
 
-.cs-chip {
+/* 工作室 chip：单行、可省略号（title 里始终是全部工作室名 studioText）
+   窄卡片（2 列 / 移动端）时选方案 a：工作室 chip 允许收缩到最小宽度并省略号，
+   上限 45% 是为了不让它把人物 chip 挤没 —— 人物 chip 自己也是 flex:0 1 auto + 省略号，
+   而「+N」计数 chip 是 flex:0 0 auto，永远保留 */
+.cp-studio {
   flex: 0 1 auto;
   min-width: 0;
-  max-width: 100%;
+  max-width: 45%;
   padding: 0 5px;
   border: 1px solid var(--line-2);
   border-radius: 4px;
@@ -661,7 +696,7 @@ function resBadge(w) {
   text-overflow: ellipsis;
 }
 
-.cs-more {
+.cp-studio-more {
   margin-left: 3px;
   font-style: normal;
   opacity: 0.7;
@@ -697,7 +732,7 @@ function resBadge(w) {
   margin-top: 2px;
   min-width: 0;
   overflow: hidden;
-  /* 固定行高：素人 / 真实人物 / 旧演员三种来源都占同一高度 */
+  /* P5.6：素人 / 真实人物 / 旧演员三种来源都占同一最小高度（行本身按内容渲染） */
   min-height: 18px;
 }
 
@@ -892,6 +927,10 @@ button.cp-chip.is-link.is-auto:focus-visible {
 @media (max-width: 768px) {
   .card-body {
     padding: 6px 7px 7px;
+    /* 窄屏隐藏了副标题（见下 .card-sub { display:none }），正文最小高度同步减掉一行：
+       6 + 标题 14×1.35=18.9 + gap 2 + 人物/工作室行 18 + gap 2 + 标签行 18 + 7 = 71.9 → 取 72px
+       （同样大于「内容最多的组合」，所以 2/3/4 列下三块结构的所有组合高度都等于 72px） */
+    min-height: 72px;
   }
 
   /* 触屏：常显但更淡一点，命中区不变 */
