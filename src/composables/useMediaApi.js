@@ -487,7 +487,11 @@ export function spriteUrl(id) {
  * 后端：GET /api/media/preview/{id}，支持 Range；产物不存在即 404 —— 先用 hasPreview 判断
  */
 export function previewUrl(id) {
-  return API_BASE + '/media/preview/' + encodeURIComponent(String(id == null ? '' : id))
+  // 片段内容寻址：产物名是 content_hash，但对外 URL 用 videoId（不变），
+  // 而服务端该 URL 带 immutable 缓存 —— 换了取帧算法后浏览器会一直用旧片段。
+  // 加算法版本号做 cache buster：算法再变更时同步 +1 即可。
+  const algo = 'v2'
+  return API_BASE + '/media/preview/' + encodeURIComponent(String(id == null ? '' : id)) + '?algo=' + algo
 }
 
 /** 图片预览图：photo.js:102 `MEDIA + '/preview/p/' + albumId + '/' + pad4(i)` */
