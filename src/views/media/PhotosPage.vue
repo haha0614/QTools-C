@@ -121,6 +121,7 @@ function fileName(rel) {
 }
 
 function photosOf(a) {
+  // 每张图带 content_hash 时优先用它拼 URL：内容变则 URL 变，避免 7 天图片缓存导致「顺序变了图不对」
   return a && Array.isArray(a.photos) ? a.photos : []
 }
 
@@ -346,7 +347,7 @@ function photoAt(a, i) {
 function photoUrl(a, i) {
   const p = photoAt(a, i)
   if (!p) return ''
-  return p.big ? previewUrl(a.id, p.i) : mediaUrl(p.rel)
+  return p.big ? previewUrl(a.id, p.hash || p.i) : mediaUrl(p.rel)
 }
 
 function memoryKey(albumId) {
@@ -1766,7 +1767,7 @@ onBeforeUnmount(() => {
           :title="'第 ' + (p.i + 1) + ' 张 · ' + fileName(p.rel)"
           @click="openLightbox(p.i)"
         >
-          <img :src="thumbUrl(album.id, p.i)" loading="lazy" decoding="async" :alt="fileName(p.rel)" @error="onFlatCellError" />
+          <img :src="thumbUrl(album.id, p.hash || p.i)" loading="lazy" decoding="async" :alt="fileName(p.rel)" @error="onFlatCellError" />
           <span v-if="p.big" class="cellBig">大图</span>
         </button>
       </div>
