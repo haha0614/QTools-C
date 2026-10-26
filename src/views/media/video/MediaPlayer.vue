@@ -67,10 +67,22 @@
           @pause="onPause"
           @ended="onEnded"
           @seeking="onSeeking"
+          @canplay="onCanPlay"
           @error="onError"
         >
           <track v-if="subSrc" :key="subSrc" kind="subtitles" label="字幕" srclang="zh" default :src="subSrc" />
         </video>
+        <!-- P5.17 转码档防黑屏覆盖层：转码流是服务端边转边推的分片 MP4（seekable=[0,0]），
+             重挂流到首帧之间是空 buffer —— 这段时间把「目标位置的精确帧」盖在画面上。
+             首帧到达（canplay）即移除；取帧失败静默撤掉（@error），不弹任何错。 -->
+        <img
+          v-if="coverOn"
+          class="p-stream-cover"
+          :src="coverSrc"
+          alt=""
+          aria-hidden="true"
+          @error="coverOn = false"
+        />
         <button v-if="tapVisible" class="p-tap" type="button" @click="onTapPlay">▶ 点击播放</button>
         <button v-if="restartVisible" class="p-restart" type="button" @click="onRestart">从头播放</button>
       </div>
@@ -736,7 +748,9 @@ function scheduleFrame(ratio) {
   const sec = frameSecond(info.labelSec, seekDur.value || 0)
   wantedFrameKey.value = id + ':' + sec
   const res = framePicker.schedule(id, sec, {
-    dragging: qSeekDragging,
+    // P5.14 口径：原画档拖动中不出浮层，自然也不取帧；
+    // P5.17：转码档拖动中浮层是唯一能跟随进度的画面，必须允许取帧（仍有 debounce / 同秒去重 / LRU 五道闸）
+    dragging: qSeekDragging && !isTranscode.value,
     mobile: isMobile.value,
     available: previewAvailable.value
   })
@@ -905,10 +919,17 @@ function contentDur(v) {
   return isFinite(d) && d > 0 ? d : 0
 }
 
-/** 源地址：原画走 /file?p=，转码走 /stream?p=&q=&t=（与 app.js:1035-1039 完全一致） */
+/**
+ * 源地址：原画走 /file?p=，转码走 /stream?p=&q=&t=（与 app.js:1035-1039 同一契约）
+ *
+ * P5.17：**不再对 startSec 取整**。转码流是服务端边转边推的分片 MP4，实测
+ * `video.seekable` 只有 `[0, 0]`（浏览器把 currentTime 赋值夹回 0），所以「流内补 seek」
+ * 这条路根本走不通 —— 唯一能把落点做到帧级的办法就是让服务端从**目标秒**出流。
+ * 之前这里是 Math.floor，后端 parseStart 又 floor 一次，3.4s 于是变成 3.000s（整秒）。
+ */
 function srcFor(v, startSec) {
   if (curQ.value === 'orig') return api.mediaFileUrl(v.rel)
-  return api.streamUrl(v.rel, { q: curQ.value, startSec: Math.max(0, Math.floor(startSec || 0)) })
+  return api.streamUrl(v.rel, { q: curQ.value, startSec })
 }
 
 /* ---------------------------------------------------------------- 转码提示 */
@@ -943,8 +964,13 @@ function seekPosOf(sec) {
 
 function updateSeekUi() {
   const dur = contentDur() || 0
-  // 上限沿用原来的整秒（round）：改成 ceil 会让滑块能拖到时长之外（画面已结束却还能前进）
-  if (dur > 0) seekMax.value = Math.max(1, Math.round(dur))
+  // P5.17：上限改由 seekPosOf 的同一套口径算 —— 知道帧率时取「不超出时长的最后一帧」
+  // （10.2669s @30fps → 10.2666，原来 Math.round 给出 10，末尾 0.27 秒拖不到；
+  //  上限与 value 不在同一张栅格上时滑块还会自己抖一下）。无 fps 时仍是整秒，行为不变。
+  if (dur > 0) {
+    const cap = seekPosOf(dur)
+    seekMax.value = Math.max(1, cap > 0 ? cap : Math.round(dur))
+  }
   seekDur.value = dur
   if (qSeekDragging) return
   const pos = absPos()
@@ -970,20 +996,70 @@ function seekOrigTo(sec) {
 
 /* ---------------------------------------------------------------- 换源 */
 
-/** absStart 是转码流的内容起点，seekAbs 是加载后要落到的内容位置（0 = 不跳） */
+/**
+ * absStart = 转码流的内容起点（= 请求后端 {@code t} 的那个秒值），seekAbs = 加载后要落到的内容位置（0 = 不跳）
+ *
+ * P5.17：streamStart 保留小数。它必须与真正发给后端的 {@code t} **逐位一致** ——
+ * 转码流在浏览器里不可 seek（seekable=[0,0]），前端没法靠「流内补一次 currentTime」纠偏，
+ * 所以内容位置 = streamStart + currentTime 只有在 streamStart 精确时才是对的。
+ */
 function applySource(v, absStart, seekAbs) {
-  streamStart = isTranscode.value ? Math.max(0, Math.floor(absStart || 0)) : 0
+  streamStart = isTranscode.value ? Math.max(0, Number(absStart) || 0) : 0
   pendingSeek = seekAbs > 0.5 ? seekAbs : 0
   lastQSrcAt = Date.now()
   const el = videoEl.value
   if (!el) return
   el.src = srcFor(v, streamStart)
   el.load()
+  // 转码流首帧要等服务端 ffmpeg 出流（4K 首字节实测数百毫秒到数秒）：这段时间用目标帧盖住画面
+  if (isTranscode.value) showStreamCover(v, streamStart)
+  else clearStreamCover()
   // P4.1：换源（切清晰度 / 转码重开流 / 换片）会把 playbackRate 打回 1 —— 这里重新落一次倍速，
   // 保证「切清晰度后仍保持当前倍速」（defaultPlaybackRate 一并写，避免下次 load 又丢）
   applySpeed()
   beginQHint()
   updateSeekUi()
+}
+
+/* ------------------------------------- P5.17 转码档防黑屏覆盖层 */
+
+/**
+ * 换流后到首帧之间的覆盖层（只在转码档出现）
+ *
+ * 现象（用户反馈）：非原画档位松手后先黑屏再播放。原因不是解码慢，而是转码流本身：
+ * 服务端边转边推分片 MP4，重挂 src 后是 emptied → waiting（空 buffer），要等 ffmpeg 首字节。
+ * 这里把「目标位置的精确帧」盖在 <video> 上（同样是 /media/frame/{id}?t= 那份永久缓存图），
+ * canplay 一到就撤。取帧失败（400/404/503）@error 静默撤掉：宁可短暂黑屏，也不弹错、不挡播放。
+ */
+const coverOn = ref(false)
+const coverSrc = ref('')
+let coverTimer = 0
+
+function showStreamCover(v, sec) {
+  if (!v || !v.id) return
+  // 帧接口按整秒落盘缓存（framePicker.frameSecond 同一口径），这里向下取整到该秒
+  const whole = Math.max(0, Math.floor(Number(sec) || 0))
+  coverSrc.value = api.frameUrl(v.id, whole)
+  coverOn.value = true
+  if (coverTimer) clearTimeout(coverTimer)
+  // 兜底：后端 504 / 客户端断流时 canplay 永远不来，12s 后自己撤（后端首字节超时是 15s）
+  coverTimer = setTimeout(() => {
+    coverOn.value = false
+    coverTimer = 0
+  }, 12000)
+}
+
+function clearStreamCover() {
+  if (coverTimer) {
+    clearTimeout(coverTimer)
+    coverTimer = 0
+  }
+  coverOn.value = false
+}
+
+/** 首帧就绪（canplay）：撒覆盖层。暂停态换流也会走到这里，所以不能只在 playing 里撤 */
+function onCanPlay() {
+  clearStreamCover()
 }
 
 /** 自动播放可能被浏览器拦截（无用户手势 + 有声音）：不报错，露出「点击播放」兜底 */
@@ -1057,7 +1133,9 @@ function openVideo(v, resumePos) {
   laneLastKey = '' // 换片后「区间标记再点一下跳 endPos」的记忆要重来，否则可能撞上同名 key
   stopFrameSampling()
   props.tracker.openPlaySession(v.id) // 新的播放器会话：本会话只报一次 play
-  const pos = Math.max(0, Number(resumePos) || 0)
+  // P5.17：续播落点同样吸到帧栅格 —— 存盘的是小数秒，但转码档要拿它当流起点，
+  // 不吸帧就会出现「续播总是从某个不存在的帧开始」（且与松手落点口径不一致）
+  const pos = snapToFrame(Math.max(0, Number(resumePos) || 0), frameFps.value)
   const total = v.dur || 0
   const canResume = pos > 1 && (!total || pos < total - 15)
   restartVisible.value = canResume
@@ -1137,6 +1215,7 @@ onBeforeUnmount(() => {
   closeAudioGraph()
   // P5.15：撤掉取帧定时器并清空 LRU（不撤的话卸载后仍会补发一次请求、回调写到旧组件的 ref 上）
   framePicker.reset()
+  clearStreamCover()
   const el = videoEl.value
   const v = openedVideo || props.video
   if (v) savePosFor(v)
@@ -1173,6 +1252,24 @@ function onQualityChange(e) {
  */
 const seekRaf = createRafSeek({ apply: (t) => seekOrigTo(t) })
 
+/** 拖动期间是否因为转码档被本组件暂停过（松手后要按原状态恢复） */
+let dragAutoPaused = false
+
+/**
+ * 转码档拖动开始：暂停播放
+ *
+ * 为什么必须暂停：转码流的 seekable 恒为 [0,0]（实测），拖动中 currentTime 写不进去，
+ * 画面只能继续按**拖动前**的位置往前播 —— 用户看到的就是「视频还在原地播放」。
+ * 暂停后画面冻结在拖动前那一帧，再由浮层负责「画面跟随」。
+ */
+function pauseForTranscodeDrag() {
+  const el = videoEl.value
+  if (!el || dragAutoPaused) return
+  if (el.paused || el.ended) return
+  dragAutoPaused = true
+  el.pause()
+}
+
 function onSeekInput(e) {
   // P5.16：Shift 精细拖动是「接管」手势，原生 range 的 value 变化一律忽略
   if (fineDrag.active) return
@@ -1183,14 +1280,19 @@ function onSeekInput(e) {
   // 保证 currentTime 恰好 = round(t*fps)/fps（浏览器对 step 的取整有浮点误差）。
   const target = snapToFrame(Number(e.target.value) || 0, frameFps.value)
   seekPos.value = target
-  // P5.14：拖动中**不显示**预览浮层 —— 原画档拖动即写 currentTime，视频画面本身就跟手，
-  // 浮层只是把同一帧再画一遍（还挡住进度条与时间码）。这里做两件事：
-  //   1. 取消悬停的待发任务，避免松手后又按旧位置补发一次；
-  //   2. 把拖动前 hover 出来的浮层立即收掉（拖动一开始画面就是预览，浮层必须让位）。
+  // 取消悬停的待发任务，避免松手后又按旧位置补发一次
   hoverPreview.cancel()
+  if (isTranscode.value) {
+    // P5.17：转码档拖动**要出浮层** —— 流在浏览器里不可 seek（seekable=[0,0]），
+    // 画面本身永远跟不上进度条，浮层（精灵图/预览片段 + 250ms 后的精确帧）是唯一能
+    // 「画面跟着进度条走」的东西。与 hover 共用 80ms 节流，请求数不会涨。
+    pauseForTranscodeDrag()
+    hoverPreview.run(() => showPreview(seekMax.value > 0 ? Number(target) / seekMax.value : 0))
+    return
+  }
+  // P5.14 原画档：拖动即写 currentTime，视频画面本身就跟手，浮层只重复一遍还挡进度 —— 收掉
   hidePreview()
-  // 原画：拖动即写 currentTime（经 rAF 合并）；转码流只能松手后重开流（拖动中不动 offset）
-  if (!isTranscode.value) seekRaf.push(target)
+  seekRaf.push(target)
 }
 
 function onSeekCommit(e) {
@@ -1208,15 +1310,22 @@ function commitSeekTo(target) {
   seekDragging.value = false
   syncCtrlState()
   hidePreview()
+  const resume = dragAutoPaused // 拖动期间被 pauseForTranscodeDrag 暂停过
+  dragAutoPaused = false
   // P5.14：松手即回到 hover 行为。指针通常还停在条上，下一次 mousemove 才会重新出图，
   // 这里按松手位置直接补一次悬停浮层（不经过 hover 的节流窗口），免得「松手后画面没了」像卡住。
   restoreHoverAt(target)
   if (!isTranscode.value) {
+    // 原画：精确写 currentTime（实测 currentTime 就落在这个帧上，不取整）
     seekRaf.cancel()
     seekOrigTo(target)
     updateSeekUi()
+    if (resume) tryPlay()
     return
   }
+  // P5.17 转码：**必须**用同一个精确秒既当流起点又当内容位置。
+  // streamStart = target（不取整）→ 服务端 -ss target → 流的第 0 秒就是目标那一帧；
+  // seekAbs 传 0：转码流 seekable=[0,0]，再写一次 currentTime 只会被浏览器夹回 0。
   seekRaf.cancel()
   applySource(props.video, target, 0)
   tryPlay()
@@ -2622,6 +2731,20 @@ defineExpose({
   max-height: 100%;
   object-fit: contain;
   background: #000;
+}
+
+/* P5.17 转码档防黑屏覆盖层：换流后到首帧之间把目标位置的精确帧盖在画面上。
+   绝对定位铺满舞台、pointer-events:none（点画面照常暂停/播放），
+   z-index 1 < .p-tap 的 2 < 控制条 5 —— 不挡「点击播放」也不挡控制条。 */
+.p-stream-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+  pointer-events: none;
 }
 
 .p-restart {

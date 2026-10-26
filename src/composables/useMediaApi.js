@@ -539,14 +539,31 @@ export function mediaFileUrl(rel) {
 }
 
 /**
+ * 秒值 → URL 里的 {@code t} 参数（P5.17）：保留到微秒，去掉浮点尾巴。
+ * 6.266666666666667 @30fps → '6.266667'（误差 3.3e-7 秒）；3.4 → '3.4'；3 → '3'（与旧整数形态逐字一致）。
+ * @param {number} sec
+ */
+export function streamStartParam(sec) {
+  const n = Number(sec)
+  if (!isFinite(n) || n <= 0) return '0'
+  return String(Math.round(n * 1e6) / 1e6)
+}
+
+/**
  * 转码流：app.js:1037-1038 `MEDIA + '/stream?p=' + encodeURIComponent(v.rel) + '&q=' + q + '&t=' + floor(start)`
+ *
+ * P5.17：`t` 不再向下取整。转码流在浏览器里不可 seek（实测 `video.seekable` 恒为 `[0, 0]`，
+ * 写 currentTime 会被夹回 0），所以帧级落点唯一的实现方式就是让服务端从**目标秒**出流；
+ * 后端 `MediaStreamServiceImpl.parseStartSec` 接受小数、ffmpeg 用 `-ss <精确秒>`（accurate_seek）。
+ * 向后兼容：整数 `t=3` 与改动前逐字相同，老后端（会 floor）拿到小数只是退化成旧的整秒行为。
+ *
  * @param {string} rel 相对路径
- * @param {{q?:string|number, startSec?:number}} [options] q 为清晰度档位（默认 '1080'），startSec 为内容起点秒
+ * @param {{q?:string|number, startSec?:number}} [options] q 为清晰度档位（默认 '1080'），startSec 为内容起点秒（可含小数）
  */
 export function streamUrl(rel, options) {
   const opt = options || {}
   const q = opt.q == null || opt.q === '' ? '1080' : String(opt.q)
-  const t = Math.max(0, Math.floor(Number(opt.startSec) || 0))
+  const t = streamStartParam(opt.startSec)
   return API_BASE + '/media/stream?p=' + encodeURIComponent(String(rel == null ? '' : rel)) + '&q=' + q + '&t=' + t
 }
 
@@ -618,6 +635,7 @@ const mediaApi = {
   thumbUrlFromRel,
   mediaFileUrl,
   streamUrl,
+  streamStartParam,
   subUrl,
   itemThumbUrl
 }
