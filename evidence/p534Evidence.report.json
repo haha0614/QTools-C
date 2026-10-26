@@ -1,8 +1,8 @@
 {
-  "page": "http://127.0.0.1:57982/evidence/playerHarness.html",
+  "page": "http://127.0.0.1:64134/evidence/playerHarness.html",
   "ports": {
-    "vite": 57982,
-    "cdp": 57986
+    "vite": 64134,
+    "cdp": 64143
   },
   "chrome": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
   "runs": [
@@ -44,7 +44,7 @@
           {
             "tag": "button",
             "aria": "上一条",
-            "text": "⏮",
+            "text": "",
             "cls": "p-btn",
             "quality": false,
             "disabled": false,
@@ -57,7 +57,7 @@
           {
             "tag": "button",
             "aria": "播放",
-            "text": "▶",
+            "text": "",
             "cls": "p-btn p-btn-play",
             "quality": false,
             "disabled": false,
@@ -70,7 +70,7 @@
           {
             "tag": "button",
             "aria": "下一条",
-            "text": "⏭",
+            "text": "",
             "cls": "p-btn",
             "quality": false,
             "disabled": false,
@@ -83,14 +83,14 @@
           {
             "tag": "button",
             "aria": "静音",
-            "text": "🔊",
+            "text": "",
             "cls": "p-btn",
             "quality": false,
             "disabled": false,
             "ariaDisabled": null,
             "x": 132,
             "y": 959.5,
-            "w": 35.86,
+            "w": 30,
             "h": 30
           },
           {
@@ -101,7 +101,7 @@
             "quality": false,
             "disabled": false,
             "ariaDisabled": null,
-            "x": 173.86,
+            "x": 168,
             "y": 964.5,
             "w": 86,
             "h": 20
@@ -114,7 +114,7 @@
             "quality": false,
             "disabled": false,
             "ariaDisabled": null,
-            "x": 265.86,
+            "x": 260,
             "y": 961.5,
             "w": 130.16,
             "h": 26
@@ -124,46 +124,46 @@
           {
             "tag": "button",
             "aria": "上一帧",
-            "text": "⏴",
+            "text": "",
             "cls": "p-btn",
             "quality": false,
             "disabled": false,
             "ariaDisabled": null,
-            "x": 1304,
+            "x": 1308,
             "y": 959.5,
-            "w": 31,
+            "w": 30,
             "h": 30
           },
           {
             "tag": "button",
             "aria": "下一帧",
-            "text": "⏵",
+            "text": "",
             "cls": "p-btn",
             "quality": false,
             "disabled": false,
             "ariaDisabled": null,
-            "x": 1339,
+            "x": 1342,
             "y": 959.5,
-            "w": 31,
+            "w": 30,
             "h": 30
           },
           {
-            "tag": "select",
+            "tag": "button",
             "aria": "画质",
-            "text": "原画（直连）72",
-            "cls": "p-qsel",
+            "text": "原画（直连）",
+            "cls": "p-qbtn",
             "quality": true,
             "disabled": false,
             "ariaDisabled": null,
-            "x": 1383,
+            "x": 1385,
             "y": 959.5,
-            "w": 109,
+            "w": 107,
             "h": 30
           },
           {
             "tag": "button",
             "aria": "播放设置",
-            "text": "⚙",
+            "text": "",
             "cls": "p-btn p-gear",
             "quality": false,
             "disabled": false,
@@ -176,7 +176,7 @@
           {
             "tag": "button",
             "aria": "全屏",
-            "text": "⛶",
+            "text": "",
             "cls": "p-btn",
             "quality": false,
             "disabled": false,
@@ -187,7 +187,7 @@
             "h": 30
           }
         ],
-        "buttonsTotal": 8,
+        "buttonsTotal": 9,
         "qualityInRight": true,
         "qualityInHead": false,
         "framePairInRight": true
@@ -237,7 +237,7 @@
           {
             "tag": "button",
             "aria": "上一条",
-            "text": "⏮",
+            "text": "",
             "cls": "p-btn",
             "quality": false,
             "disabled": false,
@@ -250,7 +250,7 @@
           {
             "tag": "button",
             "aria": "播放",
-            "text": "▶",
+            "text": "",
             "cls": "p-btn p-btn-play",
             "quality": false,
             "disabled": false,
@@ -263,7 +263,7 @@
           {
             "tag": "button",
             "aria": "下一条",
-            "text": "⏭",
+            "text": "",
             "cls": "p-btn",
             "quality": false,
             "disabled": false,
@@ -276,14 +276,14 @@
           {
             "tag": "button",
             "aria": "静音",
-            "text": "🔊",
+            "text": "",
             "cls": "p-btn",
             "quality": false,
             "disabled": false,
             "ariaDisabled": null,
             "x": 132,
             "y": 759.5,
-            "w": 35.86,
+            "w": 30,
             "h": 30
           },
           {
@@ -294,7 +294,7 @@
             "quality": false,
             "disabled": false,
             "ariaDisabled": null,
-            "x": 173.86,
+            "x": 168,
             "y": 764.5,
             "w": 86,
             "h": 20
@@ -307,7 +307,7 @@
             "quality": false,
             "disabled": false,
             "ariaDisabled": null,
-            "x": 265.86,
+            "x": 260,
             "y": 761.5,
             "w": 130.16,
             "h": 26
@@ -317,46 +317,46 @@
           {
             "tag": "button",
             "aria": "上一帧",
-            "text": "⏴",
+            "text": "",
             "cls": "p-btn",
             "quality": false,
             "disabled": false,
             "ariaDisabled": null,
-            "x": 704,
+            "x": 708,
             "y": 759.5,
-            "w": 31,
+            "w": 30,
             "h": 30
           },
           {
             "tag": "button",
             "aria": "下一帧",
-            "text": "⏵",
+            "text": "",
             "cls": "p-btn",
             "quality": false,
             "disabled": false,
             "ariaDisabled": null,
-            "x": 739,
+            "x": 742,
             "y": 759.5,
-            "w": 31,
+            "w": 30,
             "h": 30
           },
           {
-            "tag": "select",
+            "tag": "button",
             "aria": "画质",
-            "text": "原画（直连）72",
-            "cls": "p-qsel",
+            "text": "原画（直连）",
+            "cls": "p-qbtn",
             "quality": true,
             "disabled": false,
             "ariaDisabled": null,
-            "x": 783,
+            "x": 785,
             "y": 759.5,
-            "w": 109,
+            "w": 107,
             "h": 30
           },
           {
             "tag": "button",
             "aria": "播放设置",
-            "text": "⚙",
+            "text": "",
             "cls": "p-btn p-gear",
             "quality": false,
             "disabled": false,
@@ -369,7 +369,7 @@
           {
             "tag": "button",
             "aria": "全屏",
-            "text": "⛶",
+            "text": "",
             "cls": "p-btn",
             "quality": false,
             "disabled": false,
@@ -380,7 +380,7 @@
             "h": 30
           }
         ],
-        "buttonsTotal": 8,
+        "buttonsTotal": 9,
         "qualityInRight": true,
         "qualityInHead": false,
         "framePairInRight": true
@@ -430,7 +430,7 @@
           {
             "tag": "button",
             "aria": "上一条",
-            "text": "⏮",
+            "text": "",
             "cls": "p-btn",
             "quality": false,
             "disabled": false,
@@ -443,7 +443,7 @@
           {
             "tag": "button",
             "aria": "播放",
-            "text": "▶",
+            "text": "",
             "cls": "p-btn p-btn-play",
             "quality": false,
             "disabled": false,
@@ -456,7 +456,7 @@
           {
             "tag": "button",
             "aria": "下一条",
-            "text": "⏭",
+            "text": "",
             "cls": "p-btn",
             "quality": false,
             "disabled": false,
@@ -469,14 +469,14 @@
           {
             "tag": "button",
             "aria": "静音",
-            "text": "🔊",
+            "text": "",
             "cls": "p-btn",
             "quality": false,
             "disabled": false,
             "ariaDisabled": null,
             "x": 156,
             "y": 645,
-            "w": 38.61,
+            "w": 38,
             "h": 38
           },
           {
@@ -500,7 +500,7 @@
             "quality": false,
             "disabled": false,
             "ariaDisabled": null,
-            "x": 206.61,
+            "x": 206,
             "y": 652.2,
             "w": 116.94,
             "h": 23.59
@@ -510,7 +510,7 @@
           {
             "tag": "button",
             "aria": "上一帧",
-            "text": "⏴",
+            "text": "",
             "cls": "p-btn",
             "quality": false,
             "disabled": false,
@@ -523,7 +523,7 @@
           {
             "tag": "button",
             "aria": "下一帧",
-            "text": "⏵",
+            "text": "",
             "cls": "p-btn",
             "quality": false,
             "disabled": false,
@@ -534,27 +534,27 @@
             "h": 38
           },
           {
-            "tag": "select",
+            "tag": "button",
             "aria": "画质",
-            "text": "原画（直连）72",
-            "cls": "p-qsel",
+            "text": "原画（直连）",
+            "cls": "p-qbtn",
             "quality": true,
             "disabled": false,
             "ariaDisabled": null,
             "x": 103,
             "y": 689,
-            "w": 106,
+            "w": 104,
             "h": 38
           },
           {
             "tag": "button",
             "aria": "播放设置",
-            "text": "⚙",
+            "text": "",
             "cls": "p-btn p-gear",
             "quality": false,
             "disabled": false,
             "ariaDisabled": null,
-            "x": 222,
+            "x": 220,
             "y": 689,
             "w": 38,
             "h": 38
@@ -562,18 +562,18 @@
           {
             "tag": "button",
             "aria": "全屏",
-            "text": "⛶",
+            "text": "",
             "cls": "p-btn",
             "quality": false,
             "disabled": false,
             "ariaDisabled": null,
-            "x": 266,
+            "x": 264,
             "y": 689,
             "w": 38,
             "h": 38
           }
         ],
-        "buttonsTotal": 8,
+        "buttonsTotal": 9,
         "qualityInRight": true,
         "qualityInHead": false,
         "framePairInRight": true

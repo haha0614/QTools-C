@@ -184,7 +184,7 @@
                   :title="hasPrev ? '上一条（快捷键 P）' : '已经是列表第一条'"
                   @click="emit('prev')"
                 >
-                  ⏮
+                  <PlayerIcon name="prev" />
                 </button>
                 <button
                   class="p-btn p-btn-play"
@@ -193,7 +193,7 @@
                   title="播放 / 暂停（空格）"
                   @click="togglePlay"
                 >
-                  {{ isPlaying ? '⏸' : '▶' }}
+                  <PlayerIcon :name="isPlaying ? 'pause' : 'play'" />
                 </button>
                 <button
                   class="p-btn"
@@ -204,7 +204,7 @@
                   :title="hasNext ? '下一条（快捷键 N）' : '已经是列表最后一条'"
                   @click="emit('next')"
                 >
-                  ⏭
+                  <PlayerIcon name="next" />
                 </button>
                 <!-- P5.26（用户反馈 1「增加音量调节时的百分比显示」）：百分比浮标签常驻 DOM，
                      0–100 整数，松手 700ms 后淡出（CSS opacity 过渡，不参与控制条布局）。
@@ -216,7 +216,7 @@
                   :title="muted || volume === 0 ? '取消静音（M）' : '静音（M）'"
                   @click="toggleMute"
                 >
-                  {{ muted || volume === 0 ? '🔇' : '🔊' }}
+                  <PlayerIcon :name="muted || volume === 0 ? 'mute' : 'volume'" />
                 </button>
                 <!-- 音量滑块：窄屏让位给静音按钮（既有规则不变）。
                      P5.26：按住期间百分比常显（不排淡出计时），松手 / change / blur 才开始淡出；
@@ -393,26 +393,74 @@
               <div class="p-grp p-grp-right">
                 <!-- P4-B 逐帧：暂停态单帧步进（1/30 近似，有 requestVideoFrameCallback 时按实测帧间隔） -->
                 <span class="p-frame">
-                  <button class="p-btn" type="button" aria-label="上一帧" title="上一帧（快捷键 , 或 Shift+←）" @click="stepFrame(-1)">⏴</button>
-                  <button class="p-btn" type="button" aria-label="下一帧" title="下一帧（快捷键 . 或 Shift+→）" @click="stepFrame(1)">⏵</button>
+                  <button class="p-btn" type="button" aria-label="上一帧" title="上一帧（快捷键 , 或 Shift+←）" @click="stepFrame(-1)"><PlayerIcon name="framePrev" /></button>
+                  <button class="p-btn" type="button" aria-label="下一帧" title="下一帧（快捷键 . 或 Shift+→）" @click="stepFrame(1)"><PlayerIcon name="frameNext" /></button>
                 </span>
                 <span class="p-sep" aria-hidden="true"></span>
-                <!-- P5.34（用户纠正 2「我说的是视频控制栏里面的上下一部的位置换成画质切换」）：
-                     这一格原来就是 ⏮ ⏭ —— 现在换成**画质下拉**（上一条 / 下一条已移到播放按钮两侧）。
-                     与设置浮层里的画质**同源**：选项都来自 qualityOptions，切换都走 onQualityPick
+                <!-- P5.34（用户纠正 2）：这一格原来就是 ⏮ ⏭ —— 现在换成**画质下拉**。
+                     P5.37（用户反馈 2「下拉菜单样式太突兀」）：**原生 <select> 整个换掉**。
+                     原生 select 的展开列表是操作系统画的，CSS 一行都进不去 —— 深色播放器上弹出
+                     一张系统白纸，亮暗都突兀，这是无法靠「调样式」解决的（只能换控件）。
+                     现在的形态：触发按钮沿用原来的 chip 材质（.p-qbtn = 旧 .p-qsel 的令牌与几何），
+                     点开是一块**绝对定位的菜单面板**（.p-qmenu：--bg-2 底 + 圆角 10 + 内描边 + 阴影
+                     + 12.5px 字号），选中项 accent 高亮、hover 提亮、键盘 ↑↓ / Enter / Esc 可用、
+                     点面板外部关闭。
+                     与设置浮层里的画质**同源**：选项仍是 qualityOptions，切换仍走 onQualityPick
                      （先按旧档取绝对位置 → 换流 → 恢复播放状态），不存在第二套画质逻辑。
-                     原生 <select> 保留：它是键盘 / 触屏 / 读屏都能直接用的一级控件，
-                     自绘下拉会白丢一层系统级可达性。data-qt-quality 仍是证据脚本的锚点。 -->
-                <select
-                  class="p-qsel"
-                  data-qt-quality
-                  :value="curQ"
-                  aria-label="画质"
-                  title="画质：原画直连，或实时转码到 720p / 480p / 360p"
-                  @change="onQualityPick($event.target.value)"
-                >
-                  <option v-for="o in qualityOptions" :key="'cq' + o.value" :value="o.value">{{ o.label }}</option>
-                </select>
+                     data-qt-quality 仍是证据脚本的锚点（值放在 data-qt-qvalue 上）。 -->
+                <span class="p-qwrap" ref="qWrapEl">
+                  <button
+                    ref="qBtnEl"
+                    class="p-qbtn"
+                    data-qt-quality
+                    :data-qt-qvalue="curQ"
+                    type="button"
+                    aria-label="画质"
+                    role="combobox"
+                    aria-haspopup="listbox"
+                    :aria-expanded="qualityMenuOpen"
+                    :aria-controls="qualityMenuOpen ? 'qt-qmenu' : null"
+                    :aria-activedescendant="qualityMenuOpen ? 'qt-qopt-' + qActiveValue : null"
+                    title="画质：原画直连，或实时转码到 720p / 480p / 360p"
+                    @click="toggleQualityMenu"
+                    @keydown="onQualityKey"
+                  >
+                    <span class="p-qbtn-t">{{ curQLabel }}</span>
+                    <PlayerIcon name="caret" class="p-qcaret" />
+                  </button>
+                  <!-- 面板用 v-if（不在 DOM 里就不存在键盘 / 命中歧义）；层级 7 > 控制条自身的 5，
+                       但它抬在 .p-ctrl 之内 —— .p-ctrl 的 overflow 是 visible，所以既不被舞台裁剪，
+                       也不会掉到画面下面。底边贴触发按钮上沿，向上展开（控制条永远在底部）。 -->
+                  <div
+                    v-if="qualityMenuOpen"
+                    id="qt-qmenu"
+                    ref="qMenuEl"
+                    class="p-qmenu"
+                    data-qt-qmenu
+                    role="listbox"
+                    aria-label="画质"
+                  >
+                    <div
+                      v-for="(o, i) in qualityOptions"
+                      :key="'qo' + o.value"
+                      :id="'qt-qopt-' + o.value"
+                      class="p-qopt"
+                      :class="{ 'is-sel': o.value === curQ, 'is-cur': i === qActiveIndex }"
+                      data-qt-qopt
+                      :data-qt-value="o.value"
+                      role="option"
+                      :aria-selected="o.value === curQ"
+                      @click="pickQualityValue(o.value)"
+                      @mouseenter="qActiveIndex = i"
+                    >
+                      <span class="p-qopt-t">{{ o.label }}</span>
+                      <PlayerIcon v-if="o.value === curQ" name="check" class="p-qopt-ck" />
+                    </div>
+                    <!-- 转码档首字节 >3s 的提示（qHintVisible，P5.17 起的同一个信号，原来只传给
+                         设置浮层；这里在下拉里就近显示，不新增任何判定） -->
+                    <p v-if="qHintVisible" class="p-qmenu-hint">转码中…</p>
+                  </div>
+                </span>
                 <span class="p-sep" aria-hidden="true"></span>
                 <!-- 设置：倍速 / 增益 / 画质 / 字幕（含字幕样式）/ AB / 标记 / 快捷键说明都收在这个齿轮里。
                      data-qt-gear 是证据脚本的锚点（点它 = 走真实事件链打开面板）。 -->
@@ -427,7 +475,7 @@
                   title="播放设置：倍速 / 增益 / 画质 / 字幕（含字幕样式）/ AB / 标记 / 快捷键"
                   @click="toggleSettings"
                 >
-                  ⚙
+                  <PlayerIcon name="gear" />
                 </button>
                 <button
                   data-qt-fs
@@ -437,7 +485,7 @@
                   :title="fsActive ? '退出全屏（F）' : '全屏（F）'"
                   @click="toggleFullscreen"
                 >
-                  {{ fsActive ? '⤢' : '⛶' }}
+                  <PlayerIcon :name="fsActive ? 'fsExit' : 'fs'" />
                 </button>
               </div>
             </div>
@@ -623,6 +671,8 @@ import PreviewTimeBar from './PreviewTimeBar.vue'
 import { coverFrameWidth, coveredSwitch, freezeElementFrame } from './coverFreeze'
 // P5.24-A：「设置」浮层（倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键）拆成纯展示组件
 import PlayerSettings from './PlayerSettings.vue'
+/* P5.37：控制栏图标改为几何居中的内联 SVG（字体字形的墨迹在 advance box 里本来就是偏的） */
+import PlayerIcon from './PlayerIcon.vue'
 // P5.34：字幕样式的纯逻辑（归一化 / CSS 变量 / cue 文本清洗），单测见 subtitleStyle.test.mjs
 import {
   SUB_STYLE_DEFAULT,
@@ -2467,11 +2517,19 @@ function onMarkPick(t) {
 }
 
 /**
- * 点设置浮层外部收起：capture 阶段监听，先于任何按钮的 click 执行，不干扰播放器其它点击。
- * P5.24-A 起它服务的对象从「标记列表」换成「设置浮层」（同一个监听器，不再有第二个入口）。
- * 齿轮按钮本身要排除：否则「点外部收起」会在按钮的 click 之前把面板关掉，再点就永远打不开。
+ * 点浮层 / 菜单外部收起：capture 阶段监听，先于任何按钮的 click 执行，不干扰播放器其它点击。
+ * P5.24-A 起它服务的对象从「标记列表」换成「设置浮层」（同一个监听器，不再有第二个入口）；
+ * P5.37 起**同一个监听器**也管画质菜单（第二个浮层，同样的「点外部关掉」语义）。
+ * 触发它的按钮自身必须排除：否则「点外部收起」会在按钮的 click 之前把面板关掉，再点就永远打不开。
  */
 function onDocPointerDown(e) {
+  if (qualityMenuOpen.value) {
+    const menu = qMenuEl.value
+    const btn = qBtnEl.value
+    const insideMenu = !!(menu && e.target && typeof menu.contains === 'function' && menu.contains(e.target))
+    const insideBtn = !!(btn && e.target && typeof btn.contains === 'function' && btn.contains(e.target))
+    if (!insideMenu && !insideBtn) closeQualityMenu(false)
+  }
   if (!settingsOpen.value) return
   const el = settingsEl.value && settingsEl.value.$el ? settingsEl.value.$el : null
   if (el && e.target && typeof el.contains === 'function' && el.contains(e.target)) return
@@ -2485,8 +2543,115 @@ watch(
   () => (props.video ? props.video.id : ''),
   () => {
     settingsOpen.value = false
+    closeQualityMenu(false)
   }
 )
+
+/* ============================================ P5.37 画质自定义下拉 ============================================ */
+
+/**
+ * 为什么不用原生 <select>（用户反馈 2「下拉菜单样式太突兀」）：
+ * 原生 select 的**展开列表由操作系统绘制**，CSS 一行都进不去 —— 深色播放器上必然弹出一张
+ * 系统白纸。这不是「样式没调好」，而是控件选错了：想美化展开态，只能用自绘面板。
+ *
+ * 交互口径（与原生 select 对齐的那几条，一条都没丢）：
+ *   - 触发按钮：chip 材质沿用旧 .p-qsel 的全部令牌与几何（30px 高 / 8px 圆角 / 12.5px 字号）；
+ *   - 打开后键盘 ↑↓ / Home / End 移动高亮（aria-activedescendant），Enter 应用，Esc 关闭，
+ *     Tab 关闭并把焦点交回页面；↑↓ 与 Esc 在这里**吞掉事件**，不落到页面级的
+ *     「↑↓ 调音量」「Esc 关播放器」上（否则一按就把播放器关了）；
+ *   - 焦点始终留在触发按钮上（菜单项是 role=option + tabindex=-1，不抢焦点），
+ *     所以「焦点在哪」只有一个答案，读屏读到的是 combobox + activedescendant；
+ *   - 点外部关闭（onDocPointerDown，capture 阶段，先于菜单项的 click）。
+ */
+const qualityMenuOpen = ref(false)
+const qWrapEl = ref(null)
+const qBtnEl = ref(null)
+const qMenuEl = ref(null)
+/** 键盘高亮项（不等于「当前已选档」—— 上下移动只改高亮，Enter 才应用） */
+const qActiveIndex = ref(0)
+
+/** 当前档的文案（与设置浮层同一个 qualityOptions，新档位不会出现第二份文案） */
+const curQLabel = computed(() => {
+  const hit = qualityOptions.value.find((o) => o.value === curQ.value)
+  return hit ? hit.label : ''
+})
+
+/** 当前档在列表里的下标（打开时高亮落在「我现在是哪一档」上） */
+const curQIndex = computed(() => {
+  const i = qualityOptions.value.findIndex((o) => o.value === curQ.value)
+  return i < 0 ? 0 : i
+})
+
+/** 高亮项的值 → 拼 aria-activedescendant 的 id */
+const qActiveValue = computed(() => {
+  const o = qualityOptions.value[qActiveIndex.value]
+  return o ? o.value : ''
+})
+
+function openQualityMenu() {
+  qualityMenuOpen.value = true
+  qActiveIndex.value = curQIndex.value
+  syncCtrlState()
+}
+
+/** refocus=true：把焦点交回触发按钮（Esc / Enter / 点选之后）；点外部关闭时不要把焦点抢回来 */
+function closeQualityMenu(refocus) {
+  if (!qualityMenuOpen.value) return
+  qualityMenuOpen.value = false
+  if (refocus && qBtnEl.value) qBtnEl.value.focus()
+  syncCtrlState()
+}
+
+function toggleQualityMenu() {
+  if (qualityMenuOpen.value) closeQualityMenu(true)
+  else openQualityMenu()
+}
+
+/** 点一项：先关菜单再把焦点交回按钮，然后走**唯一**的画质入口（onQualityPick 自己会忽略同档） */
+function pickQualityValue(v) {
+  closeQualityMenu(true)
+  if (v) onQualityPick(v)
+}
+
+/**
+ * 画质触发按钮 / 菜单的键盘处理（挂在 .p-qwrap 上，两者共用一份逻辑）。
+ * ↑↓ 在**关闭态**也接管：焦点在触发按钮上时按 ↓ 就是「打开并停在我现在这一档」，
+ * 与原生 select 一致；这也是这里必须 stopPropagation 的原因（页面级 ↑↓ 是调音量）。
+ */
+function onQualityKey(e) {
+  const key = e.key
+  const n = qualityOptions.value.length
+  if (key === 'ArrowDown' || key === 'ArrowUp' || key === 'Home' || key === 'End') {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!qualityMenuOpen.value) {
+      openQualityMenu()
+      return
+    }
+    if (key === 'Home') qActiveIndex.value = 0
+    else if (key === 'End') qActiveIndex.value = n - 1
+    else {
+      const d = key === 'ArrowDown' ? 1 : -1
+      qActiveIndex.value = (qActiveIndex.value + d + n) % n
+    }
+    return
+  }
+  // 关闭态：Enter / Esc / Tab 交给按钮与页面的默认行为（Esc 该关播放器就让它关）
+  if (!qualityMenuOpen.value) return
+  if (key === 'Escape') {
+    e.preventDefault()
+    e.stopPropagation()
+    closeQualityMenu(true)
+    return
+  }
+  if (key === 'Enter') {
+    e.preventDefault()
+    e.stopPropagation()
+    pickQualityValue(qActiveValue.value)
+    return
+  }
+  if (key === 'Tab') closeQualityMenu(false)
+}
 
 /* ============================================ P4.4 / P5.23 控制条自动隐藏 ============================================ */
 
@@ -2517,19 +2682,24 @@ let lastPointer = { x: -1, y: -1 }
  * translateY(100%) + pointer-events:none，getBoundingClientRect 把它算到屏幕外，
  * 只靠 rect / 只靠 mouseenter-mouseleave 都会判错。
  */
+/** 「指针在不在这个矩形里」的唯一实现（两块浮层共用） */
+function pointInRect(r) {
+  if (!r || r.width <= 0 || r.height <= 0) return false
+  const { x, y } = lastPointer
+  return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom
+}
+
 /**
- * 指针是否落在设置浮层上（它是绝对定位向上展开的，几何上在 .p-ctrl 的矩形之外）。
- * 只按控制条矩形判「指针还在不在条上」时，指针从控制条滑到浮层的一瞬间会被判成「离开」，
- * 触发 hideOnLeave 把控制条连同刚打开的面板一起收走（用户看到的是面板闪一下）。
- * 所以隐藏判定用「控制条矩形 ∪ 浮层矩形」的并集，而不是只靠一个 class。
+ * P5.37：判据从「设置浮层」扩成「**所有**向上展开的浮层」—— 设置浮层 + 画质菜单。
+ * 两块浮层都是 .p-ctrl 的几何外部（absolute 向上展开），只按控制条矩形判命中时，
+ * 指针从控制条滑到菜单里的那一瞬间会被判成「离开」→ hideOnLeave 立刻把控制条连同菜单收走。
  */
 function pointerOverSettings() {
   const el = settingsEl.value && settingsEl.value.$el ? settingsEl.value.$el : null
-  if (!el) return false
-  const r = el.getBoundingClientRect()
-  if (r.width <= 0 || r.height <= 0) return false
-  const { x, y } = lastPointer
-  return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom
+  if (el && pointInRect(el.getBoundingClientRect())) return true
+  const menu = qMenuEl.value
+  if (menu && pointInRect(menu.getBoundingClientRect())) return true
+  return false
 }
 
 /**
@@ -2548,11 +2718,12 @@ function pointerOverCtrl() {
 }
 
 /**
- * 浮层（hover 预览 / 拖动预览 / 标记提示 / 设置面板）展开时不隐藏：否则会留下一张没有控制条的浮卡片。
- * P5.24-A：成员由「标记列表」换成「设置面板」—— 面板开着却把控制条淡出，面板会跟着一起消失。
+ * 浮层（hover 预览 / 拖动预览 / 标记提示 / 设置面板 / P5.37 画质菜单）展开时不隐藏：
+ * 否则会留下一张没有控制条的浮卡片 —— 面板开着却把控制条淡出，面板会跟着一起消失。
+ * P5.24-A：成员由「标记列表」换成「设置面板」；P5.37：画质菜单是第二个浮层成员。
  */
 const ctrlOverlayOpen = computed(
-  () => !!(previewShown.value || markerHover.value || settingsOpen.value)
+  () => !!(previewShown.value || markerHover.value || settingsOpen.value || qualityMenuOpen.value)
 )
 
 const ctrlAuto = createCtrlAutoHide({
@@ -3644,9 +3815,20 @@ defineExpose({
 /* P5.34：画质下拉从头部搬进**控制栏**（占原来 ⏮ ⏭ 那一格，见模板）。
    配色跟着控制条走：深色 chip + 白字 + 白描边 —— 与 .p-btn 同一套令牌，
    于是「⏴ ⏵ | 画质 | ⚙ ⛶」四件在一排里材质一致，不会有一格是浅色纸片。
-   原生 <select> 保留（键盘 / 触屏 / 读屏都能直接用；自绘下拉会白丢系统级可达性）。 */
-.p-qsel {
+   P5.37：控件由原生 <select> 换成「chip 触发按钮 + 自绘面板」—— 触发按钮的令牌与几何
+   是旧 .p-qsel 的**逐字搬移**（30px 高 / 8px 圆角 / 12.5px 字号 / 同一套 --p-* 颜色），
+   所以控制栏这一排的材质没有变化，变的只是展开态（那是 CSS 进不去的地方）。 */
+.p-qwrap {
+  position: relative;
+  display: inline-flex;
   flex-shrink: 0;
+  /* 面板以它为包含块向上展开（见 .p-qmenu） */
+}
+
+.p-qbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   max-width: 116px;
   height: 30px;
   padding: 0 6px;
@@ -3663,21 +3845,109 @@ defineExpose({
   transition: background 0.12s ease, border-color 0.12s ease;
 }
 
-.p-qsel:hover {
+.p-qbtn:hover {
   background: var(--p-chip-hover);
   border-color: var(--p-edge-hover);
 }
 
-.p-qsel:focus-visible {
+.p-qbtn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-/* select 收起时只有一段文案；原生下拉三角在深色底上仍是系统色，Chrome 下即可，
-   Firefox 用 color-scheme 让箭头跟着主题（不写它的话深色 chip 上的箭头几乎看不见） */
-.p-qsel option {
+/* 展开态与齿轮按钮「开着」同一套高亮：用户能看出「这块是我点开的」 */
+.p-qbtn[aria-expanded='true'] {
+  border-color: var(--accent);
+  background: var(--p-chip-hover);
+  box-shadow: var(--p-shadow), inset 0 0 0 1px var(--accent);
+}
+
+.p-qbtn-t {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.p-qcaret {
+  width: 14px !important;
+  height: 14px !important;
+  opacity: 0.85;
+  transition: transform 0.12s ease;
+}
+
+.p-qbtn[aria-expanded='true'] .p-qcaret {
+  transform: rotate(180deg);
+}
+
+/* ============================ P5.37 画质菜单面板 ============================ */
+
+/* 为什么是一块**绝对定位的面板**而不是继续用原生列表：原生 select 的展开列表由系统绘制，
+   CSS 一行都进不去（深色播放器上必弹一张系统白纸）。自绘之后颜色才真正只吃 mediaTheme 令牌：
+   底 = --bg-2、hover / 高亮底 = --bg-3、文字 = --fg、选中 = --accent，亮暗两套都由主题给，
+   面板本身不写死任何一个颜色。
+   层级 7 > 控制条自身的 5（.p-ctrl 也是 z-index 5 的层叠上下文，面板是它的子层，所以既压在
+   画面（舞台 1 / 冻结层 2 / 字幕层 4）之上，也不会被 .p-stage 的 overflow:hidden 裁掉 ——
+   面板的包含块是 .p-qwrap，而 .p-ctrl / .p-fs-wrap 都是 overflow:visible）。
+   几何：右对齐贴触发按钮、底边在按钮上沿 6px 之上，向上展开（控制条永远贴着底部，
+   向下展开一定出视口）。 */
+.p-qmenu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 7;
+  min-width: 168px;
+  max-width: min(240px, calc(100vw - 24px));
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
   background: var(--bg-2);
+  /* 「内描边」这一层让面板在浅色主题下也有一道内缘，不至于糊在画面边缘上 */
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.42),
+    inset 0 0 0 1px color-mix(in srgb, var(--fg) 10%, transparent);
+  font-size: 12.5px;
+  line-height: 1.5;
   color: var(--fg);
+  text-shadow: none;
+}
+
+.p-qopt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 9px;
+  border-radius: 7px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.p-qopt.is-cur {
+  background: var(--bg-3);
+}
+
+.p-qopt.is-sel {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.p-qopt.is-sel.is-cur {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.p-qopt-ck {
+  width: 14px !important;
+  height: 14px !important;
+  flex: none;
+}
+
+.p-qmenu-hint {
+  margin: 4px 2px 1px;
+  padding-top: 5px;
+  border-top: 1px solid var(--line);
+  color: var(--fg-dim);
+  font-size: 11.5px;
+  line-height: 1.4;
 }
 
 /* ============================ P5.34 自绘字幕层 ============================ */
@@ -3831,14 +4101,19 @@ defineExpose({
 
 /* P5.24-A：按钮自身承担可读性 —— 深色 chip + 白色描边 + 投影，压在亮帧上也读得出；
    底色接近透明之后，这一层才是「不影响按钮可见」的那一半（另一半是对比度数值）。 */
+/* P5.37（用户反馈 1「上下部切换图标未居中」）：按钮内的图标从**字体字符**换成了内联 SVG
+   （根因见 PlayerIcon.vue：字形墨迹在 advance box 里本来就偏，flex 居中的是行盒不是墨迹）。
+   对齐方式随之从 inline-flex 换成 inline-grid + place-items:center：两个方向都由一个声明负责，
+   「横向居中了、纵向没居中」这种半边失效写法在 grid 里不存在。
+   横向内边距 8 → 5：图标墨迹（18px SVG 里约 13px）比原来的字形略宽，
+   收到 5px 后按钮盒仍是 30px（16 的旧值没有一处依赖，见下：min-width 30 才是下界）。 */
 .p-btn {
   flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-grid;
+  place-items: center;
   min-width: 30px;
   height: 30px;
-  padding: 0 8px;
+  padding: 0 5px;
   border: 1px solid var(--p-edge);
   border-radius: 8px;
   background: var(--p-chip);
@@ -3850,6 +4125,12 @@ defineExpose({
   text-shadow: var(--p-shadow);
   box-shadow: var(--p-shadow);
   transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+/* 播放键的图标大一号（三角的墨迹本身就比其它图标小，视觉重量要拉平；几何居中不受影响） */
+.p-btn-play .p-ico {
+  width: 20px;
+  height: 20px;
 }
 
 .p-btn:hover {
@@ -4579,10 +4860,26 @@ defineExpose({
 
   /* P5.34：控制栏的画质下拉与其它按钮同高（38px），宽度收紧 —— 375px 上右组是
      「⏴ ⏵ | 画质 | ⚙ ⛶」，不让它把左组的「⏮ ▶ ⏭ 🔊」挤到第三行 */
-  .p-qsel {
+  .p-qbtn {
     max-width: 112px;
     height: 38px;
     font-size: 12px;
+  }
+
+  /* 窄屏按钮 38px，图标同步放大一档（墨迹 ≈13px；居中是构造出来的，与尺寸无关） */
+  .p-btn .p-ico {
+    width: 20px;
+    height: 20px;
+  }
+
+  .p-btn-play .p-ico {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* 菜单在 375 宽上不能被挤成一条缝，也不能贴到视口边缘 */
+  .p-qmenu {
+    min-width: 152px;
   }
 
 

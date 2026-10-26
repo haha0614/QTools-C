@@ -26,8 +26,12 @@ service.interceptors.response.use(
       if (!silent) {
         ElMessage.error(msg)
       }
-      // 无论是否静默，都保持 reject 行为不变
-      return Promise.reject(new Error(msg))
+      // 无论是否静默，都保持 reject 行为不变；业务码与原始体挂到 error 上，
+      // 调用方据此区分「接口未就绪（401）/ 参数非法 / 无权限」，不必再猜（P5.41）
+      const error = new Error(msg)
+      error.status = data.code
+      error.body = data
+      return Promise.reject(error)
     }
 
     // 直接解包，调用方拿到的就是 data

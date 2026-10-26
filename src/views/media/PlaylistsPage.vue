@@ -73,7 +73,8 @@
       </div>
     </div>
 
-    <div v-if="toast" class="ms-toast" role="status" aria-live="polite">{{ toast }}</div>
+    <!-- 页面级轻提示：媒体站唯一实现（顶部居中、可堆叠），样式不再由页面自己写 -->
+    <PageToast :toasts="toasts" />
   </div>
 </template>
 
@@ -83,6 +84,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useMediaApi } from '@/composables/useMediaApi'
 import { moveItem, normalizePlaylistDetail, normalizePlaylistList } from './video/playlistOrder'
 import PlaylistGrid from './video/PlaylistGrid.vue'
+import PageToast from './PageToast.vue'
+import { usePageToast } from './usePageToast.js'
 
 const api = useMediaApi()
 const route = useRoute()
@@ -113,16 +116,8 @@ const ordered = computed(() =>
   })
 )
 
-const toast = ref('')
-let toastTimer = 0
-function showToast(msg) {
-  if (!msg) return
-  toast.value = msg
-  clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => {
-    toast.value = ''
-  }, 2400)
-}
+/* 提示统一走 usePageToast（与视频库同一套）：堆叠、时长、卸载清理都在那里 */
+const { toasts, push: showToast } = usePageToast()
 
 /* ------------------------------------------------------------------ 数据加载 */
 

@@ -3,21 +3,24 @@
  * 谁在用：video/PlaylistPicker.vue（工具栏批量入口，居中弹层）
  *         video/VideoCard.vue（卡片右下角入口，锚在按钮上方的轻量菜单）
  * 一根线：GET /api/media/playlists 拉清单 → POST /api/media/playlist/{id}/videos 追加（后端按 id 幂等去重）
- *         → POST /api/media/playlists 新建（videoIds 一并带上，省一次追加）
+ *         → POST /api/media/playlists 新建（**只发 name**，视频随后单独追加：后端 create 从不读 videoIds）
  * 闸门：level=off 直接不给入口（两个入口都在自己的模板里拦）；level=local 由本模块给出统一文案并禁写，
  *       因为播放列表只存在服务端，本地档没有 localStorage 兜底 —— 与工具栏入口保持同一句话。
- * 失败：全部 silent + try/catch，接口未就绪时只置一句可读提示（unavailable），不抛未捕获异常。
+ * 失败：全部 silent + try/catch，不抛未捕获异常；文案由 playlistWrite.describePlaylistError 按
+ *       「HTTP 状态 + 后端 {"error":…} 原文」分级给出（400 参数 / 403 策略 / 404 未就绪 / 409 / 超时 / 断网）。
+ *       P5.41 之前所有失败都写成「接口未就绪或网络异常」，把「后端只认 videoId」的 400 藏成了假网络故障。
  * 已加入：清单条目自带 videoIds 时按内联 id 判定（playlistOrder.playlistMembership，零额外请求）；
  *        不带内联 id 的清单退化为「本会话内刚加入过」的内存标记（模块级 Set，卡片卸载重挂仍有效）。
  */
 import { computed, ref, toValue } from 'vue'
 import { useMediaApi } from '@/composables/useMediaApi'
 import { normalizePlaylistList, playlistMembership } from './playlistOrder'
+import { addOutcome, countAdded, describePlaylistError } from './playlistWrite'
 
 /** local 档统一文案：与工具栏入口同一句（含「不会写入服务端」的事实说明） */
 export const PL_HINT_LOCAL =
   '本地编辑：不会写入服务端 —— 播放列表保存在服务端，本地档不可写，请切到「完整编辑」档再试。'
-/** 接口未就绪：菜单/弹层内展示的一句提示（不弹全局错误） */
+/** 接口未就绪：菜单/弹层内展示的一句提示（不弹全局错误）；只在拿不到具体错误时兜底 */
 export const PL_HINT_UNAVAILABLE = '播放列表接口未就绪（GET /api/media/playlists）'
 /** 空清单文案 */
 export const PL_HINT_EMPTY = '还没有播放列表'
@@ -42,27 +45,34 @@ export function createdMessage(name, n) {
   return '已新建播放列表「' + name + '」并加入 ' + n + ' 个视频'
 }
 
+/** 幂等命中：目标视频本来就在这个列表里（后端 200 + added=false，不是失败） */
+export function alreadyMessage(name) {
+  return '「' + name + '」里已经有这些视频，无需重复加入'
+}
+
 /**
  * @param {object} options
  * @param {import('vue').MaybeRefOrGetter<string>} [options.level] 编辑策略档位（off/local/full）
  * @param {import('vue').MaybeRefOrGetter<string[]>} [options.videoIds] 要加入的视频 id（单条或批量）
- * @param {(msg: string) => void} [options.notify] 失败提示出口（页面 toast）
+ * @param {(msg: string) => void} [options.notify] 提示出口（页面 toast）
  */
 export function usePlaylistAdd(options = {}) {
   const api = useMediaApi()
-  const notifyError = (msg) => {
+  const notify = (msg) => {
     if (typeof options.notify === 'function') options.notify(msg)
   }
 
   const loading = ref(false)
   const items = ref([])
-  /** 非空 = 接口未就绪 / 读取失败的可读提示 */
+  /** 非空 = 读取失败的可读提示（按错误分级，不再是一句笼统的「接口未就绪」） */
   const unavailable = ref('')
   /** 正在提交的播放列表 id（'__new' 表示新建中）；非空时列表按钮全禁用，防重复提交 */
   const busyId = ref('')
   const newName = ref('')
   /** 菜单内是否已展开「新建」输入态 */
   const creating = ref(false)
+  /** 上一次写操作的真实结果：added=实际新增条数，already=本来就在里面（幂等命中） */
+  const lastAdd = ref({ added: 0, requested: 0, already: false })
 
   const level = computed(() => String(toValue(options.level) || 'full'))
 
@@ -91,7 +101,7 @@ export function usePlaylistAdd(options = {}) {
     return ids.length > 0 && ids.every((id) => sessionJoined.has(joinKey(playlistId, id)))
   }
 
-  /** 拉一次清单：失败只记提示（调用方仍可尝试新建，成功后列表会刷新） */
+  /** 拉一次清单：失败按错误分级记提示（调用方仍可尝试新建） */
   async function load() {
     loading.value = true
     unavailable.value = ''
@@ -100,9 +110,9 @@ export function usePlaylistAdd(options = {}) {
       const list = normalizePlaylistList(res)
       const inline = playlistMembership(res, targetIds())
       items.value = list.map((p) => ({ ...p, joined: !!inline[p.id] || joinedNow(p.id) }))
-    } catch {
+    } catch (err) {
       items.value = []
-      unavailable.value = PL_HINT_UNAVAILABLE
+      unavailable.value = err ? describePlaylistError(err, 'load') : PL_HINT_UNAVAILABLE
     } finally {
       loading.value = false
     }
@@ -119,20 +129,41 @@ export function usePlaylistAdd(options = {}) {
     creating.value = false
   }
 
+  /**
+   * 把 ids 追加到列表，并返回「这次到底新加了几条」。
+   *
+   * 一次批量请求打过去（新后端：{videoIds:[…]} 一次加完）；
+   * 只认 {videoId} 的老后端只会加进第一个 —— 响应里缺的那几个逐个补发，最终结果与后端版本无关。
+   */
+  async function appendAll(playlistId, ids) {
+    let res = await api.addPlaylistVideos(playlistId, ids, { silent: true })
+    let out = addOutcome(res, ids)
+    let justAdded = countAdded(out)
+    for (const missingId of out.missing) {
+      res = await api.addPlaylistVideos(playlistId, [missingId], { silent: true })
+      justAdded += countAdded(addOutcome(res, [missingId]))
+    }
+    out = addOutcome(res, ids)
+    return { justAdded, out }
+  }
+
   /** 把目标视频追加到已有列表；成功返回 true（弹层关不关由调用方决定） */
   async function addTo(p) {
     if (!p || busyId.value || blocked.value) return false
     const ids = targetIds()
     if (!ids.length) return false
     busyId.value = p.id
+    lastAdd.value = { added: 0, requested: ids.length, already: false }
     try {
-      await api.addPlaylistVideos(p.id, ids, { silent: true })
+      const { justAdded, out } = await appendAll(p.id, ids)
       markJoined(p.id)
       const hit = items.value.find((x) => String(x.id) === String(p.id))
       if (hit) hit.joined = true
+      lastAdd.value = { added: justAdded, requested: ids.length, already: out.already }
+      if (out.already) notify(alreadyMessage(p.name))
       return true
-    } catch {
-      notifyError('加入播放列表失败：播放列表接口未就绪或网络异常')
+    } catch (err) {
+      notify(describePlaylistError(err, 'add'))
       return false
     } finally {
       busyId.value = ''
@@ -143,7 +174,7 @@ export function usePlaylistAdd(options = {}) {
    * 从某个列表移出目标视频（P5.26：信息栏播放列表分区需要「移出」，两个旧入口只有「加入」）。
    * 后端：DELETE /api/media/playlist/{id}/videos/{videoId}（逐条删；批量目标就逐条调用）。
    * 成功：清掉本会话的已加入标记 + 把该条目 joined 置 false（数量同步 -1，不重拉清单）。
-   * 失败：只提示，不改任何状态（用户在界面上看到的仍是「已加入」，可以重试）。
+   * 失败：只提示真实原因，不改任何状态（用户在界面上看到的仍是「已加入」，可以重试）。
    */
   async function removeFrom(p) {
     if (!p || busyId.value || blocked.value) return false
@@ -161,33 +192,48 @@ export function usePlaylistAdd(options = {}) {
         if (typeof hit.count === 'number' && hit.count > 0) hit.count = hit.count - 1
       }
       return true
-    } catch {
-      notifyError('从播放列表移出失败：播放列表接口未就绪或网络异常')
+    } catch (err) {
+      notify(describePlaylistError(err, 'remove'))
       return false
     } finally {
       busyId.value = ''
     }
   }
 
-  /** 新建并加入；成功返回 { id, name }，失败返回 null */
+  /**
+   * 新建并加入；成功返回 { id, name, added }，失败返回 null。
+   *
+   * 后端 create 只认 name（视频另走追加），所以这里建完必须自己追加一次：
+   * 追加是幂等的，重名复用已有列表时也不会重复插。
+   */
   async function createAndAdd() {
     if (!canCreate.value) return null
     const name = String(newName.value || '').trim()
     const ids = targetIds()
     busyId.value = '__new'
+    lastAdd.value = { added: 0, requested: ids.length, already: false }
     try {
-      const res = await api.createPlaylist({ name, videoIds: ids }, { silent: true })
+      const res = await api.createPlaylist({ name }, { silent: true })
       const body = res && typeof res === 'object' && res.data && typeof res.data === 'object' ? res.data : res
       const newId = body && body.id != null ? String(body.id) : ''
-      if (newId) markJoined(newId)
+      let justAdded = 0
+      let already = false
+      if (newId && ids.length) {
+        const made = await appendAll(newId, ids)
+        justAdded = made.justAdded
+        already = made.out.already
+        markJoined(newId)
+        if (already) notify(alreadyMessage(name))
+      }
       await load()
       if (newId) {
         const hit = items.value.find((x) => String(x.id) === newId)
         if (hit) hit.joined = true
       }
-      return { id: newId, name }
-    } catch {
-      notifyError('新建播放列表失败：播放列表接口未就绪或网络异常')
+      lastAdd.value = { added: justAdded, requested: ids.length, already }
+      return { id: newId, name, added: justAdded }
+    } catch (err) {
+      notify(describePlaylistError(err, 'create'))
       return null
     } finally {
       busyId.value = ''
@@ -211,6 +257,7 @@ export function usePlaylistAdd(options = {}) {
     blocked,
     canCreate,
     targetCount,
+    lastAdd,
     load,
     openCreate,
     closeCreate,

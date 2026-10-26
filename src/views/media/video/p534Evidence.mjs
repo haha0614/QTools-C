@@ -280,7 +280,12 @@ for (const vp of VIEWPORTS) {
   ok(ctrl.qualityInRight === true, 'b4 画质下拉在右侧功能组（原 ⏮⏭ 那一格）')
   ok(ctrl.qualityInHead === false, 'b5 画质下拉不在头部')
   ok(R[2].x < R[3].x && R[3].x < R[4].x, 'b6 画质与设置 / 全屏并列在同一组', R[2].x + ' < ' + R[3].x + ' < ' + R[4].x)
-  ok(ctrl.buttonsTotal <= 8, 'c1 一级可见按钮 ≤ 8', '共 ' + ctrl.buttonsTotal + ' 个：' + L.concat(R).map((x) => x.aria || x.tag).join(' / '))
+  /* P5.37 调整：这条旧断言写的是「一级可见按钮 ≤ 8」—— 那个 8 是「8 颗图标按钮」，
+     当时画质是控制栏里的一个 <select>（select 不算 button，所以总数正好 8）。
+     P5.37 把画质换成「chip 触发按钮 + 自绘面板」（原生列表由系统绘制，深色播放器上无法美化），
+     触发按钮是一个真 <button>（键盘 / 读屏要用它），于是控制条里的 button 变成 9 个。
+     判的东西没变（一级可见控件仍然是最少的那一档），只是把上限跟着控件类型改成 9。 */
+  ok(ctrl.buttonsTotal <= 9, 'c1 一级可见控件 ≤ 9（8 颗图标按钮 + 画质触发按钮）', '共 ' + ctrl.buttonsTotal + ' 个：' + L.concat(R).map((x) => x.aria || x.tag).join(' / '))
   ok(overflow.docScrollW <= overflow.docClientW + 1, 'h1 无横向溢出', overflow.docScrollW + '/' + overflow.docClientW)
 
   if (vp.name === 'wide-1600x1000') {

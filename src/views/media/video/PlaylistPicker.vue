@@ -84,6 +84,7 @@ const {
   blocked,
   canCreate,
   targetCount,
+  lastAdd,
   load,
   addTo: addToList,
   createAndAdd: createAndAddToList,
@@ -107,18 +108,20 @@ watch(
   }
 )
 
-/** 批量入口：加入成功就关弹层（工具栏入口是一次性动作） */
+/**
+ * 批量入口：加入成功就关弹层（工具栏入口是一次性动作）。
+ * 「已加入…N 个」只报真实新增数（lastAdd.added）：幂等命中时 usePlaylistAdd 已经给过提示，这里不再重复（P5.41）。
+ */
 async function addTo(p) {
-  if (await addToList(p)) {
-    emit('added', addedMessage(p && p.name, targetCount.value))
-    emit('close')
-  }
+  if (!(await addToList(p))) return
+  if (lastAdd.value.added > 0) emit('added', addedMessage(p && p.name, lastAdd.value.added))
+  emit('close')
 }
 
 async function createAndAdd() {
   const made = await createAndAddToList()
   if (!made) return
-  emit('added', createdMessage(made.name, targetCount.value))
+  if (made.added > 0) emit('added', createdMessage(made.name, made.added))
   emit('close')
 }
 </script>

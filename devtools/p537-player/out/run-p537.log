@@ -1,0 +1,154 @@
+    实测台 P5.37 播放器图标居中 + 画质自定义下拉 实测台|object|ctrl
+
+[A] 图标居中：8 个控制栏按钮，墨迹 bbox 中心与按钮中心偏差 ≤0.5px（横 / 纵各一个数）
+    prev 上一条  按钮 {"x":14,"y":962,"w":30,"h":30,"right":44,"bottom":992}  图标墨迹 {"x":29,"y":977}  按钮中心 {"x":29,"y":977}
+      偏差 横 0px / 纵 0px   （svg 盒偏差 横 0px / 纵 0px；墨迹像素 890 个）
+  OK  a0.1) prev 上一条 按钮里只有 1 个子元素且是 <svg> — svg×1
+  OK  a0.2) prev 上一条 的 svg 是 display:block（不带基线间隙） — block
+  OK  a0.3) prev 上一条 量到真实墨迹（>20 像素） — 890
+  OK  a0.4) prev 上一条 横向偏差 ≤0.5px（实测 0px） — 0
+  OK  a0.5) prev 上一条 纵向偏差 ≤0.5px（实测 0px） — 0
+    play 播放  按钮 {"x":50,"y":962,"w":40,"h":30,"right":90,"bottom":992}  图标墨迹 {"x":69.875,"y":977}  按钮中心 {"x":70,"y":977}
+      偏差 横 -0.12px / 纵 0px   （svg 盒偏差 横 0px / 纵 0px；墨迹像素 1150 个）
+  OK  a1.1) play 播放 按钮里只有 1 个子元素且是 <svg> — svg×1
+  OK  a1.2) play 播放 的 svg 是 display:block（不带基线间隙） — block
+  OK  a1.3) play 播放 量到真实墨迹（>20 像素） — 1150
+  OK  a1.4) play 播放 横向偏差 ≤0.5px（实测 -0.12px） — -0.125
+  OK  a1.5) play 播放 纵向偏差 ≤0.5px（实测 0px） — 0
+    next 下一条  按钮 {"x":96,"y":962,"w":30,"h":30,"right":126,"bottom":992}  图标墨迹 {"x":111,"y":977}  按钮中心 {"x":111,"y":977}
+      偏差 横 0px / 纵 0px   （svg 盒偏差 横 0px / 纵 0px；墨迹像素 890 个）
+  OK  a2.1) next 下一条 按钮里只有 1 个子元素且是 <svg> — svg×1
+  OK  a2.2) next 下一条 的 svg 是 display:block（不带基线间隙） — block
+  OK  a2.3) next 下一条 量到真实墨迹（>20 像素） — 890
+  OK  a2.4) next 下一条 横向偏差 ≤0.5px（实测 0px） — 0
+  OK  a2.5) next 下一条 纵向偏差 ≤0.5px（实测 0px） — 0
+    mute 静音  按钮 {"x":132,"y":962,"w":30,"h":30,"right":162,"bottom":992}  图标墨迹 {"x":147,"y":977}  按钮中心 {"x":147,"y":977}
+      偏差 横 0px / 纵 0px   （svg 盒偏差 横 0px / 纵 0px；墨迹像素 1000 个）
+  OK  a3.1) mute 静音 按钮里只有 1 个子元素且是 <svg> — svg×1
+  OK  a3.2) mute 静音 的 svg 是 display:block（不带基线间隙） — block
+  OK  a3.3) mute 静音 量到真实墨迹（>20 像素） — 1000
+  OK  a3.4) mute 静音 横向偏差 ≤0.5px（实测 0px） — 0
+  OK  a3.5) mute 静音 纵向偏差 ≤0.5px（实测 0px） — 0
+    framePrev 上一帧  按钮 {"x":892,"y":962,"w":30,"h":30,"right":922,"bottom":992}  图标墨迹 {"x":907,"y":977}  按钮中心 {"x":907,"y":977}
+      偏差 横 0px / 纵 0px   （svg 盒偏差 横 0px / 纵 0px；墨迹像素 558 个）
+  OK  a4.1) framePrev 上一帧 按钮里只有 1 个子元素且是 <svg> — svg×1
+  OK  a4.2) framePrev 上一帧 的 svg 是 display:block（不带基线间隙） — block
+  OK  a4.3) framePrev 上一帧 量到真实墨迹（>20 像素） — 558
+  OK  a4.4) framePrev 上一帧 横向偏差 ≤0.5px（实测 0px） — 0
+  OK  a4.5) framePrev 上一帧 纵向偏差 ≤0.5px（实测 0px） — 0
+    frameNext 下一帧  按钮 {"x":926,"y":962,"w":30,"h":30,"right":956,"bottom":992}  图标墨迹 {"x":941,"y":977}  按钮中心 {"x":941,"y":977}
+      偏差 横 0px / 纵 0px   （svg 盒偏差 横 0px / 纵 0px；墨迹像素 558 个）
+  OK  a5.1) frameNext 下一帧 按钮里只有 1 个子元素且是 <svg> — svg×1
+  OK  a5.2) frameNext 下一帧 的 svg 是 display:block（不带基线间隙） — block
+  OK  a5.3) frameNext 下一帧 量到真实墨迹（>20 像素） — 558
+  OK  a5.4) frameNext 下一帧 横向偏差 ≤0.5px（实测 0px） — 0
+  OK  a5.5) frameNext 下一帧 纵向偏差 ≤0.5px（实测 0px） — 0
+    gear 设置  按钮 {"x":1089,"y":962,"w":30,"h":30,"right":1119,"bottom":992}  图标墨迹 {"x":1104,"y":977}  按钮中心 {"x":1104,"y":977}
+      偏差 横 0px / 纵 0px   （svg 盒偏差 横 0px / 纵 0px；墨迹像素 1476 个）
+  OK  a6.1) gear 设置 按钮里只有 1 个子元素且是 <svg> — svg×1
+  OK  a6.2) gear 设置 的 svg 是 display:block（不带基线间隙） — block
+  OK  a6.3) gear 设置 量到真实墨迹（>20 像素） — 1476
+  OK  a6.4) gear 设置 横向偏差 ≤0.5px（实测 0px） — 0
+  OK  a6.5) gear 设置 纵向偏差 ≤0.5px（实测 0px） — 0
+    fs 全屏  按钮 {"x":1125,"y":962,"w":30,"h":30,"right":1155,"bottom":992}  图标墨迹 {"x":1140,"y":977}  按钮中心 {"x":1140,"y":977}
+      偏差 横 0px / 纵 0px   （svg 盒偏差 横 0px / 纵 0px；墨迹像素 1024 个）
+  OK  a7.1) fs 全屏 按钮里只有 1 个子元素且是 <svg> — svg×1
+  OK  a7.2) fs 全屏 的 svg 是 display:block（不带基线间隙） — block
+  OK  a7.3) fs 全屏 量到真实墨迹（>20 像素） — 1024
+  OK  a7.4) fs 全屏 横向偏差 ≤0.5px（实测 0px） — 0
+  OK  a7.5) fs 全屏 纵向偏差 ≤0.5px（实测 0px） — 0
+
+[B] 画质：原生 select 已不存在，点开是自绘面板（深色 token / 圆角 10 / 内描边 / 阴影 / 12.5px）
+    控制栏 select 数=0 / 带 data-qt-quality 的 select 数=0 / 触发元素=BUTTON
+  OK  b1) 控制栏里不再有任何原生 <select> — 0
+  OK  b2) 画质不再是 select[data-qt-quality]（锚点已挪到触发按钮上） — 0
+  OK  b3) 画质触发是按钮（键盘 / 读屏可直接用） — BUTTON
+  OK  b4) 初始态没有面板（v-if，不在 DOM 里） — false
+  OK  b5) 点触发按钮 → 出现自绘面板 [data-qt-qmenu] — true
+    面板 rect={"x":908,"y":821,"w":168,"h":135,"right":1076,"bottom":956} bg=rgb(29, 30, 31)（--bg-2=rgb(29, 30, 31)） 圆角=10px 字=12.5px 层级=7（控制条 5）
+    阴影=rgba(0, 0, 0, 0.42) 0px 14px 32px 0px, color(srgb 0.898039 0.917647  边框=1px rgb(65, 66, 67)
+    选中项 color=rgb(64, 158, 255)（--accent=rgb(64, 158, 255)） hover/highlight 底=color(srgb 0.25098 0.619608 1 / 0.16)（--bg-3=rgb(38, 39, 39)）
+    选项=[{"t":"原画（直连）","sel":"true","cls":"p-qopt is-sel is-cur"},{"t":"720p","sel":"false","cls":"p-qopt"},{"t":"480p","sel":"false","cls":"p-qopt"},{"t":"360p","sel":"false","cls":"p-qopt"}] role={"menu":"listbox","opt":"option"} aria-expanded=true 触发文案="原画（直连）"
+  OK  b6) 面板背景 = --bg-2 令牌（不是系统白） — rgb(29, 30, 31)
+  OK  b7) 深色主题下面板是深色（均值亮度 30 < 80） — 30
+  OK  b8) 圆角 10px — 10px
+  OK  b9) 有阴影 + 内描边（一条 box-shadow 里两层） — rgba(0, 0, 0, 0.42) 0px 14px 32px 0px, color(srgb 0.898039 0
+  OK  b10) 字号 12.5px — 12.5px
+  OK  b11) 面板层级高于控制条（7 > 5） — 7/5
+  OK  b12) 选中项用 accent 高亮 — rgb(64, 158, 255) vs rgb(64, 158, 255)
+  OK  b13) 语义 = listbox / option — {"menu":"listbox","opt":"option"}
+  OK  b14) 4 个档位、恰好 1 个 aria-selected — ["原画（直连）","720p","480p","360p"]
+  OK  b15) 打开时触发按钮 aria-expanded=true — true
+    视口内=true rect={"x":908,"y":821,"w":168,"h":135,"right":1076,"bottom":956} 视口=1600×1000 命中自身=true
+    祖先 overflow=["p-qwrap:visible","p-grp p-grp-right:visible","p-ctrlline:visible","p-ctrl:visible","p-fs-wrap:visible","p-main:visible","p-body:visible","player:visible",":visible"]
+  OK  b16) 面板 rect 完整在视口内（不被裁切） — {"x":908,"y":821,"w":168,"h":135,"right":1076,"bottom":956}
+  OK  b17) 面板中心点命中的就是面板（没有东西压在上面 / 没有被裁剪）
+  OK  b18) 面板自身没有滚动裁剪（scrollHeight ≤ clientHeight）
+  OK  b19) 祖先链没有 overflow:hidden/auto（舞台的 overflow:hidden 不会裁到它） — ["p-qwrap:visible","p-grp p-grp-right:visible","p-ctrlline:visible","p-ctrl:visible","p-fs-wrap:visible","p-main:visible","p-body:visible","player:visible",":visible"]
+    键盘高亮：0 →↓ 1 →↓ 2 →↑ 1  aria-activedescendant=qt-qopt-720
+  OK  b20) 打开时高亮落在「当前档」（原画，索引 0） — 0
+  OK  b21) ↑↓ 真的在移动高亮（0→1→2→1） — [0,1,2,1]
+  OK  b22) aria-activedescendant 跟着高亮项走 — qt-qopt-720
+    Enter 之后：面板开=false 触发按钮值=720 父级 quality=720 焦点=p-qbtn
+    src=/api/media/stream?p=demo%2Fp531.mp4&q=720&t=0
+  OK  b23) Enter 应用后菜单关闭 — false
+  OK  b24) Enter 应用的正是高亮那一档（720），且父级 quality 同步 — 720/720
+  OK  b25) 仍然走同一条 onQualityPick → <video>.src 换成 q=720 — /api/media/stream?p=demo%2Fp531.mp4&q=720&t=0
+  OK  b26) 应用后焦点回到触发按钮（Tab 顺序不乱） — p-qbtn
+    键盘事件外泄计数（Enter 应用那次）={"esc":0,"arrow":0,"enter":0}
+    再打开=true → Esc：面板开=false 页面收到 Esc 0 次，当前档仍是 720
+  OK  b27) 再点触发按钮能重新打开（没有「一开就关」的死锁） — true
+  OK  b28) Esc 关闭菜单 — false
+  OK  b29) 菜单开着时 Esc 被吞掉（页面级监听收到 0 次 → 不会顺手把播放器关掉） — 0
+  OK  b30) Esc 只关面板、不改档位 — 720
+  OK  b31) 菜单关闭时 Esc 正常冒泡到页面（关闭态不劫持 Esc） — 1
+    关闭态 ↓：面板开=true 音量=0.4（0.40 起，没被 ↑↓ 调过）
+  OK  b32) 焦点在触发按钮时按 ↓ 会打开面板（与原生 select 一致） — true
+  OK  b33) 那次 ↓ 被吞掉：页面级 ↑↓ 计数 0、音量仍是 0.40 — {"open":true,"vol":0.4,"arrow":0}
+    点外部（时间码）之后：面板开=false 档位=720
+  OK  b34) 点面板外部关闭 — false
+  OK  b35) 点外部只关面板、不改档位 — 720
+    鼠标点 360p：面板开=false 触发按钮=360/360p 父级=360
+    src=/api/media/stream?p=demo%2Fp531.mp4&q=360&t=0
+  OK  b36) 鼠标点选一项 → 应用并关闭（点选与键盘同一入口） — 360/360
+  OK  b37) 点选后 <video>.src 同步换成 q=360 — /api/media/stream?p=demo%2Fp531.mp4&q=360&t=0
+  OK  b38) 触发按钮文案跟着当前档位 — 360p
+    亮色主题：面板 bg=rgb(255, 255, 255)（--bg-2=rgb(255, 255, 255)） / 深色主题 bg=rgb(29, 30, 31)
+  OK  b40) 亮色主题下面板同样是 --bg-2 令牌，且与深色值不同（两套主题各自成立） — rgb(255, 255, 255) vs rgb(29, 30, 31)
+  OK  b39) 收尾：回原画档（后续几何判据在干净状态上量）
+
+[C] 面板打开 → 鼠标移出视频区**不会**自动隐藏；关闭时仍会隐藏（对照）
+    对照（无面板）：进视频区可见=true → 移到头部 500ms 后隐藏=true
+  OK  c1) 对照组成立：没有浮层时「移出即隐藏」照常 — [true,true]
+    面板开着：回到视频区可见=true 面板=true → 移到头部 700ms：隐藏=false 面板还在=true 控制条 opacity=1
+  OK  c2) 面板已打开（前置）
+  OK  c3) 面板开着时移出视频区**不隐藏**控制条（overlay 闸门生效） — false
+  OK  c4) 控制条没被收走，面板也还在 — true
+  OK  c5) 控制条 opacity 仍为 1（没有半透明残影） — 1
+  OK  c6) 关掉面板后「移出即隐藏」立刻恢复（不会被永久钉住） — true
+
+[D] containment：本轮没碰的既有能力仍在
+    舞台高=935.67 进度条 step=0.03333333333333333 时间码="03:21:17 / 120:00:00" aria="03:21:17（第 6047 帧） / 120:00:00"
+    控制条按钮=8（其中内联 SVG=8） 时间码行高=30 无溢出 1585/1600
+  OK  d1) 舞台仍定高（未被控制条压扁） — 935.67
+  OK  d2) 进度条仍是帧级 step（1/30） — 0.03333333333333333
+  OK  d3) 时间码仍是 mm:ss:ff / mm:ss:ff — 03:21:17 / 120:00:00
+  OK  d4) aria-valuetext 仍含帧号 — 03:21:17（第 6047 帧） / 120:00:00
+  OK  d5) 一级图标按钮仍是 8 个，且 8 个都换成了内联 SVG — 8/8
+  OK  d6) 设置入口 / 全屏 / 两栏 / AB 读数仍在 — [true,true,true,true]
+  OK  d7) 控制条仍是竖向渐变底座 — linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45
+  OK  d8) 1600 宽无横向溢出 — 1585 <= 1600
+    375 宽：控制条 3 行（组 y=[656,744,700]） 控制条高=130 宽 360/375
+    画质 chip={"x":103,"y":700,"w":104,"h":38,"right":207,"bottom":738} 时间码={"x":206,"y":663.2,"w":116.94,"h":23.59,"right":322.94,"bottom":686.8}
+  OK  d9) 375 宽无横向溢出 — 360 <= 375
+  OK  d10) 375 宽控制栏仍是 3 行（左右两组 + 中组独占一行） — 3
+    375 宽 svg 盒偏差=[{"aria":"上一条","dx":0,"dy":0},{"aria":"播放","dx":0,"dy":0},{"aria":"下一条","dx":0,"dy":0},{"aria":"静音","dx":0,"dy":0},{"aria":"上一帧","dx":0,"dy":0},{"aria":"下一帧","dx":0,"dy":0},{"aria":"播放设置","dx":0,"dy":0},{"aria":"全屏","dx":0,"dy":0}]
+  OK  d11) 375 宽（38px 按钮 / 20px 图标）图标仍居中（≤0.5px） — [["上一条",0,0],["播放",0,0],["下一条",0,0],["静音",0,0],["上一帧",0,0],["下一帧",0,0],["播放设置",0,0],["全屏",0,0]]
+    375 宽面板={"x":55,"y":559,"w":152,"h":135,"right":207,"bottom":694,"inView":true,"inside":true,"vw":375,"vh":780}
+  OK  d12) 375 宽面板仍完整在视口内且未被遮挡 — {"x":55,"y":559,"w":152,"h":135,"right":207,"bottom":694,"inView":true,"inside":true,"vw":375,"vh":780}
+  OK  d13) 页面零运行时异常 — []
+  OK  d14) 控制台零 error / 异常
+
+report → evidence/p537Evidence.report.json
+
+P5.37 真浏览器实测：100 passed, 0 failed

@@ -52,7 +52,7 @@ function readRailCollapsed() {
 
 const railCollapsed = ref(readRailCollapsed())
 
-// 切换折叠并持久化：宽度由 CSS 变量 --qt-rail-w 驱动（200px ↔ 56px）
+// 切换折叠并持久化：宽度由 CSS 变量 --qt-rail-w 驱动（176px ↔ 56px）
 function toggleRail() {
   railCollapsed.value = !railCollapsed.value
   try {
@@ -452,9 +452,9 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   height: 60px;
-  padding: 0 14px;
+  padding: 0 12px;
   color: var(--qt-text-primary);
   font-size: 16px;
   font-weight: 600;
@@ -474,7 +474,7 @@ onBeforeUnmount(() => {
 .qt-rail__nav {
   flex: 1 1 auto;
   min-height: 0;
-  padding: 4px 8px 8px;
+  padding: 4px 6px 8px;
   overflow-x: hidden;
   overflow-y: auto;
 }
@@ -486,7 +486,7 @@ onBeforeUnmount(() => {
 /* 分组标题：小号灰字，收起态隐藏 */
 .qt-rail__group-title {
   margin: 12px 0 4px;
-  padding: 0 8px;
+  padding: 0 6px;
   font-size: 12px;
   line-height: 18px;
   font-weight: 500;
@@ -500,10 +500,10 @@ onBeforeUnmount(() => {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   height: 38px;
-  padding: 0 10px;
+  padding: 0 8px;
   border: none;
   border-radius: var(--qt-radius-md);
   background-color: transparent;
@@ -567,7 +567,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 8px;
+  padding: 8px 6px;
   border-top: 1px solid var(--qt-border);
 }
 
@@ -829,7 +829,7 @@ onBeforeUnmount(() => {
     line-height: 1;
   }
 
-  /* 抽屉：同一套导航结构，从左侧滑入（宽度仍由 --qt-rail-w = 200px 决定） */
+  /* 抽屉：同一套导航结构，从左侧滑入（宽度仍由 --qt-rail-w = 176px 决定，390px 窄屏下占比更轻） */
   .qt-rail {
     z-index: 80;
     /* 动态视口高度：手机地址栏收起/展开时抽屉始终等于可视高度，底部操作区不会被顶出屏幕 */

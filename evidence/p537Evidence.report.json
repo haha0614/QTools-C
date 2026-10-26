@@ -1,0 +1,631 @@
+{
+  "passed": 100,
+  "failures": [],
+  "report": {
+    "icons": [
+      {
+        "i": 0,
+        "name": "prev 上一条",
+        "aria": "上一条",
+        "btn": {
+          "x": 14,
+          "y": 962,
+          "w": 30,
+          "h": 30,
+          "right": 44,
+          "bottom": 992
+        },
+        "svg": {
+          "x": 20,
+          "y": 968,
+          "w": 18,
+          "h": 18,
+          "right": 38,
+          "bottom": 986
+        },
+        "svgDisplay": "block",
+        "inkPx": 890,
+        "inkDir": "svg",
+        "inkCenter": {
+          "x": 29,
+          "y": 977
+        },
+        "btnCenter": {
+          "x": 29,
+          "y": 977
+        },
+        "dev": {
+          "x": 0,
+          "y": 0
+        },
+        "svgDev": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "i": 1,
+        "name": "play 播放",
+        "aria": "播放",
+        "btn": {
+          "x": 50,
+          "y": 962,
+          "w": 40,
+          "h": 30,
+          "right": 90,
+          "bottom": 992
+        },
+        "svg": {
+          "x": 60,
+          "y": 967,
+          "w": 20,
+          "h": 20,
+          "right": 80,
+          "bottom": 987
+        },
+        "svgDisplay": "block",
+        "inkPx": 1150,
+        "inkDir": "svg",
+        "inkCenter": {
+          "x": 69.875,
+          "y": 977
+        },
+        "btnCenter": {
+          "x": 70,
+          "y": 977
+        },
+        "dev": {
+          "x": -0.125,
+          "y": 0
+        },
+        "svgDev": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "i": 2,
+        "name": "next 下一条",
+        "aria": "下一条",
+        "btn": {
+          "x": 96,
+          "y": 962,
+          "w": 30,
+          "h": 30,
+          "right": 126,
+          "bottom": 992
+        },
+        "svg": {
+          "x": 102,
+          "y": 968,
+          "w": 18,
+          "h": 18,
+          "right": 120,
+          "bottom": 986
+        },
+        "svgDisplay": "block",
+        "inkPx": 890,
+        "inkDir": "svg",
+        "inkCenter": {
+          "x": 111,
+          "y": 977
+        },
+        "btnCenter": {
+          "x": 111,
+          "y": 977
+        },
+        "dev": {
+          "x": 0,
+          "y": 0
+        },
+        "svgDev": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "i": 3,
+        "name": "mute 静音",
+        "aria": "静音",
+        "btn": {
+          "x": 132,
+          "y": 962,
+          "w": 30,
+          "h": 30,
+          "right": 162,
+          "bottom": 992
+        },
+        "svg": {
+          "x": 138,
+          "y": 968,
+          "w": 18,
+          "h": 18,
+          "right": 156,
+          "bottom": 986
+        },
+        "svgDisplay": "block",
+        "inkPx": 1000,
+        "inkDir": "svg",
+        "inkCenter": {
+          "x": 147,
+          "y": 977
+        },
+        "btnCenter": {
+          "x": 147,
+          "y": 977
+        },
+        "dev": {
+          "x": 0,
+          "y": 0
+        },
+        "svgDev": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "i": 4,
+        "name": "framePrev 上一帧",
+        "aria": "上一帧",
+        "btn": {
+          "x": 892,
+          "y": 962,
+          "w": 30,
+          "h": 30,
+          "right": 922,
+          "bottom": 992
+        },
+        "svg": {
+          "x": 898,
+          "y": 968,
+          "w": 18,
+          "h": 18,
+          "right": 916,
+          "bottom": 986
+        },
+        "svgDisplay": "block",
+        "inkPx": 558,
+        "inkDir": "svg",
+        "inkCenter": {
+          "x": 907,
+          "y": 977
+        },
+        "btnCenter": {
+          "x": 907,
+          "y": 977
+        },
+        "dev": {
+          "x": 0,
+          "y": 0
+        },
+        "svgDev": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "i": 5,
+        "name": "frameNext 下一帧",
+        "aria": "下一帧",
+        "btn": {
+          "x": 926,
+          "y": 962,
+          "w": 30,
+          "h": 30,
+          "right": 956,
+          "bottom": 992
+        },
+        "svg": {
+          "x": 932,
+          "y": 968,
+          "w": 18,
+          "h": 18,
+          "right": 950,
+          "bottom": 986
+        },
+        "svgDisplay": "block",
+        "inkPx": 558,
+        "inkDir": "svg",
+        "inkCenter": {
+          "x": 941,
+          "y": 977
+        },
+        "btnCenter": {
+          "x": 941,
+          "y": 977
+        },
+        "dev": {
+          "x": 0,
+          "y": 0
+        },
+        "svgDev": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "i": 6,
+        "name": "gear 设置",
+        "aria": "播放设置",
+        "btn": {
+          "x": 1089,
+          "y": 962,
+          "w": 30,
+          "h": 30,
+          "right": 1119,
+          "bottom": 992
+        },
+        "svg": {
+          "x": 1095,
+          "y": 968,
+          "w": 18,
+          "h": 18,
+          "right": 1113,
+          "bottom": 986
+        },
+        "svgDisplay": "block",
+        "inkPx": 1476,
+        "inkDir": "svg",
+        "inkCenter": {
+          "x": 1104,
+          "y": 977
+        },
+        "btnCenter": {
+          "x": 1104,
+          "y": 977
+        },
+        "dev": {
+          "x": 0,
+          "y": 0
+        },
+        "svgDev": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "i": 7,
+        "name": "fs 全屏",
+        "aria": "全屏",
+        "btn": {
+          "x": 1125,
+          "y": 962,
+          "w": 30,
+          "h": 30,
+          "right": 1155,
+          "bottom": 992
+        },
+        "svg": {
+          "x": 1131,
+          "y": 968,
+          "w": 18,
+          "h": 18,
+          "right": 1149,
+          "bottom": 986
+        },
+        "svgDisplay": "block",
+        "inkPx": 1024,
+        "inkDir": "svg",
+        "inkCenter": {
+          "x": 1140,
+          "y": 977
+        },
+        "btnCenter": {
+          "x": 1140,
+          "y": 977
+        },
+        "dev": {
+          "x": 0,
+          "y": 0
+        },
+        "svgDev": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    ],
+    "menu": {
+      "nativeGone": {
+        "ctrlSelects": 0,
+        "qualitySelects": 0,
+        "trigger": true,
+        "triggerTag": "BUTTON"
+      },
+      "look": {
+        "rect": {
+          "x": 908,
+          "y": 821,
+          "w": 168,
+          "h": 135,
+          "right": 1076,
+          "bottom": 956
+        },
+        "bg": "rgb(29, 30, 31)",
+        "bgTok": "rgb(29, 30, 31)",
+        "radius": "10px",
+        "shadow": "rgba(0, 0, 0, 0.42) 0px 14px 32px 0px, color(srgb 0.898039 0.917647 0.952941 / 0.1) 0px 0px 0px 1px inset",
+        "borderW": "1px",
+        "borderC": "rgb(65, 66, 67)",
+        "font": "12.5px",
+        "z": "7",
+        "selColor": "rgb(64, 158, 255)",
+        "accent": "rgb(64, 158, 255)",
+        "selBg": "color(srgb 0.25098 0.619608 1 / 0.16)",
+        "curBg": "color(srgb 0.25098 0.619608 1 / 0.16)",
+        "bg3Tok": "rgb(38, 39, 39)",
+        "opts": [
+          {
+            "t": "原画（直连）",
+            "sel": "true",
+            "cls": "p-qopt is-sel is-cur"
+          },
+          {
+            "t": "720p",
+            "sel": "false",
+            "cls": "p-qopt"
+          },
+          {
+            "t": "480p",
+            "sel": "false",
+            "cls": "p-qopt"
+          },
+          {
+            "t": "360p",
+            "sel": "false",
+            "cls": "p-qopt"
+          }
+        ],
+        "roles": {
+          "menu": "listbox",
+          "opt": "option"
+        },
+        "ctrlZ": "5",
+        "ariaExpanded": "true",
+        "label": "原画（直连）",
+        "vw": 1600,
+        "vh": 1000
+      },
+      "bgLuma": 30,
+      "clip": {
+        "inView": true,
+        "inside": true,
+        "anc": [
+          "p-qwrap:visible",
+          "p-grp p-grp-right:visible",
+          "p-ctrlline:visible",
+          "p-ctrl:visible",
+          "p-fs-wrap:visible",
+          "p-main:visible",
+          "p-body:visible",
+          "player:visible",
+          ":visible"
+        ],
+        "noClipBox": true,
+        "rect": {
+          "x": 908,
+          "y": 821,
+          "w": 168,
+          "h": 135,
+          "right": 1076,
+          "bottom": 956
+        },
+        "vw": 1600,
+        "vh": 1000
+      },
+      "light": {
+        "bg": "rgb(255, 255, 255)",
+        "bgTok": "rgb(255, 255, 255)",
+        "fg": "rgb(48, 49, 51)",
+        "fgTok": "rgb(255, 255, 255)",
+        "radius": "10px"
+      }
+    },
+    "hide": {
+      "baseline": {
+        "visible0": true,
+        "hiddenBase": true
+      },
+      "withMenu": {
+        "visibleBack": true,
+        "menuBeforeLeave": true,
+        "stateAfterLeave": {
+          "hidden": false,
+          "menu": true,
+          "opacity": "1"
+        }
+      }
+    },
+    "containment": {
+      "wide": {
+        "stageH": 935.67,
+        "seekStep": "0.03333333333333333",
+        "now": "03:21:17 / 120:00:00",
+        "aria": "03:21:17（第 6047 帧） / 120:00:00",
+        "vol": {
+          "x": 168,
+          "y": 967,
+          "w": 86,
+          "h": 20,
+          "right": 254,
+          "bottom": 987
+        },
+        "gear": true,
+        "fsBtn": true,
+        "twoCol": true,
+        "ab": true,
+        "grad": "linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)",
+        "ctrlZ": "5",
+        "lineH": 30,
+        "docW": 1585,
+        "winW": 1600,
+        "buttons": 8,
+        "svgs": 8
+      },
+      "narrow": {
+        "rows": 3,
+        "groupY": [
+          656,
+          744,
+          700
+        ],
+        "btns": [
+          {
+            "aria": "上一条",
+            "r": {
+              "x": 10,
+              "y": 656,
+              "w": 38,
+              "h": 38
+            },
+            "svg": {
+              "x": 19,
+              "y": 665,
+              "w": 20,
+              "h": 20
+            }
+          },
+          {
+            "aria": "播放",
+            "r": {
+              "x": 54,
+              "y": 656,
+              "w": 52,
+              "h": 38
+            },
+            "svg": {
+              "x": 69,
+              "y": 664,
+              "w": 22,
+              "h": 22
+            }
+          },
+          {
+            "aria": "下一条",
+            "r": {
+              "x": 112,
+              "y": 656,
+              "w": 38,
+              "h": 38
+            },
+            "svg": {
+              "x": 121,
+              "y": 665,
+              "w": 20,
+              "h": 20
+            }
+          },
+          {
+            "aria": "静音",
+            "r": {
+              "x": 156,
+              "y": 656,
+              "w": 38,
+              "h": 38
+            },
+            "svg": {
+              "x": 165,
+              "y": 665,
+              "w": 20,
+              "h": 20
+            }
+          },
+          {
+            "aria": "上一帧",
+            "r": {
+              "x": 10,
+              "y": 700,
+              "w": 38,
+              "h": 38
+            },
+            "svg": {
+              "x": 19,
+              "y": 709,
+              "w": 20,
+              "h": 20
+            }
+          },
+          {
+            "aria": "下一帧",
+            "r": {
+              "x": 52,
+              "y": 700,
+              "w": 38,
+              "h": 38
+            },
+            "svg": {
+              "x": 61,
+              "y": 709,
+              "w": 20,
+              "h": 20
+            }
+          },
+          {
+            "aria": "播放设置",
+            "r": {
+              "x": 220,
+              "y": 700,
+              "w": 38,
+              "h": 38
+            },
+            "svg": {
+              "x": 229,
+              "y": 709,
+              "w": 20,
+              "h": 20
+            }
+          },
+          {
+            "aria": "全屏",
+            "r": {
+              "x": 264,
+              "y": 700,
+              "w": 38,
+              "h": 38
+            },
+            "svg": {
+              "x": 273,
+              "y": 709,
+              "w": 20,
+              "h": 20
+            }
+          }
+        ],
+        "docW": 360,
+        "winW": 375,
+        "ctrlH": 130,
+        "q": {
+          "x": 103,
+          "y": 700,
+          "w": 104,
+          "h": 38,
+          "right": 207,
+          "bottom": 738
+        },
+        "now": {
+          "x": 206,
+          "y": 663.2,
+          "w": 116.94,
+          "h": 23.59,
+          "right": 322.94,
+          "bottom": 686.8
+        }
+      },
+      "narrowMenu": {
+        "x": 55,
+        "y": 559,
+        "w": 152,
+        "h": 135,
+        "right": 207,
+        "bottom": 694,
+        "inView": true,
+        "inside": true,
+        "vw": 375,
+        "vh": 780
+      }
+    },
+    "errors": {
+      "page": [],
+      "console": []
+    }
+  }
+}

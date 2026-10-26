@@ -1,0 +1,18 @@
+/**
+ * fonts.scss —— 品牌展示字体（得意黑 Smiley Sans 子集）
+ * 用途：首页 hero 标题与 logo 字标视觉同源（v3 字标本身是转轮廓 SVG，不动它，这里只借字形）。
+ * 素材：src/assets/brand/v3/fonts/smiley-sans.woff2（P5.33 出的子集，cmap 仅 6 个码位：
+ *      「青兔工具箱」5 字 + 空格），故 unicode-range 只声明这 5 个字：
+ *      - 子集外字符由 --qt-font-sans 逐字回退，不会出现缺字方框；
+ *      - 首页以外不出现这 5 字时浏览器根本不会下载该文件（unicode-range 的加载惰性）。
+ */
+@font-face {
+  font-family: "SmileySans";
+  src: url("../assets/brand/v3/fonts/smiley-sans.woff2") format("woff2");
+  /* 单一静态字形：声明成区间，浏览器对 400–700 都用真实字形，不合成假粗（避免描边变糊） */
+  font-weight: 100 900;
+  font-style: normal;
+  /* 首屏先用回退栈渲染，字体到位后替换，不阻塞文字出现 */
+  font-display: swap;
+  unicode-range: U+9752, U+5154, U+5DE5, U+5177, U+7BB1;
+}

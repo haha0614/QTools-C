@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>P5.38 synopsis harness</title>
+    <style>
+      /* 夹具外壳：只给信息栏一个定宽定高的壳（真应用里由播放器右栏给），不覆盖组件自身样式 */
+      html, body { margin: 0; padding: 0; background: #14161a; }
+      #app { width: 380px; height: 820px; overflow: auto; }
+      .harness-mount { display: block; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="./synopsisHarness.js"></script>
+  </body>
+</html>

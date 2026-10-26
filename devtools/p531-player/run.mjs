@@ -389,6 +389,10 @@ try {
       '(function(){var s=document.querySelector(".p-vol");var cs=getComputedStyle(s);var img=cs.backgroundImage;var pct=(img.match(/[\\d.]+%/g)||[]).map(parseFloat);var cols=(img.match(/rgba?\\([^)]+\\)/g)||[]);return {img:img,pct:pct,cols:cols,bgSize:cs.backgroundSize,bgPos:cs.backgroundPosition,rect:(function(){var b=s.getBoundingClientRect();return{x:+b.x.toFixed(2),y:+b.y.toFixed(2),w:+b.width.toFixed(2),h:+b.height.toFixed(2)}})()};})()'
     )
     const want = Math.round(ratio * 100)
+    /* P5.37 起加一行现场诊断：滑块 value / <video>.volume / --p-vol-pct 三者同源，
+       任何一个是旧值都能一眼看出来（这条不是新判据，只是把失配的原因打出来） */
+    const probe = await js('(function(){var s=document.querySelector(".p-vol");var v=document.querySelector(".p-stage video");return {vol:+s.value,pct:getComputedStyle(document.querySelector(".p-vol-wrap")).getPropertyValue("--p-vol-pct").trim(),mediaVol:v?v.volume:null,muted:v?!!v.muted:null}})()')
+    console.log('          [诊断] 滑块 value=' + probe.vol + ' video.volume=' + probe.mediaVol + ' muted=' + probe.muted + ' --p-vol-pct=' + probe.pct)
     const splitHit = fill.pct.some((p) => Math.abs(p - want) <= 0.6)
     console.log('    [' + want + '%] background-image=' + fill.img)
     console.log('          断点 %=' + JSON.stringify(fill.pct) + ' size=' + fill.bgSize + ' pos=' + fill.bgPos)
@@ -483,30 +487,56 @@ try {
   await sleep(200)
   ok(await js('!document.querySelector(".p-help") && !document.querySelector("[data-qt-set-panel]")'), 'c13) 收尾：帮助 / 设置两层浮层都关掉（后续真实鼠标事件不会被遮罩接走）')
 
-  /* ============================ D. 头部画质切换 ============================ */
-  console.log('\n[D] header「收藏 | 画质切换 | 关闭 Esc」；720 → 480 换源；头部不再有上一个 / 下一部')
+  /* ============================ D. 控制栏画质切换 ============================ */
+  /* P5.37 调整了本节 5 条旧断言的口径，判的东西一个都没变（档位同源 / 换档真的换源）。
+     为什么必须改：
+       1) P5.34 把画质从**头部**搬进了**控制栏右组**（占原来 ⏮ ⏭ 那一格），
+          d1 / d4 / d6 原来断言的「header 里有画质」「头部三组 = 收藏 | 画质 | 关闭」
+          「画质排在收藏与关闭之间」在 P5.34 之后就已经不成立（旧实现直接在这一段抛异常中断）；
+       2) P5.37 把原生 select 换成「chip 触发按钮 + 自绘面板」（原生列表由系统绘制，
+          深色播放器上无法美化），于是
+          d1  select[data-qt-quality] → button[data-qt-quality]（仍是证据脚本的锚点）
+          d2  选项从面板 [data-qt-qopt] 读（不再有 <option>）
+          d5  几何口径不变（30px / 8px / 12.5px），只是量的是触发按钮
+          d6  改成「组内顺序 = 逐帧 ⏴⏵ → 画质 → 设置 ⚙ → 全屏 ⛶」
+          d10 当前档从 data-qt-qvalue 读（按钮没有 .value）
+     另外 pickQuality 也不再是「改 select.value + change」，而是**两次真实点击**（开面板 → 点档位）。 */
+  console.log('\n[D] 控制栏画质：自绘下拉（不再是 select）、选项与设置浮层同源、720 → 480 换源；头部只剩关闭')
   const head = await js(
     '(function(){' +
       RECT_LIB +
-      'var h=document.querySelector(".p-head");var sel=document.querySelector("[data-qt-quality]");' +
-      'var cs=sel?getComputedStyle(sel):null;' +
-      'var groups=[].slice.call(h.querySelectorAll(".p-act-group")).map(function(g){return (g.innerText||"").replace(/\\s+/g," ").trim()});' +
+      'var h=document.querySelector(".p-head");var btn=document.querySelector("[data-qt-quality]");var cs=btn?getComputedStyle(btn):null;' +
+      'var right=document.querySelector(".p-grp-right");' +
       'var btns=[].slice.call(h.querySelectorAll("button")).map(function(b){return (b.textContent||"").replace(/\\s+/g," ").trim()});' +
-      'var fav=R(h.querySelector(".p-fav")),close=R(h.querySelector(".p-close"));' +
-      'return {favR:fav,closeR:close,text:(h.innerText||""),sel:!!sel,tag:sel?sel.tagName:null,value:sel?sel.value:null,rect:R(sel),h:cs?cs.height:null,bg:cs?cs.backgroundColor:null,color:cs?cs.color:null,radius:cs?cs.borderRadius:null,font:cs?cs.fontSize:null,aria:sel?sel.getAttribute("aria-label"):null,title:sel?sel.getAttribute("title"):null,opts:[].slice.call(h.querySelectorAll("[data-qt-quality] option")).map(function(o){return o.value+"|"+o.textContent.trim()}),groups:groups,btns:btns,hasPrevText:/上一部|下一部/.test(h.innerText||""),prevNextBtns:[].slice.call(h.querySelectorAll("button")).filter(function(b){return /上一部|下一部|⏮|⏭/.test(b.textContent||"")}).length};})()'
+      'return {text:(h.innerText||""),sel:!!btn,tag:btn?btn.tagName:null,value:btn?btn.getAttribute("data-qt-qvalue"):null,rect:R(btn),h:cs?cs.height:null,bg:cs?cs.backgroundColor:null,color:cs?cs.color:null,radius:cs?cs.borderRadius:null,font:cs?cs.fontSize:null,aria:btn?btn.getAttribute("aria-label"):null,title:btn?btn.getAttribute("title"):null,' +
+      'qualityInRight:!!(right&&right.querySelector("[data-qt-quality]")),qualityInHead:!!h.querySelector("[data-qt-quality]"),' +
+      'gearR:R(document.querySelector("[data-qt-gear]")),fsR:R(document.querySelector("[data-qt-fs]")),frameR:R(document.querySelector("button[aria-label=\'上一帧\']")),' +
+      'btns:btns,hasPrevText:/上一部|下一部/.test(h.innerText||""),prevNextBtns:[].slice.call(h.querySelectorAll("button")).filter(function(b){return /上一部|下一部|⏮|⏭/.test(b.textContent||"")}).length};})()'
   )
   console.log('    头部按钮=' + JSON.stringify(head.btns))
-  console.log('    三组=' + JSON.stringify(head.groups))
-  console.log('    画质 select=' + head.tag + ' value=' + head.value + ' rect=' + JSON.stringify(head.rect) + ' 高=' + head.h + ' 圆角=' + head.radius + ' 字号=' + head.font)
-  console.log('    选项=' + JSON.stringify(head.opts))
-  ok(head.sel && head.tag === 'SELECT', 'd1) header 里有画质切换控件（select[data-qt-quality]）', String(head.tag))
-  ok(head.opts.length === 4 && head.opts[0] === 'orig|原画（直连）', 'd2) 选项与设置浮层同源（原画（直连）+ 720p / 480p / 360p）', JSON.stringify(head.opts))
+  console.log('    画质控件=' + head.tag + ' 在控制栏右组=' + head.qualityInRight + ' 在头部=' + head.qualityInHead + ' 当前档=' + head.value)
+  console.log('    几何 rect=' + JSON.stringify(head.rect) + ' 高=' + head.h + ' 圆角=' + head.radius + ' 字号=' + head.font + ' bg=' + head.bg + ' color=' + head.color)
+  ok(head.sel && head.tag === 'BUTTON' && head.qualityInRight === true, 'd1) 画质切换控件在控制栏右组，且是 button[data-qt-quality]（不再是原生 select）', String(head.tag))
+  /* 面板选项（点开读，读完关掉） */
+  await js('document.querySelector("[data-qt-quality]").click()')
+  await sleep(220)
+  const menuD = await js(
+    '(function(){var m=document.querySelector("[data-qt-qmenu]");return {open:!!m,bg:m?getComputedStyle(m).backgroundColor:null,radius:m?getComputedStyle(m).borderRadius:null,font:m?getComputedStyle(m).fontSize:null,z:m?getComputedStyle(m).zIndex:null,opts:m?[].slice.call(m.querySelectorAll("[data-qt-qopt]")).map(function(o){return o.getAttribute("data-qt-value")+"|"+o.textContent.trim()}):[]};})()'
+  )
+  await js('document.querySelector("[data-qt-quality]").click()')
+  await sleep(180)
+  console.log('    面板=' + JSON.stringify(menuD))
+  console.log('    面板选项=' + JSON.stringify(menuD.opts))
+  ok(menuD.open && menuD.opts.length === 4 && menuD.opts[0] === 'orig|原画（直连）', 'd2) 面板选项与设置浮层同源（原画（直连）+ 720p / 480p / 360p）', JSON.stringify(menuD.opts))
   ok(head.hasPrevText === false && head.prevNextBtns === 0, 'd3) header 里不再有「上一部 / 下一部 / ⏮ / ⏭」', JSON.stringify(head.btns))
-  ok(head.groups.length === 3 && /★|☆/.test(head.groups[0]) && head.groups[1].indexOf('画质') === 0 && /关闭/.test(head.groups[2]), 'd4) 右侧分组 = 收藏 | 画质切换 | 关闭 Esc', JSON.stringify(head.groups))
-  ok(head.h === '30px' && head.radius === '8px' && head.font === '12.5px', 'd5) 画质下拉与 .btn 同高同圆角（30px / 8px / 12.5px），一排齐平', head.h + ' / ' + head.radius + ' / ' + head.font)
-  ok(head.favR && head.closeR && head.rect.x > head.favR.right && head.rect.right < head.closeR.x, 'd6) 画质下拉排在「收藏」之后、「关闭」之前（组序 = 收藏 | 画质 | 关闭）', JSON.stringify([head.favR.right, head.rect.x, head.rect.right, head.closeR.x]))
-  const ctrlNav = await js('[].slice.call(document.querySelectorAll(".p-ctrl button")).filter(function(b){return /上一部|下一部/.test(b.getAttribute("aria-label")||"")}).map(function(b){return b.getAttribute("aria-label")})')
-  ok(ctrlNav.length === 2, 'd7) 控制条上的 ⏮ / ⏭（上 / 下一集）一个都没动', JSON.stringify(ctrlNav))
+  ok(head.btns.length === 1 && /关闭/.test(head.btns[0]), 'd4) 头部只剩「关闭 Esc」一颗按钮（收藏进信息栏、画质进控制栏）', JSON.stringify(head.btns))
+  ok(head.h === '30px' && head.radius === '8px' && head.font === '12.5px', 'd5) 画质 chip 与 .btn 同高同圆角（30px / 8px / 12.5px），一排齐平', head.h + ' / ' + head.radius + ' / ' + head.font)
+  ok(head.frameR && head.gearR && head.fsR && head.rect.x > head.frameR.right && head.rect.x < head.gearR.x && head.gearR.x < head.fsR.x, 'd6) 组内顺序 = 逐帧 ⏴⏵ → 画质 → 设置 ⚙ → 全屏 ⛶', JSON.stringify([head.frameR.right, head.rect.x, head.gearR.x, head.fsR.x]))
+  ok(menuD.radius === '10px' && menuD.font === '12.5px' && Number(menuD.z) > 5, 'd6b) 自绘面板：圆角 10px / 字号 12.5px / 层级 ' + menuD.z + ' > 控制条 5', JSON.stringify([menuD.radius, menuD.font, menuD.z]))
+  /* P5.37：文案口径也更新 —— P5.34 把「上一部 / 下一部」改成了「上一条 / 下一条」，
+     两种都认（与 p532 / p535 的 NAV_LABELS 同一口径）；判的还是「两颗都在、都在控制条上」 */
+  const ctrlNav = await js('[].slice.call(document.querySelectorAll(".p-ctrl .p-btn")).filter(function(b){return /^(上一条|上一部|下一条|下一部)$/.test(b.getAttribute("aria-label")||"")}).map(function(b){return b.getAttribute("aria-label")})')
+  ok(ctrlNav.length === 2, 'd7) 控制条上的 ⏮ / ⏭（上一条 / 下一条）一个都没动', JSON.stringify(ctrlNav))
   const src0 = await api('videoSrc()')
   await api('pickQuality("720")')
   let src720 = null
@@ -515,7 +545,7 @@ try {
     if (src720 && src720 !== src0) break
     await sleep(100)
   }
-  const qv720 = await js('document.querySelector("[data-qt-quality]").value')
+  const qv720 = await js('document.querySelector("[data-qt-quality]").getAttribute("data-qt-qvalue")')
   await api('pickQuality("480")')
   let src480 = null
   for (let i = 0; i < 30; i++) {
@@ -523,24 +553,23 @@ try {
     if (src480 && src480 !== src720) break
     await sleep(100)
   }
-  const qv480 = await js('document.querySelector("[data-qt-quality]").value')
+  const qv480 = await js('document.querySelector("[data-qt-quality]").getAttribute("data-qt-qvalue")')
   const state480 = await api('quality()')
   console.log('    换档前 src = ' + String(src0).slice(0, 92))
-  console.log('    选 720 → src = ' + String(src720).slice(0, 92) + '（select value=' + qv720 + '）')
-  console.log('    选 480 → src = ' + String(src480).slice(0, 92) + '（select value=' + qv480 + '，父级 quality=' + state480 + '）')
+  console.log('    选 720 → src = ' + String(src720).slice(0, 92) + '（chip 当前档=' + qv720 + '）')
+  console.log('    选 480 → src = ' + String(src480).slice(0, 92) + '（chip 当前档=' + qv480 + '，父级 quality=' + state480 + '）')
   ok(!!src0 && /q=/.test(String(src720)) && /q=720/.test(String(src720)), 'd8) 选 720 后 <video>.src 变成转码档 q=720', String(src720).slice(0, 110))
   ok(!!src480 && /q=480/.test(String(src480)) && src480 !== src720, 'd9) 再选 480 后 src 真的换了（q=480）', String(src480).slice(0, 110))
-  ok(qv480 === '480' && state480 === '480', 'd10) 头部下拉与父级 quality 同步（emit 通道打通）', qv480 + '/' + state480)
-  const sameSrc = await js(
-    '(function(){var a=[].slice.call(document.querySelectorAll("[data-qt-quality] option")).map(function(o){return o.value+"|"+o.textContent.trim()});return {head:a};})()'
-  )
+  ok(qv480 === '480' && state480 === '480', 'd10) 控制栏画质 chip 与父级 quality 同步（emit 通道打通）', qv480 + '/' + state480)
+  /* P5.37：选项表已由上面菜单那段读过（menuD.opts），这里不再从 <option> 读 */
+  const sameSrc = { head: menuD.opts }
   await js('document.querySelector("[data-qt-gear]").click()')
   await sleep(220)
   const setPanel = await js(
     '(function(){var s=document.querySelector("#msVideoQ");return {open:!!document.querySelector("[data-qt-set-panel]"),has:!!s,value:s?s.value:null,opts:s?[].slice.call(s.options).map(function(o){return o.value+"|"+o.textContent.trim()}):[]};})()'
   )
   console.log('    设置浮层画质 select：' + JSON.stringify(setPanel))
-  ok(setPanel.has && JSON.stringify(setPanel.opts) === JSON.stringify(sameSrc.head), 'd11) 设置浮层与头部是同一份档位表（选项逐字相同）', JSON.stringify(setPanel.opts))
+  ok(setPanel.has && JSON.stringify(setPanel.opts) === JSON.stringify(sameSrc.head), 'd11) 设置浮层与控制栏画质面板是同一份档位表（选项逐字相同）', JSON.stringify(setPanel.opts))
   ok(setPanel.value === '480', 'd12) 设置浮层读到同一个当前档（480）', String(setPanel.value))
   await js('document.querySelector("[data-qt-gear]").click()')
   await sleep(200)

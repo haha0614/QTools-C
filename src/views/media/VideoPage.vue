@@ -293,8 +293,8 @@
       @notify="showToast"
     />
 
-    <!-- 页面级轻提示：批量结果 / 接口未就绪都在这里反馈，2.4s 自动消失 -->
-    <div v-if="toastMsg" class="ms-toast" role="status" aria-live="polite">{{ toastMsg }}</div>
+    <!-- 页面级轻提示：批量结果 / 接口未就绪都在这里反馈（与播放列表页同一套组件） -->
+    <PageToast :toasts="toasts" />
   </div>
 </template>
 
@@ -315,6 +315,8 @@ import {
 } from '@/composables/useMediaLocalOrg'
 // P5.3-B：local 档的演员覆盖（卡片人物行 / 「清除本地修改」共用）
 import { clearAllLocalPersons, readLocalPersons } from './video/personLocal'
+/* P5.38：local 档的「作品简介」本机覆盖（ms.orgsynopsis.*），与上面两族本地键一起清 */
+import { clearAllLocalSynopsis } from './video/synopsisLocal'
 // P4.3：标记按 videoId 的前端缓存（站端没有匿名读 meta 的接口时的替代方案）
 import { readMarkerCache, writeMarkerCache } from '@/composables/useMarkerCache'
 import FilterSidebar from './video/FilterSidebar.vue'
@@ -327,6 +329,8 @@ import BatchBar from './video/BatchBar.vue'
 import VideoMetaPanel from './video/VideoMetaPanel.vue'
 // P5-B：加入播放列表弹层 + 播放列表顺序纯逻辑（归一化 / 保序重排 / 上一部下一部）
 import PlaylistPicker from './video/PlaylistPicker.vue'
+import PageToast from './PageToast.vue'
+import { usePageToast } from './usePageToast.js'
 import { normalizePlaylistDetail } from './video/playlistOrder'
 // P5.32：播放上下文（从哪个列表点进来就按那个顺序上/下一部 + 信息栏置顶分区）
 // P5.35：来源驱动 —— 多了 person / tag 两档来源，标题与顺序都由来源页给
@@ -1077,8 +1081,8 @@ function currentPlayDur() {
   const d = Number(curVideo.value && curVideo.value.dur)
   return isFinite(d) && d > 0 ? d : 0
 }
-const toastMsg = ref('')
-let toastTimer = 0
+/* 提示统一走 usePageToast（与播放列表页同一套组件 PageToast） */
+const { toasts, push: showToast } = usePageToast()
 /** 播放层只借用播放会话相关的三个方法（不能让它自己调 useMediaTrack，否则卸载时会 dispose 页面级监听） */
 const tracker = {
   openPlaySession: tk.openPlaySession,
@@ -2061,16 +2065,6 @@ function restoreScroll() {
         写入成功后先在 metaOverrides 上做乐观更新（卡片立刻变），再让受影响项各自以服务端值为准。
    ========================================================================= */
 
-/** 页面级轻提示（批量结果 / 接口未就绪），2.4s 自动消失，与旧页 toast 时长一致 */
-function showToast(msg) {
-  if (!msg) return
-  toastMsg.value = msg
-  clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => {
-    toastMsg.value = ''
-  }, 2400)
-}
-
 const EMPTY_META = { rating: 0, tags: [] }
 /** 稳定空数组引用：人物 / 演员缺省时复用同一个，避免每帧给卡片新建 props */
 const EMPTY_LIST = []
@@ -2298,7 +2292,8 @@ function applyLocalBatchStore(ids, patch) {
 /** 「清除本地修改」：清掉本机全部 ms.org.* 与本地标签 */
 function onClearLocal() {
   // P5.3-B：本机演员覆盖（ms.orgpersons.*）与 ms.org.* / 本地标签一起清
-  const n = clearLocalOrg() + clearAllLocalPersons()
+  // P5.38：本机简介覆盖（ms.orgsynopsis.*）同理
+  const n = clearLocalOrg() + clearAllLocalPersons() + clearAllLocalSynopsis()
   for (const id of Object.keys(metaOverrides)) delete metaOverrides[id]
   for (const id of Object.keys(personsOverrides)) delete personsOverrides[id]
   showToast(n ? '已清除本地修改（' + n + ' 项）' : '没有本地修改')
@@ -2682,7 +2677,6 @@ onBeforeUnmount(() => {
   }
   clearTimeout(searchTimer)
   clearTimeout(tkSearchTimer)
-  clearTimeout(toastTimer)
   tk.flushAll()
   document.body.style.overflow = ''
 })
@@ -2706,6 +2700,9 @@ watch(
    保证三者在同一左边界上（16px，落在设计要求的 16–24px 区间内） */
 .ms-page {
   --ms-gutter: 16px;
+  /* 本页顶部是吸顶工具栏（搜索框 + 排序 + 一排按钮）：页面提示整体下移到工具栏之下，
+     避免 2.4s 内盖住用户下一步要点的控件（数值 = 工具栏实测高度，见 devtools/p540-ui） */
+  --ms-toast-top: 96px;
   min-height: 100vh;
   background: var(--bg);
   color: var(--fg);
@@ -2963,26 +2960,7 @@ watch(
   pointer-events: auto;
 }
 
-/* 页面级轻提示：层级高于播放器(100)/筛选抽屉(200)/信息抽屉(300)，
-   仍低于 Element Plus 的 message/modal 层（1000+），不会压过全局提示 */
-.ms-toast {
-  position: fixed;
-  left: 50%;
-  bottom: 28px;
-  transform: translateX(-50%);
-  z-index: 900;
-  max-width: calc(100vw - 32px);
-  padding: 8px 14px;
-  border: 1px solid var(--line-2);
-  border-radius: 999px;
-  background: var(--bg-2);
-  color: var(--fg);
-  font-size: 13px;
-  line-height: 1.4;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-  pointer-events: none;
-  text-align: center;
-}
+/* 页面级轻提示已统一到 PageToast.vue（顶部居中、可堆叠），本页不再持有 toast 样式 */
 
 /* ---------------------------------------------------------------- 筛选抽屉 */
 /* 右侧固定抽屉：桌面 320px、≤768px 占满全宽；transform 从 100% 滑入 0，
@@ -3107,6 +3085,8 @@ watch(
   /* 移动端：抽屉占满全宽；横向留白收窄到 10px，与 RecentStrip 的移动端内边距保持一致 */
   .ms-page {
     --ms-gutter: 10px;
+  /* 窄屏工具栏换行更高：提示条同样下移到它之下（实测值） */
+  --ms-toast-top: 168px;
   }
 
   .filter-drawer {

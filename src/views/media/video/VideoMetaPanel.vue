@@ -226,6 +226,73 @@
         </div>
       </section>
 
+      <!-- 作品简介 / 剧情梗概（P5.38，用户需求「信息栏补作品简介，剧情梗概」）：
+           位置放在**评分之后、标签之前** —— 阅读顺序是「人物 → 工作室 → 评分 → 简介 → 标签 → 标记」：
+           简介是这一片的**正文**，评分类属性挨着它、可枚举的 chips（标签 / 标记）排在它后面；
+           放在最上面会把置顶的收藏 / 播放上下文挤下去，放在最下面则要滚动才看得到（简介是首屏信息）。
+           三档与其它控件完全一致：off 没有编辑入口（只有正文）、local 只写 localStorage、full 走 PUT。
+           折叠规则：逻辑行 > 6 行折叠 + 「展开」（单行长文由 CSS line-clamp 视觉截断，
+           组件再按 scrollHeight 复测一次真实溢出，两者任一成立就给「展开」）。 -->
+      <section class="vp-sec vp-sec-syn" data-vp-sec="synopsis">
+        <h3 class="vp-h3">
+          作品简介
+          <span v-if="isLocal" class="vp-h3-local" :title="HINT_LOCAL">本地</span>
+          <button
+            v-if="synopsisEditable && !synopsisEditing"
+            class="vp-mini vp-syn-edit"
+            type="button"
+            :disabled="locked"
+            :title="synopsisValue ? '编辑作品简介 / 剧情梗概' : '写作品简介 / 剧情梗概'"
+            @click="startSynopsisEdit"
+          >
+            {{ synopsisValue ? '编辑' : '＋ 写简介' }}
+          </button>
+        </h3>
+
+        <template v-if="!synopsisEditing">
+          <p v-if="synopsisValue" ref="synopsisTextEl" class="vp-syn" :class="{ 'is-fold': synopsisFolded }">{{ synopsisValue }}</p>
+          <p v-else class="vp-syn-empty">暂无简介</p>
+          <button
+            v-if="synopsisFoldable"
+            class="vp-mini vp-syn-more"
+            type="button"
+            :aria-expanded="synopsisExpanded ? 'true' : 'false'"
+            :title="synopsisExpanded ? '收起简介' : '展开完整简介'"
+            @click="toggleSynopsisFold"
+          >
+            {{ synopsisExpanded ? '收起' : '展开' }}
+          </button>
+          <p v-if="synopsisNote" class="vp-hint">{{ synopsisNote }}</p>
+        </template>
+
+        <!-- 编辑态：textarea 行高 1.6 / min-height 96px / 可纵向拉高；换行原样提交 -->
+        <template v-else>
+          <textarea
+            ref="synopsisInputEl"
+            v-model="synopsisDraft"
+            class="vp-syn-input"
+            rows="5"
+            placeholder="写作品简介 / 剧情梗概（可换行，最多 8000 字符）"
+            aria-label="作品简介 / 剧情梗概"
+            :disabled="saving"
+            @keydown.esc.stop="cancelSynopsisEdit"
+          ></textarea>
+          <div class="vp-syn-bar">
+            <span class="vp-syn-count" :class="{ over: synopsisTooLong }">{{ synopsisChars }} / {{ SYNOPSIS_MAX }}</span>
+            <button
+              class="vp-mini vp-mini-ok"
+              type="button"
+              :disabled="saving || synopsisTooLong"
+              :title="synopsisTooLong ? '超过 ' + SYNOPSIS_MAX + ' 字符，无法保存' : '保存（Ctrl+Enter）'"
+              @click="saveSynopsisEdit"
+            >
+              保存
+            </button>
+            <button class="vp-mini" type="button" :disabled="saving" @click="cancelSynopsisEdit">取消</button>
+          </div>
+        </template>
+      </section>
+
       <!-- 标签：chips + 加标签入口 -->
       <section class="vp-sec">
         <h3 class="vp-h3">
@@ -394,7 +461,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useMediaApi } from '@/composables/useMediaApi'
 import { HINT_OFF, HINT_LOCAL } from '@/composables/useMediaEditPolicy'
 import { readLocalMeta, writeLocalMeta } from '@/composables/useMediaLocalOrg'
@@ -413,6 +480,9 @@ import {
 } from './personRules'
 // P5.3-B：local 档的演员覆盖（ms.orgpersons.<owner>.<videoId>）
 import { readLocalPersons, writeLocalPersons } from './personLocal'
+/* P5.38 作品简介 / 剧情梗概：规则（长度 / 换行 / 折叠 / 三档）与 local 档存储 */
+import { SYNOPSIS_MAX, canEditSynopsis, countSynopsisChars, shouldFold, trimSynopsis, validateSynopsis, writeMode } from './synopsisRules'
+import { readLocalSynopsis, writeLocalSynopsis } from './synopsisLocal'
 // P5.3-B：站端演员接口（PUT /video/{id}/persons、POST /persons）；未就绪只提示
 import { PERSON_NOT_READY, errorText, isNotReady, saveVideoPersons } from './personApi'
 // P5-C：标记预览帧（精灵图按时间取格，几何唯一实现在 spriteCell.js）
@@ -683,6 +753,166 @@ function save(patch, optimistic, okMsg, localPatch) {
   }
   saveServer(patch, optimistic, okMsg)
 }
+
+
+/* ------------------------------------------------------------------ 作品简介 / 剧情梗概（P5.38） */
+
+/**
+ * 种子值：local 档先看本机覆盖（ms.orgsynopsis.<owner>.<videoId>）；
+ * 其余两档先吃「详情接口已经带回的 synopsis」（GET /api/media/video/{id} 的非空才输出字段），
+ * 拿到首帧就有内容，随后 loadSynopsis() 再按 /synopsis 接口校准一次。
+ * 注意索引条目（/api/media/index）**从不带** synopsis：那是万级行的轻量列表。
+ */
+const synopsisSeed = isLocal.value ? readLocalSynopsis(props.video.id) : null
+const synopsisValue = ref(synopsisSeed ? synopsisSeed.synopsis : String((props.video && props.video.synopsis) || ''))
+const synopsisDraft = ref(synopsisValue.value)
+const synopsisEditing = ref(false)
+const synopsisExpanded = ref(false)
+/** DOM 复测结果：单行长文被 line-clamp 截断（逻辑行只有 1）时为 true */
+const synopsisOverflow = ref(false)
+/** 读接口失败提示（站端 private 部署可能没有这条路由） */
+const synopsisNote = ref('')
+
+const synopsisTextEl = ref(null)
+const synopsisInputEl = ref(null)
+let synopsisObserver = null
+
+/** 三档 → 写入通道（'blocked' / 'local' / 'server'），与评分 / 标签 / 标记同一套规则 */
+const synopsisMode = computed(() => writeMode(props.level))
+const synopsisEditable = computed(() => canEditSynopsis(props.level))
+/** 逻辑行 > 6 → 折叠 */
+const synopsisFoldByLine = computed(() => shouldFold(synopsisValue.value))
+/** 折叠态（展开后不再折叠；只要「按行」或「按真实溢出」任一成立就给展开按钮） */
+const synopsisFoldable = computed(() => synopsisFoldByLine.value || synopsisOverflow.value)
+const synopsisFolded = computed(() => !synopsisExpanded.value && synopsisFoldable.value)
+
+/** 编辑态的字数（code point，与后端同口径；超限的正文也照样计数，方便用户看到差多少） */
+const synopsisChars = computed(() => countSynopsisChars(synopsisDraft.value))
+const synopsisTooLong = computed(() => countSynopsisChars(trimSynopsis(synopsisDraft.value)) > SYNOPSIS_MAX)
+
+/** 折叠态用 line-clamp 截断时，scrollHeight 会大于 clientHeight —— 这里量真实溢出 */
+function measureSynopsis() {
+  nextTick(() => {
+    const el = synopsisTextEl.value
+    if (!el || synopsisExpanded.value) {
+      synopsisOverflow.value = false
+      return
+    }
+    synopsisOverflow.value = el.scrollHeight > el.clientHeight + 1
+  })
+}
+
+function connectSynopsisObserver() {
+  if (typeof ResizeObserver === 'undefined') return
+  disconnectSynopsisObserver()
+  synopsisObserver = new ResizeObserver(() => measureSynopsis())
+  nextTick(() => {
+    if (synopsisTextEl.value) synopsisObserver.observe(synopsisTextEl.value)
+  })
+}
+
+function disconnectSynopsisObserver() {
+  if (synopsisObserver) {
+    synopsisObserver.disconnect()
+    synopsisObserver = null
+  }
+}
+
+/**
+ * 读简介：full / off 都读（off 是「只读」，不是「不给看」——读接口本身不受策略影响），
+ * local 档**不发请求**（本机覆盖已经是最新值）。
+ */
+async function loadSynopsis() {
+  if (synopsisMode.value === 'local') {
+    measureSynopsis()
+    connectSynopsisObserver()
+    return
+  }
+  try {
+    const body = await api.getVideoSynopsis(props.video.id, { silent: true })
+    const text = body && typeof body === 'object' && typeof body.synopsis === 'string' ? body.synopsis : ''
+    synopsisValue.value = text
+    synopsisDraft.value = text
+    synopsisNote.value = ''
+  } catch {
+    // 读不到就保留种子（详情接口带回的值）；不 toast，不阻塞评审其它控件
+    synopsisNote.value = '简介读取失败，暂按现有内容显示'
+  } finally {
+    measureSynopsis()
+    connectSynopsisObserver()
+  }
+}
+
+function toggleSynopsisFold() {
+  synopsisExpanded.value = !synopsisExpanded.value
+  measureSynopsis()
+}
+
+function startSynopsisEdit() {
+  if (!synopsisEditable.value || locked.value) return
+  synopsisDraft.value = synopsisValue.value
+  synopsisEditing.value = true
+  nextTick(() => {
+    const el = synopsisInputEl.value
+    if (el && el.focus) el.focus()
+  })
+}
+
+function cancelSynopsisEdit() {
+  synopsisDraft.value = synopsisValue.value
+  synopsisEditing.value = false
+}
+
+/**
+ * 保存简介：乐观更新 + 失败回滚 + toast（与评分 / 标签同一套交互契约）
+ *   full  → PUT /api/media/video/{id}/synopsis（服务端已 trim / 归一化，回包即权威值）
+ *   local → 只写 localStorage
+ *   off   → 根本没有入口（synopsisEditable=false），这里再兜一次，不发任何写请求
+ */
+async function saveSynopsisEdit() {
+  if (!synopsisEditable.value || saving.value) return
+  const check = validateSynopsis(synopsisDraft.value)
+  if (!check.ok) {
+    emit('notify', check.error)
+    return
+  }
+  const prev = synopsisValue.value
+  const next = check.text
+  const okMsg = next ? '简介已保存' : '简介已清空'
+
+  // 乐观更新：先把正文换成新值、退出编辑态，失败再整体回滚
+  synopsisValue.value = next
+  synopsisExpanded.value = false
+  synopsisEditing.value = false
+
+  if (synopsisMode.value === 'local') {
+    writeLocalSynopsis(props.video.id, next)
+    emit('notify', okMsg + '（仅本机）')
+    measureSynopsis()
+    return
+  }
+
+  saving.value = true
+  try {
+    const body = await api.saveVideoSynopsis(props.video.id, { synopsis: next }, { silent: true })
+    const echoed = body && typeof body === 'object' && typeof body.synopsis === 'string' ? body.synopsis : next
+    synopsisValue.value = echoed
+    synopsisDraft.value = echoed
+    synopsisNote.value = ''
+    emit('notify', echoed ? okMsg : '简介已清空')
+  } catch {
+    // 回滚：正文回到保存前，编辑态恢复（草稿还在，用户可以直接重试）
+    synopsisValue.value = prev
+    synopsisDraft.value = next
+    synopsisEditing.value = true
+    emit('notify', '保存简介失败：接口未就绪或网络异常')
+  } finally {
+    saving.value = false
+    measureSynopsis()
+  }
+}
+
+onBeforeUnmount(() => disconnectSynopsisObserver())
 
 /** 评分夹取：值域 0–100（P5-C），顺手吃掉 NaN / 字符串 */
 function clampRating(n) {
@@ -1017,6 +1247,8 @@ onMounted(() => {
   // 元数据晚到：duration 打开抽屉时可能还是 0，挂载后按真实时长补/夹一次
   fillTimeline(false)
   revealContextCurrent()
+  // P5.38：简介走自己的接口（full / off 都读；local 档只读本机，不发请求）
+  loadSynopsis()
   if (!isFull.value) {
     loading.value = false
     return
@@ -1902,6 +2134,87 @@ onMounted(() => {
 .vp-mark-pos.is-range {
   min-width: 92px;
   font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- 作品简介（P5.38） */
+
+/* 正文：多行保留（pre-wrap 是硬要求 —— 梗概的分行就是作者写的分段），
+   行高 1.6 与编辑态 textarea 统一，折叠与未折叠切换时行高不跳。 */
+.vp-syn {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--fg);
+}
+
+/* 折叠态：CSS 逻辑行截断（单行长文也能截）。-webkit-line-clamp 之外再叠 standard
+   line-clamp 与 max-height 兜底：老 Chromium 只认 -webkit-，新内核两者都认，
+   两处都写不会互相打架。 */
+.vp-syn.is-fold {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  line-clamp: 6;
+  max-height: calc(6 * 1.6em);
+  overflow: hidden;
+}
+
+/* 无内容占位：与「暂无标记」同色阶，但明说这里可以写 -->
+.vp-syn-empty {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--fg-dim);
+}
+
+/* 「编辑 / ＋ 写简介」「展开 / 收起」：右对齐的小按钮，不抢标题的字重 */
+.vp-syn-edit,
+.vp-syn-more {
+  margin-left: auto;
+}
+
+/* 编辑态输入框：行高 1.6、min-height 96px、纵向可拉高（横向拉宽会把信息栏撑破） */
+.vp-syn-input {
+  display: block;
+  width: 100%;
+  min-height: 96px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-3);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1.6;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.vp-syn-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* 底部一行：字数在左（等宽数字），保存 / 取消在右 */
+.vp-syn-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vp-syn-count {
+  margin-right: auto;
+  font-size: 11.5px;
+  color: var(--fg-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 超限：变暖色并加粗，与保存按钮的禁用态呼应（保存本身也会被后端 400 挡住） */
+.vp-syn-count.over {
+  color: var(--warn);
+  font-weight: 600;
 }
 
 </style>

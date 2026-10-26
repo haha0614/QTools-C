@@ -242,6 +242,39 @@ export function saveVideoMeta(id, payload, options) {
 }
 
 /**
+ * 作品简介 / 剧情梗概（P5.38）
+ * 后端：GET /api/media/video/{id}/synopsis → { id, synopsis }（synopsis 为 null = 暂无）
+ * 读接口不受编辑策略影响（off 档站端也要能看到已有简介）；换行原样返回。
+ * 与 getVideoMeta 一样：站端 404/405 时自动回退到 /admin 一路（private 部署的旧后端）。
+ */
+export async function getVideoSynopsis(id, options) {
+  const opt = options || {}
+  const path = '/video/' + encodeURIComponent(String(id == null ? '' : id)) + '/synopsis'
+  try {
+    return await mediaRequest({ url: path, silent: opt.silent !== false })
+  } catch (err) {
+    return mediaRequest({ url: '/admin' + path, silent: opt.silent !== false })
+  }
+}
+
+/**
+ * 写作品简介 后端：PUT /api/media/video/{id}/synopsis（仅 full 档）
+ * body { synopsis }（null / 空串 = 清空）→ { id, synopsis }（已 trim、纯空白归一化成 null）
+ * @param {string} id
+ * @param {{synopsis:string|null}} payload
+ * @param {{silent?:boolean}} [options]
+ */
+export function saveVideoSynopsis(id, payload, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/video/' + encodeURIComponent(String(id == null ? '' : id)) + '/synopsis',
+    method: 'put',
+    data: payload || {},
+    silent: opt.silent !== false
+  })
+}
+
+/**
  * 批量更新 后端：POST /api/media/videos/batch-meta（仅 full 档）
  * body { ids, addTagIds?, removeTagIds?, rating? } → { updated }
  * 一次请求覆盖全部选中项（页面侧合并成单次调用，不做逐条循环）
@@ -363,11 +396,11 @@ export function listStudioVideos(id, params, options) {
 /* ----------------------------------------------------------- 播放列表（P5-B） */
 /* 契约（与 /filters、/persons 同一套站端 REST 风格；顺序即播放顺序）：
      GET    /api/media/playlists                        → [{id,name,count,videoIds?}]
-     POST   /api/media/playlists  {name, videoIds?}     → {id,name,count}
+     POST   /api/media/playlists  {name}                → {id,name,count}（视频另走追加）
      GET    /api/media/playlist/{id}                    → {id,name,videos:[…]} 或 {id,name,videoIds:[…]}
      PUT    /api/media/playlist/{id} {name?, videoIds?} → 改名 / 排序 / 增删（每次提交完整有序集合）
      DELETE /api/media/playlist/{id}
-     POST   /api/media/playlist/{id}/videos {videoIds}  → 追加（后端按 id 幂等去重）
+     POST   /api/media/playlist/{id}/videos {videoIds}  → 追加（后端按 id 幂等去重；只认 videoId 的老版本见 addPlaylistVideos）
    写接口受编辑策略闸门（页面在 off 档直接禁用入口，不发请求）；
    后端未就绪时全部 silent + catch，页面显示「接口未就绪」，不抛未捕获异常。 */
 
@@ -378,8 +411,11 @@ export function listPlaylists(options) {
 }
 
 /**
- * 新建播放列表 后端：POST /api/media/playlists
- * @param {{name:string, videoIds?:string[]}} payload
+ * 新建播放列表 后端：POST /api/media/playlists  body **只有 name**
+ *
+ * <p>P5.41：后端 create 从来不读 videoIds（只认 name），旧实现把 videoIds 一起发过来是「发了但没人收」，
+ * 于是「新建并加入」新建出来的列表永远是空的。现在新建只管新建，视频由调用方随后追加（追加是幂等的）。</p>
+ * @param {{name:string}} payload
  * @param {{silent?:boolean}} [options]
  */
 export function createPlaylist(payload, options) {
@@ -388,7 +424,7 @@ export function createPlaylist(payload, options) {
   return mediaRequest({
     url: '/playlists',
     method: 'post',
-    data: { name: p.name, videoIds: p.videoIds || [] },
+    data: { name: p.name },
     silent: opt.silent !== false
   })
 }
@@ -427,16 +463,22 @@ export function deletePlaylist(id, options) {
 
 /**
  * 追加视频到播放列表（幂等） 后端：POST /api/media/playlist/{id}/videos
+ *
+ * <p><b>双键发</b>（P5.41）：后端历史上只读 {@code videoId}（单条），一次请求加一个；
+ * 只发 {@code videoIds} 会被判成 400「videoId 不能为空」——正是「加入播放列表失败」的真因。
+ * 现在两个键都发：认识 {@code videoIds} 的后端一次加完，只认识 {@code videoId} 的老后端至少加进第一个，
+ * 剩下的由调用方（usePlaylistAdd）按响应里的真实条目逐个补齐 —— 行为与后端版本无关。</p>
  * @param {string} id
  * @param {string[]} videoIds
  * @param {{silent?:boolean}} [options]
  */
 export function addPlaylistVideos(id, videoIds, options) {
   const opt = options || {}
+  const ids = (Array.isArray(videoIds) ? videoIds : [videoIds]).map((v) => String(v == null ? '' : v)).filter(Boolean)
   return mediaRequest({
     url: '/playlist/' + encodeURIComponent(String(id == null ? '' : id)) + '/videos',
     method: 'post',
-    data: { videoIds: videoIds || [] },
+    data: { videoId: ids[0], videoIds: ids },
     silent: opt.silent !== false
   })
 }
@@ -631,6 +673,9 @@ const mediaApi = {
   getVideoMeta,
   saveVideoMeta,
   batchVideoMeta,
+  // 作品简介（P5.38）
+  getVideoSynopsis,
+  saveVideoSynopsis,
   // 保存筛选（P2-B）
   listFilters,
   saveFilter,

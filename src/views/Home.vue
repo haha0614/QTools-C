@@ -440,6 +440,9 @@ onMounted(() => {
   text-align: center;
 
   &__title {
+    /* P5.40：与 logo 字标同一款字体（得意黑子集），其余字符回退系统栈；
+       字重保持 600，@font-face 已声明 100–900，取真实字形不合成 */
+    font-family: var(--qt-font-display);
     margin: 0 0 10px;
     font-size: 32px;
     font-weight: 600;

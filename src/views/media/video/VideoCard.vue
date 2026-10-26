@@ -296,6 +296,7 @@ const {
   creating: plCreating,
   blocked: plBlocked,
   targetCount: plCount,
+  lastAdd: plLastAdd,
   load: plLoad,
   openCreate: plOpenCreate,
   closeCreate: plCloseCreate,
@@ -407,17 +408,21 @@ function onPlaylistBtn() {
   else openMenu()
 }
 
-/** 选中一个已有列表：加入后菜单不关，可在同一菜单里继续加到别的列表 */
+/**
+ * 选中一个已有列表：加入后菜单不关，可在同一菜单里继续加到别的列表。
+ * 只有真的新增了视频才弹「已加入…N 个」——已经在里面（幂等命中）由 usePlaylistAdd 给一句「无需重复加入」，
+ * 否则会出现「已加入 0 个视频」这种自相矛盾的提示（P5.41）。
+ */
 async function onPick(p) {
   const ok = await plAddTo(p)
-  if (ok) emit('added', addedMessage(p && p.name, plCount.value))
+  if (ok && plLastAdd.value.added > 0) emit('added', addedMessage(p && p.name, plLastAdd.value.added))
 }
 
 async function onCreate() {
   const made = await plCreateAndAdd()
   if (!made) return
   plCloseCreate()
-  emit('added', createdMessage(made.name, plCount.value))
+  if (made.added > 0) emit('added', createdMessage(made.name, made.added))
 }
 
 function onToggleCreate() {

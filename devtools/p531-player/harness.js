@@ -179,18 +179,26 @@ window.__P531 = {
     quality() {
       return quality.value
     },
+    /** 当前档位：P5.37 起画质是「触发按钮 + 自绘菜单」，值挂在 data-qt-qvalue 上（不再是 select.value） */
     headQuality() {
       const s = q('[data-qt-quality]')
-      return s ? s.value : null
+      return s ? s.getAttribute('data-qt-qvalue') : null
     },
-    /** 走真实事件链：改 select.value + change 事件（= 用户选档） */
+    qualityMenuOpen() {
+      return !!q('[data-qt-qmenu]')
+    },
+    /** 走真实事件链：点触发按钮 → 点目标档位的菜单项（= 用户点选两下，不再是改 select.value） */
     async pickQuality(qv) {
-      const s = q('[data-qt-quality]')
-      if (!s) return null
-      s.value = qv
-      s.dispatchEvent(new Event('change', { bubbles: true }))
-      await sleep(80)
-      return s.value
+      const b = q('[data-qt-quality]')
+      if (!b) return null
+      if (!q('[data-qt-qmenu]')) b.click()
+      await sleep(60)
+      const opt = q('[data-qt-qopt][data-qt-value="' + qv + '"]')
+      if (!opt) return null
+      opt.click()
+      await sleep(90)
+      const now = q('[data-qt-quality]')
+      return now ? now.getAttribute('data-qt-qvalue') : null
     },
     videoSrc() {
       const v = q('.p-stage video')

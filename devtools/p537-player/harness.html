@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<!-- 身份自检锚点：run.mjs 读 document.title 确认「此刻评估的就是本实测台」 -->
+<title>P5.37 播放器图标居中 + 画质自定义下拉 实测台</title>
+<style>
+  /* 实测台只铺满视口 —— 被测的是 .player 这一层（position:fixed; inset:0），不含站点头部 */
+  html, body, #app { margin: 0; padding: 0; height: 100%; background: #000; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<!-- 复用 p531 的实测台脚本：同一份 <video> 打桩 + 同一份 window.__P531.api（画质接口已按 P5.37 更新） -->
+<script type="module" src="../p531-player/harness.js"></script>
+</body>
+</html>
