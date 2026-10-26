@@ -276,8 +276,9 @@ export function usePlaylistAdd(options = {}) {
   /**
    * 从某个列表移出目标视频（P5.26：信息栏播放列表分区需要「移出」，两个旧入口只有「加入」）。
    * 后端：DELETE /api/media/playlist/{id}/videos/{videoId}（逐条删；批量目标就逐条调用）。
-   * 成功：清掉本会话的已加入标记 + 把该条目 joined 置 false（数量同步 -1，不重拉清单）。
-   * 失败：只提示真实原因，不改任何状态（用户在界面上看到的仍是「已加入」，可以重试）。
+   * 成功：清掉本会话的已加入标记 + 把该条目 joined 置 false，计数立刻 -实际移出条数（不低于 0），不重拉清单。
+   * 失败（P5.44）：逐条删除可能已删掉一部分 —— 已删的照算，其余回滚到操作前的计数与 joined，
+   *      再按错误分级给真实原因（用户在界面上看到的是「没删成什么样就还是什么样」，可以直接重试）。
    */
   async function removeFrom(p) {
     if (!p || busyId.value || blocked.value) return false

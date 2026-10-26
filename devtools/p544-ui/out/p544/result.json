@@ -1,11 +1,7 @@
 {
-  "passed": 52,
-  "failures": [
-    "D1 点下去先乐观 +1（10 → 11 个） -> {\"text\":\"10 个\",\"frames\":12,\"gets\":4,\"joined\":\"\"} rows=[{\"n\":\"111\",\"c\":\"1 个\",\"j\":true},{\"n\":\"1111\",\"c\":\"1 个\",\"j\":true},{\"n\":\"来不及\",\"c\":\"10 个\",\"j\":false}]",
-    "D2 乐观态同时打上「已加入 ✓」",
-    "D8 采样历史：10 个 → 11 个(+✓) → 10 个(无 ✓)，乐观值与回滚都真的上过屏 -> {\"samples\":[{\"c\":\"10 个\",\"j\":false,\"dt\":0}],\"ticks\":242,\"span\":4000,\"seen\":{\"10 个|false\":242}} obs=[{\"t\":0,\"c\":\"10 个\"},{\"t\":5,\"c\":\"11 个\"},{\"t\":9,\"c\":\"10 个\"},{\"t\":488,\"c\":\"10 个\"}] xhr=[{\"m\":\"GET\",\"u\":\"/api/media/playlists\",\"t\":759},{\"m\":\"POST\",\"u\":\"/api/media/playlist/8/videos\",\"t\":1165},{\"m\":\"GET\",\"u\":\"/api/media/playlists\",\"t\":2605},{\"m\":\"POST\",\"u\":\"/api/media/playlist/2/videos\",\"t\":5182},{\"m\":\"POST\",\"u\":\"/api/media/playlist/8/videos\",\"t\":5804},{\"m\":\"GET\",\"u\":\"/api/media/playlists\",\"t\":7027},{\"m\":\"GET\",\"u\":\"/api/media/playlists\",\"t\":7672},{\"m\":\"POST\",\"u\":\"/api/media/playlist/1/videos\",\"t\":7704}]"
-  ],
-  "vid": "36b36203288b",
+  "passed": 55,
+  "failures": [],
+  "vid": "4b4d468c3d23",
   "start": {
     "a": {
       "status": 200,
@@ -77,6 +73,89 @@
         "c": "10 个",
         "j": false,
         "dt": 0
+      },
+      {
+        "c": "11 个",
+        "j": true,
+        "dt": 7
+      },
+      {
+        "c": "10 个",
+        "j": false,
+        "dt": 275
+      }
+    ],
+    "rollbackObserver": [
+      {
+        "t": 0,
+        "c": "10 个"
+      },
+      {
+        "t": 5,
+        "c": "11 个"
+      },
+      {
+        "t": 274,
+        "c": "10 个"
+      }
+    ],
+    "rollbackXhr": [
+      {
+        "m": "GET",
+        "u": "/api/media/playlists",
+        "t": 679
+      },
+      {
+        "m": "POST",
+        "u": "/api/media/playlist/8/videos",
+        "t": 1047
+      },
+      {
+        "m": "GET",
+        "u": "/api/media/playlists",
+        "t": 2495
+      },
+      {
+        "m": "POST",
+        "u": "/api/media/playlist/2/videos",
+        "t": 5061
+      },
+      {
+        "m": "POST",
+        "u": "/api/media/playlist/8/videos",
+        "t": 5662
+      },
+      {
+        "m": "GET",
+        "u": "/api/media/playlists",
+        "t": 6876
+      },
+      {
+        "m": "GET",
+        "u": "/api/media/playlists",
+        "t": 7483
+      },
+      {
+        "m": "POST",
+        "u": "/api/media/playlist/1/videos",
+        "t": 7492
+      }
+    ],
+    "rowsAtRollbackClick": [
+      {
+        "n": "111",
+        "c": "1 个",
+        "j": true
+      },
+      {
+        "n": "1111",
+        "c": "1 个",
+        "j": true
+      },
+      {
+        "n": "来不及",
+        "c": "11 个",
+        "j": true
       }
     ],
     "toasts": {
@@ -101,8 +180,8 @@
       "overflow": 0,
       "countText": "12 个",
       "joinedText": "已加入 ✓",
-      "countRight": 299,
-      "joinedLeft": 305,
+      "countRight": 200,
+      "joinedLeft": 206,
       "tabular": "tabular-nums"
     }
   }

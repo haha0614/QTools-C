@@ -154,8 +154,6 @@ let exitCode = 0
 let heldRequestId = null
 /** 只挂住匹配这个片段的 POST（'…/playlist/8/videos'） */
 let holdUrlPart = ''
-/** POST …/videos 的失败打桩 */
-let stubPost = null
 /** GET /api/media/playlists 的清单打桩（校准用） */
 let stubList = null
 let getListCalls = 0
@@ -176,12 +174,9 @@ async function onRequestPaused(p) {
     return cdp.send('Fetch.continueRequest', { requestId: p.requestId })
   }
   if (method === 'POST' && /\/api\/media\/playlist\/[^/]+\/videos$/.test(url)) {
-    if (stubPost) {
-      console.log('  [fetch] POST ' + url + ' -> STUB ' + stubPost.code)
-      return fulfill(stubPost.code, stubPost.body)
-    }
     if (holdUrlPart && url.indexOf(holdUrlPart) >= 0 && !heldRequestId) {
       heldRequestId = p.requestId // 故意不回：验证「响应还没回来，计数已经变了」
+      console.log('  [fetch] POST ' + url + ' -> HOLD（挂住，等断言完再放行/注入失败）')
       return
     }
     console.log(
@@ -489,7 +484,7 @@ try {
   ok((await cdp.evaluate(clickListItem(L_C.name))) === 'clicked', '点到「' + L_C.name + '」（初始 10 个）')
   const waitOpt = await cdp.evaluate(waitCount(L_C.name, '11 个', 12), true)
   const rowsAtD = await cdp.evaluate('window.__plRows()')
-  ok(!!waitOpt && waitOpt.text === '11 个', 'D1 点下去先乐观 +1（10 → 11 个）', JSON.stringify(waitOpt) + ' rows=' + JSON.stringify(rowsAtD))
+  ok(!!waitOpt && waitOpt.text === '11 个', 'D1 点下去先乐观 +1（10 → 11 个）', JSON.stringify(waitOpt))
   ok(!!waitOpt && waitOpt.joined === '已加入 ✓', 'D2 乐观态同时打上「已加入 ✓」', String(waitOpt && waitOpt.joined))
   const held403 = heldRequestId
   ok(!!held403, 'D3 这次 POST 也被挂住（失败由我们注入，时序可控）', String(held403))
@@ -521,7 +516,7 @@ try {
       histC[2].c === '10 个' &&
       histC[2].j === false,
     'D8 采样历史：10 个 → 11 个(+✓) → 10 个(无 ✓)，乐观值与回滚都真的上过屏',
-    JSON.stringify(recC) + ' obs=' + JSON.stringify(obsLog) + ' xhr=' + JSON.stringify(xhrLog)
+    JSON.stringify(recC)
   )
   const afterC = await apiList(L_C.id)
   ok(afterC.count === startC.count, 'D9 后端没被写（' + L_C.name + ' 仍 ' + startC.count + ' 条）', startC.count + ' -> ' + afterC.count)
@@ -674,6 +669,9 @@ try {
           historyAdd: histA,
           historyIdempotent: histDup,
           historyRollback: histC,
+          rollbackObserver: obsLog,
+          rollbackXhr: xhrLog,
+          rowsAtRollbackClick: rowsAtD,
           toasts: { dup: toastDup, s403: toast403 },
           gets: { start: getsAtStart, beforeSettle: getsBeforeSettle, afterSettle: getsAfterSettle },
           removeHook: removedByHook,
