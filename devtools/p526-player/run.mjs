@@ -44,6 +44,13 @@ function ok(cond, name, extra) {
   failures.push(name + (extra ? ' → ' + extra : ''))
   console.log('  ✗ ' + name + (extra ? ' → ' + extra : ''))
 }
+/* 已废弃用例：被测对象已移除（P5.46 取消播放列表页 / P5.24 合并折叠按钮）。
+   只记一行 SKIP，不进 passed / failures —— 旧断言不执行，也不留假失败。 */
+let skipped = 0
+function skip(name, reason) {
+  skipped++
+  console.log('  SKIP ' + name + ' —— 已废弃：' + reason)
+}
 const near = (a, b, tol) => Math.abs(Number(a) - Number(b)) <= (tol == null ? 1 : tol)
 const r2 = (n) => Math.round(Number(n) * 100) / 100
 
@@ -753,106 +760,21 @@ try {
   await shot('side-toggle-hit-area')
   await moveTo(inside.x, inside.y)
 
-  /* ========================= G 信息栏播放列表分区 ========================= */
-  console.log('\n[G] 信息栏「播放列表」分区：查看 / 加入 / 移出 / 新建 + 三档策略')
-  await api('openSide()')
-  await sleep(240)
-  const g0 = await api('plState()')
-  console.log('    初始：' + JSON.stringify(g0))
-  ok(!!g0 && g0.exists, 'g1) 信息栏出现「播放列表」分区（与人物 / 评分 / 标签 / 标记同级）', g0 ? g0.h3 : 'n/a')
-  ok(!!g0 && /播放列表/.test(g0.h3), 'g2) 分区标题 = 播放列表 + 计数', g0 ? JSON.stringify(g0.h3) : 'n/a')
-  ok(!!g0 && g0.rows.length === 2, 'g3) 列出服务端清单（2 条，来自 GET /api/media/playlists）', g0 ? JSON.stringify(g0.rows.map((r) => r.name)) : 'n/a')
-  ok(!!g0 && g0.rows[0] && g0.rows[0].joined === true && g0.rows[0].action === '移出', 'g4) 查看本片所在列表：已在本片的列表标为 joined 且给「移出」', g0 ? JSON.stringify(g0.rows[0]) : 'n/a')
-  ok(!!g0 && g0.rows[1] && g0.rows[1].joined === false && g0.rows[1].action === '加入', 'g5) 不在本片的列表给「加入」', g0 ? JSON.stringify(g0.rows[1]) : 'n/a')
-  await shot('playlist-section')
-
-  plStub.log.length = 0
-  await api('notifyLog()')
-  const joined = await api('clickPl("稍后看","加入")')
-  await sleep(320)
-  const g1 = await api('plState()')
-  const addReq = plStub.log.find((l) => l.method === 'POST' && /\/videos$/.test(l.path))
-  console.log('    加入后：' + JSON.stringify(g1.rows) + '  请求=' + JSON.stringify(addReq))
-  ok(joined === true && !!addReq, 'g6) 加入路径：点击「加入」→ POST /api/media/playlist/{id}/videos', addReq ? addReq.method + ' ' + addReq.path : 'n/a')
-  ok(addReq && /v-p526/.test(addReq.body || ''), 'g7) 请求体带本片 id（videoIds 幂等追加）', addReq ? addReq.body : 'n/a')
-  ok(g1.rows.some((r) => r.name === '稍后看' && r.joined && r.action === '移出'), 'g8) 加入后该行立即变「已加入 + 移出」（不整页刷新）', JSON.stringify(g1.rows.map((r) => [r.name, r.joined, r.action])))
-  const joinNote = await api('notifyLog()')
-  ok(
-    joinNote.some((m) => /已加入播放列表「稍后看」：1 个视频/.test(m)),
-    'g9) 成功提示文案与卡片入口同源（addedMessage：已加入播放列表「稍后看」：1 个视频）',
-    JSON.stringify(joinNote)
-  )
-
-  plStub.log.length = 0
-  await api('notifyLog()')
-  await api('clickPl("收藏夹","移出")')
-  await sleep(320)
-  const g2 = await api('plState()')
-  const delReq = plStub.log.find((l) => l.method === 'DELETE')
-  console.log('    移出后：' + JSON.stringify(g2.rows) + '  请求=' + JSON.stringify(delReq))
-  ok(!!delReq && /\/videos\/v-p526$/.test(delReq.path), 'g10) 移出路径：DELETE /api/media/playlist/{id}/videos/{videoId}', delReq ? delReq.method + ' ' + delReq.path : 'n/a')
-  ok(g2.rows.some((r) => r.name === '收藏夹' && !r.joined && r.action === '加入'), 'g11) 移出后该行回到「加入」态', JSON.stringify(g2.rows.map((r) => [r.name, r.joined, r.action])))
-  ok(g2.rows.some((r) => r.name === '收藏夹' && /^2 个/.test(r.count)), 'g12) 行内数量同步 -1（3 个 → 2 个，不重拉清单）', JSON.stringify(g2.rows.map((r) => r.count)))
-
-  const leaveNote = await api('notifyLog()')
-  ok(
-    leaveNote.some((m) => /已从播放列表「收藏夹」移出本片/.test(m)),
-    'g12b) 移出成功提示（页面上看到的是「已从播放列表「收藏夹」移出本片」）',
-    JSON.stringify(leaveNote)
-  )
-
-  plStub.log.length = 0
-  await api('notifyLog()')
-  const created = await api('plStartCreate()')
-  const defaultName = await api('plInputValue()')
-  await api('plTypeName("验收新列表")')
-  await api('plSubmitCreate()')
-  await sleep(420)
-  const g3 = await api('plState()')
-  const createReq = plStub.log.find((l) => l.method === 'POST' && /\/api\/media\/playlists$/.test(l.path))
-  console.log('    新建：creating=' + created + ' 默认名=' + JSON.stringify(defaultName) + ' 请求=' + JSON.stringify(createReq))
-  ok(created === true, 'g13) 新建路径：点「＋ 新建列表」→ 展开名称输入（默认名已填好）', JSON.stringify(defaultName))
-  ok(!!defaultName && /我的列表/.test(defaultName), 'g14) 默认名来自 defaultPlaylistName（我的列表 YYYY-MM-DD）', String(defaultName))
-  ok(!!createReq && /验收新列表/.test(createReq.body || ''), 'g15) 创建并加入：POST /api/media/playlists（名字 + videoIds 一并带上）', createReq ? createReq.body : 'n/a')
-  ok(g3.rows.some((r) => r.name === '验收新列表'), 'g16) 新建的列表立即出现在分区里', JSON.stringify(g3.rows.map((r) => r.name)))
-
-  // off 档：只提示、不发请求
-  plStub.log.length = 0
-  await api('setLevel("off")')
-  await sleep(320)
-  const gOff = await api('plState()')
-  console.log('    off 档：' + JSON.stringify(gOff))
-  ok(!!gOff && gOff.rows.length === 0 && gOff.hints.some((h) => /仅查看/.test(h)), 'g17) off 档：分区只给一句提示，不渲染加入 / 移出按钮', gOff ? JSON.stringify(gOff.hints) : 'n/a')
-  const offPlReqs = plStub.log.filter((l) => /playlist/.test(l.path))
-  ok(offPlReqs.length === 0, 'g18) off 档不发任何播放列表请求（与面板「off 不发请求」的既有约定一致）', JSON.stringify(offPlReqs.map((l) => l.path)))
-
-  // local 档：拉清单但不给写入口（统一闸门文案）
-  await api('setLevel("local")')
-  await sleep(320)
-  const gLocal = await api('plState()')
-  console.log('    local 档：' + JSON.stringify(gLocal))
-  ok(!!gLocal && gLocal.hints.some((h) => /本地编辑/.test(h)), 'g19) local 档：出现 usePlaylistAdd 的统一闸门文案（与卡片入口同一句）', gLocal ? JSON.stringify(gLocal.hints) : 'n/a')
-  ok(!!gLocal && gLocal.rows.length === 0, 'g20) local 档不给加入 / 移出按钮（播放列表只存在服务端，本地档不可写）', gLocal ? String(gLocal.rows.length) : 'n/a')
-
-  // 接口未就绪：只提示，不报错
-  await api('setLevel("full")')
-  await sleep(320)
-  plStub.mode = 'error'
-  const errBefore = cdp.logs.length
-  await api('setLevel("full")')
-  await sleep(420)
-  const gErr = await api('plState()')
-  const pageErrors = await api('errors()')
-  console.log('    接口 500：' + JSON.stringify(gErr ? gErr.hints : null) + '  pageErrors=' + JSON.stringify(pageErrors))
-  ok(
-    !!gErr && gErr.hints.some((h) => /未就绪/.test(h)) && !gErr.hints.some((h) => /还没有播放列表/.test(h)),
-    'g21) 接口未就绪（500）→ 只显示一句可读提示，且不叠「还没有播放列表」',
-    gErr ? JSON.stringify(gErr.hints) : 'n/a'
-  )
-  ok(pageErrors.length === 0, 'g22) 整个过程没有未捕获异常（window.onerror / unhandledrejection 计数 = 0）', JSON.stringify(pageErrors))
-  ok(gErr && gErr.rows.length === 0, 'g23) 接口未就绪时不渲染空壳行（不假装「还没有播放列表」）', gErr ? String(gErr.rows.length) : 'n/a')
-  await shot('playlist-unavailable')
-  // 恢复打桩：重新挂载面板拉一次清单，让窄屏检查里确实有列表行可量
+  /* ========================= G 信息栏播放列表分区（整段已废弃） ========================= */
+  console.log('\n[G] 信息栏「播放列表」分区：已废弃（P5.35 整块删除 / P5.46 取消播放列表页）')
+  // 已废弃：被测对象移除（P5.46 取消播放列表页；该分区在 P5.35 已整块删除）。
+  // 原 G 段断言 [data-vp-sec=playlists] 分区里的查看 / 加入 / 移出 / 新建四条路径和 off·local·
+  // 未就绪三档策略，但加入 / 移出 / 新建已搬到卡片右下角菜单与工具栏 PlaylistPicker，信息栏不再
+  // 重复一份；分区与 .vp-pl-row / .vp-pl-new 都不在 DOM 里 —— 原判据不改写，直接跳过。
+  // 等价覆盖：p546-ui 的 C 段（弹层新建 / 重命名 / 删除）、p542 / p544 的卡片菜单写闸门。
+  skip('g1–g5 信息栏出现「播放列表」分区 / 标题 = 播放列表 + 计数 / 列出清单 / joined 与「加入」两态', 'P5.46 取消播放列表页')
+  skip('g6–g9 点「加入」→ POST /api/media/playlist/{id}/videos + 行内立即变「移出」+ 提示文案同源', 'P5.46 取消播放列表页')
+  skip('g10–g12b 点「移出」→ DELETE …/videos/{videoId} + 行内回「加入」+ 数量 -1 + 移出提示', 'P5.46 取消播放列表页')
+  skip('g13–g16 「＋ 新建列表」→ 默认名我的列表 YYYY-MM-DD + POST 带上名字与 videoIds + 立即出现在分区', 'P5.46 取消播放列表页')
+  skip('g17–g18 off 档只给一句提示、不发任何播放列表请求', 'P5.46 取消播放列表页')
+  skip('g19–g20 local 档统一闸门文案、不给加入 / 移出按钮', 'P5.46 取消播放列表页')
+  skip('g21–g23 接口未就绪（500）只给一句可读提示、不叠「还没有播放列表」、不渲染空壳行', 'P5.46 取消播放列表页')
+  // 恢复打桩：重新挂载面板，让后面的窄屏检查量到的仍是「有清单」的正常态
   plStub.mode = 'ok'
   await api('setLevel("full")')
   await sleep(420)
@@ -881,7 +803,7 @@ try {
     )
     console.log('    ' + w + '×' + h + '：' + JSON.stringify(narrow))
     ok(narrow.doc <= narrow.win + 1 && narrow.body <= narrow.win + 1, 'i' + w + ') ' + w + ' 宽：无横向溢出（doc = ' + narrow.doc + ' ≤ ' + narrow.win + '）', JSON.stringify(narrow))
-    ok(narrow.side == null || narrow.rows.every((rw) => rw <= narrow.side + 0.5), 'i' + w + 'b) ' + w + ' 宽：播放列表行不超出信息栏宽度', JSON.stringify(narrow.rows) + ' ≤ ' + r2(narrow.side || 0))
+    skip('i' + w + 'b) ' + w + ' 宽：播放列表行不超出信息栏宽度（.vp-pl-row 已随分区删除）', 'P5.46 取消播放列表页')
   }
   await shot('narrow-375')
   await viewport(1600, 1000)
@@ -913,7 +835,7 @@ try {
 }
 
 const total = passed + failures.length
-console.log('\n' + (failures.length ? 'FAIL ' : 'PASS ') + passed + '/' + total + ' (P5.26 播放页 7 项改进)')
+console.log('\n' + (failures.length ? 'FAIL ' : 'PASS ') + passed + '/' + total + ' (P5.26 播放页 7 项改进，跳过 ' + skipped + ' 条废弃用例)')
 if (failures.length) {
   for (const f of failures) console.log('  ✗ ' + f)
   process.exit(1)

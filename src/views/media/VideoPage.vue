@@ -41,17 +41,29 @@
           >
             加入播放列表
           </button>
-          <!-- P5.47 批量生成简介：站端唯一的批量入口（选择模式有选中项 → 只处理选中项，
-               否则 → 全库补空；overwrite=false，已有简介的不动）。逐个生成、每完成一个立刻落库。 -->
+          <!-- P5.55 批量生成简介：点一下**只打开两步确认弹窗**，不在这一步动任何数据。
+               两步确认里再选「包括已有内容」（默认不勾 = 只补空）并敲「确认」。 -->
           <button
             class="icon-btn syn-batch-btn"
             type="button"
             data-syn-batch
-            :disabled="readOnlyEdit || synopsisBatchBusy"
+            :disabled="readOnlyEdit"
             :title="synopsisBatchTitle"
-            @click="startSynopsisBatch"
+            @click="openSynopsisBatch"
           >
-            {{ synopsisBatchBusy ? '生成中…' : '⚡ 批量生成简介' }}
+            {{ synopsisRunning ? '生成中…' : '⚡ 批量生成简介' }}
+          </button>
+          <!-- P5.55 撤销入口：常驻。后端任务是内存态（重启即丢），所以这里既能精确回滚，
+               也能退化成「按 ids 清空简介」——两条路都在同一个弹窗里二次确认。 -->
+          <button
+            class="icon-btn syn-undo-btn"
+            type="button"
+            data-syn-undo
+            :disabled="readOnlyEdit"
+            title="撤销上一次批量生成（有旧值快照则精确回滚，否则按 ids 清空）"
+            @click="openSynopsisUndo"
+          >
+            撤销上次批量
           </button>
           <button
             class="icon-btn sel-btn"
@@ -112,6 +124,21 @@
         <!-- 批量简介任务进度：处理中途也能看到「已处理 N/共 M」，完成后可关闭 -->
         <div v-if="synopsisBatchText" class="tb-row tb-syn-batch">
           <span class="syn-batch-progress" data-syn-batch-progress>{{ synopsisBatchText }}</span>
+          <!-- P5.55：运行中给「停止」；已结束给「成果」回看 -->
+          <button
+            v-if="!synopsisBatchFinished"
+            class="chip syn-batch-stop"
+            type="button"
+            data-syn-batch-stop-inline
+            :disabled="synopsisStopping"
+            :title="synopsisStopping ? '正在停止：等当前这条生成完' : '停止批量生成（正在生成的这条会跑完）'"
+            @click="stopSynopsisBatch"
+          >
+            {{ synopsisStopping ? '正在停止…' : '停止' }}
+          </button>
+          <button v-else class="chip" type="button" data-syn-batch-summary-inline @click="openSynopsisSummary">
+            成果
+          </button>
           <button v-if="synopsisBatchFinished" class="chip chip-x" type="button" @click="clearSynopsisBatch">
             关闭<span class="x">×</span>
           </button>
@@ -363,6 +390,35 @@
       @notify="showToast"
     />
 
+    <!-- P5.55 批量生成简介：两步确认 / 进度+停止 / 成果汇总 / 撤销 -->
+    <SynopsisBatchDialog
+      :open="synopsisDialogOpen"
+      :phase="synopsisPhase"
+      :target="synopsisTarget"
+      :preview="synopsisPreview"
+      :preview-loading="synopsisPreviewLoading"
+      :preview-error="synopsisPreviewError"
+      :mode="synopsisMode"
+      :job="synopsisBatchJob"
+      :busy="synopsisBatchBusy"
+      :stopping="synopsisStopping"
+      :undo-count="synopsisUndoCount"
+      :undo-ids-text="synopsisUndoIds"
+      :undo-preview="synopsisUndoPreview"
+      :undo-busy="synopsisUndoBusy"
+      :undo-done="synopsisUndoDone"
+      :can-rollback="synopsisCanRollback"
+      @close="closeSynopsisDialog"
+      @start="startSynopsisBatch"
+      @stop="stopSynopsisBatch"
+      @retry-preview="loadSynopsisPreview"
+      @undo-open="openSynopsisUndo"
+      @undo-ids="(v) => (synopsisUndoIds = v)"
+      @undo-preview="previewSynopsisUndo"
+      @undo-rollback="rollbackSynopsisBatch"
+      @undo-confirm="clearSynopsisBatchIds"
+    />
+
     <!-- 页面级轻提示：批量结果 / 接口未就绪都在这里反馈（与播放列表页同一套组件） -->
     <PageToast :toasts="toasts" />
   </div>
@@ -396,7 +452,20 @@ import VideoCard from './video/VideoCard.vue'
 import RecentStrip from './video/RecentStrip.vue'
 import MediaPlayer from './video/MediaPlayer.vue'
 import BatchBar from './video/BatchBar.vue'
-import { batchFinished, batchProgressText, errorText, resolveMode } from './video/synopsisGenerate'
+import {
+  batchActive,
+  batchFinished,
+  batchProgressText,
+  batchSummary,
+  clearLastBatch,
+  errorText,
+  readLastBatch,
+  resolveMode,
+  rollbackText,
+  saveLastBatch
+} from './video/synopsisGenerate'
+// P5.55：批量生成的安全壳（两步确认 / 停止 / 成果汇总 / 撤销）
+import SynopsisBatchDialog from './video/SynopsisBatchDialog.vue'
 import VideoMetaPanel from './video/VideoMetaPanel.vue'
 // P5-B：加入播放列表弹层 + 播放列表顺序纯逻辑（归一化 / 保序重排 / 上一部下一部）
 import PlaylistPicker from './video/PlaylistPicker.vue'
@@ -1299,21 +1368,71 @@ function currentPlayDur() {
 /* 提示统一走 usePageToast（与播放列表页同一套组件 PageToast） */
 const { toasts, push: showToast } = usePageToast()
 
-/* ---------------------------------------------------------- 批量生成简介（P5.47） */
+/* ---------------------------------------------------------- 批量生成简介（P5.47 / P5.55 安全化） */
+
+/*
+ * P5.55 的形状：**点按钮只开弹窗**，弹窗里两步确认之后才真的发请求。
+ * 状态机也在这里（弹窗是纯展示 + emit）：
+ *   confirm → run → summary；undo 是独立入口（上一次批量 / 手贴 ids）。
+ */
 
 /** 当前批量任务节点（null = 没有任务在跑/没跑过） */
 const synopsisBatchJob = ref(null)
-/** 提交中 / 轮询中（按钮 loading） */
+/** 提交中（按钮 loading） */
 const synopsisBatchBusy = ref(false)
+/** 弹窗开关与阶段 */
+const synopsisDialogOpen = ref(false)
+const synopsisPhase = ref('confirm')
+/** 影响面预览（两步确认第一段读它） */
+const synopsisPreview = ref(null)
+const synopsisPreviewLoading = ref(false)
+const synopsisPreviewError = ref('')
+/** 本次将用哪种生成方式（tmpl / llm）：点开弹窗时定一次，提交时复用 */
+const synopsisMode = ref('template')
+/** 已发出停止请求（等当前那条生成完） */
+const synopsisStoppingLocal = ref(false)
+/** 撤销：dry-run 结果 / 进行中 / 已完成 */
+const synopsisUndoPreview = ref(null)
+const synopsisUndoBusy = ref(false)
+const synopsisUndoDone = ref(null)
+/** 撤销的目标 id 文本（逗号 / 空格 / 换行分隔），默认取上一次批量记录 */
+const synopsisUndoIds = ref('')
+/** 上一次批量记录（localStorage，后端内存任务丢失后撤销只能靠它） */
+const lastBatch = ref(readLastBatch())
 let synopsisBatchTimer = null
 
 const synopsisBatchText = computed(() => batchProgressText(synopsisBatchJob.value))
 const synopsisBatchFinished = computed(() => batchFinished(synopsisBatchJob.value))
-const synopsisBatchTitle = computed(() =>
-  synopsisBatchBusy.value
-    ? '批量生成进行中…'
-    : '为缺少简介的视频批量生成简介（已有简介的不覆盖；后台逐个处理，每完成一个立刻保存）'
+const synopsisRunning = computed(() => batchActive(synopsisBatchJob.value))
+const synopsisStopping = computed(
+  () => synopsisStoppingLocal.value || !!(synopsisBatchJob.value && synopsisBatchJob.value.cancelRequested)
 )
+const synopsisBatchTitle = computed(() =>
+  synopsisRunning.value
+    ? '批量生成进行中…（点开可看进度 / 停止）'
+    : '为视频批量生成简介：先弹两步确认（默认只补空、不覆盖已有内容）'
+)
+const synopsisTarget = computed(() => ({
+  hasSelection: !!(selectMode.value && selectedIds.value.length),
+  count: synopsisPreview.value ? Number(synopsisPreview.value.total) || 0 : selectedIds.value.length
+}))
+const synopsisCanRollback = computed(() => !!(synopsisBatchJob.value && synopsisBatchJob.value.canRollback))
+const synopsisUndoCount = computed(() => parseIdList(synopsisUndoIds.value).length)
+
+/** id 文本 → 数组（逗号 / 空格 / 换行都算分隔符，去空去重） */
+function parseIdList(text) {
+  const out = []
+  const seen = {}
+  String(text || '')
+    .split(/[\s,，;；]+/)
+    .forEach((raw) => {
+      const id = raw.trim()
+      if (!id || seen[id]) return
+      seen[id] = 1
+      out.push(id)
+    })
+  return out
+}
 
 function stopSynopsisBatchPoll() {
   if (synopsisBatchTimer) {
@@ -1322,7 +1441,17 @@ function stopSynopsisBatchPoll() {
   }
 }
 
-/** 轮询任务进度：1.5s 一次，结束后停表并 toast 汇总 */
+/** 任务结束后：把「这次到底写了哪些 id」记进本机记录，撤销入口才有的放矢 */
+function rememberBatchIds(job) {
+  if (!job || !Array.isArray(job.items)) return
+  const ids = job.items.filter((it) => it && it.status === 'generated' && it.videoId).map((it) => it.videoId)
+  if (!ids.length) return
+  const prev = lastBatch.value || {}
+  lastBatch.value = { ...prev, ids, jobId: job.jobId || prev.jobId, finishedAt: Date.now() }
+  saveLastBatch(lastBatch.value)
+}
+
+/** 轮询任务进度：1.5s 一次，结束后停表并弹成果汇总 */
 function pollSynopsisBatch(jobId) {
   stopSynopsisBatchPoll()
   synopsisBatchTimer = setInterval(async () => {
@@ -1332,25 +1461,40 @@ function pollSynopsisBatch(jobId) {
       if (batchFinished(job)) {
         stopSynopsisBatchPoll()
         synopsisBatchBusy.value = false
+        synopsisStoppingLocal.value = false
+        rememberBatchIds(job)
+        synopsisPhase.value = 'summary'
+        synopsisDialogOpen.value = true
         showToast(batchProgressText(job))
       }
     } catch {
       stopSynopsisBatchPoll()
       synopsisBatchBusy.value = false
-      showToast('批量生成进度查询失败（任务可能已随后端重启作废）')
+      synopsisStoppingLocal.value = false
+      synopsisPreviewError.value = ''
+      // 404 = 后端重启过，内存任务丢了：明确说出来，别让用户以为「跑完了」
+      showToast('批量生成任务已丢失（后端重启），进度查询 404；成果无从汇总，可点「撤销上次批量」按 ids 清空')
     }
   }, 1500)
 }
 
-/**
- * 触发批量生成
- *   选中项非空（选择模式）→ 只处理这些 id；否则 → all:true（全库补空）
- *   mode：本地模型可用走 llm，否则模板（与单条「⚡ 自动生成」同一套判定）
- *   overwrite 固定 false：这个按钮的语义是「补空」，不是「覆盖所有人写好的简介」
- */
-async function startSynopsisBatch() {
-  if (synopsisBatchBusy.value || readOnlyEdit.value) return
-  synopsisBatchBusy.value = true
+/** 打开两步确认弹窗（只读预览，不动任何数据） */
+async function openSynopsisBatch() {
+  if (readOnlyEdit.value) return
+  synopsisDialogOpen.value = true
+  if (synopsisRunning.value) {
+    synopsisPhase.value = 'run'
+    return
+  }
+  synopsisPhase.value = 'confirm'
+  await loadSynopsisPreview()
+}
+
+/** 影响面预览：确认弹窗里那句「将对 N 部…已有内容的 M 部将跳过」的唯一来源 */
+async function loadSynopsisPreview() {
+  if (synopsisPreviewLoading.value) return
+  synopsisPreviewLoading.value = true
+  synopsisPreviewError.value = ''
   try {
     let capabilities = null
     try {
@@ -1358,24 +1502,185 @@ async function startSynopsisBatch() {
     } catch {
       capabilities = null
     }
-    const mode = resolveMode(capabilities)
+    synopsisMode.value = resolveMode(capabilities)
     const picked = selectMode.value && selectedIds.value.length ? selectedIds.value.slice() : null
-    const payload = picked
-      ? { videoIds: picked, mode, overwrite: false }
-      : { all: true, mode, overwrite: false }
-    const job = await api.generateSynopsisBatch(payload)
+    const payload = picked ? { videoIds: picked, overwrite: false } : { all: true, overwrite: false }
+    synopsisPreview.value = await api.previewSynopsisBatch(payload, { silent: true })
+  } catch (err) {
+    synopsisPreview.value = null
+    synopsisPreviewError.value = '影响范围统计失败：' + errorText(err)
+  } finally {
+    synopsisPreviewLoading.value = false
+  }
+}
+
+/**
+ * 提交批量生成（两步确认的第二段：勾选 + 敲字都过了才会走到这里）
+ *   选中项非空 → 只处理这些 id；否则 → all:true（全库）
+ *   overwrite 由弹窗的「包括已有内容」决定，**默认 false**
+ */
+async function startSynopsisBatch(payload) {
+  if (synopsisBatchBusy.value || readOnlyEdit.value) return
+  const overwrite = !!(payload && payload.overwrite)
+  synopsisBatchBusy.value = true
+  try {
+    const picked = selectMode.value && selectedIds.value.length ? selectedIds.value.slice() : null
+    const body = picked
+      ? { videoIds: picked, mode: synopsisMode.value, overwrite }
+      : { all: true, mode: synopsisMode.value, overwrite }
+    const job = await api.generateSynopsisBatch(body)
     synopsisBatchJob.value = job
+    synopsisStoppingLocal.value = false
+    lastBatch.value = {
+      jobId: job.jobId || '',
+      ids: picked || [],
+      all: !picked,
+      overwrite,
+      mode: synopsisMode.value,
+      startedAt: Date.now()
+    }
+    saveLastBatch(lastBatch.value)
+    synopsisPhase.value = 'run'
     showToast(
       '批量生成已开始：' +
         (job.total || 0) +
         ' 条（' +
-        (mode === 'llm' ? '本地模型' : '模板') +
-        '，已有简介的跳过）'
+        (synopsisMode.value === 'llm' ? '本地模型' : '模板') +
+        (overwrite ? '，覆盖已有内容' : '，已有内容跳过') +
+        '）'
     )
     pollSynopsisBatch(job.jobId)
   } catch (err) {
-    synopsisBatchBusy.value = false
     showToast('批量生成失败：' + errorText(err))
+  } finally {
+    synopsisBatchBusy.value = false
+  }
+}
+
+/**
+ * 停止批量（P5.55）：先问后端有没有在跑的
+ *   有 → cancel（协作式：当前这条跑完才停），按钮变「正在停止…」
+ *   没有 → 直接本地标记停止（后端本来就没有活儿）
+ */
+async function stopSynopsisBatch() {
+  if (synopsisStoppingLocal.value) return
+  synopsisStoppingLocal.value = true
+  try {
+    let running = []
+    try {
+      const active = await api.listActiveSynopsisJobs({ silent: true })
+      running = active && Array.isArray(active.jobs) ? active.jobs : []
+    } catch {
+      running = []
+    }
+    const mine = running.find((j) => j && j.jobId === (synopsisBatchJob.value && synopsisBatchJob.value.jobId))
+    const target = mine || running[0] || null
+    if (!target) {
+      // 后端没有在跑的任务：本地标记停止（不假装成功，也不报错）
+      stopSynopsisBatchPoll()
+      if (synopsisBatchJob.value) {
+        const done = batchFinished(synopsisBatchJob.value)
+        synopsisBatchJob.value = done
+          ? synopsisBatchJob.value
+          : { ...synopsisBatchJob.value, status: 'stopped', cancelRequested: true }
+        synopsisPhase.value = 'summary'
+      }
+      synopsisStoppingLocal.value = false
+      showToast('后端没有正在跑的任务，已标记停止')
+      return
+    }
+    const job = await api.cancelSynopsisJob(target.jobId, { silent: true })
+    synopsisBatchJob.value = job
+    showToast('已请求停止：正在生成的这一条会跑完，之后的条目不再开始')
+    pollSynopsisBatch(job.jobId)
+  } catch (err) {
+    synopsisStoppingLocal.value = false
+    showToast('停止失败：' + errorText(err))
+  }
+}
+
+/** 从进度行「成果」按钮回看汇总 */
+function openSynopsisSummary() {
+  if (!synopsisBatchJob.value) return
+  synopsisDialogOpen.value = true
+  synopsisPhase.value = 'summary'
+}
+
+/** 打开撤销段：默认填上次批量真正写过的 id；任务有旧值快照就优先精确回滚 */
+function openSynopsisUndo() {
+  const record = lastBatch.value || {}
+  const ids = Array.isArray(record.ids) && record.ids.length ? record.ids : []
+  synopsisUndoIds.value = ids.join(' ')
+  synopsisUndoPreview.value = null
+  synopsisUndoDone.value = null
+  synopsisDialogOpen.value = true
+  synopsisPhase.value = 'undo'
+}
+
+function closeSynopsisDialog() {
+  synopsisDialogOpen.value = false
+}
+
+/** 撤销一条路：任务记了旧值 → 精确回滚（旧值空则清空） */
+async function rollbackSynopsisBatch() {
+  const jobId = (lastBatch.value && lastBatch.value.jobId) || (synopsisBatchJob.value && synopsisBatchJob.value.jobId)
+  if (!jobId) {
+    showToast('没有可回滚的任务 id（后端任务已丢失），只能按 ids 清空')
+    return
+  }
+  synopsisUndoBusy.value = true
+  try {
+    const res = await api.rollbackSynopsisJob(jobId, { silent: true })
+    synopsisUndoDone.value = { text: rollbackText(res) + '（恢复 ' + (Number(res.restored) || 0) + ' / 清空 ' + (Number(res.cleared) || 0) + '）' }
+    showToast(rollbackText(res))
+    // 回滚成功后本机记录清掉：同一个任务不重复撤销
+    clearLastBatch()
+    lastBatch.value = null
+    synopsisBatchJob.value = null
+  } catch (err) {
+    showToast('撤销失败：' + errorText(err))
+  } finally {
+    synopsisUndoBusy.value = false
+  }
+}
+
+/** 撤销另一条路：任务没有旧值快照 → 按 ids 清空（先 dry-run 报数，再二次确认执行） */
+async function clearSynopsisBatchIds() {
+  const ids = parseIdList(synopsisUndoIds.value)
+  if (!ids.length) {
+    showToast('请先填要清空的视频 id')
+    return
+  }
+  synopsisUndoBusy.value = true
+  try {
+    const res = await api.clearSynopsisByIds({ videoIds: ids, dryRun: false }, { silent: true })
+    synopsisUndoDone.value = { text: rollbackText(res) }
+    showToast(rollbackText(res))
+    clearLastBatch()
+    lastBatch.value = null
+    synopsisBatchJob.value = null
+  } catch (err) {
+    showToast('清空失败：' + errorText(err))
+  } finally {
+    synopsisUndoBusy.value = false
+  }
+}
+
+/** 撤销前的统计（dry-run）：让用户在确认前看到「到底会清掉几条」 */
+async function previewSynopsisUndo() {
+  const ids = parseIdList(synopsisUndoIds.value)
+  if (!ids.length) {
+    showToast('请先填要清空的视频 id')
+    return
+  }
+  synopsisUndoBusy.value = true
+  try {
+    synopsisUndoPreview.value = await api.clearSynopsisByIds({ videoIds: ids, dryRun: true }, { silent: true })
+    showToast(rollbackText(synopsisUndoPreview.value))
+  } catch (err) {
+    showToast('统计失败：' + errorText(err))
+  } finally {
+    synopsisUndoBusy.value = false
   }
 }
 

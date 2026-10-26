@@ -41,6 +41,13 @@ function ok(cond, name, extra) {
   console.log('  FAIL ' + name + (extra ? ' -> ' + extra : ''))
   return false
 }
+/* 已废弃用例：被测对象已移除（P5.46 取消播放列表页 / P5.24 合并折叠按钮）。
+   只记一行 SKIP，不进 passed / failures —— 旧断言不执行，也不留假失败。 */
+let skipped = 0
+function skip(name, reason) {
+  skipped++
+  console.log('  SKIP ' + name + ' —— 已废弃：' + reason)
+}
 
 /* ---------------------------------------------------- dist 静态服务 + /api 反代 */
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.woff2': 'font/woff2', '.json': 'application/json', '.ico': 'image/x-icon' }
@@ -230,162 +237,30 @@ await shot('hero-mobile-375', { x: 0, y: 0, width: 375, height: 330 }, 2)
 await viewport(1500, 900, 2, false)
 await sleep(300)
 
-/* ==================================================== B. 播放列表：重名校验 */
+/* ==================================================== B. 播放列表：重名 / 空 / 超长 / 后端兜底（整段已废弃） */
 console.log('')
-console.log('== B. 播放列表：重名 / 空 / 超长 / 后端兜底 ==')
-const stamp = Date.now().toString(36).slice(-5)
-const NAME_A = 'P542 甲 ' + stamp
-const NAME_B = 'P542 乙 ' + stamp
-const setInput = (v) => '(' + SNIP('set-input.js') + ')(' + JSON.stringify(v) + ')'
-const pressEnter = '(' + SNIP('press-enter.js') + ')()'
-const clickCreate = '(' + SNIP('click-create.js') + ')()'
-const readState = () => cdp.evaluate(SNIP('read-state.js'))
-
-await go('http://127.0.0.1:' + PORT + '/media/playlists')
-await cdp.send('Fetch.enable', { patterns: [{ urlPattern: '*/api/media/playlists', requestStage: 'Request' }] })
-await waitFor("!!document.querySelector('.pl-head .pl-input')", 20000, '播放列表页输入框')
-await waitFor("!document.querySelector('.pl-hint') || !/加载中/.test(document.querySelector('.pl-hint').textContent)", 20000, '清单加载完')
-
-let state = await readState()
-facts.initial = state
-ok(state.maxlength === '32', '输入框 maxlength = 32（与校验同源）', String(state.maxlength))
-// 主题映射层：此前本页没 @use mediaTheme.scss，--line/--danger 全空 → 描边 none、红字不红（P5.42 一并修）
-const baselineBorder = state.borderColor
-ok(!!state.lineToken && !!state.dangerToken, '媒体站主题变量已接上（--line / --danger 有值）', 'line=' + state.lineToken + ' danger=' + state.dangerToken)
-ok(state.borderStyle === 'solid', '输入框描边真的画出来了（不是 none）', state.borderStyle + ' / ' + state.borderColor)
-
-// B1 基线：新名字能正常建
-resetCreateCounter()
-await cdp.evaluate(setInput(NAME_A))
-await sleep(120)
-await cdp.evaluate(clickCreate)
-const toastA = await waitToast('')
-await sleep(400)
-state = await readState()
-facts.createOk = { toast: toastA, count: createPostCount, posts: createPosts.slice(), names: state.names }
-ok(createPostCount === 1, 'B1 新名字 → 恰好 1 个 POST /api/media/playlists', createPostCount + ' ' + JSON.stringify(createPosts.map((p) => p.postData)))
-ok(/已新建播放列表/.test(toastA), 'B1 toast = 已新建播放列表「…」', toastA)
-ok(state.names.indexOf(NAME_A) !== -1, 'B1 左栏真的多了这个列表', JSON.stringify(state.names))
-await shot('playlists-after-create')
-
-// B2 同名 → 0 请求 + 行内红字
-resetCreateCounter()
-await cdp.evaluate(setInput(NAME_A))
-await sleep(150)
-await cdp.evaluate(clickCreate)
-const toastDup = await waitToast(toastA)
-await sleep(400)
-state = await readState()
-facts.dup = { toast: toastDup, count: createPostCount, posts: createPosts.slice(), err: state.err, border: state.borderColor, invalid: state.invalid, ariaInvalid: state.ariaInvalid }
-ok(createPostCount === 0, 'B2 同名 → 请求数 0（提交前就拦住）', String(createPostCount))
-ok(/已存在同名播放列表/.test(state.err), 'B2 行内错误 = 已存在同名播放列表「…」', state.err)
-ok(/已存在同名播放列表/.test(toastDup), 'B2 toast 同步提示「已存在同名播放列表」', toastDup)
-ok(state.invalid === true && state.ariaInvalid === 'true', 'B2 输入框标红（class + aria-invalid）', 'border=' + state.borderColor)
-const rgbOf = (hex) => {
-  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex).trim())
-  if (!m) return ''
-  const n = parseInt(m[1], 16)
-  return 'rgb(' + ((n >> 16) & 255) + ', ' + ((n >> 8) & 255) + ', ' + (n & 255) + ')'
-}
-const dangerRgb = rgbOf(state.dangerToken)
-ok(state.borderColor !== baselineBorder, 'B2 边框色离开常态描边', baselineBorder + ' -> ' + state.borderColor)
-ok(!dangerRgb || state.borderColor === dangerRgb, 'B2 边框色 = --danger（真的是红色，不是继承色）', state.borderColor + ' vs ' + (dangerRgb || 'n/a'))
-ok(!dangerRgb || state.errColor === dangerRgb, 'B2 行内文案色 = --danger', state.errColor + ' vs ' + (dangerRgb || 'n/a'))
-ok(state.names.filter((n) => n === NAME_A).length === 1, 'B2 清单里没有多出同名项', JSON.stringify(state.names))
-await shot('playlists-dup-inline-error')
-
-// B3 只有大小写不同也算重名（与库的 ci collation 同口径）
-resetCreateCounter()
-await cdp.evaluate(setInput(NAME_A.toLowerCase()))
-await sleep(150)
-await cdp.evaluate(clickCreate)
-await sleep(600)
-state = await readState()
-facts.dupCase = { count: createPostCount, err: state.err }
-ok(createPostCount === 0 && /已存在同名播放列表/.test(state.err), 'B3 仅大小写不同也算重名（utf8mb4 ci 口径）', createPostCount + ' / ' + state.err)
-
-// B4 全空白 → 行内错误 + 0 请求（按钮此时 disabled，用回车提交）
-resetCreateCounter()
-await cdp.evaluate(setInput('   '))
-await sleep(120)
-await cdp.evaluate(pressEnter)
-await sleep(500)
-state = await readState()
-facts.blank = { count: createPostCount, err: state.err }
-ok(createPostCount === 0 && /请输入播放列表名称/.test(state.err), 'B4 全空白 → 行内「请输入播放列表名称」+ 0 请求', state.err)
-
-// B5 超长 33 字 → 行内错误 + 0 请求
-const LONG = '长'.repeat(33)
-resetCreateCounter()
-await cdp.evaluate(setInput(LONG))
-await sleep(120)
-await cdp.evaluate(pressEnter)
-await sleep(500)
-state = await readState()
-facts.tooLong = { count: createPostCount, err: state.err, typed: LONG.length, maxlength: state.maxlength }
-ok(createPostCount === 0 && /名称最多 32 个字符/.test(state.err), 'B5 33 字 → 行内「名称最多 32 个字符（当前 33 个）」+ 0 请求', state.err)
-
-// B5b 窄屏 375：带错误态时不能横向溢出（响应式不破坏）
-await viewport(375, 780, 2, true)
-await sleep(600)
-const narrow = await readState()
-const narrowOverflow = await cdp.evaluate('({ scrollW: document.documentElement.scrollWidth, innerW: window.innerWidth })')
-facts.narrowError = { state: narrow, overflow: narrowOverflow }
-ok(narrowOverflow.scrollW <= narrowOverflow.innerW, 'B5b 窄屏 375 带错误态无横向溢出', narrowOverflow.scrollW + ' <= ' + narrowOverflow.innerW)
-ok(!!narrow.err, 'B5b 窄屏下行内错误仍然可见', narrow.err)
-await shot('playlists-narrow-error-375', { x: 0, y: 0, width: 375, height: 300 }, 2)
-
-// B5c 窄屏重名：toast 下移一档后不得压住页头控件
-await cdp.evaluate(setInput(NAME_A))
-await sleep(120)
-await cdp.evaluate(clickCreate)
-await sleep(700)
-const narrowToast = await cdp.evaluate("(() => { const t = document.querySelector('.ms-toast'); const h = document.querySelector('.pl-head'); const btns = Array.from(document.querySelectorAll('.pl-head .pl-btn')).map((b) => b.getBoundingClientRect()); const tr = t ? t.getBoundingClientRect() : null; return tr ? { toast: { x: tr.x, y: tr.y, w: tr.width, h: tr.height, bottom: tr.bottom }, head: { x: h.getBoundingClientRect().x, y: h.getBoundingClientRect().y, bottom: h.getBoundingClientRect().bottom }, btnBottoms: btns.map((b) => b.bottom), overlapHead: Math.max(0, Math.min(tr.bottom, h.getBoundingClientRect().bottom) - Math.max(tr.top, h.getBoundingClientRect().top)) } : null })()")
-facts.narrowToast = narrowToast
-ok(narrowToast && narrowToast.toast.y >= narrowToast.head.bottom, 'B5c 窄屏重名 toast 在页头之下（不压新建/刷新）', narrowToast ? 'toast.y=' + narrowToast.toast.y.toFixed(0) + ' >= head.bottom=' + narrowToast.head.bottom.toFixed(0) : 'no toast')
-await shot('playlists-narrow-dup-toast-375', { x: 0, y: 0, width: 375, height: 300 }, 2)
-await viewport(1500, 900, 2, false)
-await sleep(400)
-
-// B6 后端幂等兜底：本地不知道重名，POST 命中同名返回 created:false → 必须提示「已存在」
-await cdp.evaluate(setInput(NAME_B))
-await sleep(120)
-stubCreate = { id: 999001, name: NAME_B, count: 0, created: false }
-resetCreateCounter()
-const prevToast = await lastToast()
-await cdp.evaluate(clickCreate)
-const toastB6 = await waitToast(prevToast, 10000)
-await sleep(400)
-stubCreate = null
-state = await readState()
-facts.idempotent = { toast: toastB6, count: createPostCount, err: state.err }
-ok(createPostCount === 1, 'B6 本地并不知道重名 → 真的发了 1 个请求（走的是后端兜底）', String(createPostCount))
-ok(/已存在同名播放列表/.test(toastB6) && !/已新建播放列表/.test(toastB6), 'B6 created:false → 提示「已存在…已为你打开原来的那个」，不是「已新建」', toastB6)
-
-// B7 关掉打桩后再建一个新的，确认正常路径没被破坏
-resetCreateCounter()
-await cdp.evaluate(setInput(NAME_B + ' 二'))
-await sleep(120)
-await cdp.evaluate(clickCreate)
-const toastB7 = await waitToast(toastB6)
-await sleep(400)
-state = await readState()
-facts.createAgain = { toast: toastB7, count: createPostCount, names: state.names }
-ok(createPostCount === 1 && /已新建播放列表/.test(toastB7), 'B7 打桩关闭后新建仍正常（1 请求 + 成功 toast）', toastB7)
-await shot('playlists-create-again')
-
-// 收尾：删掉本次造的列表（用页面自己的 owner 头直连后端 DELETE）
-const cleanup = await cdp.evaluate(SNIP('cleanup.js'), true)
-facts.cleanup = cleanup
-console.log('  清理：' + JSON.stringify(cleanup))
-ok(cleanup.deleted.every((d) => d.status === 200), '收尾清理本次新建的列表', JSON.stringify(cleanup.deleted))
+console.log('== B. 播放列表：重名 / 空 / 超长 / 后端兜底 —— 已废弃（P5.46 取消播放列表页）')
+// 已废弃：被测对象移除（P5.46 取消播放列表页）。
+// 原 B 段在 /media/playlists 上驱动 .pl-head .pl-input / .pl-new__err / .pl-page 写了 B1–B7：
+// 新名字建列表、同名 0 请求 + 行内红字、大小写不同的重名、全空白、超长、窄屏错误态与提示条位置、
+// created:false 后端兜底、关掉打桩后再建一次。整页删除后这些选择器都不存在（waitFor
+// 「播放列表页输入框」直接超时），判重逻辑本身搬进了 PlaylistManageDialog（口径未变：
+// trim / ≤32 字 / 不区分 ASCII 大小写）。等价覆盖：p546-ui 的 C 段（弹层新建 / 重命名 / 删除）。
+skip('B1 新名字 → 1 个 POST /api/media/playlists + 已新建播放列表 toast + 左栏出现该列表', 'P5.46 取消播放列表页')
+skip('B2 同名 → 0 请求 + 行内「已存在同名播放列表」+ 输入框标红（class + aria-invalid）', 'P5.46 取消播放列表页')
+skip('B3 仅大小写不同也算重名（utf8mb4 ci 口径）', 'P5.46 取消播放列表页')
+skip('B4 全空白 → 行内「请输入播放列表名称」+ 0 请求', 'P5.46 取消播放列表页')
+skip('B5 33 字 → 行内「名称最多 32 个字符（当前 33 个）」+ 0 请求', 'P5.46 取消播放列表页')
+skip('B5b 窄屏 375 带错误态无横向溢出、行内错误仍可见', 'P5.46 取消播放列表页')
+skip('B5c 窄屏重名提示条在页头之下（不压新建 / 刷新）', 'P5.46 取消播放列表页')
+skip('B6 created:false → 提示「已存在…已为你打开原来的那个」，不是「已新建」', 'P5.46 取消播放列表页')
+skip('B7 打桩关闭后新建仍正常（1 请求 + 成功 toast）', 'P5.46 取消播放列表页')
+skip('收尾清理本次新建的列表（页面自己的 owner 头直连后端 DELETE）', 'P5.46 取消播放列表页')
 
 await cdp.send('Fetch.disable')
 fs.writeFileSync(path.join(OUT, 'report.json'), JSON.stringify({ tag: TAG, passed, failures, facts }, null, 1))
 console.log('')
-console.log('== RESULT ' + TAG + ' ==')
-console.log('passed=' + passed + '  failures=' + failures.length)
-if (failures.length) console.log(JSON.stringify(failures, null, 1))
+console.log('passed=' + passed + '  failures=' + failures.length + '  skipped=' + skipped)
 
 cdp.close()
 chrome.kill()

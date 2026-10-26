@@ -284,6 +284,8 @@ export function saveVideoSynopsis(id, payload, options) {
  * 超过它前端按「超时」处理并自动回退模板，与后端 503 是同一条用户体验。
  */
 const SYNOPSIS_LLM_TIMEOUT = 30000
+/** 音频转写重新生成：后端 120s 转写 + 60s 模型，给足余量 */
+const SYNOPSIS_AUDIO_TIMEOUT = 200000
 
 /**
  * 生成能力 后端：GET /api/media/synopsis/capabilities
@@ -330,6 +332,24 @@ export function generateSynopsisLlm(id, options) {
 }
 
 /**
+ * 音频转写重新生成（预览，不落库，P5.57）后端：POST /api/media/video/{id}/synopsis/audio
+ * → { id, synopsis, chars, mode:'llm', source:'audio', model, provider, ms, material }
+ * 只走 whisper 转写这一路（不看既有字幕、不看画面）；转写不可用 / 正文太少 → 200 + insufficient:true + audioReason。
+ * 超时给 200s：后端单条转写限时 120s（ffmpeg + whisper），再加上本地模型 60s，前者是硬上限。
+ * @param {string} id
+ * @param {{silent?:boolean, timeout?:number}} [options]
+ */
+export function generateSynopsisAudio(id, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/video/' + encodeURIComponent(String(id == null ? '' : id)) + '/synopsis/audio',
+    method: 'post',
+    silent: opt.silent !== false,
+    timeout: opt.timeout || SYNOPSIS_AUDIO_TIMEOUT
+  })
+}
+
+/**
  * 批量生成 后端：POST /api/media/synopsis/generate（仅 full 档）
  * body { videoIds?:string[], all?:boolean, mode?:'template'|'llm', overwrite?:boolean } → 任务节点
  * 后端逐个处理、每完成一个立刻落库；进度用 getSynopsisJob 轮询。
@@ -356,6 +376,82 @@ export function getSynopsisJob(jobId, options) {
   const opt = options || {}
   return mediaRequest({
     url: '/synopsis/jobs/' + encodeURIComponent(String(jobId == null ? '' : jobId)),
+    silent: opt.silent !== false
+  })
+}
+
+/**
+ * 批量前的影响面预览（P5.55 两步确认第一段）后端：POST /api/media/synopsis/preview
+ * body { videoIds?:string[], all?:boolean, overwrite?:boolean }
+ * → { total, withExisting, withoutExisting, willProcess, willSkip }
+ * 弹窗里那句「将对 N 部片子生成，已有内容的 M 部将跳过/覆盖」直接读这里，不在前端猜。
+ * @param {{videoIds?:string[], all?:boolean, overwrite?:boolean}} payload
+ * @param {{silent?:boolean}} [options]
+ */
+export function previewSynopsisBatch(payload, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/synopsis/preview',
+    method: 'post',
+    data: payload || {},
+    silent: opt.silent !== false
+  })
+}
+
+/**
+ * 正在跑的批量任务（P5.55「停止」的第一步：先问后端有没有在跑的）后端：GET /api/media/synopsis/jobs/active
+ * → { count, jobs:[{jobId,status,counts,...}] }
+ * @param {{silent?:boolean}} [options]
+ */
+export function listActiveSynopsisJobs(options) {
+  const opt = options || {}
+  return mediaRequest({ url: '/synopsis/jobs/active', silent: opt.silent !== false })
+}
+
+/**
+ * 请求停止（P5.55）后端：POST /api/media/synopsis/jobs/{id}/cancel
+ * 协作式：正在生成的那一条会跑完，之后不再开始；幂等（已结束的任务回当前状态，不报错）。
+ * @param {string} jobId
+ * @param {{silent?:boolean}} [options]
+ */
+export function cancelSynopsisJob(jobId, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/synopsis/jobs/' + encodeURIComponent(String(jobId == null ? '' : jobId)) + '/cancel',
+    method: 'post',
+    silent: opt.silent !== false
+  })
+}
+
+/**
+ * 撤销本次批量（P5.55）后端：POST /api/media/synopsis/jobs/{id}/rollback
+ * → { jobId, total, cleared, restored, failed, rolledBackAt, items:[{videoId,action}] }
+ * 旧值为空 → 清空该行；旧值非空 → 写回原文。
+ * @param {string} jobId
+ * @param {{silent?:boolean}} [options]
+ */
+export function rollbackSynopsisJob(jobId, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/synopsis/jobs/' + encodeURIComponent(String(jobId == null ? '' : jobId)) + '/rollback',
+    method: 'post',
+    silent: opt.silent !== false
+  })
+}
+
+/**
+ * 按 ids 清空简介（P5.55 兜底工具）后端：POST /api/media/synopsis/clear（仅 full 档）
+ * body { videoIds:string[], dryRun?:boolean } → { dryRun, requested, willClear, cleared, alreadyEmpty, missing, ids }
+ * dryRun 缺省 true：不可逆操作的默认必须是「只统计」。
+ * @param {{videoIds:string[], dryRun?:boolean}} payload
+ * @param {{silent?:boolean}} [options]
+ */
+export function clearSynopsisByIds(payload, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/synopsis/clear',
+    method: 'post',
+    data: payload || {},
     silent: opt.silent !== false
   })
 }
@@ -768,6 +864,12 @@ const mediaApi = {
   generateSynopsisLlm,
   generateSynopsisBatch,
   getSynopsisJob,
+  // 批量生成的安全化 / 停止 / 撤销（P5.55）
+  previewSynopsisBatch,
+  listActiveSynopsisJobs,
+  cancelSynopsisJob,
+  rollbackSynopsisJob,
+  clearSynopsisByIds,
   // 保存筛选（P2-B）
   listFilters,
   saveFilter,

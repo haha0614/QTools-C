@@ -32,6 +32,13 @@ function ok(cond, name, extra) {
   failures.push(name + (extra ? ' → ' + extra : ''))
   console.log('  ✗ ' + name + (extra ? ' → ' + extra : ''))
 }
+/* 已废弃用例：被测对象已移除（P5.46 取消播放列表页 / P5.24 合并折叠按钮）。
+   只记一行 SKIP，不进 passed / failures —— 旧断言不执行，也不留假失败。 */
+let skipped = 0
+function skip(name, reason) {
+  skipped++
+  console.log('  SKIP ' + name + ' —— 已废弃：' + reason)
+}
 const near = (a, b, tol) => Math.abs(Number(a) - Number(b)) <= (tol == null ? 1 : tol)
 const r2 = (n) => Math.round(Number(n) * 100) / 100
 
@@ -191,23 +198,17 @@ try {
   ok((await cdp.evaluate('document.documentElement.scrollWidth <= window.innerWidth')) === true, '无横向滚动条（scrollWidth ≤ innerWidth）')
   const deskVideoW = desk.rects.video.w
 
-  /* ================================ B 折叠 / 重新展开 ================================ */
-  console.log('\n[B] 折叠：点面板头部「›」→ 视频占满宽度、无重叠；状态存 localStorage')
-  const col = await step('deskCollapsed')
-  await shot(cdp, 'desktop-collapsed')
-  ok(col.clickedFoldBtn === true, 'c) 面板头部存在折叠按钮（.vp-x）且可点')
-  ok(r2(col.rects.side.w) === 0, 'c) 折叠后右栏宽度 0', String(col.rects.side.w))
-  ok(near(col.rects.main.w, col.rects.body.w, 0.5), 'c) 折叠后视频列 = 整行宽度', col.rects.main.w + ' vs ' + col.rects.body.w)
-  ok(col.rects.video.w > deskVideoW + 100, 'c) 折叠后视频变宽', col.rects.video.w + ' > ' + deskVideoW)
-  ok(col.rects.main.right <= col.rects.side.x + 0.5, 'c) 折叠后仍不重叠（side.x 贴在右边缘）', col.rects.main.right + ' vs ' + col.rects.side.x)
-  ok(col.rects.tab != null && near(col.rects.tab.right, col.rects.body.right, 1), 'c) 折叠后出现唤出把手（贴右边缘）', JSON.stringify(col.rects.tab))
-  ok(col.ls === '0', 'c) 折叠状态写入 localStorage', String(col.ls))
-  ok(String(col.classes.side).includes('is-closed'), 'c) .p-side 带 is-closed 类', col.classes.side)
-
-  const reopened = await step('deskReopened')
-  ok(reopened.clickedTab === true && reopened.sideOpen === true, 'c) 点把手可重新展开', String(reopened.sideOpen))
-  ok(near(reopened.rects.side.w, desk.rects.side.w, 0.5), 'c) 重新展开后宽度还原', reopened.rects.side.w + ' vs ' + desk.rects.side.w)
-  ok(reopened.ls === '1', 'c) 展开状态也写回 localStorage', String(reopened.ls))
+  /* ================================ B 折叠 / 重新展开（整段已废弃） ================================ */
+  console.log('\n[B] 折叠 / 重新展开：已废弃（P5.24 合并折叠按钮）')
+  // 已废弃：被测对象移除（P5.24 合并折叠按钮）。
+  // 停靠态面板头部的「› 收起」按钮（.vp.is-dock .vp-x）在 P5.24 被删除：收藏 / 展开入口合并成
+  // 播放器左边缘那一个 chevron 开关（两个入口的图标与状态会各走各的，故合并为一个）。
+  // harness.js 的 deskCollapsed / deskReopened 两步点的正是那个已不存在的按钮，后面的折叠态、
+  // 唤出把手、is-closed、localStorage 断言因此全线失去对象 —— 原判据不改写，直接跳过。
+  // 等价覆盖：p526-player 的 f1–f6（side-toggle 命中区与浮起）、p540 / p542 / p546 的链路实测。
+  skip('c) 点面板头部「›」（.vp-x）→ 右栏宽度 0 / 视频列整宽 / 视频变宽 / 仍不重叠', 'P5.24 合并折叠按钮')
+  skip('c) 折叠后出现唤出把手（贴右边缘）、折叠态写入 localStorage=0、.p-side 带 is-closed', 'P5.24 合并折叠按钮')
+  skip('c) 点把手重新展开、宽度还原、localStorage=1', 'P5.24 合并折叠按钮')
 
   /* ================================ C 悬停显示 / 移出隐藏 ================================ */
   console.log('\n[C] 控制条：hover 视频区出现 / 移出消失（class + opacity）')
@@ -230,8 +231,10 @@ try {
   await viewport(1360, 820)
   await sleep(400)
   const mid = await step('measure')
-  const expected = r2(mid.rects.body.h - mid.rects.tags.h)
-  ok(near(mid.rects.stage.h, expected, 1), '3) 1360×820 下舞台高 = 行高 − 标签栏（不被控制条占用）', mid.rects.stage.h + ' vs ' + expected)
+  // 已废弃：被测对象移除 —— .p-tags 标签条已被删除（MediaPlayer.vue:3422「舞台高度只由播放器高度 − 头部
+  // 决定（.p-tags 标签条已删除）」），原判据「舞台高 = 行高 − 标签栏」的减数不存在；不反推新公式，
+  // 直接跳过这一条，下面的线性缩放判据照旧执行（它用不到标签栏）。
+  skip('3) 1360×820 下舞台高 = 行高 − 标签栏', '.p-tags 标签条移除')
   ok(near(desk.rects.stage.h - mid.rects.stage.h, 1000 - 820, 2), '3) 舞台高度只随视口高度线性变化（' + desk.rects.stage.h + ' → ' + mid.rects.stage.h + '）')
   ok(near(mid.rects.video.w, mid.rects.stage.w, 0.5) && near(mid.rects.video.h, mid.rects.stage.h, 0.5), '3) 改尺寸后 video 仍铺满舞台（无变形）')
   ok(mid.styles.sideWidthPx >= 320 && mid.styles.sideWidthPx <= 420 && mid.styles.sideOverflowY === 'auto', '3) 改尺寸后右栏宽度/滚动仍合规', mid.styles.sideWidthPx)
@@ -336,7 +339,7 @@ try {
   exitCode = 1
 } finally {
   const total = passed + failures.length
-  console.log('\n' + (failures.length ? 'FAIL' : 'PASS') + ' ' + passed + '/' + total + ' (P5.23 布局实测)')
+  console.log('\n' + (failures.length ? 'FAIL' : 'PASS') + ' ' + passed + '/' + total + ' (P5.23 布局实测，跳过 ' + skipped + ' 条废弃用例)')
   for (const f of failures) console.log('  · ' + f)
   if (failures.length) exitCode = 1
   if (cdp) cdp.close()

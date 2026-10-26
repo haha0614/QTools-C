@@ -52,6 +52,13 @@ function ok(cond, name, extra) {
   console.log('  FAIL ' + name + (extra ? ' -> ' + extra : ''))
   return false
 }
+/* 已废弃用例：被测对象已移除（P5.46 取消播放列表页 / P5.24 合并折叠按钮）。
+   只记一行 SKIP，不进 passed / failures —— 旧断言不执行，也不留假失败。 */
+let skipped = 0
+function skip(name, reason) {
+  skipped++
+  console.log('  SKIP ' + name + ' —— 已废弃：' + reason)
+}
 
 /* ---------------------------------------------------------------- vite + chrome */
 const vite = await createServer({
@@ -573,31 +580,14 @@ try {
   const afterRemoveDb = await apiList(L_B.id)
   ok(afterRemoveDb.count === startB.count, 'F4 后端也真的删掉了', startB.count + ' -> ' + afterRemoveDb.count)
 
-  console.log('== G. 播放列表页移出（真 UI）→ 页面计数 -1')
-  await cdp.send('Page.navigate', { url: 'http://127.0.0.1:' + PORT + '/media/playlists' })
-  await waitFor('!!document.querySelector(".pl-side .pl-item")', 25000, '播放列表页')
-  ok((await cdp.evaluate(pagePick(L_A.name))) === 'clicked', '播放列表页选中「' + L_A.name + '」')
-  await waitFor('!!document.querySelector(".pl-detail .pl-x")', 15000, '详情里的移除按钮')
-  const pageBefore = await cdp.evaluate(pageCountText(L_A.name))
-  ok(pageBefore === '1', 'G1 页面列表计数为 1', String(pageBefore))
-  await cdp.evaluate('document.querySelector(".pl-detail .pl-x").click()')
-  const decOk = await waitFor(
-    pageExpr(
-      '(() => {',
-      '  const items = Array.from(document.querySelectorAll(".pl-side .pl-item"))',
-      '  const hit = items.find((el) => ((el.querySelector(".pl-name") || {}).textContent || "").trim() === ' +
-        JSON.stringify(L_A.name) +
-        ')',
-      '  return !!hit && ((hit.querySelector(".pl-count") || {}).textContent || "").trim() === "0"',
-      '})()'
-    ),
-    15000,
-    '页面计数变 0'
-  )
-  ok(decOk, 'G2 移出后页面计数 1 → 0')
-  const afterG = await apiList(L_A.id)
-  ok(afterG.count === startA.count && afterG.ids.indexOf(vid) < 0, 'G3 后端也删掉了（回到起始条数）', startA.count + ' -> ' + afterG.count)
-  await shot('06-playlists-remove')
+  console.log('== G. 播放列表页移出（真 UI）→ 页面计数 -1 —— 已废弃（P5.46 取消播放列表页）')
+  // 已废弃：被测对象移除（P5.46 取消播放列表页）。
+  // 原 G 段在 /media/playlists 上点 .pl-side .pl-item 选中列表、点 .pl-detail .pl-x 移出，
+  // 断言页面计数 1 → 0；整页删除后这些选择器都不存在（waitFor 直接超时）。
+  // 等价覆盖：本文件 F 段（卡片菜单移出 → 计数 -1，判据同源）+ p546-ui 的 C 段（弹层移除）。
+  skip('G1 播放列表页列表计数为 1', 'P5.46 取消播放列表页')
+  skip('G2 移出后页面计数 1 → 0', 'P5.46 取消播放列表页')
+  skip('G3 后端也删掉了（回到起始条数）', 'P5.46 取消播放列表页')
 
   console.log('== H. 375 窄宽度：计数与「已加入 ✓」互不遮挡')
   await cdp.send('Emulation.setDeviceMetricsOverride', { width: 375, height: 780, deviceScaleFactor: 1, mobile: false })
@@ -689,7 +679,7 @@ try {
   if (cdp) cdp.close()
   chrome.kill()
   await vite.close()
-  console.log('\n通过 ' + passed + ' 项，失败 ' + failures.length + ' 项')
+  console.log('\n通过 ' + passed + ' 项，失败 ' + failures.length + ' 项，跳过 ' + skipped + ' 条废弃用例')
   if (failures.length) {
     for (const f of failures) console.log('  FAIL ' + f)
     exitCode = 1

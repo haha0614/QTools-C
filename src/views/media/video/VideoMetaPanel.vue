@@ -99,6 +99,19 @@
           >
             {{ synopsisGenerating ? '生成中…' : generateLabel(!!synopsisValue) }}
           </button>
+          <!-- P5.57：字幕根本不准时的第二入口 —— 只走 whisper 音频转写，不看既有字幕。
+               能力查不到 / 不可用时不渲染（宁可不显示，也不给一个按了就失败的按钮）。 -->
+          <button
+            v-if="synopsisEditable && !synopsisEditing && synopsisAudioAvailable"
+            class="vp-mini vp-syn-audio"
+            type="button"
+            data-vp-syn-audio
+            :disabled="locked || synopsisGenerating"
+            :title="synopsisAudioTitle"
+            @click="generateSynopsisFromAudio"
+          >
+            {{ synopsisGenerating ? '转写中…' : AUDIO_REGENERATE_LABEL }}
+          </button>
           <button
             v-if="synopsisEditable && !synopsisEditing"
             class="vp-mini vp-syn-edit"
@@ -521,6 +534,10 @@ import { SYNOPSIS_MAX, canEditSynopsis, countSynopsisChars, shouldFold, trimSyno
 import { readLocalSynopsis, writeLocalSynopsis } from './synopsisLocal'
 import {
   TEMPLATE_FALLBACK_LABEL,
+  AUDIO_OVERWRITE_CONFIRM,
+  AUDIO_REGENERATE_LABEL,
+  audioAvailable,
+  generateAudioSynopsis,
   generateLabel,
   generateSynopsis,
   generateTemplateSynopsis,
@@ -1092,6 +1109,63 @@ async function applyTemplateSynopsis() {
   }
 }
 
+/**
+ * P5.57：音频转写可用性（capabilities.sources.audio.available）与按钮文案
+ *
+ * 能力是**首次挂载后**异步探测的（ensureSynopsisCapabilities 只探一次），所以按钮会稍晚出现；
+ * 探不到（接口失败）就当不可用 —— 不给一个按了必然失败的按钮。
+ */
+const synopsisAudioAvailable = computed(() => {
+  if (!synopsisCapsProbed) return false
+  return audioAvailable(synopsisCapabilities.value)
+})
+
+const synopsisAudioTitle = computed(() => {
+  if (synopsisGenerating.value) return '正在转写整片音频并生成…'
+  return '字幕不准时用这条路：whisper 直接识别片子的声音重新生成（单条限时 120s）'
+})
+
+/**
+ * 点「🎧 用音频转写重新生成」：只走音频转写，不看既有字幕，也不看画面
+ *
+ * 覆盖已有简介前要**二次确认**（用户明确要求）：这是覆盖性动作，误点一次就丢掉手写内容。
+ * 结果同样只进可编辑预览态，保存仍走 PUT（不自动落库）。
+ */
+async function generateSynopsisFromAudio() {
+  if (!synopsisEditable.value || locked.value || synopsisGenerating.value || saving.value) return
+  const hasContent = !!String(synopsisValue.value || '').trim()
+  if (hasContent && typeof window !== 'undefined' && typeof window.confirm === 'function') {
+    if (!window.confirm(AUDIO_OVERWRITE_CONFIRM)) return
+  }
+  synopsisGenerating.value = true
+  synopsisGenerateNotice.value = ''
+  synopsisInsufficient.value = false
+  try {
+    const result = await generateAudioSynopsis(api, props.video.id)
+    if (result.insufficient) {
+      synopsisInsufficient.value = true
+      synopsisSource.value = null
+      synopsisGenerateNotice.value = result.notice || ''
+      synopsisEditing.value = true
+      emit('notify', result.notice || '音频转写没有拿到可概括的内容')
+      return
+    }
+    synopsisDraft.value = result.text
+    synopsisSource.value = result.source
+    synopsisGenerateNotice.value = ''
+    synopsisEditing.value = true
+    emit('notify', '已用音频转写生成，确认后保存')
+    nextTick(() => {
+      const el = synopsisInputEl.value
+      if (el && el.focus) el.focus()
+    })
+  } catch (err) {
+    emit('notify', '音频转写生成失败：' + errorText(err))
+  } finally {
+    synopsisGenerating.value = false
+  }
+}
+
 onBeforeUnmount(() => disconnectSynopsisObserver())
 
 /** 评分夹取：值域 0–100（P5-C），顺手吃掉 NaN / 字符串 */
@@ -1432,6 +1506,8 @@ onMounted(() => {
   // P5.54：读（标记/评分/标签）与写分开——读接口不受编辑策略限制，off/local 档也读，
   // 只是不渲染写入口（各分区自己的 isFull 判定不动）。
   load()
+  // P5.57：能力要在挂载时就探一次，否则「🎧 用音频转写重新生成」要等用户先点过自动生成才出现
+  if (synopsisEditable.value) ensureSynopsisCapabilities()
 })
 </script>
 

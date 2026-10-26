@@ -502,15 +502,22 @@ onBeforeUnmount(() => {
   position: absolute;
   right: -4px;
   bottom: -4px;
-  width: 21px;
-  height: 21px;
+  width: 22px;
+  height: 22px;
+  /* P5.55：与人物卡同一个修法 —— flex 居中 + 盒模型算进边框，不再靠 line-height 的默认行为
+     （CJK 字体 ascent/descent 不对称时，「换」会整体偏下）。 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   padding: 0;
   border: 1px solid var(--line-2);
   border-radius: 50%;
   background: var(--bg-2);
   color: var(--fg-dim);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1;
+  text-align: center;
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.12s, border-color 0.12s, color 0.12s;

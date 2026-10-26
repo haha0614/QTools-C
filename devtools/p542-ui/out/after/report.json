@@ -1,6 +1,6 @@
 {
  "tag": "after",
- "passed": 43,
+ "passed": 19,
  "failures": [],
  "facts": {
   "home": {
@@ -161,128 +161,6 @@
     "scrollW": 375,
     "innerW": 375
    }
-  },
-  "initial": {
-   "value": "",
-   "maxlength": "32",
-   "invalid": false,
-   "ariaInvalid": "false",
-   "borderColor": "rgb(65, 66, 67)",
-   "borderStyle": "solid",
-   "err": "",
-   "errColor": "",
-   "dangerToken": "#f78989",
-   "lineToken": "#414243",
-   "pageBg": "rgb(20, 20, 20)",
-   "toasts": [],
-   "names": [],
-   "listCount": 0
-  },
-  "createOk": {
-   "toast": "已新建播放列表「P542 甲 w1ev9」",
-   "count": 1,
-   "posts": [
-    {
-     "url": "http://127.0.0.1:5423/api/media/playlists",
-     "postData": "{\"name\":\"P542 甲 w1ev9\"}"
-    }
-   ],
-   "names": [
-    "P542 甲 w1ev9"
-   ]
-  },
-  "dup": {
-   "toast": "已存在同名播放列表「P542 甲 w1ev9」",
-   "count": 0,
-   "posts": [],
-   "err": "已存在同名播放列表「P542 甲 w1ev9」",
-   "border": "rgb(247, 137, 137)",
-   "invalid": true,
-   "ariaInvalid": "true"
-  },
-  "dupCase": {
-   "count": 0,
-   "err": "已存在同名播放列表「P542 甲 w1ev9」"
-  },
-  "blank": {
-   "count": 0,
-   "err": "请输入播放列表名称"
-  },
-  "tooLong": {
-   "count": 0,
-   "err": "名称最多 32 个字符（当前 33 个）",
-   "typed": 33,
-   "maxlength": "32"
-  },
-  "narrowError": {
-   "state": {
-    "value": "长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长",
-    "maxlength": "32",
-    "invalid": true,
-    "ariaInvalid": "true",
-    "borderColor": "rgb(247, 137, 137)",
-    "borderStyle": "solid",
-    "err": "名称最多 32 个字符（当前 33 个）",
-    "errColor": "rgb(247, 137, 137)",
-    "dangerToken": "#f78989",
-    "lineToken": "#414243",
-    "pageBg": "rgb(20, 20, 20)",
-    "toasts": [],
-    "names": [
-     "P542 甲 w1ev9"
-    ],
-    "listCount": 1
-   },
-   "overflow": {
-    "scrollW": 375,
-    "innerW": 375
-   }
-  },
-  "narrowToast": {
-   "toast": {
-    "x": 56.625,
-    "y": 262,
-    "w": 261.734375,
-    "h": 36.1875,
-    "bottom": 298.1875
-   },
-   "head": {
-    "x": 10,
-    "y": 58,
-    "bottom": 164.34375
-   },
-   "btnBottoms": [
-    107.171875,
-    164.34375
-   ],
-   "overlapHead": 0
-  },
-  "idempotent": {
-   "toast": "已存在同名播放列表「P542 乙 w1ev9」，已为你打开原来的那个",
-   "count": 1,
-   "err": ""
-  },
-  "createAgain": {
-   "toast": "已新建播放列表「P542 乙 w1ev9 二」",
-   "count": 1,
-   "names": [
-    "P542 乙 w1ev9 二",
-    "P542 甲 w1ev9"
-   ]
-  },
-  "cleanup": {
-   "ownerPrefix": "",
-   "before": 2,
-   "deleted": [
-    {
-     "id": 16,
-     "status": 200
-    },
-    {
-     "id": 15,
-     "status": 200
-    }
-   ]
   }
  }
 }

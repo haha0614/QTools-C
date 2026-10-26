@@ -32,6 +32,11 @@ export const INSUFFICIENT_TEXT = '该片缺少可概括的内容素材（无字�
 
 /** 素材不足时提供的退路按钮文案（模板只写客观信息） */
 export const TEMPLATE_FALLBACK_LABEL = '用模板生成客观信息'
+
+/** P5.57：字幕不可信时的手动入口（只走音频转写，不看既有字幕） */
+export const AUDIO_REGENERATE_LABEL = '🎧 用音频转写重新生成'
+/** 覆盖已有简介前的二次确认文案 */
+export const AUDIO_OVERWRITE_CONFIRM = '这会用音频转写的结果覆盖当前简介内容（保存前仍可编辑），继续？'
 /** 本地模型不可用时的统一文案（与后端 503 文案同义） */
 export const MODEL_NOT_READY_TEXT = '本地模型未就绪（Ollama 未启动？）'
 
@@ -151,6 +156,54 @@ export async function generateTemplateSynopsis(api, videoId) {
 }
 
 /**
+ * 音频转写这一路是否值得显示按钮（P5.57）
+ *
+ * @param {{sources?:{audio?:{available?:boolean}}}} capabilities 后端 capabilities()
+ * @returns {boolean} true = 显示「用音频转写重新生成」
+ */
+export function audioAvailable(capabilities) {
+  const audio = capabilities && capabilities.sources && capabilities.sources.audio
+  return !!(audio && audio.available === true)
+}
+
+/**
+ * 用音频转写重新生成（预览，不落库，P5.57）
+ *
+ * <p>只走 whisper 转写这一路：字幕不可信时用户按的就是这个按钮，所以<b>不</b>在这里回退字幕 /
+ * 模板 —— 转写不可用或正文太少一律按「素材不足」返回，由界面显示后端的原因。</p>
+ *
+ * @param {{generateSynopsisAudio:Function}} api
+ * @param {string} videoId
+ * @returns {Promise<{text:string, source:{kind:string, model?:string}, notice:string, insufficient:boolean, reason?:string, material?:object}>}
+ */
+export async function generateAudioSynopsis(api, videoId) {
+  const body = await api.generateSynopsisAudio(videoId)
+  if (isInsufficient(body)) {
+    return {
+      text: '',
+      source: { kind: 'none' },
+      notice: String((body && (body.audioReason || body.reason)) || INSUFFICIENT_TEXT),
+      insufficient: true,
+      reason: String((body && body.reason) || ''),
+      material: (body && body.material) || null
+    }
+  }
+  const text = replyText(body)
+  if (!text) {
+    const empty = new Error('音频转写没有返回内容')
+    empty.status = 503
+    throw empty
+  }
+  return {
+    text,
+    source: sourceOf(body),
+    notice: '',
+    insufficient: false,
+    material: (body && body.material) || null
+  }
+}
+
+/**
  * 生成一次简介（预览，不落库）
  *
  * @param {{generateSynopsisLlm:Function, generateSynopsisTemplate:Function}} api 注入的接口
@@ -210,7 +263,26 @@ export async function generateSynopsis(api, videoId, capabilities) {
   return { text, source: { kind: 'template' }, notice: '', insufficient: false }
 }
 
-/** 批量任务进度文案（工具栏一行，处理中途也能看出「已完成几条」） */
+/**
+ * 跳过原因分类的文案（P5.55）
+ *
+ * 为什么要在界面上分开：用户看到「跳过 12」时无法判断是「本来就写过、没动」还是
+ * 「这条片子没字幕没画面、生成不了」——前者是保护，后者是能力边界，两件事必须说清。
+ */
+export const SKIP_REASON_LABELS = {
+  existing: '已有内容（未覆盖）',
+  insufficient: '缺少素材（无字幕且无可识别画面）',
+  other: '其它原因'
+}
+
+/** 任务状态 → 成果面板标题（P5.55：done / stopped / failed 三种标题） */
+export const BATCH_TITLES = {
+  done: '批量生成完成',
+  stopped: '已手动停止',
+  failed: '批量生成失败'
+}
+
+/** 工具栏进度文案（处理中途也能看出「已完成几条」；已请求停止时明确说在等最后一条） */
 export function batchProgressText(job) {
   if (!job || typeof job !== 'object') return ''
   const total = Number(job.total) || 0
@@ -221,12 +293,105 @@ export function batchProgressText(job) {
   const tail = '已生成 ' + generated + ' · 跳过 ' + skipped + (failed ? ' · 失败 ' + failed : '')
   if (job.status === 'failed') return '批量生成失败：' + (job.error || '未知错误')
   if (job.status === 'done') return '批量生成完成 ' + processed + '/' + total + '（' + tail + '）'
+  if (job.status === 'stopped') {
+    const left = Number((job.counts && job.counts.remaining) != null ? job.counts.remaining : total - processed) || 0
+    return '批量生成已停止 ' + processed + '/' + total + '（' + tail + ' · 未处理 ' + left + '）'
+  }
+  if (job.cancelRequested) return '正在停止 ' + processed + '/' + total + '（等本条生成完 · ' + tail + '）'
   return '批量生成中 ' + processed + '/' + total + '（' + tail + '）'
 }
 
-/** 任务是否已结束（完成或失败）——轮询到这里就停 */
+/** 任务是否已结束（完成 / 手动停止 / 失败）——轮询到这里就停 */
 export function batchFinished(job) {
-  return !!job && (job.status === 'done' || job.status === 'failed')
+  return !!job && (job.status === 'done' || job.status === 'stopped' || job.status === 'failed')
+}
+
+/** 任务是否还在跑（pending 也算：还没开始但已经排上了） */
+export function batchActive(job) {
+  return !!job && (job.status === 'pending' || job.status === 'running')
+}
+
+/**
+ * 成果汇总（P5.55 验收口径：总条数 / 已生成 / 已跳过（分类）/ 失败 / 未处理）
+ *
+ * @param {object|null} job 任务节点（后端 counts / skipReasons 优先，缺了才用顶层字段兜底）
+ * @returns {{status:string,title:string,rows:{key:string,label:string,value:number}[],reasons:{key:string,label:string,value:number}[],remaining:number}}
+ */
+export function batchSummary(job) {
+  if (!job || typeof job !== 'object') {
+    return { status: '', title: '', rows: [], reasons: [], remaining: 0 }
+  }
+  const c = job.counts && typeof job.counts === 'object' ? job.counts : {}
+  const num = (key, fallback) => {
+    const raw = c[key] != null ? c[key] : job[key]
+    const n = Number(raw)
+    return Number.isFinite(n) ? n : fallback
+  }
+  const total = num('total', 0)
+  const processed = num('processed', 0)
+  const generated = num('generated', 0)
+  const skipped = num('skipped', 0)
+  const failed = num('failed', 0)
+  const remaining = c.remaining != null ? Number(c.remaining) || 0 : Math.max(0, total - processed)
+  const rows = [
+    { key: 'total', label: '总条数', value: total },
+    { key: 'generated', label: '已生成', value: generated },
+    { key: 'skipped', label: '已跳过', value: skipped },
+    { key: 'failed', label: '失败', value: failed },
+    { key: 'remaining', label: '未处理', value: remaining }
+  ]
+  const sr = job.skipReasons && typeof job.skipReasons === 'object' ? job.skipReasons : {}
+  const reasons = Object.keys(SKIP_REASON_LABELS)
+    .map((key) => ({ key, label: SKIP_REASON_LABELS[key], value: Number(sr[key]) || 0 }))
+    .filter((r) => r.value > 0)
+  const status = String(job.status || '')
+  return { status, title: BATCH_TITLES[status] || '批量生成', rows, reasons, remaining }
+}
+
+/** 撤销结果的一行文案（回滚 / 按 ids 清空共用） */
+export function rollbackText(res) {
+  if (!res || typeof res !== 'object') return ''
+  if (res.dryRun) return '将清空 ' + (Number(res.willClear) || 0) + ' 条简介'
+  const cleared = Number(res.cleared) || 0
+  const restored = Number(res.restored) || 0
+  if (restored > 0) return '已恢复 ' + restored + ' 条旧内容' + (cleared ? '，清空 ' + cleared + ' 条' : '')
+  return '已清空 ' + cleared + ' 条简介'
+}
+
+/**
+ * 上次批量任务的本机记录（撤销入口靠它）
+ *
+ * 为什么存本机：后端任务表是**内存态**（后端一重启就没了），而「撤销」恰恰最可能发生在
+ * 「用户发现跑错了 → 重启/重进页面之后」。把 jobId 与本次目标 id 一起留在 localStorage，
+ * 后端任务丢了还能退回「按 ids 清空」这条路。
+ */
+export const LAST_BATCH_KEY = 'ms.synbatch.last'
+
+export function saveLastBatch(record) {
+  try {
+    localStorage.setItem(LAST_BATCH_KEY, JSON.stringify(record || {}))
+  } catch {
+    /* 隐私模式：撤销入口退化成「手动粘贴 ids」 */
+  }
+}
+
+export function readLastBatch() {
+  try {
+    const raw = localStorage.getItem(LAST_BATCH_KEY)
+    if (!raw) return null
+    const obj = JSON.parse(raw)
+    return obj && typeof obj === 'object' ? obj : null
+  } catch {
+    return null
+  }
+}
+
+export function clearLastBatch() {
+  try {
+    localStorage.removeItem(LAST_BATCH_KEY)
+  } catch {
+    /* 忽略 */
+  }
 }
 
 export default {
@@ -249,5 +414,14 @@ export default {
   generateTemplateSynopsis,
   generateSynopsis,
   batchProgressText,
-  batchFinished
+  batchFinished,
+  batchActive,
+  batchSummary,
+  rollbackText,
+  SKIP_REASON_LABELS,
+  BATCH_TITLES,
+  LAST_BATCH_KEY,
+  saveLastBatch,
+  readLastBatch,
+  clearLastBatch
 }

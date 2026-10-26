@@ -33,6 +33,13 @@ function ok(cond, name, extra) {
   failures.push(name + (extra ? ' -> ' + extra : ''))
   console.log('  FAIL ' + name + (extra ? ' -> ' + extra : ''))
 }
+/* 已废弃用例：被测对象已移除（P5.46 取消播放列表页 / P5.24 合并折叠按钮）。
+   只记一行 SKIP，不进 passed / failures —— 旧断言不执行，也不留假失败。 */
+let skipped = 0
+function skip(name, reason) {
+  skipped++
+  console.log('  SKIP ' + name + ' —— 已废弃：' + reason)
+}
 
 /* ---------------------------------------------------------------- vite + chrome */
 const vite = await createServer({
@@ -381,41 +388,11 @@ try {
   result.lightNote = { isDark: await ensureTheme(false) }
   await sleep(400)
 
-  /* ============================================== 2. 播放列表页：toast */
-  await goto('/media/playlists')
-  await waitFor("!!document.querySelector('.pl-head')", 15000)
-  await sleep(500)
-  await ensureTheme(false)
-  result.railPlaylists = await js(MEASURE_RAIL)
-  result.probe = await js(PROBE)
-
-  await setInput('111')
-  await sleep(150)
-  const btnNew = await centerOf('.pl-head .pl-btn')
-  await clickAt(btnNew.x, btnNew.y)
-  await sleep(280)
-  result.toastOne = await js(MEASURE_TOAST)
-  await shot('playlists-toast-light-1600')
-
-  await setInput('222')
-  await sleep(90)
-  await clickAt(btnNew.x, btnNew.y)
-  await sleep(150)
-  await setInput('333')
-  await sleep(90)
-  await clickAt(btnNew.x, btnNew.y)
-  await sleep(280)
-  result.toastStack = await js(MEASURE_TOAST)
-  await shot('playlists-toast-stack-light-1600')
-
-  await ensureTheme(true)
-  await sleep(400)
-  await setInput('444')
-  await sleep(120)
-  await clickAt(btnNew.x, btnNew.y)
-  await sleep(280)
-  result.toastDark = await js('(() => { const l = document.querySelector(".ms-toast-layer"); const el = l ? l.firstElementChild : null; if (!el) return { missing: true, isDark: document.documentElement.classList.contains("dark") }; const c = getComputedStyle(el); const b = el.getBoundingClientRect(); const rail = document.querySelector(".qt-rail").getBoundingClientRect(); const ox = Math.max(0, Math.min(b.right, rail.right) - Math.max(b.left, rail.left)); const oy = Math.max(0, Math.min(b.bottom, rail.bottom) - Math.max(b.top, rail.top)); return { isDark: document.documentElement.classList.contains("dark"), cls: String(el.className), bg: c.backgroundColor, color: c.color, rect: { x: +b.x.toFixed(1), y: +b.y.toFixed(1), w: +b.width.toFixed(1), h: +b.height.toFixed(1) }, railOverlap: +(ox * oy).toFixed(0) } })()')
-  await shot('playlists-toast-dark-1600')
+  /* ============================================== 2. 播放列表页：toast（整段已废弃） */
+  // 已废弃：被测对象移除（P5.46 取消播放列表页）。
+  // 原第 2 节在 /media/playlists 上量 .pl-head / .pl-input 触发的提示条（单条 / 连点堆叠 / 暗色），
+  // P5.46 把播放列表降级成视频库的筛选维度并删除整页，旧地址只剩重定向，这些 DOM 都不再存在。
+  // 等价覆盖：p546-ui 的 C 段（管理弹层新建 / 重命名 / 删除 + toast）、本文件第 3 节的视频库 toast。
 
   /* ============================================== 3. 视频库页：同一套 toast 的宿主 */
   await goto('/media')
@@ -430,9 +407,9 @@ try {
 
   /* ============================================== 4. 窄屏 390x844 */
   await viewport(390, 844, true)
-  await goto('/media/playlists')
-  await waitFor("!!document.querySelector('.pl-head')", 15000)
-  await sleep(500)
+  // P5.46：播放列表页已取消，抽屉改在视频库上量（同一套 .qt-shell / .qt-rail / .qt-topbar__icon）
+  await goto('/media')
+  await sleep(1500)
   const burger = await centerOf('.qt-topbar__icon')
   await clickAt(burger.x, burger.y)
   await sleep(500)
@@ -440,15 +417,7 @@ try {
   await shot('mobile-drawer-390')
   // 抽屉 z-index 80 盖住顶栏 50：再点 ☰ 会点到抽屉里的导航项，ESC 才是关闭抽屉的真路径
   await pressEsc()
-  await waitFor("!!document.querySelector('.pl-input')", 8000)
-  await setInput('555')
-  await sleep(150)
-  const mBtn = await centerOf('.pl-head .pl-btn')
-  await clickAt(mBtn.x, mBtn.y)
-  await sleep(300)
-  result.toastMobile = await js(MEASURE_TOAST)
-  result.mobileVar = await js('(() => { const p = document.querySelector(".ms-page.pl-page"); const l = document.querySelector(".ms-toast-layer"); return { pageVar: p ? getComputedStyle(p).getPropertyValue("--ms-toast-top") : null, layerVar: l ? getComputedStyle(l).getPropertyValue("--ms-toast-top") : null, innerW: innerWidth, mq: matchMedia("(max-width: 768px)").matches, headBottom: (() => { const h = document.querySelector(".pl-head"); return h ? +h.getBoundingClientRect().bottom.toFixed(1) : null })() } })()')
-  await shot('mobile-toast-390')
+  // 已废弃：被测对象移除（P5.46 取消播放列表页）—— 原「窄屏播放列表页 新建 → 提示条」用例。
 
   // 视频库窄屏也量一次：本页顶部有吸顶工具栏（搜索框 + 排序 + 按钮），提示条要避开
   await goto('/media')
@@ -480,18 +449,15 @@ try {
   ok(result.reExpanded.w > 100, '折叠可再展开（宽度回落）', String(result.reExpanded.w))
   ok(result.dark.isDark === true, '暗色主题真生效（走应用自己的按钮）', JSON.stringify({ isDark: result.dark.isDark, pageBg: result.dark.pageBg }))
   ok(result.lightNote.isDark === false, '再切回浅色成功（主题切换未破）', String(result.lightNote.isDark))
-  ok(result.toastDark.isDark === true && result.toastDark.railOverlap === 0, '暗色下 toast 仍在顶部居中且不压左栏', JSON.stringify(result.toastDark))
+  skip('暗色下 toast 仍在顶部居中且不压左栏（播放列表页 1600）', 'P5.46 取消播放列表页')
   ok(result.toastVideo.railOverlap.every((a) => a === 0) && result.toastVideo.btnOverlaps.length === 0, '视频库 toast 不压左栏与工具栏控件', JSON.stringify({ items: result.toastVideo.items.map((i) => i.rect), toolbar: result.toastVideo.toolbar, overlaps: result.toastVideo.btnOverlaps }))
   ok(result.toastVideoMobile.inViewport && result.toastVideoMobile.railOverlap.every((a) => a === 0), '窄屏视频库 toast 不溢出', JSON.stringify(result.toastVideoMobile.items.map((i) => i.rect)))
 
-  ok(result.toastOne.count >= 1, 'toast 已渲染', String(result.toastOne.count))
-  ok(result.toastOne.railOverlap.every((a) => a === 0), 'toast 与 .qt-rail 相交面积为 0', JSON.stringify({ toast: result.toastOne.items.map((i) => i.rect), rail: result.toastOne.rail, overlap: result.toastOne.railOverlap }))
-  ok(result.toastOne.btnOverlaps.length === 0, 'toast 不压主操作按钮', JSON.stringify(result.toastOne.btnOverlaps))
-  ok(result.toastOne.inViewport && result.toastOne.overflowX.scrollW <= result.toastOne.overflowX.innerW, 'toast 在视口内且无横向溢出', JSON.stringify(result.toastOne.viewport))
-  ok(result.toastStack.count >= 2 && result.toastStack.stackGaps.every((g) => g >= 4), '多条 toast 纵向堆叠不重叠', JSON.stringify({ count: result.toastStack.count, gaps: result.toastStack.stackGaps }))
-  ok(result.toastMobile.inViewport && result.toastMobile.railOverlap.every((a) => a === 0), '窄屏 toast 不溢出、不压抽屉', JSON.stringify(result.toastMobile.items.map((i) => i.rect)))
+  skip('toast 已渲染 / 与 .qt-rail 相交面积为 0 / 不压主操作按钮 / 在视口内无横向溢出（播放列表页 1600）', 'P5.46 取消播放列表页')
+  skip('多条 toast 纵向堆叠不重叠（播放列表页连点三次）', 'P5.46 取消播放列表页')
+  skip('窄屏 toast 不溢出、不压抽屉（播放列表页 390）', 'P5.46 取消播放列表页')
   ok(result.mobileDrawer.rail.w < 390, '窄屏抽屉不超出视口', String(result.mobileDrawer.rail.w))
-  ok(result.toastMobile.btnOverlaps.length === 0, '窄屏提示条不压页头控件（新建/刷新/名称输入）', JSON.stringify(result.toastMobile.btnOverlaps))
+  skip('窄屏提示条不压页头控件（新建/刷新/名称输入，播放列表页 390）', 'P5.46 取消播放列表页')
 
   result.summary = { passed, failures, shots }
   console.log('')

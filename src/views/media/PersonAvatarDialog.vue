@@ -190,15 +190,203 @@ function applyUrl() {
   emit('save', { kind: 'url', ref: urlValue.value })
 }
 
+/* ---------------------------------------------------------------- 框选裁剪（P5.55）
+
+   为什么在弹层里裁、而不是选完就存：一张相册图 400/1600px 宽，头像只有 56px 大小，
+   「整张缩进去」时脸往往只占几个像素。让用户框一下，落库的是裁剪参数（比例），
+   后端按参数现裁 —— 存比例而不是像素，缩略图重建后裁剪框不会偏。
+
+   映射口径（重要）：后端裁的是 **thumbs/p 里的缩略图**，而 build-thumbs 对缩略图
+   （scale=400:-2）与大图预览（scale=1600:-2）用的是**同一套等比缩放**，两者比例完全一致。
+   所以这里显示大图预览做更高清的选择，但算出来的比例对缩略图同样成立。 */
+
+/** 裁剪态（null = 没在裁，显示相册网格） */
+const crop = reactive({
+  open: false,
+  albumId: '',
+  seq: 0,
+  url: '',
+  fallbackUrl: '',
+  W: 0,
+  H: 0,
+  /** 选择框（相对图片显示框的像素） */
+  sel: { x: 0, y: 0, w: 0, h: 0 },
+  /** 缩放滑块：选择框边长占图片短边的百分比 */
+  zoom: 60
+})
+const cropImgEl = ref(null)
+let drag = null
+
+const cropMinSide = computed(() => Math.min(crop.W || 1, crop.H || 1))
+
+/** 选择框 → 归一化 crop 串（4 位小数，与后端 MediaAvatarCrop.normalize 同口径） */
+function cropParam() {
+  const W = crop.W || 1
+  const H = crop.H || 1
+  const fx = (v) => Math.min(1, Math.max(0, v))
+  const x = fx(crop.sel.x / W)
+  const y = fx(crop.sel.y / H)
+  const w = Math.min(1 - x, Math.max(0.02, crop.sel.w / W))
+  const h = Math.min(1 - y, Math.max(0.02, crop.sel.h / H))
+  return [x, y, w, h].map((v) => v.toFixed(4)).join(',')
+}
+
+function centerBox(side, cyRatio) {
+  const s = Math.max(12, Math.round(side))
+  const cx = crop.W / 2
+  const cy = (crop.H || 0) * (cyRatio == null ? 0.5 : cyRatio)
+  let x = Math.round(cx - s / 2)
+  let y = Math.round(cy - s / 2)
+  x = Math.max(0, Math.min(x, Math.max(0, crop.W - s)))
+  y = Math.max(0, Math.min(y, Math.max(0, crop.H - s)))
+  return { x, y, w: s, h: s }
+}
+
+function applyPreset(kind) {
+  if (!crop.W || !crop.H) return
+  const min = cropMinSide.value
+  if (kind === 'full') {
+    crop.sel = { x: 0, y: 0, w: crop.W, h: crop.H }
+    crop.zoom = Math.round((min / min) * 100)
+    return
+  }
+  // 脸部：短边的 42%，中心略偏上（正脸在画面 42% 处）；中心：短边 60%
+  const ratio = kind === 'face' ? 42 : 60
+  crop.zoom = ratio
+  crop.sel = centerBox((min * ratio) / 100, kind === 'face' ? 0.42 : 0.5)
+}
+
+function onZoom() {
+  if (!crop.W || !crop.H) return
+  const side = (cropMinSide.value * Number(crop.zoom || 60)) / 100
+  const prev = crop.sel
+  const cx = prev.x + prev.w / 2
+  const cy = prev.y + prev.h / 2
+  const s = Math.max(12, Math.round(side))
+  let x = Math.round(cx - s / 2)
+  let y = Math.round(cy - s / 2)
+  x = Math.max(0, Math.min(x, Math.max(0, crop.W - s)))
+  y = Math.max(0, Math.min(y, Math.max(0, crop.H - s)))
+  crop.sel = { x, y, w: s, h: s }
+}
+
+/** 鼠标 / 触摸坐标 → 图片内像素（用 img 的真实盒，不用容器盒） */
+function pointIn(ev) {
+  const el = cropImgEl.value
+  if (!el) return null
+  const rect = el.getBoundingClientRect()
+  if (!rect.width || !rect.height) return null
+  const cx = ev.clientX != null ? ev.clientX : ev.touches && ev.touches[0] ? ev.touches[0].clientX : 0
+  const cy = ev.clientY != null ? ev.clientY : ev.touches && ev.touches[0] ? ev.touches[0].clientY : 0
+  return {
+    x: Math.min(crop.W, Math.max(0, ((cx - rect.left) / rect.width) * crop.W)),
+    y: Math.min(crop.H, Math.max(0, ((cy - rect.top) / rect.height) * crop.H))
+  }
+}
+
+function onCropDown(ev) {
+  if (props.busy) return
+  const p = pointIn(ev)
+  if (!p) return
+  drag = { ax: p.x, ay: p.y }
+  crop.sel = { x: p.x, y: p.y, w: 0, h: 0 }
+  if (typeof ev.preventDefault === 'function') ev.preventDefault()
+}
+
+function onCropMove(ev) {
+  if (!drag) return
+  const p = pointIn(ev)
+  if (!p) return
+  const x = Math.min(drag.ax, p.x)
+  const y = Math.min(drag.ay, p.y)
+  const w = Math.abs(p.x - drag.ax)
+  const h = Math.abs(p.y - drag.ay)
+  crop.sel = { x, y, w, h }
+  if (typeof ev.preventDefault === 'function') ev.preventDefault()
+}
+
+function onCropUp() {
+  if (!drag) return
+  drag = null
+  // 点一下没拖动（< 8px）：视作「用中心 60%」，避免留下一个 1px 的框
+  if (crop.sel.w < 8 || crop.sel.h < 8) {
+    applyPreset('center')
+    return
+  }
+  crop.zoom = Math.round((Math.min(crop.sel.w, crop.sel.h) / cropMinSide.value) * 100)
+  // 拖出来的不是正方形时按短边收成正方形（头像圆形容器裁的是正方形，避免预期外的裁切）
+  const side = Math.min(crop.sel.w, crop.sel.h)
+  centerBoxAt(crop.sel.x + crop.sel.w / 2, crop.sel.y + crop.sel.h / 2, side)
+}
+
+function centerBoxAt(cx, cy, side) {
+  const s = Math.max(12, Math.round(side))
+  let x = Math.round(cx - s / 2)
+  let y = Math.round(cy - s / 2)
+  x = Math.max(0, Math.min(x, Math.max(0, crop.W - s)))
+  y = Math.max(0, Math.min(y, Math.max(0, crop.H - s)))
+  crop.sel = { x, y, w: s, h: s }
+}
+
+/** 选择框的显示样式（用百分比定位，图片尺寸变化时不用重新算） */
+const cropBoxStyle = computed(() => {
+  if (!crop.W || !crop.H) return { display: 'none' }
+  return {
+    left: (crop.sel.x / crop.W) * 100 + '%',
+    top: (crop.sel.y / crop.H) * 100 + '%',
+    width: (crop.sel.w / crop.W) * 100 + '%',
+    height: (crop.sel.h / crop.H) * 100 + '%'
+  }
+})
+
+/** 图片解码出真实尺寸后再摆默认框（在此之前 W/H 是 0，任何框都算不出来） */
+function onCropImgLoad(ev) {
+  const el = ev && ev.target ? ev.target : cropImgEl.value
+  if (!el) return
+  crop.W = el.clientWidth || el.naturalWidth || 0
+  crop.H = el.clientHeight || el.naturalHeight || 0
+  if (crop.W && crop.H) applyPreset('center')
+}
+
+/** 从相册挑一张 → 进裁剪态（不再「点一下就直接落库」） */
 function pickPhoto(album, photo) {
   if (props.busy) return
-  emit('save', { kind: 'photo', ref: String(album.id) + ':' + photo.seq })
+  crop.open = true
+  crop.albumId = String(album.id)
+  crop.seq = photo.seq
+  // 裁剪用大图预览（更清晰）；没有大图（is_big≠1）时同一张缩略图也能裁，比例一致
+  crop.url = api.photoPreviewUrl(crop.albumId, photo.seq)
+  crop.fallbackUrl = photo.url
+  crop.W = 0
+  crop.H = 0
+  crop.sel = { x: 0, y: 0, w: 0, h: 0 }
+  crop.zoom = 60
+}
+
+function onCropImgError(ev) {
+  if (crop.fallbackUrl && ev && ev.target && ev.target.src !== crop.fallbackUrl) {
+    ev.target.src = crop.fallbackUrl
+  }
+}
+
+function closeCrop() {
+  crop.open = false
+}
+
+/** 用这张（带裁剪）→ 落库形状 a164:4#crop=x,y,w,h */
+function saveCrop() {
+  if (props.busy) return
+  const base = crop.albumId + ':' + crop.seq
+  const full = Math.abs(crop.sel.w - crop.W) < 2 && Math.abs(crop.sel.h - crop.H) < 2
+  emit('save', { kind: 'photo', ref: full ? base : base + '#crop=' + cropParam() })
 }
 
 /* ------------------------------------------------------------------ 生命周期 */
 
 function reset() {
   stopObserver()
+  crop.open = false
+  crop.sel = { x: 0, y: 0, w: 0, h: 0 }
   tab.value = 'album'
   albums.value = []
   albumTotal.value = 0
@@ -267,8 +455,58 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
-      <!-- tab 1：相册缩略图网格（每行 6 张，懒加载） -->
+      <!-- tab 1：相册缩略图网格（每行 6 张，懒加载）；选中一张后进入裁剪态 -->
       <div v-if="tab === 'album'" class="pa-body" data-role="avatar-album-tab">
+        <!-- 裁剪态（P5.55）：拖拽框选 + 缩放滑块 + 脸部/中心/整图三档 -->
+        <div v-if="crop.open" class="pa-crop" data-role="avatar-crop">
+          <p class="pa-crop-tip">在图片上拖拽选择区域（不拖则默认中心 60%）</p>
+          <div
+            class="pa-crop-stage"
+            @mousedown="onCropDown"
+            @mousemove="onCropMove"
+            @mouseup="onCropUp"
+            @mouseleave="onCropUp"
+          >
+            <div class="pa-crop-wrap">
+              <img
+                ref="cropImgEl"
+                :src="crop.url"
+                alt=""
+                draggable="false"
+                data-role="avatar-crop-img"
+                @load="onCropImgLoad"
+                @error="onCropImgError"
+              />
+              <span v-if="crop.W" class="pa-crop-box" data-role="avatar-crop-box" :style="cropBoxStyle"></span>
+            </div>
+          </div>
+          <div class="pa-crop-tools">
+            <button class="pa-btn pa-btn-sm" type="button" data-role="avatar-crop-face" @click="applyPreset('face')">
+              脸部
+            </button>
+            <button class="pa-btn pa-btn-sm" type="button" data-role="avatar-crop-center" @click="applyPreset('center')">
+              中心
+            </button>
+            <button class="pa-btn pa-btn-sm" type="button" data-role="avatar-crop-full" @click="applyPreset('full')">
+              整图
+            </button>
+            <label class="pa-crop-zoom">
+              缩放
+              <input
+                v-model.number="crop.zoom"
+                type="range"
+                min="20"
+                max="100"
+                step="1"
+                data-role="avatar-crop-zoom"
+                @input="onZoom"
+              />
+              <em>{{ crop.zoom }}%</em>
+            </label>
+          </div>
+          <p class="pa-crop-param" data-role="avatar-crop-param">{{ cropParam() }}</p>
+        </div>
+        <template v-else>
         <p v-if="albumsLoading" class="pa-state">相册加载中…</p>
         <p v-else-if="albumsErr" class="pa-state pa-state-err">{{ albumsErr }}</p>
         <p v-else-if="!albums.length" class="pa-state">这位人物名下还没有相册，改用「图片地址」吧</p>
@@ -310,6 +548,7 @@ onBeforeUnmount(() => {
           </section>
           <p v-if="albums.length < albumTotal" class="pa-more">仅列出前 {{ albums.length }} 本（共 {{ albumTotal }} 本）</p>
         </template>
+        </template>
       </div>
 
       <!-- tab 2：外部图片地址（带预览 + 基本校验） -->
@@ -341,6 +580,19 @@ onBeforeUnmount(() => {
           恢复自动头像
         </button>
         <span class="pa-spacer"></span>
+        <template v-if="crop.open">
+          <button class="pa-btn" type="button" :disabled="busy" data-role="avatar-crop-back" @click="closeCrop">返回</button>
+          <button
+            class="pa-btn pa-btn-primary"
+            type="button"
+            :disabled="busy"
+            data-role="avatar-crop-save"
+            @click="saveCrop"
+          >
+            {{ busy ? '保存中…' : '用这张（裁剪后）' }}
+          </button>
+        </template>
+        <template v-else>
         <button class="pa-btn" type="button" :disabled="busy" @click="emit('close')">取消</button>
         <button
           v-if="tab === 'url'"
@@ -352,6 +604,7 @@ onBeforeUnmount(() => {
         >
           {{ busy ? '保存中…' : '保存' }}
         </button>
+        </template>
       </footer>
     </div>
   </div>
@@ -639,6 +892,85 @@ onBeforeUnmount(() => {
   border-color: transparent;
   color: var(--accent-on, #fff);
   filter: brightness(1.06);
+}
+
+/* ---------------- 裁剪态（P5.55） ---------------- */
+
+.pa-crop-tip {
+  margin: 0 0 8px;
+  font-size: 11.5px;
+  color: var(--fg-dim);
+}
+
+.pa-crop-stage {
+  display: flex;
+  justify-content: center;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius, 10px);
+  background: var(--bg-3);
+  cursor: crosshair;
+  user-select: none;
+}
+
+/* 外层贴紧图片（inline-block），选择框的百分比定位才有正确的参考盒 */
+.pa-crop-wrap {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+.pa-crop-wrap img {
+  display: block;
+  max-width: 100%;
+  max-height: 320px;
+  width: auto;
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.pa-crop-box {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.pa-crop-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pa-crop-zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--fg-dim);
+}
+
+.pa-crop-zoom input[type='range'] {
+  width: 108px;
+}
+
+.pa-crop-zoom em {
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.pa-crop-param {
+  margin: 6px 0 0;
+  font-size: 10.5px;
+  color: var(--fg-dim);
+  font-family: ui-monospace, monospace;
+  word-break: break-all;
 }
 
 @media (max-width: 560px) {

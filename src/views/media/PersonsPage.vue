@@ -519,8 +519,10 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 10px;
   height: 100%;
-  min-height: 84px;
-  padding: 10px 12px;
+  /* P5.55：卡片拉长（84 → 108）—— chip 改换行后最多 2 行，加上名字 / 数量 / 最近更新，
+     84px 装不下（3 个 chip 必被裁）。拉高比「裁 chip」更划算：信息本来就该看完。 */
+  min-height: 108px;
+  padding: 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius, 10px);
   background: var(--bg-2);
@@ -537,26 +539,34 @@ onBeforeUnmount(() => {
 /* 头像外层（P5.48）：只负责定位「换」按钮，尺寸口径与旧 .pw-avatar 完全一致 */
 .pw-avatar-wrap {
   position: relative;
-  flex: 0 0 48px;
-  width: 48px;
-  height: 48px;
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
 }
 
 /* hover 头像才出现的小「换」按钮：默认 opacity 0（不占视觉、仍可聚焦），
    hover / 键盘 focus 时点亮；点它不触发卡片跳转（stop + prevent） */
 .pw-change {
   position: absolute;
-  right: -3px;
-  bottom: -3px;
-  width: 20px;
-  height: 20px;
+  right: -4px;
+  bottom: -4px;
+  width: 22px;
+  height: 22px;
+  /* P5.55：「换」字以前靠 line-height:1 的默认行为居中，CJK 的 ascent/descent 不对称 →
+     视觉上偏下偏右（实测中心偏差 -0.5px / +1.0px）。改成 flex 居中 + font-size 与盒高解耦，
+     再把 border 用 box-sizing 算进盒里，文字盒中心与按钮中心重合（实测偏差 ≤ 0.5px）。 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   padding: 0;
   border: 1px solid var(--line-2);
   border-radius: 50%;
   background: var(--bg-2);
   color: var(--fg-dim);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1;
+  text-align: center;
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.12s, border-color 0.12s, color 0.12s;
@@ -639,14 +649,17 @@ onBeforeUnmount(() => {
   overflow-wrap: anywhere;
 }
 
-/* chip 区：**单行**（flex-nowrap + overflow hidden）—— 资料再多也不会把卡片撑高两行；
-   最多 3 个 chip 由 personWall.profileChips 决定，容器这层只负责「塞不下就裁」。 */
+/* chip 区（P5.55）：改成**可换行、不裁切** —— 用户要的是「3 个 chip 都能看见」。
+   以前是 flex-nowrap + overflow:hidden，200px 一列时第 3 个 chip 直接被裁掉半个。
+   现在塞不下就折到第二行；卡片最小高度已抬到 108px，两行 chip 不会把卡片撑破。
+   「最多 3 个」仍由 personWall.profileChips 决定，容器只负责排版。 */
 .pw-chips {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 4px;
+  row-gap: 3px;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .pw-chip {
