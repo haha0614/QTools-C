@@ -72,16 +72,23 @@
         >
           <track v-if="subSrc" :key="subSrc" kind="subtitles" label="字幕" srclang="zh" default :src="subSrc" />
         </video>
-        <!-- P5.17 转码档防黑屏覆盖层：转码流是服务端边转边推的分片 MP4（seekable=[0,0]），
-             重挂流到首帧之间是空 buffer —— 这段时间把「目标位置的精确帧」盖在画面上。
-             首帧到达（canplay）即移除；取帧失败静默撤掉（@error），不弹任何错。 -->
+        <!-- P5.17 转码档防黑屏覆盖层 / P5.20 内容换成「canvas 冻结当前画面」
+             转码流是服务端边转边推的分片 MP4（seekable=[0,0]），重挂流到首帧之间是空 buffer。
+             P5.20 起这层不再等取帧接口（那是 100-400ms 的空窗 + 一张 480 宽的放大图），
+             而是换流前用 canvas 把**当前显示的像素**画下来：0 请求、尺寸=舞台显示尺寸、0 放大。
+             新流 canplay 后淡出移除；取帧失败静默退回冻结图（@error），不弹任何错。
+             data-cover-origin 供证据脚本断言「这一帧是冻结图（freeze）还是取帧图（frame）」。 -->
         <img
           v-if="coverOn"
+          ref="coverEl"
           class="p-stream-cover"
+          :class="{ 'p-cover-out': coverFading }"
+          :data-cover-origin="coverOrigin"
+          :data-cover-w="coverFrameW"
           :src="coverSrc"
           alt=""
           aria-hidden="true"
-          @error="coverOn = false"
+          @error="onCoverError"
         />
         <!-- P5.18 转码档拖动「画面跟随」层：转码流在浏览器里不可 seek（seekable=[0,0]），
              拖动时改写 currentTime 是无效的，所以把**目标位置的帧**铺满整个舞台（不是只在小浮层里）。
@@ -89,6 +96,7 @@
              父级尺寸不再依赖 video 的临时 videoWidth/videoHeight（见 .p-stage video / .p-fs-wrap 的 P5.18 注释）。 -->
         <img
           v-if="scrubOn"
+          ref="scrubCoverEl"
           class="p-scrub-cover"
           :src="scrubSrc"
           alt=""
@@ -189,10 +197,17 @@
                 <div v-else class="p-hover-img" :style="spriteStyle"></div>
                 <!-- P5.15 精确帧：盖在上面的精灵图切片 / 预览片段之上。
                      精灵图一格铺 400 格，2 小时片一格 ≈18 秒，只能当零延迟兜底；
-                     debounce 250ms 后向 /media/frame 取真帧，到了就盖上这里（右上角标「精确帧」）。
+                     debounce 250ms 后向 /media/frame 取真帧，到了就盖上这里（右上角一个指示点，P5.21）。
                      失败（400/404/503）时这一层不渲染 → 用户看到的还是精灵图切片，不弹任何错。 -->
                 <div v-if="frameExact" class="p-hover-exact" :style="frameImgStyle"></div>
-                <span v-if="frameExact" class="p-preview-exact">精确帧</span>
+                <!-- P5.21：真帧指示从文字徽标改成一个小圆点 —— 视觉上不占字面，语义留在 aria-label/title 上 -->
+                <span
+                  v-if="frameExact"
+                  class="p-preview-exact"
+                  role="img"
+                  aria-label="精确帧"
+                  title="精确帧"
+                ></span>
                 <!-- 底部时间条（P5.19）：大字是**带帧号的影片内容时间**（00:03:21:08），小字才是片段内部时间
                      （片段 0:07 / 0:08），见 PreviewTimeBar.vue。z-index 3 → 压在 .p-hover-exact 精确帧之上，
                      所以「精确帧浮层」看到的时间码同样是带帧号的那一条。 -->
@@ -478,6 +493,8 @@ import {
 import { createFramePicker, frameSecond } from './framePicker'
 // P5.19：浮层底部时间条（大字改成带帧号的 hh:mm:ss:ff，SSR 可渲染验证）
 import PreviewTimeBar from './PreviewTimeBar.vue'
+// P5.20：换流时把「当前画面」冻结成 canvas 覆盖层（0 请求 / 不放大），取帧只作兜底
+import { coverFrameWidth, coveredSwitch, freezeElementFrame } from './coverFreeze'
 
 const props = defineProps({
   /** 当前播放的视频对象 */
@@ -1055,11 +1072,23 @@ function applySource(v, absStart, seekAbs) {
   lastQSrcAt = Date.now()
   const el = videoEl.value
   if (!el) return
-  el.src = srcFor(v, streamStart)
-  el.load()
-  // 转码流首帧要等服务端 ffmpeg 出流（4K 首字节实测数百毫秒到数秒）：这段时间用目标帧盖住画面
-  if (isTranscode.value) showStreamCover(v, streamStart)
-  else clearStreamCover()
+  // P5.20：任何一次换源都作废上一次「挂起中」的换流 —— 否则迟到的 switchSrc 会把新 src 覆盖回旧的
+  const token = ++switchToken
+  const src = srcFor(v, streamStart)
+  if (!isTranscode.value) {
+    // 原画直连流没有「服务端起动延时」，换源即出帧 —— 不盖任何东西（P5.17 契约：原画拖动不出浮层）
+    clearStreamCover()
+    switchPending = false
+    el.src = src
+    el.load()
+    if (wantPlay) {
+      wantPlay = false
+      tryPlay()
+    }
+  } else {
+    // 转码流首帧要等服务端 ffmpeg 出流（实测数百毫秒到数秒）：先冻结当前画面，再换 src
+    switchWithFrozenCover(el, src, v, token)
+  }
   // P4.1：换源（切清晰度 / 转码重开流 / 换片）会把 playbackRate 打回 1 —— 这里重新落一次倍速，
   // 保证「切清晰度后仍保持当前倍速」（defaultPlaybackRate 一并写，避免下次 load 又丢）
   applySpeed()
@@ -1067,42 +1096,208 @@ function applySource(v, absStart, seekAbs) {
   updateSeekUi()
 }
 
-/* ------------------------------------- P5.17 转码档防黑屏覆盖层 */
+/* --------------------------- P5.20 换流覆盖层：canvas 冻结当前画面 */
 
 /**
- * 换流后到首帧之间的覆盖层（只在转码档出现）
+ * 换流后到首帧之间盖在 <video> 上的那一层（只在转码档出现）
  *
- * 现象（用户反馈）：非原画档位松手后先黑屏再播放。原因不是解码慢，而是转码流本身：
- * 服务端边转边推分片 MP4，重挂 src 后是 emptied → waiting（空 buffer），要等 ffmpeg 首字节。
- * 这里把「目标位置的精确帧」盖在 <video> 上（P5.18：走 /media/frame/{id}?t=<小数> 的精确取帧，
- * 不再是按整秒缓存的那一张 —— 否则画面会先落到整秒位置），
- * canplay 一到就撤。取帧失败（400/404/503）@error 静默撤掉：宁可短暂黑屏，也不弹错、不挡播放。
+ * <p><b>为什么不再直接用取帧接口的图</b>（P5.17/P5.18 的做法，用户反馈「黑屏 → 低清 → 播放」）：</p>
+ * <ol>
+ *   <li><b>黑屏</b>：那张图要现取现解码（后端 ffmpeg 现解一帧 100-400ms + 前端 decode），
+ *       而 <video> 的 emptied 已经把画面清掉了 —— 这段时间舞台上是空的。覆盖层元素先出现、
+ *       图后到，中间就是一个纯黑窗口；</li>
+ *   <li><b>低清</b>：那张图只有 480 宽（MediaFrameCommand.FRAME_WIDTH），铺满舞台就是放大。</li>
+ * </ol>
+ *
+ * <p><b>现在的做法</b>：换流前把**当前正在显示的像素**用 canvas 画下来当覆盖层 ——
+ * 0 请求、尺寸等于舞台显示尺寸、0 放大，所以「点击 → 有画面」之间没有任何一帧是空的。
+ * 取帧接口保留但只做两件事：① 把画面**升级**成目标位置的高分辨率帧（宽 ≥960，仍是每换流 1 个请求）；
+ * ② canvas 不可用（tainted / 无可绘制帧）时兜底。新流 canplay 后 180ms 淡出。</p>
+ *
+ * 时序由 coverFreeze.coveredSwitch 统一保证：freeze → show（上屏）→ arm（取帧/兜底计时）→
+ * 等 paint（decode + 一帧 rAF）→ 才写 src。
  */
 const coverOn = ref(false)
 const coverSrc = ref('')
+/** 这层内容来自哪儿：freeze = canvas 冻结的当前像素；frame = 取帧接口的图（升级 / B 兜底） */
+const coverOrigin = ref('')
+/** 取帧兜底请求的宽度（960~1280，按舞台 CSS 宽度取，见 coverFreeze.coverFrameWidth） */
+const coverFrameW = ref(coverFrameWidth(0))
+const coverFading = ref(false)
+const coverEl = ref(null)
+const scrubCoverEl = ref(null)
 let coverTimer = 0
+let coverFadeTimer = 0
+/** 冻结图的 dataURL：取帧图加载失败时退回它（好过露出黑底） */
+let coverFrozenSrc = ''
+/** 换流序号：迟到的 paint / 取帧回调靠它判断「自己是不是已经被更新的换流取代」 */
+let switchToken = 0
+/** 转码换流的 src 还没写下去（这期间 play() 要排队，不能放到旧流上）*/
+let switchPending = false
+let wantPlay = false
 
-function showStreamCover(v, sec) {
-  if (!v || !v.id) return
-  // P5.18：**不再向下取整到整秒**。取整的那一帧是「这一秒的第一帧」，
-  // 于是用户先看到整秒位置、再看到真正落点 —— 正是反馈里的「先跳到整秒位置再跳到点击位置」。
-  // 这里改用精确取帧（帧接口的 t 支持小数，这一路不落盘缓存，见 useMediaApi.frameExactUrl）。
-  coverSrc.value = api.frameExactUrl(v.id, Math.max(0, Number(sec) || 0))
-  coverOn.value = true
-  if (coverTimer) clearTimeout(coverTimer)
-  // 兜底：后端 504 / 客户端断流时 canplay 永远不来，12s 后自己撤（后端首字节超时是 15s）
-  coverTimer = setTimeout(() => {
-    coverOn.value = false
-    coverTimer = 0
-  }, 12000)
+/** 冻结当前画面：拖动跟随层铺着就用它（正是用户此刻看到的那张），否则用 <video> 的当前帧 */
+function freezeCoverFrame() {
+  const scrub = scrubCoverEl.value
+  const from = scrubOn.value && scrub && scrub.complete && scrub.naturalWidth ? scrub : videoEl.value
+  if (!from) return ''
+  return freezeElementFrame(from)
 }
 
+/**
+ * 转码换流：先冻结 → 冻结图上屏 → 再写 src
+ *
+ * <p>src 的写入被推到「冻结图已经画上屏」之后，这就是「中间没有任何一帧是空的」的**唯一**保证：
+ * 覆盖层先有内容，<video> 才被 emptied；等到 canplay，新流的画已经在那儿了，覆盖层才淡出。</p>
+ */
+function switchWithFrozenCover(el, src, v, token) {
+  switchPending = true
+  coveredSwitch(
+    {
+      freeze: () => freezeCoverFrame(),
+      show: (data) => {
+        coverFrozenSrc = data
+        coverSrc.value = data
+        coverOrigin.value = 'freeze'
+        coverFading.value = false
+        coverOn.value = true
+      },
+      arm: (frozen) => showStreamCover(v, streamStart, frozen, token),
+      paint: () => whenCoverPainted(),
+      switchSrc: () => {
+        if (token !== switchToken) return // 期间又发生了新的换流：这次作废
+        el.src = src
+        el.load()
+        switchPending = false
+        if (wantPlay) {
+          wantPlay = false
+          tryPlay()
+        }
+      }
+    },
+    { token: () => token, cancelled: () => token !== switchToken }
+  )
+}
+
+/**
+ * 等覆盖层「真的被画出来」
+ *
+ * <p>只等 nextTick 不够（dataURL 仍要解码一次），只等 decode 也不完全够（解码完成到合成器真的
+ * 画上屏还差一帧）。所以 decode + 双 rAF，并带 120ms 上限：后台标签页里 rAF 不跑，
+ * 不能让换流永远挂在那里。</p>
+ */
+function whenCoverPainted() {
+  return new Promise((resolve) => {
+    let done = false
+    const finish = () => {
+      if (done) return
+      done = true
+      resolve(true)
+    }
+    const guard = setTimeout(finish, 120)
+    nextTick().then(async () => {
+      const img = coverEl.value
+      try {
+        if (img && typeof img.decode === 'function') await img.decode()
+      } catch (e) {
+        /* 忽略：decode 拒绝（图被撤 / 派生出错）也要继续换流，否则卡死在旧流上 */
+      }
+      const after = () => {
+        clearTimeout(guard)
+        finish()
+      }
+      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(after))
+      else after()
+    })
+  })
+}
+
+/**
+ * 冻结图就位之后：起兜底计时 + 发起**一次**高分辨率取帧
+ *
+ * <p>P5.18：**不再向下取整到整秒**。取整的那一帧是「这一秒的第一帧」，于是用户先看到整秒位置、
+ * 再看到真正落点 —— 正是反馈里的「先跳到整秒位置再跳到点击位置」。这里继续用精确取帧
+ * （帧接口的 t 支持小数，这一路不落盘缓存，见 useMediaApi.frameExactUrl）。</p>
+ *
+ * <p>P5.20 的两点变化：① 追加 <code>&amp;w=</code>（960~1280，按舞台 CSS 宽度）；
+ * ② 先 preloadImage 解码、解码成功才换 src —— <code>&lt;img&gt;</code> 换 src 时旧画面会留到
+ * 新图可绘制为止，所以这次「升级」也不会出现空窗。</p>
+ */
+function showStreamCover(v, sec, frozen, token) {
+  if (!v || !v.id) return
+  if (coverTimer) {
+    clearTimeout(coverTimer)
+    coverTimer = 0
+  }
+  // 兜底：后端 504 / 客户端断流时 canplay 永远不来，12s 后自己撤（后端首字节超时是 15s）
+  coverTimer = setTimeout(() => {
+    coverTimer = 0
+    coverOn.value = false
+    coverFading.value = false
+  }, 12000)
+  const w = coverFrameWidth(stageEl.value && stageEl.value.clientWidth)
+  coverFrameW.value = w
+  // 兜底宽度下限 960（coverFreeze.COVER_FRAME_MIN_WIDTH）：480 铺满舞台就是用户看到的「低清」
+  const url = api.frameExactUrl(v.id, Math.max(0, Number(sec) || 0)) + '&w=' + w
+  if (!frozen) {
+    // B 兜底：canvas 不可用（tainted / 没有可绘制帧）→ 直接挂取帧 URL，回到 P5.18 的老行为
+    coverFrozenSrc = ''
+    coverSrc.value = url
+    coverOrigin.value = 'frame'
+    coverFading.value = false
+    coverOn.value = true
+  }
+  preloadImage(url, v.id + ':cover:' + sec, (loaded) => {
+    if (!loaded || token !== switchToken || !coverOn.value) return
+    coverSrc.value = url
+    coverOrigin.value = 'frame'
+  })
+}
+
+/** 覆盖层图片加载失败：有冻结图就退回冻结图（好过露黑底），否则撤掉这层 */
+function onCoverError() {
+  if (coverFrozenSrc && coverSrc.value !== coverFrozenSrc) {
+    coverSrc.value = coverFrozenSrc
+    coverOrigin.value = 'freeze'
+    return
+  }
+  coverOn.value = false
+  coverFading.value = false
+}
+
+/** 收覆盖层（换原画流 / 换片 / 淡出结束） */
 function clearStreamCover() {
   if (coverTimer) {
     clearTimeout(coverTimer)
     coverTimer = 0
   }
+  if (coverFadeTimer) {
+    clearTimeout(coverFadeTimer)
+    coverFadeTimer = 0
+  }
   coverOn.value = false
+  coverFading.value = false
+  coverFrozenSrc = ''
+}
+
+/**
+ * canplay 之后淡出（180ms）再移除
+ *
+ * <p>为什么不是立刻 v-if 删掉：canplay 只保证「有可播放的帧」，合成器把那一帧画出来仍差一点；
+ * 硬切会闪一下黑。这 180ms 正好盖住它。</p>
+ */
+function fadeStreamCover() {
+  if (!coverOn.value || coverFading.value) return
+  if (coverTimer) {
+    clearTimeout(coverTimer)
+    coverTimer = 0
+  }
+  coverFading.value = true
+  if (coverFadeTimer) clearTimeout(coverFadeTimer)
+  coverFadeTimer = setTimeout(() => {
+    coverFadeTimer = 0
+    clearStreamCover()
+  }, 180)
 }
 
 /* ------------------------------- P5.18 转码档拖动：舞台级「画面跟随」 */
@@ -1154,15 +1349,21 @@ function clearScrub() {
   scrubSrc.value = ''
 }
 
-/** 首帧就绪（canplay）：撒覆盖层。暂停态换流也会走到这里，所以不能只在 playing 里撤 */
+/** 首帧就绪（canplay）：覆盖层淡出。暂停态换流也会走到这里，所以不能只在 playing 里撤 */
 function onCanPlay() {
-  clearStreamCover()
+  fadeStreamCover()
 }
 
 /** 自动播放可能被浏览器拦截（无用户手势 + 有声音）：不报错，露出「点击播放」兜底 */
 function tryPlay() {
   const el = videoEl.value
   if (!el) return
+  // P5.20：转码换流还在等冻结图上屏（src 尚未写下去）—— 这时 play() 打到的是**旧流**，
+  // 会先响一下旧声音、播一小段旧画面。排队到 switchSrc 之后再放。
+  if (switchPending) {
+    wantPlay = true
+    return
+  }
   const p = el.play()
   if (p && p.catch) p.catch(() => { tapVisible.value = true })
 }
@@ -1435,8 +1636,10 @@ function commitSeekTo(target) {
   // streamStart = target（不取整）→ 服务端 -ss target → 流的第 0 秒就是目标那一帧；
   // seekAbs 传 0：转码流 seekable=[0,0]，再写一次 currentTime 只会被浏览器夹回 0。
   seekRaf.cancel()
-  clearScrub() // 跟随帧的任务结束，接下来由 .p-stream-cover 挡黑屏
+  // P5.20：**先** applySource 再收跟随层 —— 冻结图要从跟随层（用户此刻看到的那张）上取像素；
+  // 反过来先 clearScrub 的话，冻结图只能退回「拖动前那一帧」，松手瞬间画面会往回跳一下。
   applySource(props.video, target, 0)
+  clearScrub() // 跟随帧的任务结束：像素已经拷进 .p-stream-cover
   tryPlay()
 }
 
@@ -2656,19 +2859,40 @@ defineExpose({
   background-color: #000;
 }
 
-/* 「精确帧」小标记：右上角，只在真帧已盖上时出现（用户能分辨这是真帧还是精灵图兜底） */
+/* P5.21 精确帧指示点：右上角 6px 实心点，只在真帧已盖上时出现
+   （用户能分辨这是真帧还是精灵图兜底；精灵图阶段整块不渲染）。
+   视觉上只是一个点，语义没有丢：role="img" + aria-label/title 仍读得到「精确帧」。
+   强调色 + 半透明黑描边 + 阴影，浅色画面和深色画面都能看见；z-index 2 压在画面层(1)之上、
+   底部时间条(3)之下，且 6px 边角不会碰到画面主体与时间条。 */
 .p-preview-exact {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 5px;
+  right: 5px;
   z-index: 2;
-  padding: 1px 5px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 82%, transparent);
-  color: var(--bg);
-  font-size: 10px;
-  line-height: 1.5;
-  letter-spacing: 0.2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  /* 1px 深色描边（亮背景下有轮廓） + 一点外阴影（暗背景下有分离感） */
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.55),
+    0 0 3px rgba(0, 0, 0, 0.45);
+  /* 纯指示器，不吃鼠标事件（不要挡住预览框上的其它交互） */
+  pointer-events: none;
+  /* P5.21：只在挂上来时淡入一次，之后不再有任何动画（不闪烁） */
+  animation: p-exact-dot-in 0.14s ease-out both;
+}
+
+@keyframes p-exact-dot-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 降低动态偏好：直接出现，不做淡入 */
+@media (prefers-reduced-motion: reduce) {
+  .p-preview-exact {
+    animation: none;
+  }
 }
 
 /* 预览片段：与精灵图单格同尺寸，画面比例不一致时裁切填满。
@@ -2845,6 +3069,14 @@ defineExpose({
   object-fit: contain;
   background: #000;
   pointer-events: none;
+  /* P5.20：canplay 之后 180ms 淡出（.p-cover-out）再移除 —— 硬切会闪一下黑 */
+  transition: opacity 180ms ease-out;
+}
+
+/* P5.20：覆盖层淡出中的状态（onCanPlay → fadeStreamCover）。只改不透明度，
+   定位/尺寸/底色与 .p-stream-cover 完全一致，舞台 rect 与裁剪行为都不变。 */
+.p-cover-out {
+  opacity: 0;
 }
 
 /* P5.18 拖动跟随层：与 .p-stream-cover 完全同一定位（换手时画面不跳），
