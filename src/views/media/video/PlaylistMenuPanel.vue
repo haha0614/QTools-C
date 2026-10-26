@@ -42,7 +42,7 @@
             @click="emit('pick', p)"
           >
             <span class="pl-name">{{ p.name }}</span>
-            <span class="pl-count">{{ p.count }} 个</span>
+            <span class="pl-count">{{ countText(p.count) }}</span>
             <span v-if="p.joined" class="pl-joined">已加入 ✓</span>
             <span v-else-if="busyId === p.id" class="pl-busy">…</span>
           </button>
@@ -76,6 +76,8 @@
 
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
+// P5.44：计数文案统一「0 个 / N 个」（纯函数，与 usePlaylistAdd 的乐观值同源）
+import { countText } from './playlistWrite'
 
 const props = defineProps({
   /** 菜单开关（由 VideoCard 控制） */
@@ -269,14 +271,22 @@ watch(
   white-space: nowrap;
 }
 
+/* P5.44：「0 个 → 1 个 → 10 个」不许把菜单撑宽，也不许和「已加入 ✓」挤在一起。
+   tabular-nums 让等宽数字不跳字，min-width 兜住位数变化，nowrap 保证两者都不断行。 */
 .pl-count {
   flex: 0 0 auto;
+  min-width: 3.2em;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
   font-size: 11px;
   color: var(--fg-dim);
 }
 
 .pl-joined {
   flex: 0 0 auto;
+  white-space: nowrap;
   font-size: 11px;
   color: var(--accent);
   font-weight: 600;

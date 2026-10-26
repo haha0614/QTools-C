@@ -1,0 +1,46 @@
+{
+ "html": "http://127.0.0.1/",
+ "titleText": "青兔工具箱",
+ "fontFamily": "SmileySans, MiSans, MiSans, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", Arial, sans-serif",
+ "fontSize": "32px",
+ "fontWeight": "600",
+ "color": "rgb(229, 234, 243)",
+ "fontsCheck": true,
+ "smileyFaces": [
+  {
+   "family": "SmileySans",
+   "status": "loaded",
+   "weight": "100 900",
+   "unicodeRange": "U+9752, U+5154, U+5DE5, U+5177, U+7BB1"
+  }
+ ],
+ "textWidth": 128,
+ "h1Rect": {
+  "x": 233,
+  "y": 65,
+  "width": 1195,
+  "height": 41.59375,
+  "top": 65,
+  "right": 1428,
+  "bottom": 106.59375,
+  "left": 233
+ },
+ "heroRect": {
+  "x": 204,
+  "y": 40,
+  "width": 1253,
+  "height": 219.171875,
+  "top": 40,
+  "right": 1457,
+  "bottom": 259.171875,
+  "left": 204
+ },
+ "hasLogoInHero": false,
+ "railLogo": {
+  "w": 24,
+  "h": 24,
+  "fill": "rgb(64, 158, 255)"
+ },
+ "docWidth": 1485,
+ "viewWidth": 1500
+}

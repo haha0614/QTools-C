@@ -32,7 +32,7 @@
           <li v-for="p in items" :key="p.id">
             <button class="pp-item" type="button" :disabled="!!busyId" @click="addTo(p)">
               <span class="pp-name" :title="p.name">{{ p.name }}</span>
-              <span class="pp-count">{{ p.count }} 个</span>
+              <span class="pp-count">{{ countText(p.count) }}</span>
             </button>
           </li>
         </ul>
@@ -58,6 +58,8 @@
 
 <script setup>
 import { computed, watch } from 'vue'
+// P5.44：计数文案统一「0 个 / N 个」（与卡片菜单同一份纯函数）
+import { countText } from './playlistWrite'
 import { addedMessage, createdMessage, usePlaylistAdd } from './usePlaylistAdd'
 
 const props = defineProps({
@@ -257,8 +259,14 @@ async function createAndAdd() {
   white-space: nowrap;
 }
 
+/* P5.44：等宽数字 + 最小宽度 —— 计数从 0 变 10 时行宽不跳（与卡片菜单同一口径） */
 .pp-count {
   flex: 0 0 auto;
+  min-width: 3.2em;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
   font-size: 11.5px;
   color: var(--fg-dim);
 }

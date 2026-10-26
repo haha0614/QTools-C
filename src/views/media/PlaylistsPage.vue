@@ -9,21 +9,30 @@
   样式：媒体站主题变量（mediaTheme.scss 把 --qt-* 映射成 --bg / --fg / --accent …），亮暗与移动端通用。
 -->
 <template>
-  <div class="ms-page pl-page">
+  <!-- is-name-error：行内校验把页头撑高时，窄屏的 toast 下移一档（见样式里的 --ms-toast-top） -->
+  <div class="ms-page pl-page media-scope" :class="{ 'is-name-error': !!nameError }">
     <div class="app pl-app">
       <header class="pl-head">
         <h1 class="pl-h1">播放列表</h1>
         <span class="pl-sub">{{ playlists.length ? '共 ' + playlists.length + ' 个' : '' }}</span>
         <span class="pl-spacer"></span>
-        <input
-          v-model="newName"
-          class="pl-input"
-          type="text"
-          maxlength="60"
-          placeholder="新建播放列表名称"
-          aria-label="新建播放列表名称"
-          @keyup.enter="createList"
-        />
+        <!-- 新建区：输入框 + 行内校验（P5.42）。空 / 全空白 / 超长 / 重名都在这里说清楚，且不会发出请求 -->
+        <div class="pl-new">
+          <input
+            v-model="newName"
+            class="pl-input"
+            :class="{ 'is-invalid': !!nameError }"
+            type="text"
+            :maxlength="NAME_MAX"
+            placeholder="新建播放列表名称"
+            aria-label="新建播放列表名称"
+            :aria-invalid="!!nameError"
+            :aria-describedby="nameError ? 'pl-new-err' : undefined"
+            @input="clearNameError"
+            @keyup.enter="createList"
+          />
+          <p v-if="nameError" id="pl-new-err" class="pl-new__err" role="alert">{{ nameError }}</p>
+        </div>
         <button class="pl-btn" type="button" :disabled="!newName.trim() || creating" @click="createList">新建</button>
         <button class="pl-btn pl-ghost" type="button" :disabled="loadingList" @click="loadList">刷新</button>
       </header>
@@ -96,6 +105,10 @@ const loadingList = ref(false)
 const listUnavailable = ref('')
 const newName = ref('')
 const creating = ref(false)
+/** 名称长度上限（字符）：输入框 maxlength 与下面的校验同源，只改这一处 */
+const NAME_MAX = 32
+/** 行内校验文案：非空时输入框标红 + 下方红字 */
+const nameError = ref('')
 
 const curId = ref('')
 const detail = ref({ id: '', name: '', ids: [] })
@@ -166,19 +179,75 @@ function selectList(id) {
   loadDetail(id)
 }
 
-/** 新建：POST /api/media/playlists {name, videoIds:[]}，成功后进入该列表 */
+/* -------------------------------------------------- 新建前的名称校验（P5.42） */
+
+/**
+ * 判重口径：**trim 后整串相等，ASCII 不区分大小写**。
+ * 为什么不区分大小写：库里唯一键 uk_media_playlist_name_owner 走 utf8mb4 默认 ci 排序规则，
+ * 后端本来就把 Demo / demo 当同一个名字（POST 会返回 created:false）。前端若区分大小写，
+ * 就会出现「前端放行 → 请求发出去 → 后端说已存在」的自相矛盾，正是这次要消灭的体验。
+ * 不做全半角折叠：那是后端 collation 之外的行为，前端不擅自猜测。
+ */
+function nameKey(v) {
+  return String(v == null ? '' : v).trim().toLowerCase()
+}
+
+/** 当前已加载清单里找同名项（用于提示文案与「顺手选中」；清单没加载成功时返回 null，交给后端兜底） */
+function findByName(v) {
+  const key = nameKey(v)
+  if (!key) return null
+  return playlists.value.find((p) => nameKey(p.name) === key) || null
+}
+
+/** 返回 '' = 通过；非空 = 错误文案（同时用于行内红字） */
+function validateName(v) {
+  const name = String(v == null ? '' : v).trim()
+  if (!name) return '请输入播放列表名称'
+  if (name.length > NAME_MAX) return '名称最多 ' + NAME_MAX + ' 个字符（当前 ' + name.length + ' 个）'
+  const hit = findByName(name)
+  if (hit) return '已存在同名播放列表「' + (hit.name || name) + '」'
+  return ''
+}
+
+/** 一边改一边把上一次的错误擦掉（不实时报错：否则刚敲第一个空字符就标红） */
+function clearNameError() {
+  if (nameError.value) nameError.value = ''
+}
+
+/**
+ * 新建：POST /api/media/playlists {name, videoIds:[]}
+ *
+ * 三道闸门，越靠前越省钱：
+ *   1. 本地校验（空 / 超长 / 与已加载清单重名）→ 直接红字提示 + toast，**一个请求都不发**；
+ *   2. 后端幂等：同名时 create() 查到就返回它并把 created 置 false（HTTP 200，不是错误）→ 按「已存在」提示；
+ *   3. 真异常（接口未就绪 / 403 只读）才落到 catch。
+ */
 async function createList() {
+  if (creating.value) return
   const name = String(newName.value || '').trim()
-  if (!name || creating.value) return
+  const err = validateName(name)
+  if (err) {
+    nameError.value = err
+    const hit = findByName(name) // 重名时顺手把旧列表选中，用户不用自己去左栏找
+    if (hit) {
+      showToast(err)
+      selectList(hit.id)
+    }
+    return
+  }
+  nameError.value = ''
   creating.value = true
   try {
     const res = await api.createPlaylist({ name, videoIds: [] }, { silent: true })
     const body = res && typeof res === 'object' && res.data && typeof res.data === 'object' ? res.data : res
     const id = body && body.id != null ? String(body.id) : ''
+    // created === false ⇒ 后端命中了同名（幂等返回）。字段缺失（老后端）按成功处理，不误报「已存在」。
+    const existed = !!(body && body.created === false)
+    const shown = (body && body.name) || name
     newName.value = ''
     await loadList()
     if (id) selectList(id)
-    showToast('已新建播放列表「' + name + '」')
+    showToast(existed ? '已存在同名播放列表「' + shown + '」，已为你打开原来的那个' : '已新建播放列表「' + shown + '」')
   } catch {
     showToast('新建失败：播放列表接口未就绪')
   } finally {
@@ -266,6 +335,12 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+/* 媒体站变量映射层（局部模式），与 PersonsPage / PhotosPage / MePage 同一约定：
+   不 @use 的话 --bg / --fg / --line / --danger 在本页全是无效值，整条声明作废——
+   表现就是播放列表页「没有描边、没有卡片底色、红字不红」（P5.42 实测 border-top-style: none、
+   错误文案继承文字色）。补上 @use + 根容器 .media-scope 才真正拿到颜色。 */
+@use './mediaTheme.scss' with ($global: false);
+
 .pl-page {
   min-height: 100%;
   background: var(--bg);
@@ -301,6 +376,24 @@ onMounted(() => {
   flex: 1;
 }
 
+/* 新建区：输入框与行内错误竖排（错误文案不挤占页头其它按钮的位置） */
+.pl-new {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pl-new__err {
+  width: 200px;
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--danger);
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
 .pl-input {
   width: 200px;
   padding: 6px 9px;
@@ -314,6 +407,12 @@ onMounted(() => {
 
 .pl-input:focus {
   border-color: var(--accent);
+}
+
+/* 校验不通过：输入框标红（含聚焦态，否则点了输入框红色就消失，提示像闪一下） */
+.pl-input.is-invalid,
+.pl-input.is-invalid:focus {
+  border-color: var(--danger);
 }
 
 .pl-btn {
@@ -474,9 +573,17 @@ onMounted(() => {
     max-height: 34vh;
   }
 
-  .pl-input {
+  .pl-new {
     flex: 1 1 140px;
+  }
+
+  .pl-input {
+    width: 100%;
+  }
+
+  .pl-new__err {
     width: auto;
+    max-width: none;
   }
 
   .pl-dname {
@@ -487,6 +594,11 @@ onMounted(() => {
      提示条下移到页头之下，否则 2.4s 内正好盖住「新建 / 刷新」这两个主操作按钮 */
   .pl-page {
     --ms-toast-top: 138px;
+  }
+
+  /* 行内校验出现时页头又高一行（错误文案换行），提示条继续下移，别压住「刷新」 */
+  .pl-page.is-name-error {
+    --ms-toast-top: 214px;
   }
 }
 </style>

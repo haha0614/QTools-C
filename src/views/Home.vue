@@ -12,6 +12,7 @@ import { useRouter } from 'vue-router'
 import { getToolList } from '@/api/tool.js' // GET /toolInfo/list，返回工具数组
 import { APP_INFO } from '@/utils/constants' // 站点信息常量（名称、版权等）
 import * as ElementPlusIcons from '@element-plus/icons-vue' // 按名字动态取图标组件
+import BrandMark from '@/components/BrandMark.vue' // 品牌图形（与左栏 / 顶栏同源），hero 标题前那一枚
 
 // ========== 常量 ==========
 // 最近使用的持久化键与上限
@@ -257,7 +258,12 @@ onMounted(() => {
   <div class="home-page">
     <!-- ===== 1. Hero 营销位：浅底细线框，纯文字 ===== -->
     <section class="hero">
-      <h1 class="hero__title">{{ APP_INFO.name }}</h1>
+      <!-- P5.42：站点名前的品牌图形与左栏 / 顶栏是同一枚（BrandMark 内联 SVG，吃 --qt-primary）；
+           与标题同一行、同一基准线居中，窄屏缩到 30px -->
+      <div class="hero__brand">
+        <BrandMark class="hero__logo" :size="44" :stroke-width="1.7" />
+        <h1 class="hero__title">{{ APP_INFO.name }}</h1>
+      </div>
       <p class="hero__subtitle">在线工具 + 私有媒体库，打开即用，数据只留在你自己的浏览器里</p>
 
       <ul class="hero__badges">
@@ -439,14 +445,33 @@ onMounted(() => {
   background-color: var(--qt-bg-card);
   text-align: center;
 
-  &__title {
-    /* P5.40：与 logo 字标同一款字体（得意黑子集），其余字符回退系统栈；
-       字重保持 600，@font-face 已声明 100–900，取真实字形不合成 */
-    font-family: var(--qt-font-display);
+  /* 标题行：图标 + 站点名同一条基线居中；间距用 token */
+  &__brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--qt-space-3);
     margin: 0 0 10px;
-    font-size: 32px;
+  }
+
+  /* 与左栏 Logo 同源的一枚图标（24 网格放大到 44px，线宽等比压到 1.7 才不会显粗） */
+  &__logo {
+    flex: 0 0 auto;
+    display: block;
+    width: 44px;
+    height: 44px;
+    color: var(--qt-primary);
+  }
+
+  &__title {
+    /* P5.42：显式兜底 —— 令牌缺失时仍然先尝试得意黑，不会静默退回系统栈 */
+    font-family: var(--qt-font-display, "SmileySans", sans-serif);
+    /* 子集是单份静态字形（@font-face 声明 100–900）：锁死合成，杜绝浏览器用假粗把斜切糊成「普通粗体」 */
+    font-synthesis: none;
+    margin: 0;
+    font-size: 44px;
     font-weight: 600;
-    line-height: 1.3;
+    line-height: 1.25;
     color: var(--qt-text-primary);
   }
 
@@ -830,8 +855,17 @@ onMounted(() => {
     padding: 20px 18px;
   }
 
+  .hero__brand {
+    gap: var(--qt-space-2);
+  }
+
+  .hero__logo {
+    width: 30px;
+    height: 30px;
+  }
+
   .hero__title {
-    font-size: 30px;
+    font-size: 34px;
   }
 }
 </style>

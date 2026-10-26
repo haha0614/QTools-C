@@ -55,6 +55,69 @@ export function countAdded(outcome) {
   return out.added === true ? 1 : 0
 }
 
+/* ---------------------------------------------- P5.44 计数乐观更新（纯函数） */
+/* 用户反馈：加入成功 → 「已加入 ✓」变了，可「N 个」还是旧值，必须重开菜单才刷新。
+   根因是清单行的 count 只在拉清单（GET /api/media/playlists）时赋值，加入/移出只改了 joined。
+   这里把「计数怎么变」的算术收成纯函数，组件只负责调用，便于 Node 单测（scripts/playlist-count.test.mjs）。 */
+
+/**
+ * 计数加减：base + delta，结果夹到 >= 0（移出不会减成负数）
+ * @param {number} count 当前计数（null / NaN / 负数一律按 0 起算）
+ * @param {number} delta 增量（+N / -N；NaN 按 0）
+ * @returns {number} 新的计数（整数）
+ */
+export function shiftCount(count, delta) {
+  const base = Number(count)
+  const step = Number(delta)
+  return Math.max(0, Math.round((Number.isFinite(base) ? base : 0) + (Number.isFinite(step) ? step : 0)))
+}
+
+/** 计数文案统一：「0 个 / N 个」（缺值按 0，永不出 undefined 个） */
+export function countText(count) {
+  const n = Number(count)
+  return (Number.isFinite(n) && n > 0 ? Math.round(n) : 0) + ' 个'
+}
+
+/**
+ * 清单里**某一行的**乐观更新（不可变：返回新数组；没命中该 id 时原数组原样返回）
+ *
+ * 一次只动一行 → 「同一视频加到多个列表」时每个列表各自 +1，互不影响（P5.44 要求 6）。
+ *
+ * @param {Array<{id:string,name:string,count:number,joined:boolean}>} items
+ * @param {string} playlistId 目标列表 id
+ * @param {{delta?:number, count?:number, joined?:boolean}} patch
+ *        delta 相对增减；count 绝对赋值（优先）；joined 显式设置
+ */
+export function patchPlaylistRow(items, playlistId, patch) {
+  const list = Array.isArray(items) ? items : []
+  const id = String(playlistId == null ? '' : playlistId)
+  const p = patch || {}
+  if (!id) return list
+  let hit = false
+  const out = list.map((it) => {
+    if (!it || String(it.id) !== id) return it
+    hit = true
+    const next = { ...it }
+    if (typeof p.count === 'number') next.count = shiftCount(p.count, 0)
+    else if (typeof p.delta === 'number') next.count = shiftCount(it.count, p.delta)
+    if (typeof p.joined === 'boolean') next.joined = p.joined
+    return next
+  })
+  return hit ? out : list
+}
+
+/**
+ * 失败回滚：把一行恢复成操作前的快照（count 与 joined 一起回）
+ * @param {Array} items
+ * @param {string} playlistId
+ * @param {{count:number, joined:boolean}|null} snapshot 操作前的快照（null = 当时没有这一行 → 不动）
+ */
+export function restorePlaylistRow(items, playlistId, snapshot) {
+  const s = snapshot && typeof snapshot === 'object' ? snapshot : null
+  if (!s) return Array.isArray(items) ? items : []
+  return patchPlaylistRow(items, playlistId, { count: Number(s.count), joined: !!s.joined })
+}
+
 /** 后端错误体文案：媒体模块是 {"error":…}，框架层是 AjaxResult {msg:…} */
 function backendText(body) {
   if (!body || typeof body !== 'object') return ''
@@ -118,4 +181,12 @@ export function describePlaylistError(err, action) {
   return head + '网络异常：连不上后端' + withText(message)
 }
 
-export default { addOutcome, countAdded, describePlaylistError }
+export default {
+  addOutcome,
+  countAdded,
+  describePlaylistError,
+  shiftCount,
+  countText,
+  patchPlaylistRow,
+  restorePlaylistRow
+}

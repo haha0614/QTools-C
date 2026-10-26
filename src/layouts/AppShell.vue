@@ -456,6 +456,11 @@ onBeforeUnmount(() => {
   height: 60px;
   padding: 0 12px;
   color: var(--qt-text-primary);
+  /* P5.42：站点名统一用品牌展示字体（得意黑子集，与首页 hero 标题同一款）。
+     之前这里继承 body 的 MiSans，于是「左栏 logo」和「首页大标题」两处同一个站名是两种字——
+     用户一眼就看出不是同一款。子集外的字仍逐个回退 --qt-font-sans。 */
+  font-family: var(--qt-font-display, "SmileySans", sans-serif);
+  font-synthesis: none;
   font-size: 16px;
   font-weight: 600;
   text-decoration: none;
@@ -740,6 +745,9 @@ onBeforeUnmount(() => {
     min-width: 0;
     overflow: hidden;
     color: var(--qt-text-primary);
+    /* P5.42：与左栏 Logo / 首页 hero 标题同款（品牌展示字体）；合成粗体一律关闭 */
+    font-family: var(--qt-font-display, "SmileySans", sans-serif);
+    font-synthesis: none;
     font-size: 14px;
     font-weight: 600;
     white-space: nowrap;

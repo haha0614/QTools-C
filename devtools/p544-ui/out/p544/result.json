@@ -1,0 +1,109 @@
+{
+  "passed": 52,
+  "failures": [
+    "D1 点下去先乐观 +1（10 → 11 个） -> {\"text\":\"10 个\",\"frames\":12,\"gets\":4,\"joined\":\"\"} rows=[{\"n\":\"111\",\"c\":\"1 个\",\"j\":true},{\"n\":\"1111\",\"c\":\"1 个\",\"j\":true},{\"n\":\"来不及\",\"c\":\"10 个\",\"j\":false}]",
+    "D2 乐观态同时打上「已加入 ✓」",
+    "D8 采样历史：10 个 → 11 个(+✓) → 10 个(无 ✓)，乐观值与回滚都真的上过屏 -> {\"samples\":[{\"c\":\"10 个\",\"j\":false,\"dt\":0}],\"ticks\":242,\"span\":4000,\"seen\":{\"10 个|false\":242}} obs=[{\"t\":0,\"c\":\"10 个\"},{\"t\":5,\"c\":\"11 个\"},{\"t\":9,\"c\":\"10 个\"},{\"t\":488,\"c\":\"10 个\"}] xhr=[{\"m\":\"GET\",\"u\":\"/api/media/playlists\",\"t\":759},{\"m\":\"POST\",\"u\":\"/api/media/playlist/8/videos\",\"t\":1165},{\"m\":\"GET\",\"u\":\"/api/media/playlists\",\"t\":2605},{\"m\":\"POST\",\"u\":\"/api/media/playlist/2/videos\",\"t\":5182},{\"m\":\"POST\",\"u\":\"/api/media/playlist/8/videos\",\"t\":5804},{\"m\":\"GET\",\"u\":\"/api/media/playlists\",\"t\":7027},{\"m\":\"GET\",\"u\":\"/api/media/playlists\",\"t\":7672},{\"m\":\"POST\",\"u\":\"/api/media/playlist/1/videos\",\"t\":7704}]"
+  ],
+  "vid": "36b36203288b",
+  "start": {
+    "a": {
+      "status": 200,
+      "count": 0,
+      "ids": []
+    },
+    "b": {
+      "status": 200,
+      "count": 0,
+      "ids": []
+    },
+    "c": {
+      "status": 200,
+      "count": 10,
+      "ids": [
+        "fc4cce426d14",
+        "36b36203288b",
+        "cdb119655307",
+        "5748fa576880",
+        "5433efc1abcb",
+        "00b0143dfc10",
+        "046839cff1cd",
+        "160e0849ae55",
+        "097efb7b3c62",
+        "2c5bd70483b6"
+      ]
+    }
+  },
+  "end": {
+    "a": {
+      "status": 200,
+      "count": 0,
+      "ids": []
+    },
+    "b": {
+      "status": 200,
+      "count": 0,
+      "ids": []
+    }
+  },
+  "evidence": {
+    "optimistic": {
+      "text": "1 个",
+      "frames": 0,
+      "gets": 1,
+      "joined": "已加入 ✓"
+    },
+    "historyAdd": [
+      {
+        "c": "0 个",
+        "j": false,
+        "dt": 0
+      },
+      {
+        "c": "1 个",
+        "j": true,
+        "dt": 21
+      }
+    ],
+    "historyIdempotent": [
+      {
+        "c": "1 个",
+        "j": true,
+        "dt": 0
+      }
+    ],
+    "historyRollback": [
+      {
+        "c": "10 个",
+        "j": false,
+        "dt": 0
+      }
+    ],
+    "toasts": {
+      "dup": "「1111」里已经有这些视频，无需重复加入",
+      "s403": "加入播放列表失败：当前编辑策略禁止写入（403）：当前为演示/本地模式，站端不允许写入（管理员可在媒体库「编辑策略」中改为完全编辑）"
+    },
+    "gets": {
+      "start": 1,
+      "beforeSettle": 4,
+      "afterSettle": 5
+    },
+    "removeHook": {
+      "before": 1,
+      "after": 0,
+      "joinedBefore": true,
+      "joinedAfter": false,
+      "otherAfter": 1,
+      "notices": []
+    },
+    "narrow": {
+      "rowW": 242,
+      "overflow": 0,
+      "countText": "12 个",
+      "joinedText": "已加入 ✓",
+      "countRight": 299,
+      "joinedLeft": 305,
+      "tabular": "tabular-nums"
+    }
+  }
+}

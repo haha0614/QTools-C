@@ -1,0 +1,1 @@
+(() => { const els = document.querySelectorAll('.ms-toast'); return els.length ? els[els.length - 1].textContent.trim() : '' })()

@@ -1,0 +1,288 @@
+{
+ "tag": "after",
+ "passed": 43,
+ "failures": [],
+ "facts": {
+  "home": {
+   "title": "青兔工具箱",
+   "heroFontFamily": "SmileySans, MiSans, MiSans, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", Arial, sans-serif",
+   "heroFontSize": "44px",
+   "heroFontWeight": "600",
+   "heroFontSynthesis": "none",
+   "heroColor": "rgb(229, 234, 243)",
+   "railFontFamily": "SmileySans, MiSans, MiSans, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", Arial, sans-serif",
+   "railFontSize": "16px",
+   "sameFamily": true,
+   "fontsCheck": true,
+   "fontsCheckRail": true,
+   "smileyFaces": [
+    {
+     "family": "SmileySans",
+     "status": "loaded",
+     "weight": "100 900",
+     "unicodeRange": "U+9752, U+5154, U+5DE5, U+5177, U+7BB1"
+    }
+   ],
+   "textWidth": 176,
+   "textPerChar": 35.2,
+   "fontResources": [],
+   "hasBrandRow": true,
+   "hasLogo": true,
+   "logoTag": "svg",
+   "logoRect": {
+    "w": 44,
+    "h": 44,
+    "x": 714.5,
+    "y": 70.5
+   },
+   "logoCenterGapVsLineBox": 0,
+   "logoCenterGapVsInk": 1,
+   "h1Rect": {
+    "x": 770.5,
+    "y": 65,
+    "w": 176,
+    "h": 55,
+    "cx": 858.5,
+    "cy": 92.5
+   },
+   "textRect": {
+    "x": 770.5,
+    "y": 63,
+    "w": 176,
+    "h": 58
+   },
+   "brandRect": {
+    "x": 233,
+    "y": 65,
+    "w": 1195,
+    "h": 55,
+    "cx": 830.5,
+    "cy": 92.5
+   },
+   "railMarkRect": {
+    "x": 12,
+    "y": 18,
+    "w": 24,
+    "h": 24,
+    "cx": 24,
+    "cy": 30
+   },
+   "railTextWidth": 64,
+   "railTextCut": false,
+   "heroRect": {
+    "x": 204,
+    "y": 40,
+    "w": 1253,
+    "h": 232.58,
+    "cx": 830.5,
+    "cy": 156.29
+   },
+   "overflowX": {
+    "scrollW": 1485,
+    "innerW": 1500
+   }
+  },
+  "fallbackPerChar": 44,
+  "homeMobile": {
+   "title": "青兔工具箱",
+   "heroFontFamily": "SmileySans, MiSans, MiSans, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", Arial, sans-serif",
+   "heroFontSize": "34px",
+   "heroFontWeight": "600",
+   "heroFontSynthesis": "none",
+   "heroColor": "rgb(229, 234, 243)",
+   "railFontFamily": "SmileySans, MiSans, MiSans, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", Arial, sans-serif",
+   "railFontSize": "16px",
+   "sameFamily": true,
+   "fontsCheck": true,
+   "fontsCheckRail": true,
+   "smileyFaces": [
+    {
+     "family": "SmileySans",
+     "status": "loaded",
+     "weight": "100 900",
+     "unicodeRange": "U+9752, U+5154, U+5DE5, U+5177, U+7BB1"
+    }
+   ],
+   "textWidth": 136,
+   "textPerChar": 27.2,
+   "fontResources": [],
+   "hasBrandRow": true,
+   "hasLogo": true,
+   "logoTag": "svg",
+   "logoRect": {
+    "w": 30,
+    "h": 30,
+    "x": 100.5,
+    "y": 111.25
+   },
+   "logoCenterGapVsLineBox": 0,
+   "logoCenterGapVsInk": 1,
+   "h1Rect": {
+    "x": 138.5,
+    "y": 105,
+    "w": 136,
+    "h": 42.5,
+    "cx": 206.5,
+    "cy": 126.25
+   },
+   "textRect": {
+    "x": 138.5,
+    "y": 103,
+    "w": 136,
+    "h": 45
+   },
+   "brandRect": {
+    "x": 35,
+    "y": 105,
+    "w": 305,
+    "h": 42.5,
+    "cx": 187.5,
+    "cy": 126.25
+   },
+   "railMarkRect": {
+    "x": -164,
+    "y": 18,
+    "w": 24,
+    "h": 24,
+    "cx": -152,
+    "cy": 30
+   },
+   "railTextWidth": 64,
+   "railTextCut": false,
+   "heroRect": {
+    "x": 16,
+    "y": 84,
+    "w": 343,
+    "h": 271.66,
+    "cx": 187.5,
+    "cy": 219.83
+   },
+   "overflowX": {
+    "scrollW": 375,
+    "innerW": 375
+   }
+  },
+  "initial": {
+   "value": "",
+   "maxlength": "32",
+   "invalid": false,
+   "ariaInvalid": "false",
+   "borderColor": "rgb(65, 66, 67)",
+   "borderStyle": "solid",
+   "err": "",
+   "errColor": "",
+   "dangerToken": "#f78989",
+   "lineToken": "#414243",
+   "pageBg": "rgb(20, 20, 20)",
+   "toasts": [],
+   "names": [],
+   "listCount": 0
+  },
+  "createOk": {
+   "toast": "已新建播放列表「P542 甲 w1ev9」",
+   "count": 1,
+   "posts": [
+    {
+     "url": "http://127.0.0.1:5423/api/media/playlists",
+     "postData": "{\"name\":\"P542 甲 w1ev9\"}"
+    }
+   ],
+   "names": [
+    "P542 甲 w1ev9"
+   ]
+  },
+  "dup": {
+   "toast": "已存在同名播放列表「P542 甲 w1ev9」",
+   "count": 0,
+   "posts": [],
+   "err": "已存在同名播放列表「P542 甲 w1ev9」",
+   "border": "rgb(247, 137, 137)",
+   "invalid": true,
+   "ariaInvalid": "true"
+  },
+  "dupCase": {
+   "count": 0,
+   "err": "已存在同名播放列表「P542 甲 w1ev9」"
+  },
+  "blank": {
+   "count": 0,
+   "err": "请输入播放列表名称"
+  },
+  "tooLong": {
+   "count": 0,
+   "err": "名称最多 32 个字符（当前 33 个）",
+   "typed": 33,
+   "maxlength": "32"
+  },
+  "narrowError": {
+   "state": {
+    "value": "长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长",
+    "maxlength": "32",
+    "invalid": true,
+    "ariaInvalid": "true",
+    "borderColor": "rgb(247, 137, 137)",
+    "borderStyle": "solid",
+    "err": "名称最多 32 个字符（当前 33 个）",
+    "errColor": "rgb(247, 137, 137)",
+    "dangerToken": "#f78989",
+    "lineToken": "#414243",
+    "pageBg": "rgb(20, 20, 20)",
+    "toasts": [],
+    "names": [
+     "P542 甲 w1ev9"
+    ],
+    "listCount": 1
+   },
+   "overflow": {
+    "scrollW": 375,
+    "innerW": 375
+   }
+  },
+  "narrowToast": {
+   "toast": {
+    "x": 56.625,
+    "y": 262,
+    "w": 261.734375,
+    "h": 36.1875,
+    "bottom": 298.1875
+   },
+   "head": {
+    "x": 10,
+    "y": 58,
+    "bottom": 164.34375
+   },
+   "btnBottoms": [
+    107.171875,
+    164.34375
+   ],
+   "overlapHead": 0
+  },
+  "idempotent": {
+   "toast": "已存在同名播放列表「P542 乙 w1ev9」，已为你打开原来的那个",
+   "count": 1,
+   "err": ""
+  },
+  "createAgain": {
+   "toast": "已新建播放列表「P542 乙 w1ev9 二」",
+   "count": 1,
+   "names": [
+    "P542 乙 w1ev9 二",
+    "P542 甲 w1ev9"
+   ]
+  },
+  "cleanup": {
+   "ownerPrefix": "",
+   "before": 2,
+   "deleted": [
+    {
+     "id": 16,
+     "status": 200
+    },
+    {
+     "id": 15,
+     "status": 200
+    }
+   ]
+  }
+ }
+}
