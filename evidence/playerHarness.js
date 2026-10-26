@@ -99,13 +99,33 @@ function parseColor(str) {
   return null
 }
 
-/** 从 background-image 里取第一条带 alpha 的颜色（亮色主题的「浅色叠层」写在 gradient 里） */
-function firstAlphaInGradient(str) {
+/**
+ * 从 background-image 的渐变里取出**所有**颜色的 alpha（P5.29：控制条底座改成竖向渐变，
+ * 顶部 alpha=0、底部 alpha≈.55，只取第一条会漏掉另一头）。
+ */
+function gradientAlphas(str) {
   const s = String(str || '')
-  const m = s.match(/rgba?\([^)]+\)|color\(srgb[^)]+\)/)
-  if (!m) return null
-  const c = parseColor(m[0])
-  return c && c.a > 0 ? c : null
+  const out = []
+  const re = /rgba?\([^)]+\)|color\(srgb[^)]+\)/g
+  let m
+  while ((m = re.exec(s))) {
+    const c = parseColor(m[0])
+    if (c) out.push(c)
+  }
+  return out
+}
+
+/** 渐变里 alpha 最小 / 最大的那一档（= 最上端 / 最下端） */
+function alphaRange(str) {
+  const list = gradientAlphas(str)
+  if (!list.length) return { min: null, max: null }
+  let min = null
+  let max = null
+  for (const c of list) {
+    if (min == null || c.a < min.a) min = c
+    if (max == null || c.a > max.a) max = c
+  }
+  return { min, max }
 }
 
 const over = (base, top) => [
@@ -249,7 +269,11 @@ function measureBar() {
   if (!ctrl) return null
   const cs = getComputedStyle(ctrl)
   const bg = parseColor(cs.backgroundColor) || { r: 0, g: 0, b: 0, a: 0 }
-  const veil = firstAlphaInGradient(cs.backgroundImage)
+  // P5.29：底座是一条竖向渐变（顶 0 → 底 .55）。最坏背衬 = 纯白视频帧 **压在该元素所在高度
+  // 那一段渐变上**；对 chip 来说最坏的是渐变 alpha 最小（= 顶部、完全透明）的那一段，
+  // 所以合成用 min，另外把 max 也记下来供报告引用。
+  const al = alphaRange(cs.backgroundImage)
+  const veil = al.min && al.min.a > 0 ? al.min : null
 
   // 最坏背衬 = 纯白视频帧（真实的暗帧下对比度只会更高）
   const WHITE = [255, 255, 255]
@@ -286,6 +310,12 @@ function measureBar() {
     backgroundAlpha: bg.a,
     backgroundImage: cs.backgroundImage,
     veilAlpha: veil ? veil.a : 0,
+    // P5.29：渐变两端的 alpha（验收要的是「最上端 alpha = 0、底部有值」）
+    gradTopAlpha: al.min ? al.min.a : 0,
+    gradBottomAlpha: al.max ? al.max.a : 0,
+    gradTopColor: al.min ? 'rgba(' + al.min.r + ',' + al.min.g + ',' + al.min.b + ',' + al.min.a + ')' : null,
+    gradBottomColor: al.max ? 'rgba(' + al.max.r + ',' + al.max.g + ',' + al.max.b + ',' + al.max.a + ')' : null,
+    isVerticalGradient: /linear-gradient\(\s*to top/.test(String(cs.backgroundImage)),
     backdropFilter: cs.backdropFilter || cs.webkitBackdropFilter || 'none',
     borderTop: cs.borderTopWidth + ' ' + cs.borderTopStyle + ' ' + cs.borderTopColor,
     padding: cs.padding,

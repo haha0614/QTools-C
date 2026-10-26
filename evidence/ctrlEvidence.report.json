@@ -1,5 +1,5 @@
 {
-  "passed": 235,
+  "passed": 243,
   "failures": [],
   "report": {
     "page": "http://127.0.0.1:5199/evidence/playerHarness.html",
@@ -37,19 +37,24 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.07)",
-          "backgroundAlpha": 0.07,
-          "backgroundImage": "linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "backgroundAlpha": 0,
+          "backgroundImage": "linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)",
           "veilAlpha": 0,
-          "backdropFilter": "blur(14px) saturate(1.08)",
-          "borderTop": "1px solid rgba(255, 255, 255, 0.08)",
+          "gradTopAlpha": 0,
+          "gradBottomAlpha": 0.55,
+          "gradTopColor": "rgba(0,0,0,0)",
+          "gradBottomColor": "rgba(0,0,0,0.55)",
+          "isVerticalGradient": true,
+          "backdropFilter": "none",
+          "borderTop": "0px none rgb(229, 234, 243)",
           "padding": "8px 14px",
-          "composedRGB": "237,237,237",
+          "composedRGB": "255,255,255",
           "rect": {
             "x": 0,
-            "y": 948,
+            "y": 949,
             "w": 1585,
-            "h": 52
+            "h": 51
           },
           "controls": [
             {
@@ -57,9 +62,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -68,9 +73,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -79,9 +84,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             },
@@ -90,9 +95,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             }
@@ -289,7 +294,7 @@
           "seekInput": true,
           "markerLane": true,
           "markerTicks": 2,
-          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecode": "00:00:00 / 125:32:00",
           "timecodeAlwaysVisible": true,
           "abReadout": "A/B",
           "volumeSlider": true,
@@ -331,19 +336,24 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.06)",
-          "backgroundAlpha": 0.06,
-          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.02))",
-          "veilAlpha": 0.02,
-          "backdropFilter": "blur(14px) saturate(1.08)",
-          "borderTop": "1px solid rgba(0, 0, 0, 0.05)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "backgroundAlpha": 0,
+          "backgroundImage": "linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)",
+          "veilAlpha": 0,
+          "gradTopAlpha": 0,
+          "gradBottomAlpha": 0.55,
+          "gradTopColor": "rgba(0,0,0,0)",
+          "gradBottomColor": "rgba(0,0,0,0.55)",
+          "isVerticalGradient": true,
+          "backdropFilter": "none",
+          "borderTop": "0px none rgb(48, 49, 51)",
           "padding": "8px 14px",
-          "composedRGB": "240,240,240",
+          "composedRGB": "255,255,255",
           "rect": {
             "x": 0,
-            "y": 948,
+            "y": 949,
             "w": 1585,
-            "h": 52
+            "h": 51
           },
           "controls": [
             {
@@ -351,9 +361,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -362,9 +372,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -373,9 +383,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             },
@@ -384,9 +394,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             }
@@ -583,7 +593,7 @@
           "seekInput": true,
           "markerLane": true,
           "markerTicks": 2,
-          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecode": "00:00:00 / 125:32:00",
           "timecodeAlwaysVisible": true,
           "abReadout": "A/B",
           "volumeSlider": true,
@@ -625,19 +635,24 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.07)",
-          "backgroundAlpha": 0.07,
-          "backgroundImage": "linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "backgroundAlpha": 0,
+          "backgroundImage": "linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)",
           "veilAlpha": 0,
-          "backdropFilter": "blur(14px) saturate(1.08)",
-          "borderTop": "1px solid rgba(255, 255, 255, 0.08)",
+          "gradTopAlpha": 0,
+          "gradBottomAlpha": 0.55,
+          "gradTopColor": "rgba(0,0,0,0)",
+          "gradBottomColor": "rgba(0,0,0,0.55)",
+          "isVerticalGradient": true,
+          "backdropFilter": "none",
+          "borderTop": "0px none rgb(229, 234, 243)",
           "padding": "8px 14px",
-          "composedRGB": "237,237,237",
+          "composedRGB": "255,255,255",
           "rect": {
             "x": 0,
-            "y": 748,
+            "y": 749,
             "w": 985,
-            "h": 52
+            "h": 51
           },
           "controls": [
             {
@@ -645,9 +660,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -656,9 +671,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -667,9 +682,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             },
@@ -678,9 +693,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             }
@@ -877,7 +892,7 @@
           "seekInput": true,
           "markerLane": true,
           "markerTicks": 2,
-          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecode": "00:00:00 / 125:32:00",
           "timecodeAlwaysVisible": true,
           "abReadout": "A/B",
           "volumeSlider": true,
@@ -919,19 +934,24 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.06)",
-          "backgroundAlpha": 0.06,
-          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.02))",
-          "veilAlpha": 0.02,
-          "backdropFilter": "blur(14px) saturate(1.08)",
-          "borderTop": "1px solid rgba(0, 0, 0, 0.05)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "backgroundAlpha": 0,
+          "backgroundImage": "linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)",
+          "veilAlpha": 0,
+          "gradTopAlpha": 0,
+          "gradBottomAlpha": 0.55,
+          "gradTopColor": "rgba(0,0,0,0)",
+          "gradBottomColor": "rgba(0,0,0,0.55)",
+          "isVerticalGradient": true,
+          "backdropFilter": "none",
+          "borderTop": "0px none rgb(48, 49, 51)",
           "padding": "8px 14px",
-          "composedRGB": "240,240,240",
+          "composedRGB": "255,255,255",
           "rect": {
             "x": 0,
-            "y": 748,
+            "y": 749,
             "w": 985,
-            "h": 52
+            "h": 51
           },
           "controls": [
             {
@@ -939,9 +959,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -950,9 +970,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -961,9 +981,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             },
@@ -972,9 +992,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             }
@@ -1171,7 +1191,7 @@
           "seekInput": true,
           "markerLane": true,
           "markerTicks": 2,
-          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecode": "00:00:00 / 125:32:00",
           "timecodeAlwaysVisible": true,
           "abReadout": "A/B",
           "volumeSlider": true,
@@ -1213,19 +1233,24 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.07)",
-          "backgroundAlpha": 0.07,
-          "backgroundImage": "linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "backgroundAlpha": 0,
+          "backgroundImage": "linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)",
           "veilAlpha": 0,
-          "backdropFilter": "blur(14px) saturate(1.08)",
-          "borderTop": "1px solid rgba(255, 255, 255, 0.08)",
+          "gradTopAlpha": 0,
+          "gradBottomAlpha": 0.55,
+          "gradTopColor": "rgba(0,0,0,0)",
+          "gradBottomColor": "rgba(0,0,0,0.55)",
+          "isVerticalGradient": true,
+          "backdropFilter": "none",
+          "borderTop": "0px none rgb(229, 234, 243)",
           "padding": "6px 10px 10px",
-          "composedRGB": "237,237,237",
+          "composedRGB": "255,255,255",
           "rect": {
             "x": 0,
-            "y": 802,
+            "y": 803,
             "w": 745,
-            "h": 98
+            "h": 97
           },
           "controls": [
             {
@@ -1233,9 +1258,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -1244,9 +1269,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -1255,9 +1280,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             },
@@ -1266,9 +1291,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             }
@@ -1308,7 +1333,7 @@
               "aria": "上一帧",
               "title": "上一帧（快捷键 , 或 Shift+←）",
               "rect": {
-                "x": 284.72,
+                "x": 241.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1320,7 +1345,7 @@
               "aria": "下一帧",
               "title": "下一帧（快捷键 . 或 Shift+→）",
               "rect": {
-                "x": 326.72,
+                "x": 283.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1332,7 +1357,7 @@
               "aria": "上一部",
               "title": "上一部（快捷键 P）",
               "rect": {
-                "x": 377.72,
+                "x": 334.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1344,7 +1369,7 @@
               "aria": "下一部",
               "title": "下一部（快捷键 N）",
               "rect": {
-                "x": 421.72,
+                "x": 378.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1356,7 +1381,7 @@
               "aria": "播放设置",
               "title": "播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键",
               "rect": {
-                "x": 472.72,
+                "x": 429.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1368,7 +1393,7 @@
               "aria": "全屏",
               "title": "全屏（F）",
               "rect": {
-                "x": 516.72,
+                "x": 473.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1465,7 +1490,7 @@
           "seekInput": true,
           "markerLane": true,
           "markerTicks": 2,
-          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecode": "00:00:00 / 125:32:00",
           "timecodeAlwaysVisible": true,
           "abReadout": "A/B",
           "volumeSlider": true,
@@ -1507,19 +1532,24 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.06)",
-          "backgroundAlpha": 0.06,
-          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.02))",
-          "veilAlpha": 0.02,
-          "backdropFilter": "blur(14px) saturate(1.08)",
-          "borderTop": "1px solid rgba(0, 0, 0, 0.05)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "backgroundAlpha": 0,
+          "backgroundImage": "linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)",
+          "veilAlpha": 0,
+          "gradTopAlpha": 0,
+          "gradBottomAlpha": 0.55,
+          "gradTopColor": "rgba(0,0,0,0)",
+          "gradBottomColor": "rgba(0,0,0,0.55)",
+          "isVerticalGradient": true,
+          "backdropFilter": "none",
+          "borderTop": "0px none rgb(48, 49, 51)",
           "padding": "6px 10px 10px",
-          "composedRGB": "240,240,240",
+          "composedRGB": "255,255,255",
           "rect": {
             "x": 0,
-            "y": 802,
+            "y": 803,
             "w": 745,
-            "h": 98
+            "h": 97
           },
           "controls": [
             {
@@ -1527,9 +1557,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -1538,9 +1568,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -1549,9 +1579,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             },
@@ -1560,9 +1590,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             }
@@ -1602,7 +1632,7 @@
               "aria": "上一帧",
               "title": "上一帧（快捷键 , 或 Shift+←）",
               "rect": {
-                "x": 284.72,
+                "x": 241.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1614,7 +1644,7 @@
               "aria": "下一帧",
               "title": "下一帧（快捷键 . 或 Shift+→）",
               "rect": {
-                "x": 326.72,
+                "x": 283.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1626,7 +1656,7 @@
               "aria": "上一部",
               "title": "上一部（快捷键 P）",
               "rect": {
-                "x": 377.72,
+                "x": 334.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1638,7 +1668,7 @@
               "aria": "下一部",
               "title": "下一部（快捷键 N）",
               "rect": {
-                "x": 421.72,
+                "x": 378.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1650,7 +1680,7 @@
               "aria": "播放设置",
               "title": "播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键",
               "rect": {
-                "x": 472.72,
+                "x": 429.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1662,7 +1692,7 @@
               "aria": "全屏",
               "title": "全屏（F）",
               "rect": {
-                "x": 516.72,
+                "x": 473.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1759,7 +1789,7 @@
           "seekInput": true,
           "markerLane": true,
           "markerTicks": 2,
-          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecode": "00:00:00 / 125:32:00",
           "timecodeAlwaysVisible": true,
           "abReadout": "A/B",
           "volumeSlider": true,
@@ -1801,19 +1831,24 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.07)",
-          "backgroundAlpha": 0.07,
-          "backgroundImage": "linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "backgroundAlpha": 0,
+          "backgroundImage": "linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)",
           "veilAlpha": 0,
-          "backdropFilter": "blur(14px) saturate(1.08)",
-          "borderTop": "1px solid rgba(255, 255, 255, 0.08)",
+          "gradTopAlpha": 0,
+          "gradBottomAlpha": 0.55,
+          "gradTopColor": "rgba(0,0,0,0)",
+          "gradBottomColor": "rgba(0,0,0,0.55)",
+          "isVerticalGradient": true,
+          "backdropFilter": "none",
+          "borderTop": "0px none rgb(229, 234, 243)",
           "padding": "6px 10px 10px",
-          "composedRGB": "237,237,237",
+          "composedRGB": "255,255,255",
           "rect": {
             "x": 0,
-            "y": 638,
+            "y": 639,
             "w": 360,
-            "h": 142
+            "h": 141
           },
           "controls": [
             {
@@ -1821,9 +1856,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -1832,9 +1867,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -1843,9 +1878,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             },
@@ -1854,9 +1889,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             }
@@ -2053,7 +2088,7 @@
           "seekInput": true,
           "markerLane": true,
           "markerTicks": 2,
-          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecode": "00:00:00 / 125:32:00",
           "timecodeAlwaysVisible": true,
           "abReadout": "A/B",
           "volumeSlider": true,
@@ -2095,19 +2130,24 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.06)",
-          "backgroundAlpha": 0.06,
-          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.02))",
-          "veilAlpha": 0.02,
-          "backdropFilter": "blur(14px) saturate(1.08)",
-          "borderTop": "1px solid rgba(0, 0, 0, 0.05)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "backgroundAlpha": 0,
+          "backgroundImage": "linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)",
+          "veilAlpha": 0,
+          "gradTopAlpha": 0,
+          "gradBottomAlpha": 0.55,
+          "gradTopColor": "rgba(0,0,0,0)",
+          "gradBottomColor": "rgba(0,0,0,0.55)",
+          "isVerticalGradient": true,
+          "backdropFilter": "none",
+          "borderTop": "0px none rgb(48, 49, 51)",
           "padding": "6px 10px 10px",
-          "composedRGB": "240,240,240",
+          "composedRGB": "255,255,255",
           "rect": {
             "x": 0,
-            "y": 638,
+            "y": 639,
             "w": 360,
-            "h": 142
+            "h": 141
           },
           "controls": [
             {
@@ -2115,9 +2155,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -2126,9 +2166,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -2137,9 +2177,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             },
@@ -2148,9 +2188,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             }
@@ -2347,7 +2387,7 @@
           "seekInput": true,
           "markerLane": true,
           "markerTicks": 2,
-          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecode": "00:00:00 / 125:32:00",
           "timecodeAlwaysVisible": true,
           "abReadout": "A/B",
           "volumeSlider": true,
@@ -2390,19 +2430,24 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.07)",
-          "backgroundAlpha": 0.07,
-          "backgroundImage": "linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "backgroundAlpha": 0,
+          "backgroundImage": "linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)",
           "veilAlpha": 0,
-          "backdropFilter": "blur(14px) saturate(1.08)",
-          "borderTop": "1px solid rgba(255, 255, 255, 0.08)",
+          "gradTopAlpha": 0,
+          "gradBottomAlpha": 0.55,
+          "gradTopColor": "rgba(0,0,0,0)",
+          "gradBottomColor": "rgba(0,0,0,0.55)",
+          "isVerticalGradient": true,
+          "backdropFilter": "none",
+          "borderTop": "0px none rgb(229, 234, 243)",
           "padding": "8px 14px",
-          "composedRGB": "237,237,237",
+          "composedRGB": "255,255,255",
           "rect": {
             "x": 0,
-            "y": 948,
+            "y": 949,
             "w": 1169,
-            "h": 52
+            "h": 51
           },
           "controls": [
             {
@@ -2410,9 +2455,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -2421,9 +2466,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -2432,9 +2477,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             },
@@ -2443,9 +2488,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             }
@@ -2795,7 +2840,7 @@
           "seekInput": true,
           "markerLane": true,
           "markerTicks": 2,
-          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecode": "00:00:00 / 125:32:00",
           "timecodeAlwaysVisible": true,
           "abReadout": "A/B",
           "volumeSlider": true,
@@ -2842,19 +2887,24 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.06)",
-          "backgroundAlpha": 0.06,
-          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.02))",
-          "veilAlpha": 0.02,
-          "backdropFilter": "blur(14px) saturate(1.08)",
-          "borderTop": "1px solid rgba(0, 0, 0, 0.05)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "backgroundAlpha": 0,
+          "backgroundImage": "linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)",
+          "veilAlpha": 0,
+          "gradTopAlpha": 0,
+          "gradBottomAlpha": 0.55,
+          "gradTopColor": "rgba(0,0,0,0)",
+          "gradBottomColor": "rgba(0,0,0,0.55)",
+          "isVerticalGradient": true,
+          "backdropFilter": "none",
+          "borderTop": "0px none rgb(48, 49, 51)",
           "padding": "8px 14px",
-          "composedRGB": "240,240,240",
+          "composedRGB": "255,255,255",
           "rect": {
             "x": 0,
-            "y": 748,
+            "y": 749,
             "w": 985,
-            "h": 52
+            "h": 51
           },
           "controls": [
             {
@@ -2862,9 +2912,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -2873,9 +2923,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -2884,9 +2934,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             },
@@ -2895,9 +2945,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.14,
-              "ratioOnChip": 5.85,
-              "chipRGB": "101,101,101",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             }
@@ -3247,7 +3297,7 @@
           "seekInput": true,
           "markerLane": true,
           "markerTicks": 2,
-          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecode": "00:00:00 / 125:32:00",
           "timecodeAlwaysVisible": true,
           "abReadout": "A/B",
           "volumeSlider": true,
@@ -3294,19 +3344,24 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.07)",
-          "backgroundAlpha": 0.07,
-          "backgroundImage": "linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "backgroundAlpha": 0,
+          "backgroundImage": "linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)",
           "veilAlpha": 0,
-          "backdropFilter": "blur(14px) saturate(1.08)",
-          "borderTop": "1px solid rgba(255, 255, 255, 0.08)",
+          "gradTopAlpha": 0,
+          "gradBottomAlpha": 0.55,
+          "gradTopColor": "rgba(0,0,0,0)",
+          "gradBottomColor": "rgba(0,0,0,0.55)",
+          "isVerticalGradient": true,
+          "backdropFilter": "none",
+          "borderTop": "0px none rgb(229, 234, 243)",
           "padding": "6px 10px 10px",
-          "composedRGB": "237,237,237",
+          "composedRGB": "255,255,255",
           "rect": {
             "x": 0,
-            "y": 802,
+            "y": 803,
             "w": 745,
-            "h": 98
+            "h": 97
           },
           "controls": [
             {
@@ -3314,9 +3369,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -3325,9 +3380,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
@@ -3336,9 +3391,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             },
@@ -3347,9 +3402,9 @@
               "color": "rgb(255, 255, 255)",
               "chipColor": "rgba(0, 0, 0, 0.58)",
               "chipAlpha": 0.58,
-              "ratioOnBar": 1.17,
-              "ratioOnChip": 5.95,
-              "chipRGB": "100,100,100",
+              "ratioOnBar": 1,
+              "ratioOnChip": 5.32,
+              "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             }
@@ -3389,7 +3444,7 @@
               "aria": "上一帧",
               "title": "上一帧（快捷键 , 或 Shift+←）",
               "rect": {
-                "x": 284.72,
+                "x": 241.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -3401,7 +3456,7 @@
               "aria": "下一帧",
               "title": "下一帧（快捷键 . 或 Shift+→）",
               "rect": {
-                "x": 326.72,
+                "x": 283.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -3413,7 +3468,7 @@
               "aria": "上一部",
               "title": "上一部（快捷键 P）",
               "rect": {
-                "x": 377.72,
+                "x": 334.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -3425,7 +3480,7 @@
               "aria": "下一部",
               "title": "下一部（快捷键 N）",
               "rect": {
-                "x": 421.72,
+                "x": 378.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -3437,7 +3492,7 @@
               "aria": "播放设置",
               "title": "播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键",
               "rect": {
-                "x": 472.72,
+                "x": 429.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -3449,7 +3504,7 @@
               "aria": "全屏",
               "title": "全屏（F）",
               "rect": {
-                "x": 516.72,
+                "x": 473.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -3699,7 +3754,7 @@
           "seekInput": true,
           "markerLane": true,
           "markerTicks": 2,
-          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecode": "00:00:00 / 125:32:00",
           "timecodeAlwaysVisible": true,
           "abReadout": "A/B",
           "volumeSlider": true,

@@ -593,7 +593,7 @@ try {
   /* ========================= F 控制条 alpha / 对比度 ========================= */
   console.log('\n[F] 控制条透明度与「白帧最坏背衬」对比度')
   const probeExpr =
-    "JSON.stringify((function(){var ctrl=document.querySelector('.p-ctrl');var cs=getComputedStyle(ctrl);var items=['.p-btn-play','.p-btn','.p-seek-now','.p-ab-text'].map(function(sel){var el=document.querySelector('.p-ctrlline '+sel)||document.querySelector('.p-ctrl '+sel);if(!el)return null;var s=getComputedStyle(el);var r=el.getBoundingClientRect();return {sel:sel,color:s.color,bg:s.backgroundColor,rect:{x:r.x,y:r.y,w:r.width,h:r.height,right:r.right,bottom:r.bottom}}}).filter(Boolean);return {bg:cs.backgroundColor,image:cs.backgroundImage,hair:cs.borderTopColor,blur:cs.backdropFilter||cs.webkitBackdropFilter,items:items}})())"
+    "JSON.stringify((function(){var ctrl=document.querySelector('.p-ctrl');var cs=getComputedStyle(ctrl);var items=['.p-btn-play','.p-btn','.p-seek-now','.p-ab-text'].map(function(sel){var el=document.querySelector('.p-ctrlline '+sel)||document.querySelector('.p-ctrl '+sel);if(!el)return null;var s=getComputedStyle(el);var r=el.getBoundingClientRect();return {sel:sel,color:s.color,bg:s.backgroundColor,rect:{x:r.x,y:r.y,w:r.width,h:r.height,right:r.right,bottom:r.bottom}}}).filter(Boolean);return {bg:cs.backgroundColor,image:cs.backgroundImage,hair:cs.borderTopColor,hairW:cs.borderTopWidth,blur:cs.backdropFilter||cs.webkitBackdropFilter,items:items}})())"
   const probe = async (theme) => {
     await api('setTheme(' + (theme === 'dark') + ')')
     await sleep(240)
@@ -606,9 +606,17 @@ try {
     }
     const bgc = parseRgb(info.bg)
     info.bgAlpha = bgc ? bgc.a : 1
+    // P5.29：底座改成「顶 0 → 底 .55」的竖向渐变，所以不再只取第一条颜色，
+    // 而是把渐变里所有 alpha 都收下来，分别当作「最上端 / 最下端」。
+    const all = Array.from(String(info.image).matchAll(/rgba?\(([^)]+)\)/g)).map((m) => {
+      const p = m[1].split(',').map(Number)
+      return { c: m[1], a: p.length > 3 ? p[3] : 1 }
+    })
     const vm = String(info.image).match(/rgba?\(([^)]+)\)/)
     info.veil = vm ? vm[1] : 'none'
-    info.veilAlpha = vm ? Number(vm[1].split(',')[3]) : 0
+    info.veilAlpha = all.length ? all[0].a : 0
+    info.gradTopAlpha = all.length ? Math.min(...all.map((x) => x.a)) : 0
+    info.gradBottomAlpha = all.length ? Math.max(...all.map((x) => x.a)) : 0
     const bar = await api('rectOf(".p-ctrl")')
     const barShot = await clipShot(cdp, bar, 0)
     for (const it of info.items) {
@@ -633,14 +641,18 @@ try {
   console.log('    暗: bg=' + F2.bg + ' veil=' + F2.veil + ' hair=' + F2.hair + ' blur=' + F2.blur + ' 底座合成=' + F2.baseRGB)
   F2.items.forEach((it, i) => console.log('      ' + it.sel + ' chip=' + it.bg + ' 采样=' + it.sampled.join(',') + ' 对比度=' + it.contrast + ':1（解析 ' + F2.analytic[i] + ':1）'))
 
-  // P5.26（用户反馈 5「背景透明度还是不够，继续透明」）：又降了一档，旧口径（.11/.12、白雾 4%、
-  // blur 12px、发丝线 .06）随之更新为：底座 .06（亮）/ .07（暗）（验收区间 0.04–0.07）、白雾 2%、
-  // blur 14px、发丝线 .05（亮）。chip 同步加深到 .58 以守住白帧最坏背衬的 4.5:1（见 f6/f7）。
-  ok(near(F1.bgAlpha, 0.06, 0.006), 'f1) 亮色底座 alpha = .06（P5.26，原 .11）', String(F1.bgAlpha))
-  ok(near(F2.bgAlpha, 0.07, 0.006), 'f2) 暗色底座 alpha = .07（P5.26，原 .12）', String(F2.bgAlpha))
-  ok(near(F1.veilAlpha, 0.02, 0.006), 'f3) 亮色白雾降到 2%（P5.26，原 4%）', String(F1.veilAlpha))
-  ok(/14px/.test(String(F1.blur)) && /14px/.test(String(F2.blur)), 'f4) backdrop blur = 14px（P5.26，原 12px）', F1.blur + ' / ' + F2.blur)
-  ok(/\.05/.test(String(F1.hair)) && /0\.08/.test(String(F2.hair)), 'f5) 顶边发丝线 .05（亮，P5.26）/ .08（暗）', F1.hair + ' / ' + F2.hair)
+  // P5.29（用户反馈 2「控制栏你不行就做成全透明，或者做成从下往上的一个透明渐变」）：
+  // 上一版口径是「整条半透明色带（.06/.07）+ 2% 白雾 + blur 14px + 1px 发丝线」，本版整块换掉 ——
+  //   f1/f2 底色完全透明（alpha 0）；
+  //   f3    竖向渐变最上端 alpha = 0（画面中部一点不被压暗）；
+  //   f4    渐变最下端 alpha ≈ .55（只有底部一小段有颜色）；
+  //   f5    不再有 1px 发丝线（它正好画在 alpha 0 的位置，会重新切一条硬边）；
+  //   f6    竖色带模糊一并撤掉，可读性全部由控件自己的 chip（.58）承担 → f6/f7 的对比度不降反升。
+  ok(F1.bgAlpha === 0 && F2.bgAlpha === 0, 'f1) 亮 / 暗底色都完全透明（alpha = 0，原 .06 / .07）', F1.bg + ' / ' + F2.bg)
+  ok(near(F1.gradTopAlpha, 0, 0.001) && near(F2.gradTopAlpha, 0, 0.001), 'f2) 渐变最上端 alpha = 0（亮 / 暗）', String(F1.gradTopAlpha) + ' / ' + String(F2.gradTopAlpha))
+  ok(near(F1.gradBottomAlpha, 0.55, 0.02) && near(F2.gradBottomAlpha, 0.55, 0.02), 'f3) 渐变最下端 alpha ≈ .55（底部一小段有底色）', String(F1.gradBottomAlpha) + ' / ' + String(F2.gradBottomAlpha))
+  ok(String(F1.blur) === 'none' && String(F2.blur) === 'none', 'f4) 竖向渐变方案不再挂 backdrop-filter（原 14px 色带模糊）', F1.blur + ' / ' + F2.blur)
+  ok(String(F1.hairW) === '0px' && String(F2.hairW) === '0px', 'f5) 顶边发丝线已撤（border-top-width = 0，原 1px）', F1.hairW + ' / ' + F2.hairW)
   const worstLight = Math.min(...F1.items.map((i) => i.contrast))
   const worstDark = Math.min(...F2.items.map((i) => i.contrast))
   ok(worstLight >= 4.5, 'f6) 亮色：白帧背衬下最坏对比度 ≥4.5:1', worstLight + ':1（实测像素）')

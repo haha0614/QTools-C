@@ -763,40 +763,25 @@ function pad2(n) {
   return (n < 10 ? '0' : '') + n
 }
 
+/** 分钟位：至少两位，超过 99 分钟自然变长（两小时 = 120，见 P5.29 用户口径） */
+function padMin(m) {
+  return m < 10 ? '0' + m : String(m)
+}
+
 /**
- * 内容时间标签：<1 小时 → "mm:ss"，≥1 小时 → "h:mm:ss"（7:44 的片子拖到尾显示 07:44）。
- * 0 是合法时间（"00:00"），只有 null / NaN / 负数才降级成 "--:--"：
- * 播放器的 fmtDur 把 0 也当未知，浮层标签不能沿用它，否则拖到最左端会显示 "--:--"。
+ * 分:秒 文案（P5.29 用户口径：**分钟不折成小时**）：3661.5 → "61:01"；0 是合法时间 → "00:00"。
+ * 只有 null / NaN / 负数才降级成 "--:--"（播放器的 fmtDur 把 0 也当未知，
+ * 浮层标签不能沿用它，否则拖到最左端会显示 "--:--"）。
+ *
+ * P5.29 用户反馈 3/4：整条时间口径统一成「分:秒:帧」，两小时的片写 120:00:00，
+ * 不再出现 h:mm:ss 与 hh:mm:ss 两套。浮层的「片段 0:03 / 0:08」小字随反馈 4 整块删除
+ * （clipTimeLabel / clipCaption 一并移除，调用方不再需要片段时长）。
  */
 export function previewTimeLabel(sec) {
   const n = num(sec)
   if (n == null || n < 0) return '--:--'
   const t = Math.round(n)
-  const h = Math.floor(t / 3600)
-  const m = Math.floor((t % 3600) / 60)
-  const s = t % 60
-  return h > 0 ? h + ':' + pad2(m) + ':' + pad2(s) : pad2(m) + ':' + pad2(s)
-}
-
-/** 片段内部时间（不带小时位）：3.4 → "0:03"；未知 → "" */
-export function clipTimeLabel(sec) {
-  const n = num(sec)
-  if (n == null || n < 0) return ''
-  const t = Math.round(n)
-  return Math.floor(t / 60) + ':' + pad2(t % 60)
-}
-
-/**
- * 浮层底部的小字「片段 0:03 / 0:08」：把片段内部时间与内容时间分开标注，
- * 避免把 8 秒成片的时长误读成影片位置（P5.2 用户反馈之一）。
- * 片段时长未知时返回 ""，调用方据此不渲染这行小字。
- */
-export function clipCaption(sec, clipDur) {
-  const d = num(clipDur)
-  if (d == null || d <= 0) return ''
-  const total = clipTimeLabel(d)
-  const cur = clipTimeLabel(sec)
-  return cur ? '片段 ' + cur + ' / ' + total : '片段 / ' + total
+  return padMin(Math.floor(t / 60)) + ':' + pad2(t % 60)
 }
 
 /**
@@ -991,7 +976,7 @@ export function shouldSeekWrite(target, current, fps) {
 }
 
 /**
- * 时间码 hh:mm:ss:ff（帧号两位）。
+ * 时间码 分:秒:帧 → mm:ss:ff（分钟位不折成小时，两小时 = 120:00:00；P5.29 用户反馈 3）。
  *
  * 口径（与 snapToFrame 同一张网格，只差一个 1e-3 帧的容差）：
  *   k = floor(sec×fps + 1e-3)      —— 这一刻**所在**的帧号（floor 语义，落在哪一帧就显示哪一帧）
@@ -1006,26 +991,20 @@ export function shouldSeekWrite(target, current, fps) {
  *   所以真正落在两帧中间的位置（如 1.999s @30fps = 第 59 帧）仍然按 floor 取。
  *   实测：1.999@30 → 00:00:01:29；2.0@30 → 00:00:02:00；6.266666@30 → 00:00:06:08。
  *
- * 帧率未知（0）时退化成 hh:mm:ss（没有帧位可写，不编一个假帧号）。
+ * 帧率未知（0）时退化成 分:秒（没有帧位可写，不编一个假帧号）。
  */
 export function timecode(sec, fps) {
   const s = num(sec)
   const t = s == null || s < 0 ? 0 : s
   const f = normFps(fps)
-  if (!f) {
-    const whole = Math.floor(t)
-    const hh = Math.floor(whole / 3600)
-    const mm = Math.floor((whole % 3600) / 60)
-    const ss = whole % 60
-    return (hh < 10 ? '0' + hh : String(hh)) + ':' + pad2(mm) + ':' + pad2(ss)
-  }
+  /** 无帧率：分:秒（minutes 不折成小时，与有帧率分支同一套分钟位） */
+  if (!f) return previewTimeLabel(t)
   /** 浏览器时间精度容差（帧）：1e-3 帧 ≈ 0.03ms，远小于半帧 */
   const k = Math.floor(t * f + 1e-3)
   const total = Math.floor(k / f + 1e-9)
-  const hh = Math.floor(total / 3600)
-  const mm = Math.floor((total % 3600) / 60)
+  const mm = Math.floor(total / 60)
   const ss = total % 60
-  const head = (hh < 10 ? '0' + hh : String(hh)) + ':' + pad2(mm) + ':' + pad2(ss)
+  const head = padMin(mm) + ':' + pad2(ss)
   let ff = Math.round(k - total * f)
   ff = Math.min(Math.max(0, ff), Math.ceil(f) - 1)
   return head + ':' + pad2(ff)
@@ -1048,10 +1027,11 @@ export function durText(sec) {
 }
 
 /**
- * 帧号时间码（P5.19 唯一入口）：知道帧率 → hh:mm:ss:ff；不知道 → mm:ss。
+ * 帧号时间码（P5.19 起的唯一入口，P5.29 起口径是 分:秒:帧）：
+ *   知道帧率 → mm:ss:ff（两小时 = 120:00:00）；不知道 → mm:ss。
  * 为什么不补一个假帧号：帧号只能由帧率算出来，猜一个 30 会让 23.976 的片越拖越错
  * （与 normFps 的注释同一理由），所以「不知道」就如实退化成 mm:ss（没有 ff 段）。
- * sec 为 null / 负数（内容时长还没就绪）→ "--:--"，与旧的浮层标签 previewTimeLabel 一致。
+ * sec 为 null / 负数（内容时长还没就绪）→ "--:--"，与浮层标签 previewTimeLabel 一致。
  */
 export function frameTimecode(sec, fps) {
   const n = num(sec)
@@ -1061,20 +1041,24 @@ export function frameTimecode(sec, fps) {
 }
 
 /**
- * 进度条右侧的时间码（P5.19：静止 / 暂停 / 播放 / 拖动**都**走这一条，不再只在拖动时出帧号）：
- *   有 fps → "位置 00:03:21 / 02:00:31:08"
- *   无 fps → "位置 03:21 / 02:00"（mm:ss；时长未就绪时右边是 --:--）
+ * 控制条时间码（静止 / 暂停 / 播放 / 拖动都走这一条）：
+ *   有 fps → "03:21:17 / 120:00:00"
+ *   无 fps → "03:22 / 120:31"（分:秒；时长未就绪时右边是 --:--）
+ *
+ * P5.29 用户反馈 3：**删掉「位置」前缀**（用户原话「位置这两个字不要」），
+ * 且分钟位不折成小时 —— 「两个小时就是 120:00:00」。整条文案只由本函数生成，
+ * 控制条 / aria-valuetext / 预览框 / 拖动跟随层都走 timecode 这一套，各处不手写格式。
  */
 export function seekTimecodeText(posSec, durSec, fps) {
   const f = normFps(fps)
   if (f) {
     const d = num(durSec)
     // 总时长还没就绪（0 / 未知）→ "--:--"，与无帧率分支、与 fmtDur 同一口径：
-    // 「不知道」就写 --:--，不写成 00:00:00:00 这种看起来像「0 秒片」的假值。
+    // 「不知道」就写 --:--，不写成 00:00:00 这种看起来像「0 秒片」的假值。
     const total = d != null && d > 0 ? timecode(d, f) : '--:--'
-    return '位置 ' + timecode(posSec, f) + ' / ' + total
+    return timecode(posSec, f) + ' / ' + total
   }
-  return '位置 ' + durText(posSec) + ' / ' + durText(durSec)
+  return previewTimeLabel(posSec) + ' / ' + durText(durSec)
 }
 
 /**
@@ -1083,8 +1067,8 @@ export function seekTimecodeText(posSec, durSec, fps) {
  */
 export function seekTimecodeTitle(fps) {
   return normFps(fps)
-    ? '时:分:秒:帧（hh:mm:ss:ff），帧号按该片探测到的帧率换算，暂停 / 播放 / 拖动都显示'
-    : '该片缺帧率数据，时间码退化为 mm:ss（不显示假帧号；探测到帧率后自动补上帧号）'
+    ? '分:秒:帧（mm:ss:ff），帧号按该片探测到的帧率换算，暂停 / 播放 / 拖动都显示'
+    : '该片缺帧率数据，时间码退化为分:秒（mm:ss，不显示假帧号；探测到帧率后自动补上帧号）'
 }
 
 /**

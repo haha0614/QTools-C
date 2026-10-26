@@ -233,8 +233,13 @@ for (const vp of VIEWPORTS) {
 
     console.log('\n=== ' + tag + ' (' + vp.w + '×' + vp.h + ') ===')
     // a) 控制栏底色透明 + 按钮可读
-    ok(ev.bar.backgroundAlpha <= 0.3, 'a1 控制栏背景 alpha ≤ 0.3', 'bg=' + ev.bar.backgroundColor + ' alpha=' + ev.bar.backgroundAlpha)
-    ok(/blur/.test(ev.bar.backdropFilter), 'a2 backdrop-filter 生效', ev.bar.backdropFilter)
+    //    P5.29（用户反馈 2）改口径：底座不再是「整条半透明色带 + 背衬模糊」，而是**竖向渐变**
+    //    （顶 alpha 0 → 底 alpha .55）。所以 a1 收紧到「底色完全透明」，a2 从「有 blur」换成
+    //    「是 to top 渐变 + 最上端 alpha = 0 + 底部有值」。blur 与发丝线一起撤掉是有意的：
+    //    渐变顶部完全透明的区域再挂 backdrop-filter，等于把画面那一条糊掉，就不是「全透明」了。
+    ok(ev.bar.backgroundAlpha === 0, 'a1 控制栏 backgroundColor 完全透明（alpha = 0）', 'bg=' + ev.bar.backgroundColor + ' alpha=' + ev.bar.backgroundAlpha)
+    ok(ev.bar.isVerticalGradient && ev.bar.gradTopAlpha === 0 && ev.bar.gradBottomAlpha >= 0.45, 'a2 底座是 to top 竖向渐变：最上端 alpha = 0、底部 alpha ≈ .55', 'top=' + ev.bar.gradTopColor + ' bottom=' + ev.bar.gradBottomColor)
+    ok(ev.bar.backdropFilter === 'none', 'a2b 竖向渐变方案不再挂 backdrop-filter（顶部透明区不许被糊掉）', ev.bar.backdropFilter)
     const worst = ev.bar.controls
       .map((c) => c.ratioOnChip)
       .filter((v) => typeof v === 'number')

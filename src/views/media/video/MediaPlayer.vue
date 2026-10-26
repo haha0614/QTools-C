@@ -19,10 +19,12 @@
       <!-- P5.25（用户反馈 7）：头部左侧补站点标识，与布局左栏的 Logo 同一套语言（首字徽标 + 站点名）。
            名称只从 APP_INFO.name 取（src/utils/constants.js 是全站唯一来源），这里不再硬编码第二份品牌名。
            尺寸 20–22px、次级色、hover 提亮：它只负责「这是哪个站」，不与标题抢注意力。 -->
-      <span class="p-brand" :title="brandName">
+      <!-- P5.29（用户反馈 6）：标识区改成**能回首页的链接** —— 用 <a href="/"> 保留原生语义
+           （可 Tab 聚焦、回车触发、可中键新开），点击时 preventDefault 改走路由 push，不整页刷新。 -->
+      <a class="p-brand" href="/" :title="brandTitle" :aria-label="brandTitle" @click="onBrandClick($event)">
         <span class="p-brand-badge" aria-hidden="true">{{ brandInitial }}</span>
         <span class="p-brand-text">{{ brandName }}</span>
-      </span>
+      </a>
       <div class="p-info">
         <h2 class="p-title" :title="video.title">{{ video.title }}</h2>
         <div class="p-meta">
@@ -172,44 +174,48 @@
                 >
                   {{ isPlaying ? '⏸' : '▶' }}
                 </button>
-                <!-- P5.26（用户反馈 1「增加音量调节时的百分比显示」）：
-                     百分比浮标签锚在**音量按钮**上方（不是滑块上方）—— 按钮在窄屏也不隐藏，
-                     而 .p-vol 在 ≤767px 是 display:none，锚滑块会让标签失去定位基准。
-                     标签绝对定位在控制条之上（bottom:100%+8px）+ pointer-events:none：
-                     既不占控制条布局，也不会遮住任何控件；0–100 整数，松手 700ms 后淡出。 -->
-                <span class="p-volb-wrap">
-                  <span class="p-vol-pct" :class="{ on: volPctShown }" aria-hidden="true">{{ volPct }}%</span>
-                  <button
-                    class="p-btn"
-                    type="button"
-                    :aria-label="muted || volume === 0 ? '取消静音' : '静音'"
-                    :title="muted || volume === 0 ? '取消静音（M）' : '静音（M）'"
-                    @click="toggleMute"
-                  >
-                    {{ muted || volume === 0 ? '🔇' : '🔊' }}
-                  </button>
-                </span>
+                <!-- P5.26（用户反馈 1「增加音量调节时的百分比显示」）：百分比浮标签常驻 DOM，
+                     0–100 整数，松手 700ms 后淡出（CSS opacity 过渡，不参与控制条布局）。
+                     P5.29（用户反馈 1）：锚点见下方 .p-vol-wrap —— 已从本按钮挪到音量滑块的 thumb 上方。 -->
+                <button
+                  class="p-btn"
+                  type="button"
+                  :aria-label="muted || volume === 0 ? '取消静音' : '静音'"
+                  :title="muted || volume === 0 ? '取消静音（M）' : '静音（M）'"
+                  @click="toggleMute"
+                >
+                  {{ muted || volume === 0 ? '🔇' : '🔊' }}
+                </button>
                 <!-- 音量滑块：窄屏让位给静音按钮（既有规则不变）。
                      P5.26：按住期间百分比常显（不排淡出计时），松手 / change / blur 才开始淡出；
-                     键盘 ↑/↓ 走的是 input 事件（没有 pointerdown），直接按「自动淡出」处理。 -->
-                <input
-                  class="p-vol"
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  :value="muted ? 0 : volume"
-                  aria-label="音量"
-                  title="音量（↑ / ↓，滚轮 ±5%）"
-                  @input="onVolumeInput"
-                  @pointerdown="onVolPointerDown"
-                  @pointerup="onVolRelease"
-                  @pointercancel="onVolRelease"
-                  @change="onVolRelease"
-                  @blur="onVolRelease"
-                />
-                <!-- P5.19：时间码**一直**显示帧号（位置 hh:mm:ss:ff / 总时长），
-                     文案由 playerExtras.seekTimecodeText 一处生成；缺帧率的片退化成 mm:ss。
+                     键盘 ↑/↓ 走的是 input 事件（没有 pointerdown），直接按「自动淡出」处理。
+
+                     P5.29（用户反馈 1「音量百分比出现的位置不好，放在音量条附近吧」）：
+                     浮标签的锚点从**静音按钮**换成**音量滑块**，并且 left 由 volPctStyle 算成
+                     「当前 thumb 中心」—— 65% 时标签正对 thumb 上方，仍不占控制条布局
+                     （absolute + pointer-events:none），压在控制条之上 8px 处、不遮任何控件。 -->
+                <span class="p-vol-wrap" :style="{ '--p-vol-ratio': volRatio }">
+                  <span class="p-vol-pct" :class="{ on: volPctShown }" aria-hidden="true">{{ volPct }}%</span>
+                  <input
+                    class="p-vol"
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    :value="muted ? 0 : volume"
+                    aria-label="音量"
+                    title="音量（↑ / ↓，滚轮 ±5%）"
+                    @input="onVolumeInput"
+                    @pointerdown="onVolPointerDown"
+                    @pointerup="onVolRelease"
+                    @pointercancel="onVolRelease"
+                    @change="onVolRelease"
+                    @blur="onVolRelease"
+                  />
+                </span>
+                <!-- 时间码**一直**显示帧号，P5.29 起口径是 分:秒:帧 且**没有「位置」前缀**：
+                     「03:21:17 / 120:00:00」（两小时片就是 120 分钟，不折成小时）。
+                     文案由 playerExtras.seekTimecodeText 一处生成；缺帧率的片退化成 分:秒。
                      P5.24-A：从进度条右侧挪到左侧控制组，并把时间码常显的区域从本行起点算起，
                      于是「左侧 = 播放 / 音量 / 时间」与参考图的信息层级一致。 -->
                 <span class="p-seek-now" :class="{ 'is-frame': hasFps }" :title="seekNowTitle">{{ seekNowText }}</span>
@@ -302,10 +308,12 @@
                         aria-label="精确帧"
                         title="精确帧"
                       ></span>
-                      <!-- 底部时间条（P5.19）：大字是**带帧号的影片内容时间**（00:03:21:08），小字才是片段内部时间
-                           （片段 0:07 / 0:08），见 PreviewTimeBar.vue。z-index 3 → 压在 .p-hover-exact 精确帧之上，
-                           所以「精确帧浮层」看到的时间码同样是带帧号的那一条。 -->
-                      <PreviewTimeBar :sec="previewInfo.labelSec" :fps="frameFps" :caption="previewCaptionText" />
+                      <!-- 底部时间条：只有一条**带帧号的影片内容时间**（03:21:17 / 两小时片 120:00:00）。
+                           P5.29（用户反馈 4）：原来那行「片段 0:07 / 0:08」小字已整块删除 ——
+                           用户不需要知道预览片有多长、播到哪里。
+                           底色与控制条**同一套材质**（同一个 --p-grad + --p-shadow），见 PreviewTimeBar.vue。
+                           z-index 3 → 压在 .p-hover-exact 精确帧之上，所以「精确帧浮层」读到的也是这一条。 -->
+                      <PreviewTimeBar :sec="previewInfo.labelSec" :fps="frameFps" />
                     </div>
                   </div>
                   <!-- P4.1 标记轨（marker lane）：进度条下方独立一条，间距 var(--lane-gap)=3px（P4.3 起的值）。
@@ -481,7 +489,10 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+// P5.29（用户反馈 6）：头部标识点回首页 —— 只用 routerKey 取值（不是 useRouter()），
+// 这样组件在没有 router 的宿主里（SSR 证据脚本 / p52x 实测台）不会打出 inject 缺失告警。
+import { routerKey } from 'vue-router'
 import { useMediaApi } from '@/composables/useMediaApi'
 // P4-B：AB 循环 / 逐帧 / 增益 / 标记刻度的纯逻辑（无 DOM，可单独单测）
 // P4.1：+ 视频倍速档位与持久化、增益档位循环、标记轨尺寸与点击目标
@@ -501,7 +512,6 @@ import {
   abTick,
   applyGain,
   blurActiveInCtrl,
-  clipCaption,
   clipSeekStep,
   createCtrlAutoHide,
   createGainGraph,
@@ -551,7 +561,7 @@ import {
 } from './playerExtras'
 // P5.15：hover 精确帧的调度（debounce 250ms / LRU 60 张 / 同秒去重 / 失败静默回退，纯逻辑可单测）
 import { createFramePicker, frameSecond } from './framePicker'
-// P5.19：浮层底部时间条（大字改成带帧号的 hh:mm:ss:ff，SSR 可渲染验证）
+// P5.19：浮层底部时间条（大字带帧号；P5.29 起口径是分:秒:帧 mm:ss:ff，SSR 可渲染验证）
 import PreviewTimeBar from './PreviewTimeBar.vue'
 // P5.20：换流时把「当前画面」冻结成 canvas 覆盖层（0 请求 / 不放大），取帧只作兜底
 import { coverFrameWidth, coveredSwitch, freezeElementFrame } from './coverFreeze'
@@ -563,6 +573,21 @@ import { APP_INFO } from '@/utils/constants'
 /** P5.25（用户反馈 7）：头部站点标识的文案来源 —— 与 AppShell 左栏 Logo 同源 */
 const brandName = APP_INFO.name
 const brandInitial = APP_INFO.name.charAt(0)
+
+/**
+ * P5.29（用户反馈 6）：「header 里面的 logo 区域点击应当回到主页」。
+ * routerKey 是 vue-router 注入的路由器本体（不是 useRouter()：那个在无 router 的宿主里会打告警）；
+ * 没有 router（SSR 证据脚本 / 实测台）时拿到 null，点击就退化成「什么都不做」——
+ * 绝不用 window.location 整页刷新兜底，那正是用户不要的行为。
+ */
+const router = inject(routerKey, null)
+const brandTitle = brandName + ' · 返回首页'
+
+/** 点击 / 回车（<a> 原生触发 click）→ 路由 push 到首页；href="/" 仍保留给中键 / 右键新标签页 */
+function onBrandClick(event) {
+  if (event && typeof event.preventDefault === 'function') event.preventDefault()
+  if (router && typeof router.push === 'function') router.push('/')
+}
 
 const props = defineProps({
   /** 当前播放的视频对象 */
@@ -671,8 +696,7 @@ const seekEl = ref(null)
 const previewMode = ref('')
 const previewOn = ref(false)
 const previewRatio = ref(0)
-/** 预览片段自身时间（秒）：只喂给浮层底部的小字「片段 0:03 / 0:08」，不再当进度显示 */
-const clipTime = ref(0)
+/** 预览片段自身的时长（秒）：只用于把比例换算成片段内的 seek 落点（P5.29 起不再显示片段进度） */
 let clipDur = 0
 /** 片段取片是否已经发起过：preload="none" 下 readyState 恒为 0，只允许 load() 一次（见 playerExtras.clipSeekStep） */
 let clipLoadStarted = false
@@ -788,12 +812,9 @@ const previewSrc = computed(() => (hasPreview.value ? api.previewUrl(props.video
 
 /* P5.2：三处徽标都由 seekPreview 一处换算（纯函数，playerExtras 单测覆盖），
    浮层大字 = 影片内容时间（ratio × 内容时长），不是 8 秒片段时长。
-   P5.19：大字改成带帧号的 hh:mm:ss:ff —— 格式化交给 PreviewTimeBar（frameTimecode），
+   大字是带帧号的内容时间（P5.29 起 mm:ss:ff）—— 格式化交给 PreviewTimeBar（frameTimecode），
    与进度条右侧同一个纯函数，缺帧率时两边一起退化成 mm:ss。 */
 const previewInfo = computed(() => seekPreview(previewRatio.value, seekDur.value || 0, clipDur))
-const previewCaptionText = computed(() =>
-  previewMode.value === 'clip' ? clipCaption(clipTime.value, previewInfo.value.clipDur) : ''
-)
 /** 是否真的显示浮层：悬停时若正好命中标记（要出标记提示条）就让位，避免两条浮层抢同一位置抖动 */
 const previewShown = computed(() => previewOn.value && !markerHover.value)
 /** 浮层只有悬停一种来源：is-hover 恒亮（≤768px 的样式靠它整块隐藏），is-clip / is-sprite 标注内容类型 */
@@ -816,8 +837,9 @@ const seekVars = computed(() => ({
 
 /**
  * P5.19 进度条右侧时间码：**一直**显示帧号（P5.16 只在拖动中显示，用户要求改成常显）。
- *   有 fps → 「位置 hh:mm:ss:ff / 总时长 hh:mm:ss:ff」，静止 / 暂停 / 播放 / 拖动完全同一条；
- *   无 fps → 「位置 mm:ss / mm:ss」（不知道帧率就不编假帧号，见 playerExtras.frameTimecode）。
+ *   有 fps → 「03:21:17 / 120:00:00」（分:秒:帧，分钟不折成小时），静止 / 暂停 / 播放 / 拖动完全同一条；
+ *   无 fps → 「03:22 / 120:31」（不知道帧率就不编假帧号，见 playerExtras.frameTimecode）。
+ * P5.29（用户反馈 3）：**没有「位置」前缀**了 —— 前缀与 hh:mm:ss:ff 都在 seekTimecodeText 里删掉。
  * 文案只有一个来源（playerExtras.seekTimecodeText），单测直接覆盖这条字符串。
  * 刷新频率（P5.22）：文案读的是 **seekTextPos**，不是 seekPos —— 滑块位置每帧都变（见 P5.22
  * 逐帧进度），**文本**则按 25Hz 节流（playerExtras.createSeekTextThrottle）：帧号 25 次/秒已看不出
@@ -838,13 +860,15 @@ const seekAriaText = computed(() => {
   const fps = frameFps.value
   // P5.22：跟文本节流（25Hz）走 —— 读屏软件不可能念 60 次/秒，每帧重建这段字符串纯属白花时间；
   // 与滑块真实位置的差最多 40ms，远小于一次朗读。
-  if (!fps) return durText(seekTextPos.value) + ' / ' + durText(seekDur.value)
+  //
+  // P5.29（用户反馈 3）：两侧都走 playerExtras.timecode 这**一个**纯函数 —— 控制条文案
+  // （seekTimecodeText）与 aria 因此永远同形（03:21:17 / 120:00:00），没有第二处手写格式；
+  // 无帧率的片由 timecode 自己退化成 分:秒，不再在这里另调 durText 拼一套。
+  const pos = timecode(seekTextPos.value, fps)
+  const total = seekDur.value > 0 ? timecode(seekDur.value, fps) : '--:--'
+  if (!fps) return pos + ' / ' + total
   const n = frameOf(seekTextPos.value, fps)
-  return (
-    timecode(seekTextPos.value, fps) +
-    '（第 ' + (n == null ? 0 : n) + ' 帧） / ' +
-    timecode(seekDur.value || 0, fps)
-  )
+  return pos + '（第 ' + (n == null ? 0 : n) + ' 帧） / ' + total
 })
 
 /** 进度条已播放部分（CSS 渐变的断点）：原生 appearance 关掉后自己画填充，亮暗都跟 --accent */
@@ -1097,7 +1121,6 @@ function previewModeFor() {
 /** 按拖动比例把预览片段定位到对应帧（元数据未到时先 load，loadedmetadata 再补定位） */
 function seekClip(ratio) {
   const info = seekPreview(ratio, 0, clipDur)
-  clipTime.value = info.clipSeek
   const el = clipEl.value
   if (!el) return
   const step = clipSeekStep({ readyState: el.readyState, loadStarted: clipLoadStarted })
@@ -1567,7 +1590,7 @@ function fadeStreamCover() {
  * 所以这里把它同时铺到**整个舞台**（.p-scrub-cover），松手后交给 .p-stream-cover 接棒。
  *
  * 取帧走整秒缓存（frameSecond 同一口径）：同一秒只请求一次、命中零延迟，请求数与 hover 同级。
- * 精度由「拖动中的帧码 位置 hh:mm:ss:ff」与松手落点（精确起播秒）保证，与 P5.17 一致。
+ * 精度由「拖动中的帧码 分:秒:帧（P5.29 起 mm:ss:ff）」与松手落点（精确起播秒）保证，与 P5.17 一致。
  */
 const scrubOn = ref(false)
 const scrubSrc = ref('')
@@ -2704,6 +2727,15 @@ let volHold = false
 let volPctTimer = null
 /** 浮标签文本：静音按 0 显示（与滑块 thumb 位置一致，不是「记忆音量」） */
 const volPct = computed(() => volumePercent(muted.value ? 0 : volume.value))
+/**
+ * 滑块比例（0–1，静音按 0）：P5.29 用户反馈 1 的定位量 —— 浮标签的 left 在 CSS 里由它算出
+ * 「当前 thumb 中心」（.p-vol-wrap 的 --p-vol-ratio），于是标签永远压在 thumb 正上方，
+ * 65% 就落在滑块的 65% 处，不再固定在静音按钮上。这里只出一个数字，不做任何位置换算。
+ */
+const volRatio = computed(() => {
+  const v = muted.value ? 0 : Number(volume.value)
+  return String(Math.min(1, Math.max(0, isFinite(v) ? v : 0)))
+})
 
 /**
  * 显示百分比。autoHide=true → delay 后淡出（滚轮 / 键盘 / 松手）；
@@ -3238,6 +3270,8 @@ defineExpose({
 
 /* P5.25（用户反馈 7）：头部左侧站点标识 —— 与左栏 Logo 同一套语言（首字徽标 + 站点名），
    尺寸压到 22px、次级色、常规字重：它只回答「这是哪个站」，不与 15.5px/700 的标题抢注意力。 */
+/* P5.29（用户反馈 6）：标识区是 <a href="/"> —— 锚点自带键盘可聚焦 / 回车触发，
+   这里只把浏览器的链接样式抹平（下划线 / 链接色），几何与 P5.25 完全一致（22px 高、无内边距）。 */
 .p-brand {
   flex: 0 0 auto;
   display: inline-flex;
@@ -3246,11 +3280,26 @@ defineExpose({
   height: 22px;
   max-width: 180px;
   color: var(--fg-dim);
+  text-decoration: none;
+  cursor: pointer;
   transition: color 0.15s ease;
 }
 
+/* hover / focus 反馈只改颜色，不加内边距 —— 头部几何（22px 高、左缘 x）一点不动 */
 .p-brand:hover {
   color: var(--fg);
+}
+
+.p-brand:hover .p-brand-badge {
+  background: var(--accent);
+  color: var(--accent-on);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.p-brand:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .p-brand-badge {
@@ -3416,32 +3465,23 @@ defineExpose({
 /* 自绘控制条：原画（直连）与转码共用一套；颜色只取 mediaTheme 变量（--bg/--fg/--line/--accent → --qt-*）。
    P5.23：改成**常驻叠加层**（绝对定位贴 .p-fs-wrap 下沿），脱离文档流，不占视频高度。
 
-   P5.24-A（用户反馈 3「透明度降到极低」）：底座不再是 color-mix(--bg-2 86%) 那条实心色带。
-   取值与依据：
-     - 底色 alpha = .18（亮）/ .20（暗），都远低于验收上限 .30 —— 画面可视面积基本不被侵占；
-     - 亮色主题额外铺一层 rgba(255,255,255,.06) 的「相反叠层」（写在 background-image，
-       不动 background-color 的 alpha，验收读到的仍是 .18）；
-     - 只留一条 1px 发丝线定界，边界不再是色块；
-     - 可读性不再由底座承担：底座一旦接近全透明，就必然出现「白字压亮帧」的最坏情况
-       （.20 的底座叠在纯白帧上仍是 204,204,204，白字只有 1.6:1）。所以每个控件自带深色 chip
-       （--p-chip = rgba(0,0,0,.46)）+ 白色描边 + 投影：最坏背衬下白字 5.09:1（暗）/ 4.78:1（亮）。 */
+   P5.24-A（用户反馈 3「透明度降到极低」）起，可读性**不再由底座承担**：底座一旦接近全透明，
+   就必然出现「白字压亮帧」的最坏情况（.20 的底座叠在纯白帧上仍是 204，白字只有 1.6:1），
+   所以每个控件自带深色 chip（--p-chip）+ 白色描边 + 投影，最坏背衬下白字 ≥4.5:1。
+   历轮底座数值（.18 → .11 → .06 → 本轮的竖向渐变）都只是「底座」这一侧的调整，chip 越调越深。 */
 .p-ctrl {
-  /* 控制条专属令牌：亮色是默认，暗色在文件末尾的 html.dark 块里覆盖。
-     P5.25（用户反馈 6「控制条不够透明」）：底座 .18 → .11、白雾 6% → 4%、发丝线 .08 → .06，
-     blur 9px → 12px。底座越淡，「白帧背衬下的白字」就越依赖控件自己的深色 chip，
-     所以 chip 同步从 .46 提到 .50（亮）/ .50（暗）—— 把可读性留在 chip 上，而不是回退底座。
-     实测（白帧最坏背衬 → 底座 → 白雾 → chip → 白字）：亮 4.81:1 / 暗 4.94:1，均 ≥4.5:1。
-
-     P5.26（用户反馈 5「背景透明度还是不够，继续透明」）：再降一档到验收区间 0.04–0.07 的中值 ——
-     底座 .11 → .06、白雾 4% → 2%、发丝线 .06 → .05、blur 12px → 14px（更模糊 = 更像玻璃）。
-     底座降到 .06 之后，白帧最坏背衬只剩 240（.11 时是 228），**chip 必须加深**才守得住 4.5:1：
-     chip .50 → .58（亮 / 暗同值）、hover .60 → .68。
-     算账（sRGB 白 255 → 底座 .06 → 白雾 .02 → chip .58 → 白字 #fff）：
-       白帧 255 → 底座后 239.7 → 白雾后 240.0 → chip 后 100.8 → 相对亮度 0.1281 → 对比度 5.90:1。
-     结论：底座更透（0.06 落在用户要求区间），可读性由 chip 变深来兜，没有回退底座。 */
-  --p-scrim: rgba(0, 0, 0, 0.06);
-  --p-veil: rgba(255, 255, 255, 0.02);
-  --p-hair: rgba(0, 0, 0, 0.05);
+  /* 控制条专属令牌。 */
+  /* P5.25 / P5.26 的「整条半透明色带 + 白雾 + backdrop blur + 1px 发丝线」已被 P5.29 整块替换，
+     旧数值（底座 .06 / 白雾 2% / blur 14px / 发丝 .05）不再存在 —— 取代它的是下面这条渐变： */
+  /* 实测（devtools/p529-player，白帧最坏背衬）：条顶行像素 255 → alpha 0；条底行像素 118 → alpha .54；
+     画面中部 255（完全不被压暗）；chip 上白字 11.9:1（解析 5.32:1，均 ≥4.5:1）。 */
+  /* P5.29（用户反馈 2「做成从下往上的一个透明渐变」）：底座不再是整条半透明色块，而是
+     **竖向渐变** —— 底部 alpha .55、中部 .45、顶部 **alpha 0**：画面上沿 / 中部一点不被压暗，
+     只有贴着画面下沿的这一小段有颜色。材质 = 渐变（--p-grad）+ 控件自带 chip（--p-chip），
+     所以 backdrop-filter 与 1px 发丝线一并去掉（发丝线正好画在 alpha 0 的位置，会重新切一条硬边）。
+     --p-grad 同时被悬浮预览框的时间条（PreviewTimeBar.vue）消费 —— 两处材质逐字相同，
+     改一处颜色两处一起变，不存在第二套「遮罩材质」。 */
+  --p-grad: linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%);
   --p-ink: #fff;
   --p-chip: rgba(0, 0, 0, 0.58);
   --p-chip-hover: rgba(0, 0, 0, 0.68);
@@ -3460,11 +3500,9 @@ defineExpose({
   flex-direction: column;
   gap: 4px;
   padding: 8px 14px;
-  background-color: var(--p-scrim);
-  background-image: linear-gradient(var(--p-veil), var(--p-veil));
-  backdrop-filter: blur(14px) saturate(1.08);
-  -webkit-backdrop-filter: blur(14px) saturate(1.08);
-  border-top: 1px solid var(--p-hair);
+  /* 底色完全透明，颜色全部来自 --p-grad（顶部 alpha = 0 → 最上端不压暗任何像素） */
+  background-color: transparent;
+  background-image: var(--p-grad);
   min-width: 0;
   overflow: visible;
   /* P4.4 / P5.23：自动隐藏的淡出与下沉位移一并过渡（隐藏态定义见 .p-fs-wrap.is-ctrl-hidden） */
@@ -3569,20 +3607,30 @@ defineExpose({
    改法：appearance:none + 显式 4px 轨道 + 12px thumb + padding 归零 ——
    Blink / Gecko 都把 thumb 完整含在轨道内（thumb 中心行程 = [r, W-r]），
    于是 value=0 时 thumb 左缘贴 0%、value=1 时 thumb 右缘贴 100%（实测 ±1px，见 devtools/p525-player）。 */
-/* P5.26（用户反馈 1 / 2）：音量百分比的锚与浮标签。
-   锚点包住**静音按钮**（不是滑块）—— .p-vol 在 ≤767px 是 display:none，锚滑块会让标签失去基准。
-   浮标签在控制条之上（bottom:100%+8px）绝对定位 + pointer-events:none：不占布局、不挡任何控件。 */
-.p-volb-wrap {
+/* P5.29（用户反馈 1「音量百分比出现的位置不好，放在音量条附近吧」）：
+   锚点从静音按钮换成**音量滑块**，几何量（轨道宽 86px / thumb 12px）在这里只写一次，
+   滑块自己的 width 也读同一个变量，所以「标签对准 thumb」不会因为改宽而漂。
+   浮标签仍绝对定位在控制条之上（bottom:100%+8px）+ pointer-events:none：不占布局、不挡任何控件。 */
+.p-vol-wrap {
   position: relative;
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
+  --p-vol-track-w: 86px;
+  --p-vol-knob: 12px;
 }
 
 .p-vol-pct {
   position: absolute;
-  left: 50%;
-  bottom: calc(100% + 8px);
+  /* thumb 中心 = 半个 thumb + 比例 × (轨道宽 - thumb)；两端各夹 20px（标签半宽 40/2） */
+  left: clamp(
+    20px,
+    calc(var(--p-vol-knob) / 2 + var(--p-vol-ratio, 0) * (var(--p-vol-track-w) - var(--p-vol-knob))),
+    calc(var(--p-vol-track-w) - 20px)
+  );
+  /* 14px 而不是 8px：滑块只有 20px 高（比静音按钮矮一档），8px 会让标签压进控制条顶部 5px。
+     抬到 14px 后标签整体落在控制条之上（不压任何控件），水平仍对准 thumb。 */
+  bottom: calc(100% + 14px);
   transform: translateX(-50%);
   z-index: 6;
   min-width: 40px;
@@ -3610,12 +3658,13 @@ defineExpose({
 
 .p-vol {
   flex-shrink: 0;
-  width: 86px;
+  width: var(--p-vol-track-w, 86px);
   height: 20px;
   margin: 0;
   padding: 0;
   border-radius: 999px;
-  /* 底座 chip + 4px 轨道画成「垂直居中的背景线」：轨道由背景承担，滑块盒始终 86×20 */
+  /* 底座 chip + 4px 轨道画成「垂直居中的背景线」：轨道由背景承担，滑块盒始终
+     var(--p-vol-track-w) × 20（宽度与浮标签的定位量是同一个变量，改一处两边一起变） */
   background-color: var(--p-chip);
   background-image: linear-gradient(var(--p-vol-rail), var(--p-vol-rail));
   background-size: 100% 4px;
@@ -3887,7 +3936,7 @@ defineExpose({
 /* P5.19：浮层底部时间条（.p-preview-bar / -t / -sub）的样式已随组件搬到 PreviewTimeBar.vue —
    大字在那里渲染「带帧号的内容时间」，样式跟着 DOM 走才不会两边各写一套。 */
 
-/* P5.19 进度条右侧时间码：**一直**显示「位置 hh:mm:ss:ff / 总时长 hh:mm:ss:ff」。
+/* 控制条时间码：**一直**显示「03:21:17 / 120:00:00」（P5.29 起 分:秒:帧、无「位置」前缀）。
    一行不换行（溢出时宁可缩短轨道也不能把时间码折成两行 —— 折行后和标记轨、浮层锚点全错位）。 */
 /* P5.19：时间码**一直**显示帧号（播放 / 暂停 / 拖动同一条）；
    P5.24-A：chip 化 —— 裸白字直接压在近乎透明的底座上，最坏背衬（纯白帧）只有 1.6:1，
@@ -4249,7 +4298,7 @@ defineExpose({
     display: none;
   }
 
-  /* P5.19：常显的「位置 hh:mm:ss:ff / hh:mm:ss:ff」比原来的 mm:ss 长 60%。
+  /* 常显的「mm:ss:ff / mm:ss:ff」比原来的 mm:ss 长（P5.29 起分钟位可以是 3 位，如 120:00:00）。
      窄屏再大字号会把进度条轨道压到很窄，这里降一档（仍然 ≥11px，可读），
      同时去掉 letter-spacing 省出 2 个字符的宽度；不换行由 .p-seek-now 的 nowrap 保证。 */
   .p-seek-now {
@@ -4532,17 +4581,6 @@ defineExpose({
   .p-help-key {
     flex-basis: 88px;
   }
-}
-
-/* ==================== P5.24-A 暗色主题：控制条令牌覆盖 ====================
-   亮色是 .p-ctrl 上的默认值。暗色下底座与亮色同一档（都在验收区间 0.04–0.07 内）、
-   去掉那层白色薄雾（暗色不需要「压成浅雾」），发丝线换成亮色。 */
-html.dark .p-ctrl {
-  /* P5.25：暗色底座 .20 → .12；P5.26：再降到 .07（仍落在区间上限内，白雾保持 transparent）。
-     暗色没有白色薄雾，白帧背衬合成后是 237 —— 比亮色略深，chip .58 的对比度反而更高。 */
-  --p-scrim: rgba(0, 0, 0, 0.07);
-  --p-veil: transparent;
-  --p-hair: rgba(255, 255, 255, 0.08);
 }
 
 /* 暗色主题：标记在深底上靠一圈 1px 深色描边勾出边界（亮色下是同位置的浅描边） */

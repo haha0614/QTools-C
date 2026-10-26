@@ -77,10 +77,11 @@ console.log('  文字: ' + JSON.stringify(now30 && now30.text))
 console.log('  标签: ' + (now30 && now30.tag))
 /* 左侧：当前帧时间码恒为 hh:mm:ss:ff（3 个冒号）；右侧：总时长就绪后同样是 hh:mm:ss:ff，
    还没就绪时是 --:--（SSR 里没有 <video>，所以这里看到的就是 --:-- 这种退化形态）。 */
-ok(!!now30 && /^位置 \d{2}:\d{2}:\d{2}:\d{2} \/ (\d{2}:\d{2}:\d{2}:\d{2}|--:--)$/.test(now30.text), 'A2 文案是「位置 hh:mm:ss:ff / hh:mm:ss:ff（或 --:--）」', now30 && now30.text)
-ok(!!now30 && (now30.text.match(/:/g) || []).length >= 3, 'A3 左侧时间码含 3 个冒号（hh:mm:ss:ff）', now30 && String((now30.text.match(/:/g) || []).length))
+ok(!!now30 && /^\d{2,}:\d{2}:\d{2} \/ (\d{2,}:\d{2}:\d{2}|--:--)$/.test(now30.text), 'A2 文案是「mm:ss:ff / mm:ss:ff（或 --:--）」且**没有「位置」前缀**（P5.29 反馈 3）', now30 && now30.text)
+ok(!!now30 && !now30.text.includes('位置'), 'A2b 文案里不再出现「位置」两个字', now30 && now30.text)
+ok(!!now30 && (now30.text.match(/:/g) || []).length >= 2, 'A3 左侧时间码含 2 个冒号（mm:ss:ff）', now30 && String((now30.text.match(/:/g) || []).length))
 ok(!!now30 && /class="[^"]*is-frame/.test(now30.tag), 'A4 有帧率时带 is-frame 类（等宽数字 + 主文字色，不再只在拖动时出现）', now30 && now30.tag)
-ok(!!now30 && attr(now30.tag, 'title').includes('hh:mm:ss:ff'), 'A5 title 说明格式是 hh:mm:ss:ff', now30 && attr(now30.tag, 'title'))
+ok(!!now30 && attr(now30.tag, 'title').includes('mm:ss:ff'), 'A5 title 说明格式是 mm:ss:ff（分:秒:帧）', now30 && attr(now30.tag, 'title'))
 ok(!!now30 && !/is-frame[^"]*"/.test(now30.tag.replace(/is-frame/, '')), 'A6 is-frame 只出现一次（没有叠加旧逻辑）')
 
 /* 同一个元素的 title 也在 input 上：无 fps 时 input title 必须说明缺帧率 */
@@ -96,7 +97,7 @@ ok(!!nowNo, 'C1 .p-seek-now 仍然渲染（缺帧率不是「不显示」）')
 console.log('  文字: ' + JSON.stringify(nowNo && nowNo.text))
 console.log('  标签: ' + (nowNo && nowNo.tag))
 ok(!!nowNo && !HHMMSSFF.test(nowNo.text), 'C2 缺 fps：文案里**没有** hh:mm:ss:ff（不编假帧号）', nowNo && nowNo.text)
-ok(!!nowNo && /^位置 (\d{2}:\d{2}|--:--)( \/ (\d{2}:\d{2}|--:--))?$/.test(nowNo.text), 'C3 缺 fps：退化成 mm:ss / --:--', nowNo && nowNo.text)
+ok(!!nowNo && /^(\d{2,}:\d{2}|--:--)( \/ (\d{2,}:\d{2}|--:--))?$/.test(nowNo.text), 'C3 缺 fps：退化成 mm:ss / --:--（无前缀）', nowNo && nowNo.text)
 ok(!!nowNo && attr(nowNo.tag, 'title').includes('该片缺帧率数据'), 'C4 缺 fps：时间码 title 写明「该片缺帧率数据」', nowNo && attr(nowNo.tag, 'title'))
 ok(!!nowNo && !/is-frame/.test(nowNo.tag), 'C5 缺 fps：不带 is-frame（视觉上也不假装是帧级时间码）')
 ok(String(hNo).includes('该片缺帧率数据'), 'C6 缺 fps：input title 也说明「该片缺帧率数据，按整秒拖动、不显示帧号」')
@@ -106,35 +107,40 @@ ok(String(hNo).includes('该片缺帧率数据'), 'C6 缺 fps：input title 也�
 console.log('\n[B] hover 浮层底部时间条 PreviewTimeBar（.p-preview-bar）')
 /** 浮层本体 <div v-if="previewMode"> 只有 hover 时才进 DOM（SSR 拿不到），
     所以直接渲染浮层用的那个组件 —— 生产环境里它就是浮层里的同一棵子树。 */
-const hBar = await render(bar, { sec: 201.7, fps: 30, caption: '片段 0:03 / 0:08' })
+const hBar = await render(bar, { sec: 201.7, fps: 30 })
 console.log('  HTML: ' + hBar)
 ok(hBar.includes('p-preview-bar'), 'B1 根节点是 .p-preview-bar（与旧 DOM 同层级，没有多套一层）')
 const tBar = pick(hBar, 'p-preview-t')
-ok(!!tBar && tBar.text === '00:03:21:21', 'B2 大字 = 带帧号的内容时间（201.7s @30fps → 00:03:21:21）', tBar && tBar.text)
-ok(!!tBar && /^\d{2}:\d{2}:\d{2}:\d{2}$/.test(tBar.text), 'B3 大字含 3 段冒号', tBar && tBar.text)
-ok(hBar.includes('片段 0:03 / 0:08'), 'B4 小字仍是片段内部时间（P5.2 口径保留）')
-ok(hBar.includes('p-preview-sub'), 'B5 小字元素仍是 .p-preview-sub')
+ok(!!tBar && tBar.text === '03:21:21', 'B2 大字 = 带帧号的内容时间（201.7s @30fps → 03:21:21，分:秒:帧）', tBar && tBar.text)
+ok(!!tBar && /^\d{2,}:\d{2}:\d{2}$/.test(tBar.text), 'B3 大字是 2 个冒号（mm:ss:ff）', tBar && tBar.text)
+/* P5.29 用户反馈 4：「预览框里片段不需要，我不需要知道预览片段有多长以及播放到哪里」——
+   那行小字整块删除，所以这里断言的是**它不存在**（DOM 断言，不是源码 grep）。 */
+ok(!hBar.includes('片段'), 'B4 预览框里不再有「片段」字样（P5.29 反馈 4，DOM 断言）')
+ok(!hBar.includes('p-preview-sub'), 'B5 片段小字元素 .p-preview-sub 已从 DOM 移除')
+const hBarTwo = await render(bar, { sec: 7200, fps: 30 })
+const tBarTwo = pick(hBarTwo, 'p-preview-t')
+ok(!!tBarTwo && tBarTwo.text === '120:00:00', 'B5b 两小时片：预览框时间 = 120:00:00（不折成 2:00:00:00）', tBarTwo && tBarTwo.text)
 
 console.log('\n[B2] 浮层时间条 —— 缺 fps 的片')
-const hBarNo = await render(bar, { sec: 201.7, fps: 0, caption: '' })
+const hBarNo = await render(bar, { sec: 201.7, fps: 0 })
 const tBarNo = pick(hBarNo, 'p-preview-t')
 console.log('  HTML: ' + hBarNo)
 ok(!!tBarNo && tBarNo.text === '03:22', 'B6 缺 fps：大字退化成 mm:ss（201.7s → 03:22）', tBarNo && tBarNo.text)
 ok(!!tBarNo && !HHMMSSFF.test(tBarNo.text), 'B7 缺 fps：没有 ff 段')
-ok(!hBarNo.includes('p-preview-sub'), 'B8 caption 为空时不渲染小字')
+ok(!hBarNo.includes('p-preview-sub') && !hBarNo.includes('片段'), 'B8 缺 fps 时同样没有片段小字（该元素已整块删除）')
 
 console.log('\n[B3] 浮层时间条 —— 内容时长还没就绪（sec=null）')
-const hBarNull = await render(bar, { sec: null, fps: 30, caption: '' })
+const hBarNull = await render(bar, { sec: null, fps: 30 })
 const tBarNull = pick(hBarNull, 'p-preview-t')
 ok(!!tBarNull && tBarNull.text === '--:--', 'B9 sec=null → --:--（不显示 00:00:00:00 这种假时间）', tBarNull && tBarNull.text)
-ok(!!tBarNull && attr(tBarNull.tag, 'title').includes('hh:mm:ss:ff'), 'B10 浮层大字的 title 也说清格式口径')
+ok(!!tBarNull && attr(tBarNull.tag, 'title').includes('mm:ss:ff'), 'B10 浮层大字的 title 也说清格式口径（mm:ss:ff）')
 
 /* ============================ 源码级包含关系（浮层 / 跟随层） ============================ */
 
 console.log('\n[D] MediaPlayer 模板里的接线（源码级）')
 const { readFileSync } = await import('node:fs')
 const src = readFileSync(new URL('./MediaPlayer.vue', import.meta.url), 'utf8')
-ok(src.includes('<PreviewTimeBar :sec="previewInfo.labelSec" :fps="frameFps" :caption="previewCaptionText" />'), 'D1 浮层用的是 PreviewTimeBar（同一个 frameTimecode 口径）')
+ok(src.includes('<PreviewTimeBar :sec="previewInfo.labelSec" :fps="frameFps" />'), 'D1 浮层用的是 PreviewTimeBar（同一个 frameTimecode 口径，P5.29 起没有 caption）')
 ok(/<span v-if="scrubOn" class="p-scrub-tc" :title="seekNowTitle">\{\{ frameTimecode\(seekPos, frameFps\) \}\}<\/span>/.test(src), 'D2 拖动跟随层（.p-scrub-cover）旁边有帧号徽标 .p-scrub-tc')
 ok(src.includes(':class="{ \'is-frame\': hasFps }" :title="seekNowTitle"'), 'D3 进度条时间码常亮 is-frame + title')
 

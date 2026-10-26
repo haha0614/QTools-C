@@ -655,7 +655,7 @@ try {
   ok(/标记位置/.test(pointTitles[0] || ''), 'd8) 单点态 title 说明「标记位置」', JSON.stringify(pointTitles))
 
   /* ========================= E 控制条透明度 / 对比度 ========================= */
-  console.log('\n[E] 控制条底座 alpha ∈ [0.04,0.07] + 白帧最坏背衬 chip 对比度 ≥4.5:1')
+  console.log('\n[E] 控制条底座 = 竖向渐变（顶 alpha 0 / 底 .55）+ 白帧最坏背衬 chip 对比度 ≥4.5:1')
   const probeExpr =
     "JSON.stringify((function(){var ctrl=document.querySelector('.p-ctrl');var cs=getComputedStyle(ctrl);var items=['.p-btn-play','.p-btn','.p-seek-now','.p-ab-text'].map(function(sel){var el=document.querySelector('.p-ctrlline '+sel)||document.querySelector('.p-ctrl '+sel);if(!el)return null;var s=getComputedStyle(el);var r=el.getBoundingClientRect();return {sel:sel,color:s.color,bg:s.backgroundColor,rect:{x:r.x,y:r.y,w:r.width,h:r.height,right:r.right,bottom:r.bottom}}}).filter(Boolean);return {bg:cs.backgroundColor,image:cs.backgroundImage,hair:cs.borderTopColor,blur:cs.backdropFilter||cs.webkitBackdropFilter,items:items}})())"
   const probe = async (theme) => {
@@ -670,9 +670,15 @@ try {
     }
     const bgc = parseRgb(info.bg)
     info.bgAlpha = bgc ? bgc.a : 1
+    // P5.29：底座是「顶 0 → 底 .55」的竖向渐变 —— 取所有 alpha，分出头尾两档
+    const all = Array.from(String(info.image).matchAll(/rgba?\(([^)]+)\)/g)).map((m) => {
+      const p = m[1].split(',').map(Number)
+      return { c: m[1], a: p.length > 3 ? p[3] : 1 }
+    })
     const vm = String(info.image).match(/rgba?\(([^)]+)\)/)
     info.veil = vm ? vm[1] : 'none'
-    info.veilAlpha = vm ? Number(vm[1].split(',')[3]) : 0
+    info.veilAlpha = all.length ? Math.min(...all.map((x) => x.a)) : 0
+    info.gradBottomAlpha = all.length ? Math.max(...all.map((x) => x.a)) : 0
     const bar = await api('rectOf(".p-ctrl")')
     const barShot = await clipShot(cdp, bar, 0)
     for (const it of info.items) {
@@ -695,10 +701,12 @@ try {
   const E2 = await probe('dark')
   console.log('    暗: bg=' + E2.bg + ' veil=' + E2.veil + ' hair=' + E2.hair + ' blur=' + E2.blur + ' 白帧合成=' + E2.baseRGB)
   E2.items.forEach((it, i) => console.log('      ' + it.sel + ' chip=' + it.bg + ' 像素采样=' + it.sampled.join(',') + ' 对比度=' + it.contrast + ':1（解析 ' + E2.analytic[i] + ':1）'))
-  ok(E1.bgAlpha >= 0.04 && E1.bgAlpha <= 0.07, 'e1) 亮色底座 alpha 落在 0.04–0.07（实测 ' + E1.bgAlpha + '，原 .11）', String(E1.bgAlpha))
-  ok(E2.bgAlpha >= 0.04 && E2.bgAlpha <= 0.07, 'e2) 暗色底座 alpha 落在 0.04–0.07（原 .12）', String(E2.bgAlpha))
-  ok(near(E1.veilAlpha, 0.02, 0.006), 'e3) 亮色白雾降到 2%（原 4%）', String(E1.veilAlpha))
-  ok(/14px/.test(String(E1.blur)) && /14px/.test(String(E2.blur)), 'e4) backdrop blur = 14px（原 12px）', E1.blur + ' / ' + E2.blur)
+  // P5.29（用户反馈 2）：上一版的「整条 .06/.07 色带 + 2% 白雾 + blur 14px」整块换成
+  // 「顶 alpha 0 → 底 .55 的竖向渐变」，所以 e1–e4 的判据随之改口径（详细理由见 MediaPlayer.vue 的 .p-ctrl 注释）：
+  ok(E1.bgAlpha === 0 && E2.bgAlpha === 0, 'e1) 底座 backgroundColor 完全透明（alpha 0，原 .06 / .07）', E1.bg + ' / ' + E2.bg)
+  ok(near(E1.veilAlpha, 0, 0.001) && near(E2.veilAlpha, 0, 0.001), 'e2) 渐变最上端 alpha = 0（原「白雾 2%」已不存在）', String(E1.veilAlpha) + ' / ' + String(E2.veilAlpha))
+  ok(near(E1.gradBottomAlpha, 0.55, 0.02) && near(E2.gradBottomAlpha, 0.55, 0.02), 'e3) 渐变最下端 alpha ≈ .55（底部一小段才是底色）', String(E1.gradBottomAlpha) + ' / ' + String(E2.gradBottomAlpha))
+  ok(String(E1.blur) === 'none' && String(E2.blur) === 'none', 'e4) 不再挂 backdrop-filter（顶部透明区不许被色带模糊糊掉，原 14px）', E1.blur + ' / ' + E2.blur)
   ok(E1.items.every((it) => it.a >= 0.54) && E2.items.every((it) => it.a >= 0.54), 'e5) 底座变淡后 chip 加深（alpha ≥ .54，原 .50）', E1.items.map((i) => i.a).join('/') + ' | ' + E2.items.map((i) => i.a).join('/'))
   const worstLight = Math.min(...E1.items.map((i) => i.contrast))
   const worstDark = Math.min(...E2.items.map((i) => i.contrast))
