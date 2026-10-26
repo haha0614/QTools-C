@@ -517,6 +517,33 @@ export function frameUrl(id, sec) {
   )
 }
 
+/**
+ * 精确取帧（P5.18）：`GET /media/frame/{id}?t=<毫秒级秒数>` → 该**确切时刻**的一帧
+ *
+ * <p>与 {@link frameUrl} 的区别只在缓存语义：整秒取帧按 <秒>.jpg 永久落盘（hover 用，同一秒
+ * 复用一张图），而这里的目标是「换流前把**目标位置的画面**盖上去」—— 向下取整会让用户先看到
+ * 整秒那一帧、再看到真正落点（用户反馈的「先跳到整秒位置再跳到点击位置」）。所以这一路把小数
+ * 原样发给后端，后端不落缓存（每个落点都不同，落了就是无上限的磁盘增长）。</p>
+ *
+ * <p>精度到毫秒：3.4 → `t=3.4`；6.266666666666667 → `t=6.267`（半帧 1/60 = 16.7ms，
+ * 毫秒级远小于半帧，落点仍在同一帧上）。</p>
+ *
+ * @param {string} id  视频 id
+ * @param {number} sec 目标时刻（秒，可含小数）
+ */
+export function frameExactUrl(id, sec) {
+  const n = Number(sec)
+  const t = !isFinite(n) || n <= 0 ? '0' : String(Math.round(n * 1000) / 1000)
+  return (
+    API_BASE +
+    '/media/frame/' +
+    encodeURIComponent(String(id == null ? '' : id)) +
+    '?t=' +
+    t +
+    '&algo=f1e'
+  )
+}
+
 /** 图片预览图：photo.js:102 `MEDIA + '/preview/p/' + albumId + '/' + pad4(i)` */
 export function photoPreviewUrl(albumId, i) {
   return API_BASE + '/media/preview/p/' + encodeURIComponent(String(albumId == null ? '' : albumId)) + '/' + pad4(i)
@@ -630,6 +657,7 @@ const mediaApi = {
   spriteUrl,
   previewUrl,
   frameUrl,
+  frameExactUrl,
   photoThumbUrl,
   photoPreviewUrl,
   thumbUrlFromRel,

@@ -865,6 +865,27 @@ export function sameFrame(a, b, fps) {
 }
 
 /**
+ * 落点是否需要再写一次 {@code currentTime}（P5.18：一次手势只写一次）
+ *
+ * <p>为什么单独成函数：一次点击曾经写两次 —— {@code input} 的 rAF 合并落点与 {@code change}
+ * 的精确落点各写一次，两次赋值就是两次 seek 往返（真浏览器实测写入序列
+ * {@code [3.3666666666666667, 3.3666666666666667]}）。第二次写的是同一帧，浏览器解的是同一帧，
+ * 用户看到的就是「跳两下」。判据与 {@link sameFrame} 同一张栅格：同一帧 = 不必再写。</p>
+ *
+ * @param {number} target  目标内容时间（秒）
+ * @param {number} current 最近一次真正写进 currentTime 的落点（秒）；NaN / 非数字 = 没有写过
+ * @param {number} fps     帧率；未知时退化成 1ms 容差
+ * @return {boolean} true = 需要写
+ */
+export function shouldSeekWrite(target, current, fps) {
+  const t = num(target)
+  if (t == null) return false
+  const c = num(current)
+  if (c == null) return true
+  return !sameFrame(t, c, fps)
+}
+
+/**
  * 时间码 hh:mm:ss:ff（帧号两位）。
  *
  * 口径（与 snapToFrame 同一张网格，只差一个 1e-3 帧的容差）：

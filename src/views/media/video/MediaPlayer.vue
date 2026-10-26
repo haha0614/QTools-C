@@ -83,6 +83,18 @@
           aria-hidden="true"
           @error="coverOn = false"
         />
+        <!-- P5.18 转码档拖动「画面跟随」层：转码流在浏览器里不可 seek（seekable=[0,0]），
+             拖动时改写 currentTime 是无效的，所以把**目标位置的帧**铺满整个舞台（不是只在小浮层里）。
+             与 .p-stream-cover 同一套定位（绝对铺满 + object-fit:contain + 黑底），
+             父级尺寸不再依赖 video 的临时 videoWidth/videoHeight（见 .p-stage video / .p-fs-wrap 的 P5.18 注释）。 -->
+        <img
+          v-if="scrubOn"
+          class="p-scrub-cover"
+          :src="scrubSrc"
+          alt=""
+          aria-hidden="true"
+          @error="scrubOn = false"
+        />
         <button v-if="tapVisible" class="p-tap" type="button" @click="onTapPlay">▶ 点击播放</button>
         <button v-if="restartVisible" class="p-restart" type="button" @click="onRestart">从头播放</button>
       </div>
@@ -432,6 +444,7 @@ import {
   halfFrameSec,
   normFps,
   sameFrame,
+  shouldSeekWrite,
   snapToFrame,
   timecode,
   markJumpTarget,
@@ -704,19 +717,34 @@ const frameUrl = ref('')
 /** 当前「想要的」帧键（id:整秒）：迟到的响应按它过滤，避免鼠标已经移开还盖上旧帧 */
 const wantedFrameKey = ref('')
 
+/**
+ * 取帧预加载（P5.18）
+ *
+ * `decode()` 是修「预览框白屏」的关键：onload 只代表**字节**到齐，解码仍是异步的。
+ * 直接把 URL 交给 background-image / <img src> 时，解码完成之前那一层是空的 —— 露出的是容器底色
+ * （亮色主题下 --bg-3 ≈ 白 → 用户看到的白屏）。所以这里等 decode() 落地再回调，
+ * 调用方拿到 done(true) 时这张图一定已经可以立刻画出来。
+ *
+ * 失败（400/404/503）一律 done(false)，由 framePicker 记进失败记忆并静默回退精灵图。
+ */
+function preloadImage(url, key, done) {
+  if (typeof Image !== 'function') {
+    done(false)
+    return
+  }
+  const img = new Image()
+  img.onload = () => {
+    const d = typeof img.decode === 'function' ? img.decode() : null
+    if (d && typeof d.then === 'function') d.then(() => done(true), () => done(true))
+    else done(true)
+  }
+  img.onerror = () => done(false)
+  img.src = url
+}
+
 const framePicker = createFramePicker({
   urlOf: (id, sec) => api.frameUrl(id, sec),
-  // 用 <img> 预加载：图进了浏览器缓存，换成 background-image 时零延迟；失败（4xx/5xx）走 onerror
-  load: (url, key, done) => {
-    if (typeof Image !== 'function') {
-      done(false)
-      return
-    }
-    const img = new Image()
-    img.onload = () => done(true)
-    img.onerror = () => done(false)
-    img.src = url
-  },
+  load: preloadImage,
   onFrame: ({ key, url }) => {
     if (key !== wantedFrameKey.value) return // 鼠标已经移到别的秒了，迟到的帧丢弃
     frameUrl.value = url
@@ -766,6 +794,9 @@ watch(
     wantedFrameKey.value = ''
     frameUrl.value = ''
     frameExact.value = false
+    // P5.18：跟随层同理 —— 上一部片的跟随帧不能留在舞台上
+    clearScrub()
+    scrubPicker.reset()
   }
 )
 
@@ -988,6 +1019,8 @@ function seekOrigTo(sec) {
   t = Math.max(0, t)
   try {
     el.currentTime = t
+    lastSeekWrite = t
+    lastSeekWriteAt = Date.now()
   } catch {
     /* 忽略：未就绪的流拒绝赋值 */
   }
@@ -1028,7 +1061,8 @@ function applySource(v, absStart, seekAbs) {
  *
  * 现象（用户反馈）：非原画档位松手后先黑屏再播放。原因不是解码慢，而是转码流本身：
  * 服务端边转边推分片 MP4，重挂 src 后是 emptied → waiting（空 buffer），要等 ffmpeg 首字节。
- * 这里把「目标位置的精确帧」盖在 <video> 上（同样是 /media/frame/{id}?t= 那份永久缓存图），
+ * 这里把「目标位置的精确帧」盖在 <video> 上（P5.18：走 /media/frame/{id}?t=<小数> 的精确取帧，
+ * 不再是按整秒缓存的那一张 —— 否则画面会先落到整秒位置），
  * canplay 一到就撤。取帧失败（400/404/503）@error 静默撤掉：宁可短暂黑屏，也不弹错、不挡播放。
  */
 const coverOn = ref(false)
@@ -1037,9 +1071,10 @@ let coverTimer = 0
 
 function showStreamCover(v, sec) {
   if (!v || !v.id) return
-  // 帧接口按整秒落盘缓存（framePicker.frameSecond 同一口径），这里向下取整到该秒
-  const whole = Math.max(0, Math.floor(Number(sec) || 0))
-  coverSrc.value = api.frameUrl(v.id, whole)
+  // P5.18：**不再向下取整到整秒**。取整的那一帧是「这一秒的第一帧」，
+  // 于是用户先看到整秒位置、再看到真正落点 —— 正是反馈里的「先跳到整秒位置再跳到点击位置」。
+  // 这里改用精确取帧（帧接口的 t 支持小数，这一路不落盘缓存，见 useMediaApi.frameExactUrl）。
+  coverSrc.value = api.frameExactUrl(v.id, Math.max(0, Number(sec) || 0))
   coverOn.value = true
   if (coverTimer) clearTimeout(coverTimer)
   // 兜底：后端 504 / 客户端断流时 canplay 永远不来，12s 后自己撤（后端首字节超时是 15s）
@@ -1055,6 +1090,55 @@ function clearStreamCover() {
     coverTimer = 0
   }
   coverOn.value = false
+}
+
+/* ------------------------------- P5.18 转码档拖动：舞台级「画面跟随」 */
+
+/**
+ * 拖动中的跟随层（只用于转码档）
+ *
+ * 用户反馈：「非原画档拖动的时候视频画面不会跟随进度条变化（原画档可以，拖到哪里画面就是哪里）」。
+ * 原画档能跟手是因为 currentTime 直接生效；转码流的 seekable 恒为 [0,0]（P5.17 实测），
+ * currentTime 写不进去 —— 唯一能「跟着走」的画面就是取帧接口给的静止帧。
+ * P5.17 只在进度条上方的小浮层里给了它（160×90），主画面仍是拖动前那一帧，
+ * 所以这里把它同时铺到**整个舞台**（.p-scrub-cover），松手后交给 .p-stream-cover 接棒。
+ *
+ * 取帧走整秒缓存（frameSecond 同一口径）：同一秒只请求一次、命中零延迟，请求数与 hover 同级。
+ * 精度由「拖动中的帧码 位置 hh:mm:ss:ff」与松手落点（精确起播秒）保证，与 P5.17 一致。
+ */
+const scrubOn = ref(false)
+const scrubSrc = ref('')
+const scrubWanted = ref('')
+
+const scrubPicker = createFramePicker({
+  urlOf: (id, sec) => api.frameUrl(id, sec),
+  load: preloadImage,
+  onFrame: ({ key, url }) => {
+    if (key !== scrubWanted.value) return // 已经拖到别的位置了，迟到的帧丢弃
+    scrubSrc.value = url
+    scrubOn.value = true
+  },
+  // 取帧失败：静默撤掉（下面还是暂停住的那一帧，比顶着错图强）
+  onFallback: ({ key }) => {
+    if (key === scrubWanted.value) scrubOn.value = false
+  }
+})
+
+/** 拖动到 target → 安排一次「跟随帧」（转码档专用；dragging 显式放行，否则 canRequestFrame 会拒） */
+function scheduleScrub(target) {
+  const id = props.video && props.video.id
+  if (!id) return
+  const sec = frameSecond(target, seekDur.value || 0)
+  scrubWanted.value = id + ':' + sec
+  scrubPicker.schedule(id, sec, { dragging: false, mobile: false, available: true })
+}
+
+/** 收起跟随层（松手 / 换源 / 换片） */
+function clearScrub() {
+  scrubPicker.leave()
+  scrubWanted.value = ''
+  scrubOn.value = false
+  scrubSrc.value = ''
 }
 
 /** 首帧就绪（canplay）：撒覆盖层。暂停态换流也会走到这里，所以不能只在 playing 里撤 */
@@ -1215,6 +1299,9 @@ onBeforeUnmount(() => {
   closeAudioGraph()
   // P5.15：撤掉取帧定时器并清空 LRU（不撤的话卸载后仍会补发一次请求、回调写到旧组件的 ref 上）
   framePicker.reset()
+  // P5.18：跟随层同样要撤（否则卸载后仍会往旧组件的 ref 上写一次）
+  clearScrub()
+  scrubPicker.reset()
   clearStreamCover()
   const el = videoEl.value
   const v = openedVideo || props.video
@@ -1255,6 +1342,10 @@ const seekRaf = createRafSeek({ apply: (t) => seekOrigTo(t) })
 /** 拖动期间是否因为转码档被本组件暂停过（松手后要按原状态恢复） */
 let dragAutoPaused = false
 
+/** P5.18：最近一次真正写进 <video>.currentTime 的落点（帧栅格上），用于「一次手势只写一次」 */
+let lastSeekWrite = NaN
+let lastSeekWriteAt = 0
+
 /**
  * 转码档拖动开始：暂停播放
  *
@@ -1288,6 +1379,8 @@ function onSeekInput(e) {
     // 「画面跟着进度条走」的东西。与 hover 共用 80ms 节流，请求数不会涨。
     pauseForTranscodeDrag()
     hoverPreview.run(() => showPreview(seekMax.value > 0 ? Number(target) / seekMax.value : 0))
+    // P5.18：主画面也要跟随（浮层只有 160×90，用户看的是舞台）—— 见 scheduleScrub 注释
+    scheduleScrub(target)
     return
   }
   // P5.14 原画档：拖动即写 currentTime，视频画面本身就跟手，浮层只重复一遍还挡进度 —— 收掉
@@ -1318,7 +1411,11 @@ function commitSeekTo(target) {
   if (!isTranscode.value) {
     // 原画：精确写 currentTime（实测 currentTime 就落在这个帧上，不取整）
     seekRaf.cancel()
-    seekOrigTo(target)
+    // P5.18：一次手势只写一次 —— input 的 rAF 落点若已经把同一帧写进去了，这里不再写第二次。
+    // 两次赋值 = 两次 seek 往返（用户看到的「跳两下」），而且第二次毫无信息量。
+    const justWrote =
+      Date.now() - lastSeekWriteAt < 400 && !shouldSeekWrite(target, lastSeekWrite, frameFps.value)
+    if (!justWrote) seekOrigTo(target)
     updateSeekUi()
     if (resume) tryPlay()
     return
@@ -1327,6 +1424,7 @@ function commitSeekTo(target) {
   // streamStart = target（不取整）→ 服务端 -ss target → 流的第 0 秒就是目标那一帧；
   // seekAbs 传 0：转码流 seekable=[0,0]，再写一次 currentTime 只会被浏览器夹回 0。
   seekRaf.cancel()
+  clearScrub() // 跟随帧的任务结束，接下来由 .p-stream-cover 挡黑屏
   applySource(props.video, target, 0)
   tryPlay()
 }
@@ -2503,7 +2601,10 @@ defineExpose({
   z-index: 6;
   border: 1px solid var(--line-2);
   border-radius: var(--radius);
-  background: var(--bg-2);
+  /* P5.18：底色必须是深色。--bg-3 / --bg-2 在亮色主题下是接近白的灰，
+     而这一格里装的是**视频画面**（精灵图切片 / 精确帧 / 预览片段），
+     任何一层没就绪时露出的就是那块白底 —— 用户反馈的「预览框白屏」。 */
+  background: #000;
   box-shadow: 0 6px 18px var(--accent-soft);
   overflow: hidden;
   pointer-events: none;
@@ -2527,7 +2628,8 @@ defineExpose({
   width: 160px;
   height: 90px;
   background-repeat: no-repeat;
-  background-color: var(--bg-3);
+  /* P5.18：深色底（原来是 --bg-3，亮色主题下 ≈ 白 → 精灵图解码完成前就是一块白屏） */
+  background-color: #000;
 }
 
 /* P5.15 精确帧层：绝对铺满浮层，盖在精灵图切片 / 预览片段之上（兜底先出、真帧后到）。
@@ -2539,7 +2641,9 @@ defineExpose({
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
-  background-color: var(--bg-3);
+  /* P5.18：深色底 + 只有 decode() 落地后才会挂上来（见 preloadImage），
+     于是「精确帧还没出来」的那一瞬露出的是精灵图/黑底，不是白屏。 */
+  background-color: #000;
 }
 
 /* 「精确帧」小标记：右上角，只在真帧已盖上时出现（用户能分辨这是真帧还是精灵图兜底） */
@@ -2565,7 +2669,7 @@ defineExpose({
   width: 160px;
   height: 90px;
   object-fit: cover;
-  background: var(--bg-3);
+  background: #000;
   opacity: 0;
   transition: opacity 0.12s linear;
 }
@@ -2644,8 +2748,13 @@ defineExpose({
 
 /* P4.3 全屏容器：包住 .p-stage（<video>）与 .p-ctrl（自绘控制栏）。
    平时它就是 .player 里的弹性列（顶替原来 .p-stage 占的那一格），视觉与改动前一致。 */
+/* P5.18（「变矮」的根因）：这里原来是 flex: 1 1 auto —— basis 是 auto，即**内容尺寸**，
+   而内容里 <video> 的固有尺寸会在换流瞬间归零（emptied 时 videoWidth/videoHeight = 0）。
+   flex 基准一变，剩余空间的重分配就跟着变：底部 .p-tags 拿回自己的一行（实测 27 → 42px），
+   .p-stage 正好少掉这 15px（实测 550 → 534），也就是用户看到的「画面突然变矮一点、再回归」。
+   改成 basis 0 之后，舞台高度只由「播放器高度 − 头部 − 标签栏」决定，与媒体元数据无关。 */
 .p-fs-wrap {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -2722,9 +2831,15 @@ defineExpose({
   align-items: center;
   justify-content: center;
   background: #000;
+  /* P5.18：换流瞬间 video 的固有尺寸会归零，任何「按内容撑开」的可能性都要掐掉 */
+  overflow: hidden;
 }
 
+/* P5.18：<video> 与两个覆盖层走同一套定位（绝对铺满 + contain），
+   于是「有没有元数据」「有没有覆盖层」都不再影响舞台尺寸，换流前后 stage rect 完全一致。 */
 .p-stage video {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   max-width: 100%;
@@ -2737,6 +2852,19 @@ defineExpose({
    绝对定位铺满舞台、pointer-events:none（点画面照常暂停/播放），
    z-index 1 < .p-tap 的 2 < 控制条 5 —— 不挡「点击播放」也不挡控制条。 */
 .p-stream-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+  pointer-events: none;
+}
+
+/* P5.18 拖动跟随层：与 .p-stream-cover 完全同一定位（换手时画面不跳），
+   z-index 1 与它同级 —— 两者不会同时出现（clearScrub → applySource 顺序保证）。 */
+.p-scrub-cover {
   position: absolute;
   inset: 0;
   z-index: 1;
@@ -2792,6 +2920,9 @@ defineExpose({
   padding: 10px 14px;
   max-height: 22vh;
   overflow-y: auto;
+  /* P5.18：标签栏不参与收缩 —— 否则 flex 分配的微小变化会让它多吞一行，
+     舞台跟着少一行高度（用户看到的「画面变矮」）。 */
+  flex: 0 0 auto;
   background: var(--bg-2);
   border-top: 1px solid var(--line);
 }
