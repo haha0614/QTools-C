@@ -508,26 +508,30 @@ try {
   /* ============================ F. logo 回首页 ============================ */
   console.log('\n[F] header logo 点击回首页（路由 push，不整页刷新）')
   const brand = await js(
-    '(function(){' + RECT_LIB + 'var a=document.querySelector(".p-brand");var b=a?a.getBoundingClientRect():null;return{tag:a?a.tagName:null,href:a?a.getAttribute("href"):null,title:a?a.getAttribute("title"):null,aria:a?a.getAttribute("aria-label"):null,rect:R(a),tabIndex:a?a.tabIndex:null,badge:getComputedStyle(document.querySelector(".p-brand-badge")).backgroundColor,text:(document.querySelector(".p-brand-text")||{}).textContent};})()'
+    '(function(){' + RECT_LIB + 'var a=document.querySelector(".p-brand");var b=a?a.getBoundingClientRect():null;var m=document.querySelector(".p-brand-mark");var t=document.querySelector(".p-brand-text");return{tag:a?a.tagName:null,href:a?a.getAttribute("href"):null,title:a?a.getAttribute("title"):null,aria:a?a.getAttribute("aria-label"):null,rect:R(a),tabIndex:a?a.tabIndex:null,markTag:m?m.tagName:null,markPaths:m?m.querySelectorAll("path").length:0,markColor:m?getComputedStyle(m).color:null,markW:m?m.getBoundingClientRect().width:null,text:t?t.textContent.trim():null};})()'
   )
   console.log('    标签=' + brand.tag + ' href=' + brand.href + ' title=' + JSON.stringify(brand.title) + ' tabIndex=' + brand.tabIndex)
   ok(brand.tag === 'A', 'f1) .p-brand 是 <a>（原生链接语义：可 Tab 聚焦 / 回车触发 / 中键新开）', String(brand.tag))
   ok(brand.href === '/', 'f2) href="/"（无 router 时也有可见的落点，不是死链）', String(brand.href))
   ok(brand.tabIndex === 0, 'f3) 可键盘聚焦（tabIndex=0）', String(brand.tabIndex))
+  /* P5.33：徽标从「青」字方块换成 Lucide rabbit 内联图标，判据随之改成「图标节点在 + 文本节点在」；
+     hover 反馈从「徽标底色变化」改成「图标颜色变化」（线性图标没有底色可变了）。 */
+  ok(brand.markTag === 'svg' && brand.markPaths === 5, 'f4) 标识里有图标节点（内联 svg + 5 条 Lucide 路径）', brand.markTag + ' / ' + brand.markPaths)
+  ok(brand.text === '青兔工具箱', 'f5) 标识里有文本节点《青兔工具箱》（与 logo-lockup.svg 字标一致）', JSON.stringify(brand.text))
   await mouse('mouseMoved', brand.rect.x + 2, brand.rect.y + 2)
   await sleep(220)
-  const badgeHover = await js('getComputedStyle(document.querySelector(".p-brand-badge")).backgroundColor')
-  console.log('    hover 前徽标底色=' + brand.badge + ' hover 后=' + badgeHover)
-  ok(badgeHover !== brand.badge, 'f4) hover 有轻微反馈（徽标底色变化）', brand.badge + ' -> ' + badgeHover)
+  const markHover = await js('getComputedStyle(document.querySelector(".p-brand-mark")).color')
+  console.log('    hover 前图标色=' + brand.markColor + ' hover 后=' + markHover)
+  ok(markHover !== brand.markColor, 'f6) hover 有轻微反馈（图标颜色变化）', brand.markColor + ' -> ' + markHover)
   await clickAt(brand.rect.x + brand.rect.w / 2, brand.rect.y + brand.rect.h / 2)
   const nav = await js(
     '(function(){return{log:window.__P529.pushLog.slice(),route:window.__P529.router.currentRoute.value.path,boot:window.__P529.meta.bootId,path:location.pathname};})()'
   )
   console.log('    push 调用=' + JSON.stringify(nav.log) + ' currentRoute=' + nav.route + ' location.pathname=' + nav.path)
-  ok(nav.log.length >= 1 && nav.log[0] === '/', 'f5) 点击走 router.push("/")', JSON.stringify(nav.log))
-  ok(nav.route === '/', 'f6) 路由真的切到 /（不是只改了地址栏）', String(nav.route))
+  ok(nav.log.length >= 1 && nav.log[0] === '/', 'f7) 点击走 router.push("/")', JSON.stringify(nav.log))
+  ok(nav.route === '/', 'f8) 路由真的切到 /（不是只改了地址栏）', String(nav.route))
   const bootAfter = await js('window.__P529.meta.bootId')
-  ok(bootAfter === nav.boot, 'f7) 没有整页刷新（bootId 不变）', String(bootAfter))
+  ok(bootAfter === nav.boot, 'f9) 没有整页刷新（bootId 不变）', String(bootAfter))
   /* 键盘：聚焦 + 回车 */
   await js('document.querySelector(".p-brand").focus()')
   const before = (await js('window.__P529.pushLog.length')) | 0
@@ -537,7 +541,7 @@ try {
   const after = (await js('window.__P529.pushLog.length')) | 0
   const focused = await js('document.activeElement && document.activeElement.className')
   console.log('    回车前 push 数=' + before + ' 回车后=' + after + ' activeElement=' + focused)
-  ok(after > before, 'f8) 键盘回车同样触发回首页（<a> 原生行为）', before + ' -> ' + after)
+  ok(after > before, 'f10) 键盘回车同样触发回首页（<a> 原生行为）', before + ' -> ' + after)
 
   /* ============================ G. containment（本次未碰的既有能力） ============================ */
   console.log('\n[G] containment：本次改动没有碰到的既有能力仍在')

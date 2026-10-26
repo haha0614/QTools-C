@@ -1,0 +1,105 @@
+{
+  "geom": {
+    "iconEm": 1.34,
+    "gapEm": 0.35,
+    "iconInkEm": null,
+    "lockup": {
+      "青兔工具箱": {
+        "widthEm": 5.71,
+        "heightEm": 1.34,
+        "textEm": 4,
+        "inkHeightEm": 0.982
+      },
+      "青兔": {
+        "widthEm": 3.31,
+        "heightEm": 1.34,
+        "textEm": 1.6,
+        "inkHeightEm": 0.98
+      }
+    },
+    "chosen16": "c3"
+  },
+  "manifest": [
+    {
+      "file": "src/assets/brand/final/logo-icon.svg",
+      "bytes": 637
+    },
+    {
+      "file": "src/assets/brand/final/logo-icon-light.svg",
+      "bytes": 632
+    },
+    {
+      "file": "src/assets/brand/final/logo-icon-dark.svg",
+      "bytes": 632
+    },
+    {
+      "file": "src/assets/brand/final/logo-icon-16.svg",
+      "bytes": 543
+    },
+    {
+      "file": "src/assets/brand/final/logo-icon-16-light.svg",
+      "bytes": 538
+    },
+    {
+      "file": "src/assets/brand/final/logo-icon-16-dark.svg",
+      "bytes": 538
+    },
+    {
+      "file": "src/assets/brand/final/logo-lockup.svg",
+      "bytes": 3254
+    },
+    {
+      "file": "src/assets/brand/final/logo-lockup-short.svg",
+      "bytes": 1969
+    },
+    {
+      "file": "src/assets/brand/final/logo-lockup-light.svg",
+      "bytes": 3244
+    },
+    {
+      "file": "src/assets/brand/final/logo-lockup-short-light.svg",
+      "bytes": 1959
+    },
+    {
+      "file": "src/assets/brand/final/logo-lockup-dark.svg",
+      "bytes": 3244
+    },
+    {
+      "file": "src/assets/brand/final/logo-lockup-short-dark.svg",
+      "bytes": 1959
+    },
+    {
+      "file": "public/favicon.svg",
+      "bytes": 669
+    },
+    {
+      "file": "devtools/p533-brand/out/candidates/icon16-c1.svg",
+      "bytes": 601
+    },
+    {
+      "file": "devtools/p533-brand/out/candidates/icon16-c2.svg",
+      "bytes": 605
+    },
+    {
+      "file": "devtools/p533-brand/out/candidates/icon16-c3.svg",
+      "bytes": 543
+    },
+    {
+      "file": "devtools/p533-brand/out/candidates/icon16-c4.svg",
+      "bytes": 551
+    },
+    {
+      "file": "devtools/p533-brand/out/candidates/favicon-chip-a.svg",
+      "bytes": 669
+    },
+    {
+      "file": "devtools/p533-brand/out/candidates/favicon-chip-b.svg",
+      "bytes": 669
+    },
+    {
+      "file": "devtools/p533-brand/out/candidates/favicon-chip-c.svg",
+      "bytes": 669
+    }
+  ],
+  "fontFace": 0
+}

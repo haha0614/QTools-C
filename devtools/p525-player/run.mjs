@@ -664,11 +664,14 @@ try {
   /* ========================= G 头部站点标识 ========================= */
   console.log('\n[G] 头部站点标识（复用 APP_INFO / 与左栏 Logo 同一套语言）')
   const gExpr =
-    "JSON.stringify((function(){var brand=document.querySelector('.p-brand');var head=document.querySelector('.p-head');var info=document.querySelector('.p-info');var title=document.querySelector('.p-title');var b=brand?brand.getBoundingClientRect():null;var h=head?head.getBoundingClientRect():null;var i=info?info.getBoundingClientRect():null;var badge=document.querySelector('.p-brand-badge');var text=document.querySelector('.p-brand-text');return {has:!!brand,text:text?(text.textContent||'').trim():null,textDisplay:text?getComputedStyle(text).display:null,badge:badge?(badge.textContent||'').trim():null,rect:b?{x:b.x,y:b.y,w:b.width,h:b.height,right:b.right}:null,height:b?b.height:null,color:brand?getComputedStyle(brand).color:null,fontSize:text?getComputedStyle(text).fontSize:null,titleSize:title?getComputedStyle(title).fontSize:null,titleWeight:title?getComputedStyle(title).fontWeight:null,brandWeight:text?getComputedStyle(text).fontWeight:null,head:h?{x:h.x,y:h.y,w:h.width,right:h.right}:null,infoLeft:i?i.x:null,docScrollW:document.documentElement.scrollWidth,winW:window.innerWidth}})())"
+    "JSON.stringify((function(){var brand=document.querySelector('.p-brand');var head=document.querySelector('.p-head');var info=document.querySelector('.p-info');var title=document.querySelector('.p-title');var b=brand?brand.getBoundingClientRect():null;var h=head?head.getBoundingClientRect():null;var i=info?info.getBoundingClientRect():null;var mark=document.querySelector('.p-brand-mark');var text=document.querySelector('.p-brand-text');return {has:!!brand,text:text?(text.textContent||'').trim():null,textDisplay:text?getComputedStyle(text).display:null,markTag:mark?mark.tagName:null,markPaths:mark?mark.querySelectorAll('path').length:0,markW:mark?mark.getBoundingClientRect().width:null,rect:b?{x:b.x,y:b.y,w:b.width,h:b.height,right:b.right}:null,height:b?b.height:null,color:brand?getComputedStyle(brand).color:null,fontSize:text?getComputedStyle(text).fontSize:null,titleSize:title?getComputedStyle(title).fontSize:null,titleWeight:title?getComputedStyle(title).fontWeight:null,brandWeight:text?getComputedStyle(text).fontWeight:null,head:h?{x:h.x,y:h.y,w:h.width,right:h.right}:null,infoLeft:i?i.x:null,docScrollW:document.documentElement.scrollWidth,winW:window.innerWidth}})())"
   const G = JSON.parse(await js(gExpr))
-  console.log('    brand=' + JSON.stringify(G.rect) + ' text=' + JSON.stringify(G.text) + ' badge=' + G.badge + ' color=' + G.color + ' font=' + G.fontSize + ' weight=' + G.brandWeight)
-  ok(G.has && G.text === '青兔在线工具箱', 'g1) 头部出现站点名（取自 APP_INFO.name，不是硬编码第二份）', JSON.stringify(G.text))
-  ok(G.badge === '青', 'g2) 首字徽标 = 「青」（与左栏 Logo 同形）', JSON.stringify(G.badge))
+  console.log('    brand=' + JSON.stringify(G.rect) + ' text=' + JSON.stringify(G.text) + ' mark=' + G.markTag + ' ' + G.markW + 'px color=' + G.color + ' font=' + G.fontSize + ' weight=' + G.brandWeight)
+  /* P5.33：标识从「首字徽标 + APP_INFO.name」换成「Lucide rabbit 图标 + 品牌锁定名」，
+     g1 的文案随之变成《青兔工具箱》（与 logo-lockup.svg 的字标逐字一致），g2 从「徽标文字 = 青」
+     改成「图标节点在场且 18px」。页面标题 / 浏览器标题仍走 APP_INFO.name，未改动。 */
+  ok(G.has && G.text === '青兔工具箱', 'g1) 头部出现品牌锁定名《青兔工具箱》（与字标资产一致）', JSON.stringify(G.text))
+  ok(G.markTag === 'svg' && G.markPaths === 5 && near(G.markW, 18, 0.5), 'g2) 首字徽标 → 18px Lucide rabbit 图标（与左栏 Logo 同源）', G.markTag + '/' + G.markPaths + ' paths/' + G.markW + 'px')
   ok(near(G.height, 22, 0.6), 'g3) 标识高 22px（20–22 区间）', String(G.height))
   ok(parseFloat(G.fontSize) < parseFloat(G.titleSize), 'g4) 字号小于标题（不与标题抢注意力）', G.fontSize + ' vs 标题 ' + G.titleSize)
   ok(parseFloat(G.brandWeight) < parseFloat(G.titleWeight), 'g5) 字重也比标题轻（次级信息）', G.brandWeight + ' vs ' + G.titleWeight)
@@ -679,8 +682,8 @@ try {
   await viewport(375, 780)
   await sleep(340)
   const G2 = JSON.parse(await js(gExpr))
-  console.log('    375: badge=' + G2.badge + ' textDisplay=' + G2.textDisplay + ' brand=' + JSON.stringify(G2.rect) + ' head=' + JSON.stringify(G2.head))
-  ok(G2.has && G2.badge === '青', 'g8) 375 宽：只留首字徽标（仍能看出是哪个站）', String(G2.badge))
+  console.log('    375: mark=' + G2.markTag + ' ' + G2.markW + 'px textDisplay=' + G2.textDisplay + ' brand=' + JSON.stringify(G2.rect) + ' head=' + JSON.stringify(G2.head))
+  ok(G2.has && G2.markTag === 'svg' && near(G2.markW, 18, 0.5), 'g8) 375 宽：只留图标（图标本身就是完整标识）', G2.markTag + ' ' + G2.markW + 'px')
   ok(G2.textDisplay === 'none', 'g9) 375 宽：站点名隐藏（把宽度让给标题与按钮）', String(G2.textDisplay))
   ok(G2.head.right <= G2.winW + 0.5 && G2.docScrollW <= G2.winW + 1, 'g10) 375 宽：头部不溢出、无横向滚动', G2.head.right + '/' + G2.winW + ' doc=' + G2.docScrollW)
   await shot('header-brand-375')

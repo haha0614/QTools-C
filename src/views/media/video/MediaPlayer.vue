@@ -17,13 +17,16 @@
          .p-actions .btn 定义，宽度不再随文案长短跳动。
          P5.31 起三组是「收藏 | 画质切换 | 关闭 Esc」（画质下拉与 .btn 同高 30px，见 .p-qsel）。 -->
     <div class="p-head">
-      <!-- P5.25（用户反馈 7）：头部左侧补站点标识，与布局左栏的 Logo 同一套语言（首字徽标 + 站点名）。
-           名称只从 APP_INFO.name 取（src/utils/constants.js 是全站唯一来源），这里不再硬编码第二份品牌名。
-           尺寸 20–22px、次级色、hover 提亮：它只负责「这是哪个站」，不与标题抢注意力。 -->
+      <!-- P5.25（用户反馈 7）：头部左侧补站点标识，与布局左栏的 Logo 同一套语言。
+           尺寸 20–22px、次级色、hover 提亮：它只负责「这是哪个站」，不与标题抢注意力。
+           P5.33 起字形从「青」字徽标换成 Lucide rabbit，文案改取品牌锁定名 @/utils/brandMark 的 BRAND.name
+           （与 logo-lockup.svg 的字标逐字一致；页面标题 / 浏览器标题仍走 APP_INFO.name）。 -->
       <!-- P5.29（用户反馈 6）：标识区改成**能回首页的链接** —— 用 <a href="/"> 保留原生语义
            （可 Tab 聚焦、回车触发、可中键新开），点击时 preventDefault 改走路由 push，不整页刷新。 -->
+      <!-- P5.33（A1 定稿方案）：首字徽标 → Lucide rabbit 图标（内联 SVG，stroke 吃继承色，亮/暗主题同一份），
+           文本沿用原始品牌名，字号 / 行高 / 次级色与 P5.25 完全一致（18px 图标 + 12.5px 文本，行高仍是 22px）。 -->
       <a class="p-brand" href="/" :title="brandTitle" :aria-label="brandTitle" @click="onBrandClick($event)">
-        <span class="p-brand-badge" aria-hidden="true">{{ brandInitial }}</span>
+        <BrandMark class="p-brand-mark" :size="18" />
         <span class="p-brand-text">{{ brandName }}</span>
       </a>
       <div class="p-info">
@@ -610,12 +613,17 @@ import PreviewTimeBar from './PreviewTimeBar.vue'
 import { coverFrameWidth, coveredSwitch, freezeElementFrame } from './coverFreeze'
 // P5.24-A：「设置」浮层（倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键）拆成纯展示组件
 import PlayerSettings from './PlayerSettings.vue'
-// P5.25：站点标识（名称 + 首字徽标）与全站共用一份常量，不在播放页另存一份品牌名
-import { APP_INFO } from '@/utils/constants'
+// P5.33：品牌图形（Lucide rabbit）与字标文案来自同一份品牌模块；路径数据同时被
+// devtools/p533-brand/build.mjs 用来生成 src/assets/brand/final/*.svg
+import BrandMark from '@/components/BrandMark.vue'
+import { BRAND } from '@/utils/brandMark'
 
-/** P5.25（用户反馈 7）：头部站点标识的文案来源 —— 与 AppShell 左栏 Logo 同源 */
-const brandName = APP_INFO.name
-const brandInitial = APP_INFO.name.charAt(0)
+/**
+ * P5.33：标识文案 = 品牌锁定组合的短名「青兔工具箱」（与 logo-lockup.svg 的字标**逐字一致**）。
+ * 注意与 APP_INFO.name（"青兔在线工具箱"，浏览器标题 / 页面标题 / 关于弹窗用）是两件事：
+ * 字标是从得意黑**导出轮廓**的固定字形，改了文案就得重新导字形，因此品牌位用固定串，页面标题仍走 APP_INFO。
+ */
+const brandName = BRAND.name
 
 /**
  * P5.29（用户反馈 6）：「header 里面的 logo 区域点击应当回到主页」。
@@ -3333,10 +3341,9 @@ defineExpose({
   color: var(--fg);
 }
 
-.p-brand:hover .p-brand-badge {
-  background: var(--accent);
-  color: var(--accent-on);
-  transition: background 0.15s ease, color 0.15s ease;
+/* hover：图标从强调色提亮到正文色（原来徽标是「浅底→强调底」，换成线性图标后只剩颜色这一层语言） */
+.p-brand:hover .p-brand-mark {
+  color: var(--fg);
 }
 
 .p-brand:focus-visible {
@@ -3345,19 +3352,14 @@ defineExpose({
   border-radius: 4px;
 }
 
-.p-brand-badge {
+/* P5.33：图标位（原 22px 方块徽标）—— 18px 线性图标 + 强调色；不再有底色块，
+   在 --bg-2 上呈现为「细线 + 一点颜色」，比实心徽标安静，不与 15.5px/700 的标题抢注意力。
+   强调色在亮/暗两套主题里都来自 --qt-primary（#409eff），不做第二套配色。 */
+.p-brand-mark {
   flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  background: var(--accent-soft);
+  display: block;
   color: var(--accent);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1;
+  transition: color 0.15s ease;
 }
 
 /* 站点名：单行省略（长名字不撑破头部，窄屏整段隐藏只留徽标） */
@@ -4289,7 +4291,8 @@ defineExpose({
     padding: 8px 10px;
   }
 
-  /* P5.25：窄屏只留首字徽标（站点名让位给标题与三组按钮），徽标本身就是完整标识 */
+  /* P5.25 / P5.33：窄屏只留图标（站点名让位给标题与三组按钮）—— 16px 起「只放图标」是 v3 实测出的尺寸下限：
+     五个汉字在 16px 高度下压成一条灰带，谁都读不出来，所以窄屏不缩字、直接去掉文字。 */
   .p-brand-text {
     display: none;
   }

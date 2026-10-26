@@ -24,6 +24,7 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 // 图标按名显式导入（本项目没有 unplugin-auto-import，模板里不能凭空出现组件名）
 import { House, List, Menu, Moon, Picture, Sunny, User, UserFilled, VideoPlay } from '@element-plus/icons-vue'
+import BrandMark from '@/components/BrandMark.vue'
 import { APP_INFO } from '@/utils/constants'
 // P4.3：侧栏选中态的纯判定（首页精确、/media 精确、人物含 /media/person/:id）
 import { isNavActive } from '@/utils/navActive'
@@ -273,7 +274,11 @@ onBeforeUnmount(() => {
       >
         <el-icon :size="18"><Menu /></el-icon>
       </button>
-      <span class="qt-topbar__brand">{{ APP_INFO.name }}</span>
+      <!-- P5.33：顶栏品牌位与播放页 / 左栏共用同一枚 Lucide rabbit 图标（内联，跟随 --qt-primary） -->
+      <span class="qt-topbar__brand">
+        <BrandMark class="qt-topbar__mark" :size="18" />
+        <span class="qt-topbar__brand-text">{{ APP_INFO.name }}</span>
+      </span>
       <span v-if="showPageTitle" class="qt-topbar__title">{{ pageTitle }}</span>
       <!-- 右侧只放账号入口：移动端不放主题切换（主题跟随系统） -->
       <RouterLink v-if="state.user" class="qt-topbar__account" to="/me" aria-label="个人中心">
@@ -288,9 +293,9 @@ onBeforeUnmount(() => {
 
     <!-- 左侧导航栏（桌面固定；移动端为覆盖式抽屉） -->
     <aside ref="railRef" class="qt-rail">
-      <!-- Logo：收起态只留首字徽标 -->
+      <!-- Logo：P5.33 起首字徽标换成 Lucide rabbit 图标（收起态只留图标，图标本身就是完整标识） -->
       <RouterLink class="qt-rail__logo" to="/" title="返回首页">
-        <span class="qt-rail__logo-badge">{{ APP_INFO.name.charAt(0) }}</span>
+        <BrandMark class="qt-rail__logo-mark" :size="24" />
         <span class="qt-rail__logo-text">{{ APP_INFO.name }}</span>
       </RouterLink>
 
@@ -458,19 +463,11 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-.qt-rail__logo-badge {
+/* P5.33：图标位（原 28px 实心方块徽标）：24px 线性图标摆在同样的 28px 槽位里，左缘不移动 */
+.qt-rail__logo-mark {
   flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--qt-radius-sm);
-  background-color: var(--qt-primary);
-  color: var(--qt-on-primary);
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1;
+  display: block;
+  color: var(--qt-primary);
 }
 
 /* 导航区：独立滚动，底部区因此始终可见 */
@@ -736,12 +733,28 @@ onBeforeUnmount(() => {
 
   .qt-topbar__brand {
     flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     max-width: 40%;
+    min-width: 0;
     overflow: hidden;
     color: var(--qt-text-primary);
     font-size: 14px;
     font-weight: 600;
     white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .qt-topbar__mark {
+    flex: 0 0 auto;
+    display: block;
+    color: var(--qt-primary);
+  }
+
+  .qt-topbar__brand-text {
+    min-width: 0;
+    overflow: hidden;
     text-overflow: ellipsis;
   }
 

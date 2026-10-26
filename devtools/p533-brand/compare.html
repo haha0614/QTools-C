@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>P5.33 品牌资产自查（16px 1:1 / 尺寸阶梯 / 22px 上栏 / favicon / 180）</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: #ffffff; color: #1f2328; font: 12px/1.5 "Segoe UI", "Microsoft YaHei", system-ui, sans-serif; }
+  section { padding: 14px 18px; border-bottom: 1px solid #e3e6ea; }
+  h2 { margin: 0 0 10px; font-size: 12px; font-weight: 600; color: #4b5157; letter-spacing: .2px; }
+  .row { display: flex; align-items: flex-end; gap: 26px; flex-wrap: wrap; }
+  .cell { text-align: center; }
+  .cap { margin-top: 6px; font-size: 11px; color: #6b7280; }
+  .card { display: inline-flex; align-items: center; justify-content: center; padding: 6px; background: #fff; border: 1px solid #e3e6ea; border-radius: 4px; }
+  .zoom { width: 128px; height: 128px; overflow: hidden; background: #fff; border: 1px solid #e3e6ea; margin-top: 6px; }
+  .zoom img { width: 16px; height: 16px; transform: scale(8); transform-origin: 0 0; image-rendering: pixelated; display: block; }
+  .dark-bg { background: #1c2024; color: #c9d1d9; }
+  .dark-bg .cap { color: #8b949e; }
+  .dark-bg h2 { color: #adbac7; }
+  .stack { display: flex; flex-direction: column; gap: 12px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module" src="./compare.js"></script>
+</body>
+</html>
