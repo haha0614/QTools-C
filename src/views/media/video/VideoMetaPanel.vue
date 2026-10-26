@@ -46,6 +46,39 @@
       <div v-if="loading" class="vp-hint">加载中…</div>
       <p v-if="readNote" class="vp-hint vp-note">{{ readNote }}</p>
 
+      <!-- P5.32（用户需求「信息栏播放列表置顶」）：置顶的「播放列表」= **本次播放的上/下文** ——
+           从哪个列表点进来就按那个顺序列出，当前项高亮 + 序号，点任一项直接切到该片。
+           来源优先级由页面（VideoPage）在 openPlayer 时定好：playlist > browse > recent > library；
+           没有播放列表时这里的默认口径就是「播放前的页面视频排序」（browse）。
+           与下方「我的播放列表」（可加入 / 移出 / 新建，写服务端）严格分层：这一块**只读导航**，
+           所以不渲染任何编辑控件、也不发任何请求。列表长时区间内部滚动（上限见 CONTEXT_MAX = 1000）。 -->
+      <section class="vp-sec vp-sec-ctx" data-vp-sec="playlist-context">
+        <h3 class="vp-h3">
+          播放列表<span class="vp-h3n">{{ context ? context.total : 0 }}</span>
+        </h3>
+        <template v-if="context">
+          <p class="vp-ctx-src" :title="context.label">{{ context.label }}</p>
+          <ul v-if="context.rows.length" ref="ctxListEl" class="vp-ctx">
+            <li v-for="r in context.rows" :key="r.id">
+              <button
+                class="vp-ctx-row"
+                :class="{ on: r.current }"
+                type="button"
+                :aria-current="r.current ? 'true' : null"
+                :title="r.title"
+                @click="emit('pick', r.id)"
+              >
+                <span class="vp-ctx-n">{{ r.n }}</span>
+                <span class="vp-ctx-t">{{ r.title }}</span>
+              </button>
+            </li>
+          </ul>
+          <p v-else class="vp-hint">当前列表里没有可播放的条目</p>
+        </template>
+        <!-- 上下文缺失（索引没加载出来 / 来源列表为空）：只说明，不报错，也不给点不动的行 -->
+        <p v-else class="vp-hint">未记录播放上下文 · 上/下一部不可用</p>
+      </section>
+
       <!-- 人物 / 演员（P3-B 只读 → P5.3-B 可编辑）：
            「素人」是**真实人物**（后端把没有真演员的视频都绑给它），按普通人物 chip 渲染，
            形状与真实人物一致、只把主色降为次级色；persons 与 actors 都为空时才用同一个 chip 兜底。
@@ -323,7 +356,7 @@
            full 正常。接口未就绪（404/405/501/网络异常）时只显示一句提示，不抛异常、不影响播放。 -->
       <section class="vp-sec vp-sec-pl" data-vp-sec="playlists">
         <h3 class="vp-h3">
-          播放列表<span class="vp-h3n">{{ plJoinedCount }}</span>
+          我的播放列表<span class="vp-h3n">{{ plJoinedCount }}</span>
         </h3>
         <p v-if="readOnly" class="vp-hint vp-policy">播放列表保存在服务端：当前为「仅查看」档，只能查看，不能加入或移出。</p>
         <template v-else>
@@ -456,10 +489,17 @@ const props = defineProps({
    * P5.23：停靠态 —— 内容作为播放页右侧常驻列的内嵌块（不再是 fixed 浮层抽屉）。
    * 只换容器定位与滚动归属，抽屉内部结构（标题 / 元信息 / 评分 / 标签 / 人物 / 工作室 / 标记 / 播放列表）一字不动。
    */
-  dock: { type: Boolean, default: false }
+  dock: { type: Boolean, default: false },
+  /**
+   * P5.32：本次播放的上下文（置顶「播放列表」分区）——
+   * { label, total, source, name, index, rows:[{ id, n, title, current }] }；
+   * 由页面用 playbackContext.js 的 contextLabel / contextRows 现算，面板只负责渲染与 emit('pick')。
+   * null = 上下文缺失（分区显示一句说明，上/下一部分区外已禁用）。
+   */
+  context: { type: Object, default: null }
 })
 
-const emit = defineEmits(['close', 'updated', 'tag-created', 'person-created', 'notify', 'markers'])
+const emit = defineEmits(['close', 'updated', 'tag-created', 'person-created', 'notify', 'markers', 'pick'])
 
 const api = useMediaApi()
 
@@ -1040,9 +1080,25 @@ watch(
 /* P4.5：setup 期先按 props 回填一次（SSR / 首帧就能看到预填值） */
 fillTimeline(true)
 
+/* P5.32：置顶上下文分区的滚动容器与「当前项滚进视野」——
+   上下文最长 1000 条，切到第 300 条时若列表回到顶部，用户看不到自己在哪。
+   面板由页面按 (videoId#openSeq) 重建，所以每次换片都会重新居中一次；
+   手算 scrollTop 而不是 scrollIntoView：后者会把外层右栏 / 页面一起滚走。 */
+const ctxListEl = ref(null)
+
+function revealContextCurrent() {
+  const box = ctxListEl.value
+  if (!box) return
+  const row = box.querySelector('.vp-ctx-row.on')
+  if (!row) return
+  const top = row.offsetTop - box.clientHeight / 2 + row.offsetHeight / 2
+  box.scrollTop = Math.max(0, top)
+}
+
 onMounted(() => {
   // 元数据晚到：duration 打开抽屉时可能还是 0，挂载后按真实时长补/夹一次
   fillTimeline(false)
+  revealContextCurrent()
   // P5.26：播放列表分区（off 档直接返回，不发请求）
   loadPlaylists()
   if (!isFull.value) {
@@ -1337,6 +1393,109 @@ onMounted(() => {
 .vp-mini:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+/* P5.32（用户需求「信息栏播放列表置顶」）：置顶的「播放列表」= 播放上下文（只读导航）。
+   与下方 .vp-pl（我的播放列表，可编辑）同一套变量，但样式刻意区分：
+     - 上下文行是一整行按钮（序号 + 标题），整行可点 → 明确「点了就换片」；
+     - 当前项用强调色描边 + 浅底 + 左侧强调条（一眼看出「我在这里」）；
+     - 列表自身滚动（max-height 由 --ms-ctx-h 给），不把下面的人物 / 评分 / 标签挤走。 */
+.vp-sec-ctx {
+  /* 12 条左右可见，长列表区间内部滚动 */
+  --ms-ctx-h: 288px;
+}
+
+.vp-ctx-src {
+  margin: -2px 0 0;
+  overflow: hidden;
+  color: var(--fg-dim);
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.vp-ctx {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: var(--ms-ctx-h);
+  margin: 0;
+  padding: 2px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-3);
+}
+
+.vp-ctx::-webkit-scrollbar {
+  width: 8px;
+}
+
+.vp-ctx::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fg) 22%, transparent);
+}
+
+.vp-ctx-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 28px;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+}
+
+.vp-ctx-row:hover {
+  border-color: var(--line);
+  background: var(--bg);
+}
+
+.vp-ctx-row:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* 当前项：强调色描边 + 浅底 + 左侧 2px 强调条（不改变行高，滚动位置不跳） */
+.vp-ctx-row.on {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: var(--accent-soft);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.vp-ctx-n {
+  flex: 0 0 auto;
+  min-width: 24px;
+  color: var(--fg-dim);
+  font-size: 11.5px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.vp-ctx-row.on .vp-ctx-n {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* 标题占满剩余宽度：长标题省略而不是把整行撑出横向滚动条 */
+.vp-ctx-t {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* P5.26（用户反馈 7）：信息栏「播放列表」分区 —— 与人物 / 标签同一套卡片式分组的语言：

@@ -205,7 +205,13 @@ try {
   // P5.25（用户反馈 3）：默认改成**完全不可见**（0）。旧口径「半透明但看得见（>0 且 <0.5）」作废 ——
   // 0.34 的竖条压在画面上像渲染残影，用户认不出那是按钮。新口径：未 hover 时 opacity 必须正好 0。
   ok(parseFloat(A.toggle.opacity) === 0, 'c) 默认完全不可见（未 hover，opacity = 0；P5.25 新口径）', A.toggle.opacity)
-  ok(A.otherEntries.headButtons.length === 4 && A.otherEntries.headButtons.every((t) => !/信息/.test(t)), '不破坏：头部剩下 4 个按钮且已无「信息」', A.otherEntries.headButtons.join('|'))
+  // P5.31（用户反馈 4）：头部第二格从「‹ 上一部 / 下一部 ›」换成画质下拉 <select> ——
+  //   <button> 数从 4 降到 2（收藏 + 关闭），但「已无『信息』」这条原意不变（头部仍不是信息入口）。
+  ok(
+    A.otherEntries.headButtons.length === 2 && A.otherEntries.headButtons.every((t) => !/信息|上一部|下一部/.test(t)),
+    '不破坏：头部只剩 2 个 button（收藏 / 关闭），且无「信息」、无上一部 / 下一部（P5.31 换成画质下拉）',
+    A.otherEntries.headButtons.join('|')
+  )
   ok(A.styles.bodyDisplay === 'flex' && A.styles.bodyDirection === 'row', '不破坏：.p-body 仍是 flex 行容器', A.styles.bodyDisplay + '/' + A.styles.bodyDirection)
   ok(A.styles.sidePosition === 'static' && A.styles.sideOverflowY === 'auto', '不破坏：桌面右栏仍是静态列 + 自己纵向滚动', A.styles.sidePosition + '/' + A.styles.sideOverflowY)
   ok(A.sideOpen === true, '不破坏：桌面默认展开', String(A.sideOpen))

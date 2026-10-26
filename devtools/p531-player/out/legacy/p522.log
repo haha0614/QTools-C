@@ -1,0 +1,57 @@
+模板 vnode 规模 rows=60
+{
+  "rafHz": 62,
+  "playing": {
+    "ticks": 60,
+    "posWrites": 60,
+    "textWrites": 25,
+    "vueUpdates": 60,
+    "flushTotalMs": 11.3,
+    "flushMaxMs": 1.5,
+    "tickTotalMs": 2.2,
+    "tickMaxMs": 0.5
+  },
+  "paused": {
+    "ticks": 0,
+    "posWrites": 0,
+    "textWrites": 0,
+    "vueUpdates": 0,
+    "flushTotalMs": 0,
+    "flushMaxMs": 0,
+    "tickTotalMs": 0,
+    "tickMaxMs": 0
+  },
+  "dragging": {
+    "dragWrites": 55,
+    "ticks": 0,
+    "posWrites": 0,
+    "textWrites": 55,
+    "vueUpdates": 55,
+    "flushTotalMs": 6.3,
+    "flushMaxMs": 0,
+    "tickTotalMs": 0,
+    "tickMaxMs": 0
+  },
+  "hidden": {
+    "startReturned": false,
+    "ticks": 0,
+    "posWrites": 0,
+    "textWrites": 0,
+    "vueUpdates": 0,
+    "flushTotalMs": 0,
+    "flushMaxMs": 0,
+    "tickTotalMs": 0,
+    "tickMaxMs": 0
+  },
+  "resumed": {
+    "startReturned": true,
+    "ticks": 32,
+    "posWrites": 30,
+    "textWrites": 13,
+    "vueUpdates": 30,
+    "flushTotalMs": 2.4,
+    "flushMaxMs": 0,
+    "tickTotalMs": 0.4,
+    "tickMaxMs": 0
+  }
+}

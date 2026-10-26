@@ -1,0 +1,6 @@
+
+✗ 实测中断：Error: CDP 连到了别的页面：/video|P5.31 播放页 4 项 UI 微调 实测台
+    at file:///E:/111/project/QTools/QTools-C/devtools/p531-player/run.mjs:300:55
+
+P5.31 真浏览器实测：0 passed, 1 failed
+  XX 实测中断：Error: CDP 连到了别的页面：/video|P5.31 播放页 4 项 UI 微调 实测台

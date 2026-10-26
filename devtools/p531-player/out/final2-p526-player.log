@@ -1,0 +1,146 @@
+
+舞台 {"x":0,"y":64.328125,"w":1169,"h":935.671875,"right":1169,"bottom":1000}  信息栏 {"x":1169,"y":64.328125,"w":416,"h":935.671875,"right":1585,"bottom":1000}
+区内点 {"x":585,"y":134}  区外点 {"x":1209,"y":284}
+
+[A] 拖音量到 65% → 浮标签显示「65%」、位置不遮挡、松手淡出
+  ✓ a0) 前置：音量滑块 86×20（几何未变） — {"x":101.859375,"y":967,"w":86,"h":20,"right":187.859375,"bottom":987}
+    按住时：value=0.65  标签={"text":"65%","op":0.996932,"r":{"x":136.953125,"y":946,"w":38,"h":16,"right":174.953125,"bottom":962}}
+  ✓ a1) 真实鼠标按下 65% 位置 → <video>.volume ≈ 0.65 — 0.65
+  ✓ a2) 浮标签文本 = 「65%」（0–100 整数） — "65%"
+  ✓ a3) 拖动中标签可见（opacity ≥0.99，0.18s 过渡内实测） — 0.996932
+  ✓ a4) 标签紧贴滑块：下沿距滑块顶 ≤6px（不再浮在控制条上方 14px） — 5px（控制条顶 954）
+  ✓ a5) 标签矩形与滑块矩形不相交（不遮挡滑块） — [{"x":136.953125,"y":946,"w":38,"h":16,"right":174.953125,"bottom":962},{"x":101.859375,"y":967,"w":86,"h":20,"right":187.859375,"bottom":987}]
+  ✓ a6) 标签完全在视口内（不溢出左 / 右 / 上边） — {"x":136.953125,"y":946,"w":38,"h":16,"right":174.953125,"bottom":962}
+    [shot] devtools\p526-player\out\01-volume-pct-dragging.png
+  ✓ a7) 松手 700ms 后浮标签淡出（opacity 回到 0） — 0
+
+[B] 视频区内滚轮 ±5% / 到端点停 / 区内 preventDefault / 区外不拦
+    连续 5 次上滚：0.45 → 0.5 → 0.55 → 0.6 → 0.65  标签=65%
+  ✓ b1) 每次 +5%（0.40 → 0.45 … 0.65，逐档精确） — 0.45 → 0.5 → 0.55 → 0.6 → 0.65
+  ✓ b2) 连续 5 次 = +25%（0.40 → 0.65） — 0.65
+  ✓ b3) 滚轮同样弹百分比浮标签（「65%」） — 65%/1
+  ✓ b4) 视频区内 5 次滚轮全部 preventDefault（页面不会被顺带滚走） — [true,true,true,true,true]
+  ✓ b5) 区内滚轮后 window.scrollY 仍为 0（没有滚动页面） — 0
+  ✓ b6) 连续 5 次下滚 = -25%（0.65 → 0.40） — 0.4
+  ✓ b7) 已到 100% 再上滚 → 停在 1（不越界） — 1
+  ✓ b8) 已到 0% 再下滚 → 停在 0（不越界） — 0
+  ✓ b9) 静音（0%）时上滚 → 解除静音并 +5% — 0.05 muted=false
+  ✓ b10) 设置浮层内滚轮不改音量（面板列表自己滚） — volume=0.5
+  ✓ b11) 设置浮层内滚轮不 preventDefault — [false]
+  ✓ b12) 视频区外（信息栏）滚轮不 preventDefault（页面 / 面板照常滚） — [false]
+  ✓ b13) 区外滚轮完全不改音量 — 0.5
+  ✓ b14) 区外滚轮确实作用在信息栏（自身滚动），window 未被拦 — [{"winY":0,"sideTop":0,"sideH":38},{"winY":0,"sideTop":0,"sideH":38}]
+  ✓ b16) Ctrl+滚轮（页面缩放）不被接管：音量不变、不 preventDefault — volume=0.5 prevented=[false]
+  ✓ b17) Shift+滚轮（横向滚动）同样不被接管 — volume=0.5
+
+[B-fs] 全屏内滚轮仍然有效
+  ✓ b15) 全屏状态下滚轮仍然调音量（+5%） — fullscreen={"fs":false,"tag":null} volume=0.45
+
+[C] 暂停后：移出 → ≤400ms 淡出；移入 → 1；设置浮层打开时移出不隐藏
+  ✓ c1) 前置：播放中 + 指针在视频区 → 控制条可见 — {"op":1,"hidden":false,"settings":false}
+    暂停 + 移出：13 帧采样，opacity≤0.01 于 185ms
+  ✓ c2) 暂停态移出视频区 → 控制条 opacity 归 0（不再常驻） — t=185ms
+  ✓ c3) 淡出用时 ≤400ms（<2500ms 的旧全屏阈值，是「移出即收」） — 185ms
+  ✓ c4) 同时带上 is-ctrl-hidden（pointer-events:none / 不可点） — {"op":0.00393815,"hidden":true,"settings":false}
+    [shot] devtools\p526-player\out\02-paused-ctrl-hidden.png
+    移入：opacity≥0.99 于 186ms
+  ✓ c5) 暂停态移入视频区 → 控制条 ≤400ms 恢复 opacity 1 — 186ms
+  ✓ c6) 前置：设置浮层已打开 — true
+  ✓ c7) 浮层打开时移出视频区 → 控制条**不**隐藏（闸门仍在） — {"op":1,"hidden":false,"settings":true}
+  ✓ c8) 浮层关闭后再移出 → 仍然收起（闸门只针对浮层本身） — t=181ms
+    拖动探针：seek value 0 → 177  按下后控制条={"op":1,"hidden":false,"settings":false}
+  ✓ c9) 拖进度条期间移出 → 不隐藏（第二条闸门仍在） — {"op":1,"hidden":false,"settings":false}
+
+[D] 标记「以当前位置为起点 / 终点」→「取当前」+ title 完整
+    区间态按钮：["取当前","取当前"]  title=["把起点设成此刻的播放位置（打开时 00:04）","把终点设成此刻的播放位置"]
+  ✓ d1) 区间态两个「取当前」按钮都在（起点 / 终点各一个） — ["取当前","取当前"]
+  ✓ d2) 文案缩短为「取当前」（不再是 7–8 个字的「以当前位置为起点」） — ["取当前","取当前"]
+  ✓ d3) 每个按钮文案 ≤3 字（用户要求「简短」） — 3/3
+  ✓ d4) title 仍写全语义（起点 / 终点 + 此刻的播放位置） — ["把起点设成此刻的播放位置（打开时 00:04）","把终点设成此刻的播放位置"]
+  ✓ d5) title 里说明「播放位置」（完整语义没丢） — ["把起点设成此刻的播放位置（打开时 00:04）","把终点设成此刻的播放位置"]
+  ✓ d6) aria-label 也写全语义（读屏用户不因短文案丢上下文） — ["以当前播放位置为起点","以当前播放位置为终点"]
+    [shot] devtools\p526-player\out\03-mark-now-buttons.png
+  ✓ d7) 单点态同样缩短为「取当前」（原「取当前时间」） — ["取当前"]
+  ✓ d8) 单点态 title 说明「标记位置」 — ["把标记位置设成此刻的播放位置（打开时 00:04）"]
+
+[E] 控制条底座 = 竖向渐变（顶 alpha 0 / 底 .55）+ 白帧最坏背衬 chip 对比度 ≥4.5:1
+    亮: bg=rgba(0, 0, 0, 0) veil=0, 0, 0, 0.55 hair=rgb(48, 49, 51) blur=none 白帧合成=255
+      .p-btn-play chip=rgba(0, 0, 0, 0.58) 像素采样=54,54,54 对比度=12.08:1（解析 5.32:1）
+      .p-btn chip=rgba(0, 0, 0, 0.58) 像素采样=54,54,54 对比度=12.08:1（解析 5.32:1）
+      .p-seek-now chip=rgba(0, 0, 0, 0.58) 像素采样=54,54,54 对比度=12.08:1（解析 5.32:1）
+      .p-ab-text chip=rgba(0, 0, 0, 0.58) 像素采样=55,55,55 对比度=11.9:1（解析 5.32:1）
+    暗: bg=rgba(0, 0, 0, 0) veil=0, 0, 0, 0.55 hair=rgb(229, 234, 243) blur=none 白帧合成=255
+      .p-btn-play chip=rgba(0, 0, 0, 0.58) 像素采样=54,54,54 对比度=12.08:1（解析 5.32:1）
+      .p-btn chip=rgba(0, 0, 0, 0.58) 像素采样=54,54,54 对比度=12.08:1（解析 5.32:1）
+      .p-seek-now chip=rgba(0, 0, 0, 0.58) 像素采样=54,54,54 对比度=12.08:1（解析 5.32:1）
+      .p-ab-text chip=rgba(0, 0, 0, 0.58) 像素采样=55,55,55 对比度=11.9:1（解析 5.32:1）
+  ✓ e1) 底座 backgroundColor 完全透明（alpha 0，原 .06 / .07） — rgba(0, 0, 0, 0) / rgba(0, 0, 0, 0)
+  ✓ e2) 渐变最上端 alpha = 0（原「白雾 2%」已不存在） — 0 / 0
+  ✓ e3) 渐变最下端 alpha ≈ .55（底部一小段才是底色） — 0.55 / 0.55
+  ✓ e4) 不再挂 backdrop-filter（顶部透明区不许被色带模糊糊掉，原 14px） — none / none
+  ✓ e5) 底座变淡后 chip 加深（alpha ≥ .54，原 .50） — 0.58/0.58/0.58/0.58 | 0.58/0.58/0.58/0.58
+  ✓ e6) 亮色：白帧最坏背衬下白字对比度 ≥4.5:1（实测像素） — 11.9:1
+  ✓ e7) 暗色：白帧最坏背衬下白字对比度 ≥4.5:1（实测像素） — 11.9:1
+  ✓ e8) 控制条文字仍是 --p-ink = #fff（可读性由 chip 承担，没有回退底座） — rgb(255, 255, 255) | rgb(255, 255, 255) | rgb(255, 255, 255) | rgb(255, 255, 255)
+    [shot] devtools\p526-player\out\04-ctrl-contrast-white-frame.png
+
+[F] 信息栏 toggle：视觉 20×64 不变，命中 / hover 激活区拉高
+    sweep={"x":1159,"minY":435,"maxY":629,"height":195,"rect":{"x":1149,"y":500.15625,"w":20,"h":64}}
+  ✓ f1) 视觉尺寸仍是 20×64（像素 rect 未变） — 20×64
+  ✓ f2) 命中区高度 ≥120px（elementFromPoint 逐点实测） — 195px
+  ✓ f3) 命中区至少是视觉高度的 2 倍（上下各扩一段） — 195 vs 视觉 64
+  ✓ f4) 命中区以按钮为中心上下对称（沿左边缘上下移动都能触发） — 532 vs 532.15625
+  ✓ f5) 指针在视觉盒之外、命中区内 → 按钮同样浮起（is-shown / opacity 1） — {"op":"1","shown":"p-side-toggle is-shown is-open","hits":true}
+  ✓ f6) 该探针点在视觉盒上方 ≥20px（确实是扩展出来的区域） — 443 vs 视觉顶 500.16
+    [shot] devtools\p526-player\out\05-side-toggle-hit-area.png
+
+[G] 信息栏「播放列表」分区：查看 / 加入 / 移出 / 新建 + 三档策略
+    初始：{"exists":true,"h3":"我的播放列表1","hints":[],"creating":false,"inputValue":null,"rows":[{"name":"收藏夹","count":"3 个","joined":true,"action":"移出","actionTitle":"把本片从「收藏夹」移出"},{"name":"稍后看","count":"2 个","joined":false,"action":"加入","actionTitle":"把本片加入「稍后看」"}]}
+  ✓ g1) 信息栏出现「播放列表」分区（与人物 / 评分 / 标签 / 标记同级） — 我的播放列表1
+  ✓ g2) 分区标题 = 播放列表 + 计数 — "我的播放列表1"
+  ✓ g3) 列出服务端清单（2 条，来自 GET /api/media/playlists） — ["收藏夹","稍后看"]
+  ✓ g4) 查看本片所在列表：已在本片的列表标为 joined 且给「移出」 — {"name":"收藏夹","count":"3 个","joined":true,"action":"移出","actionTitle":"把本片从「收藏夹」移出"}
+  ✓ g5) 不在本片的列表给「加入」 — {"name":"稍后看","count":"2 个","joined":false,"action":"加入","actionTitle":"把本片加入「稍后看」"}
+    [shot] devtools\p526-player\out\06-playlist-section.png
+    加入后：[{"name":"收藏夹","count":"3 个","joined":true,"action":"移出","actionTitle":"把本片从「收藏夹」移出"},{"name":"稍后看","count":"2 个","joined":true,"action":"移出","actionTitle":"把本片从「稍后看」移出"}]  请求={"method":"POST","path":"/api/media/playlist/p2/videos","body":"{\"videoIds\":[\"v-p526\"]}"}
+  ✓ g6) 加入路径：点击「加入」→ POST /api/media/playlist/{id}/videos — POST /api/media/playlist/p2/videos
+  ✓ g7) 请求体带本片 id（videoIds 幂等追加） — {"videoIds":["v-p526"]}
+  ✓ g8) 加入后该行立即变「已加入 + 移出」（不整页刷新） — [["收藏夹",true,"移出"],["稍后看",true,"移出"]]
+  ✓ g9) 成功提示文案与卡片入口同源（addedMessage：已加入播放列表「稍后看」：1 个视频） — ["已加入播放列表「稍后看」：1 个视频"]
+    移出后：[{"name":"收藏夹","count":"2 个","joined":false,"action":"加入","actionTitle":"把本片加入「收藏夹」"},{"name":"稍后看","count":"2 个","joined":true,"action":"移出","actionTitle":"把本片从「稍后看」移出"}]  请求={"method":"DELETE","path":"/api/media/playlist/p1/videos/v-p526","body":""}
+  ✓ g10) 移出路径：DELETE /api/media/playlist/{id}/videos/{videoId} — DELETE /api/media/playlist/p1/videos/v-p526
+  ✓ g11) 移出后该行回到「加入」态 — [["收藏夹",false,"加入"],["稍后看",true,"移出"]]
+  ✓ g12) 行内数量同步 -1（3 个 → 2 个，不重拉清单） — ["2 个","2 个"]
+  ✓ g12b) 移出成功提示（页面上看到的是「已从播放列表「收藏夹」移出本片」） — ["已从播放列表「收藏夹」移出本片"]
+    新建：creating=true 默认名="我的列表 2026-10-26" 请求={"method":"POST","path":"/api/media/playlists","body":"{\"name\":\"验收新列表\",\"videoIds\":[\"v-p526\"]}"}
+  ✓ g13) 新建路径：点「＋ 新建列表」→ 展开名称输入（默认名已填好） — "我的列表 2026-10-26"
+  ✓ g14) 默认名来自 defaultPlaylistName（我的列表 YYYY-MM-DD） — 我的列表 2026-10-26
+  ✓ g15) 创建并加入：POST /api/media/playlists（名字 + videoIds 一并带上） — {"name":"验收新列表","videoIds":["v-p526"]}
+  ✓ g16) 新建的列表立即出现在分区里 — ["验收新列表","收藏夹","稍后看"]
+    off 档：{"exists":true,"h3":"我的播放列表0","hints":["播放列表保存在服务端：当前为「仅查看」档，只能查看，不能加入或移出。"],"creating":false,"inputValue":null,"rows":[]}
+  ✓ g17) off 档：分区只给一句提示，不渲染加入 / 移出按钮 — ["播放列表保存在服务端：当前为「仅查看」档，只能查看，不能加入或移出。"]
+  ✓ g18) off 档不发任何播放列表请求（与面板「off 不发请求」的既有约定一致） — []
+    local 档：{"exists":true,"h3":"我的播放列表2","hints":["本地编辑：不会写入服务端 —— 播放列表保存在服务端，本地档不可写，请切到「完整编辑」档再试。"],"creating":false,"inputValue":null,"rows":[]}
+  ✓ g19) local 档：出现 usePlaylistAdd 的统一闸门文案（与卡片入口同一句） — ["本地编辑：不会写入服务端 —— 播放列表保存在服务端，本地档不可写，请切到「完整编辑」档再试。"]
+  ✓ g20) local 档不给加入 / 移出按钮（播放列表只存在服务端，本地档不可写） — 0
+    接口 500：["播放列表接口未就绪（GET /api/media/playlists）"]  pageErrors=[]
+  ✓ g21) 接口未就绪（500）→ 只显示一句可读提示，且不叠「还没有播放列表」 — ["播放列表接口未就绪（GET /api/media/playlists）"]
+  ✓ g22) 整个过程没有未捕获异常（window.onerror / unhandledrejection 计数 = 0） — []
+  ✓ g23) 接口未就绪时不渲染空壳行（不假装「还没有播放列表」） — 0
+    [shot] devtools\p526-player\out\07-playlist-unavailable.png
+
+[H] 不破坏：无横向溢出 / 控制条仍可见
+  ✓ h1) 1600 宽：文档无横向溢出 — 1585/1600
+  ✓ h2) 控制条与信息栏都还在（布局未破坏） — {"doc":1585,"win":1600,"body":1585,"ctrl":true,"side":true}
+    [shot] devtools\p526-player\out\08-final-1600.png
+
+[I] 窄屏（760 / 375）：无横向溢出，播放列表行不被撑宽
+    760×900：{"doc":745,"win":760,"side":745,"rows":[696,696,696],"body":745}
+  ✓ i760) 760 宽：无横向溢出（doc = 745 ≤ 760） — {"doc":745,"win":760,"side":745,"rows":[696,696,696],"body":745}
+  ✓ i760b) 760 宽：播放列表行不超出信息栏宽度 — [696,696,696] ≤ 745
+    375×780：{"doc":360,"win":375,"side":360,"rows":[311,311,311],"body":360}
+  ✓ i375) 375 宽：无横向溢出（doc = 360 ≤ 375） — {"doc":360,"win":375,"side":360,"rows":[311,311,311],"body":360}
+  ✓ i375b) 375 宽：播放列表行不超出信息栏宽度 — [311,311,311] ≤ 360
+    [shot] devtools\p526-player\out\09-narrow-375.png
+
+PASS 86/86 (P5.26 播放页 7 项改进)

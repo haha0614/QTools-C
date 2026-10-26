@@ -1,0 +1,29 @@
+{
+ "smiley-sans": {
+  "woff2_bytes": 1556,
+  "src_bytes": 2629764,
+  "upem": 1000,
+  "svg_width": 4.24,
+  "svg_height": 1.2,
+  "ascender": 0.97,
+  "descender": -0.23
+ },
+ "noto-sans-sc": {
+  "woff2_bytes": 2048,
+  "src_bytes": 17772300,
+  "upem": 1000,
+  "svg_width": 5.24,
+  "svg_height": 1.448,
+  "ascender": 1.16,
+  "descender": -0.288
+ },
+ "lxgw-wenkai": {
+  "woff2_bytes": 2008,
+  "src_bytes": 25928940,
+  "upem": 1000,
+  "svg_width": 5.24,
+  "svg_height": 1.184,
+  "ascender": 0.928,
+  "descender": -0.256
+ }
+}

@@ -1,0 +1,124 @@
+
+[A] 唯一 toggle 按钮：DOM 计数 / chevron / 贴在信息栏左边缘中部
+    📷 devtools\p524-side\out\01-desktop-open-idle.png
+    展开: side={"x":1172.91,"y":64.33,"w":412.09,"h":935.67,"right":1585,"bottom":1000} toggle={"x":1152.91,"y":500.16,"w":20,"h":64,"right":1172.91,"bottom":564.16} video.w=1172.91 opacity=0
+  ✓ a) 信息栏开关按钮在 DOM 里只有 1 个
+  ✓ a) 旧的竖向「信息」把手（.p-side-tab）已不存在
+  ✓ a) 头部「信息」按钮已移除
+  ✓ a) 面板头部「› 收起」按钮已移除（两套 UI 合并为一个）
+  ✓ a) 展开态图标 = 单个 chevron「›」（指向右 = 收起）
+  ✓ a) 按钮里没有「信息」两个字
+  ✓ a) 语义：aria-label=收起信息栏 / aria-pressed=true
+  ✓ b) 按钮 20×64（竖条，宽 18–22 / 高 56–72）
+  ✓ b) 按钮右边缘 = 信息栏左边缘（贴在栏左侧）
+  ✓ b) 垂直居中（栏的中线）
+  ✓ b) 圆角只在左侧
+  ✓ c) 默认完全不可见（未 hover，opacity = 0；P5.25 新口径）
+  ✗ 不破坏：头部剩下 4 个按钮且已无「信息」 → ☆ 收藏|关闭 Esc
+  ✓ 不破坏：.p-body 仍是 flex 行容器
+  ✓ 不破坏：桌面右栏仍是静态列 + 自己纵向滚动
+  ✓ 不破坏：桌面默认展开
+
+[B] hover 信息栏 → 按钮浮起；移出 → 淡回
+    📷 devtools\p524-side\out\02-hover-panel.png
+  ✓ c) 指针移入信息栏 → 按钮 opacity = 1
+  ✓ c) 同时带 is-shown 类（DOM 断言）
+  ✓ c) 指针移出 → opacity 回到 0（P5.25 新口径）
+
+[D] hover 按钮本身 → 同样浮起，且位置不动
+  ✓ c) 指针在按钮上 → opacity = 1
+  ✓ b) hover 不改变按钮 rect（位置固定）
+
+[E] 收起：同一个按钮 → 视频变宽、按钮滑到视频右边缘、图标变向
+    收起: toggle={"x":1565,"y":500.16,"w":20,"h":64,"right":1585,"bottom":564.16} video.w=1585 stage.w=1585
+    📷 devtools\p524-side\out\03-desktop-collapsed.png
+  ✓ a) 一次真实点击就让同一个按钮翻转状态与图标
+  ✓ b) 已收起（.p-side.is-closed）
+  ✓ 不破坏：收起后右栏宽度 0
+  ✓ a) 收起态图标 = 「‹」（指向左 = 展开）
+  ✓ a) 语义随状态翻转
+  ✓ b) 收起态：按钮右边缘 = 视频区右边缘（跟着栏走），y / 宽 / 高不变（只水平滑动）
+  ✓ b) 收起后按钮确实右移了（不是浮在画面中间）
+  ✓ e) 收起后视频变宽
+  ✓ e) 视频列占满整行宽度
+  ✓ f) 收起写入 localStorage
+  ✓ a) 收起态仍然只有一个按钮（没有另造一个把手）
+  ✓ 无横向滚动条
+
+[F] 再点同一个按钮 → 展开，rect 与初始一致
+    📷 devtools\p524-side\out\04-desktop-reopened.png
+  ✓ b) 重新展开后栏宽还原
+  ✓ b) 再展开后回到「贴栏左边缘」的原落点（与初始展开态一致）
+  ✓ f) 图标与 localStorage 同步回展开
+
+[G] 收起后刷新页面：localStorage 生效（面板一进来就是收起的）
+  ✓ f) 刷新前已收起并落盘
+  ✓ f) 刷新后启动即收起（读的就是 qt-player-side-open=0）
+  ✓ f) 刷新后 .p-side 是 is-closed
+  ✓ f) 刷新后仍然只有一个按钮，图标为「‹」
+  ✓ b) 刷新后（收起起点）按钮贴视频右边缘，垂直位置不变
+  ✓ f) 刷新后点一下仍能展开并写回 1
+
+[H] 信息栏内部：卡片式分组 / 统一标题 / 28px 按钮 / 评分对齐 / 6px 滚动条
+    sections: 播放列表 | 人物 | 工作室 | 评分 | 标签 | 标记 | 我的播放列表
+  ✗ d) 分区数 = 6（人物 / 工作室 / 评分 / 标签 / 标记 / 播放列表） → 7
+  ✗ d) 分区顺序与标题正确（P5.26 末位新增播放列表） → 播放列表|人物|工作室|评分|标签|标记|我的播放列表
+  ✓ d) 分区标题字号统一（12px）
+  ✓ d) 分区标题字重统一（600）
+  ✓ d) 每组都是圆角卡片（radius 10px）
+  ✓ d) 每组卡片内边距一致
+  ✓ d) 区组之间留白一致（10/10/10/10/10/10px）
+  ✓ d) 卡片底色与栏底色不同（看得见的分组）
+  ✓ d) 「＋ 加演员 / ＋ 加标签」高 28px
+  ✓ d) 「清除 / 单点 / 区间 / 加标记」高 28px
+  ✓ d) 星星等高
+  ✓ d) 星星与滑条左对齐（同一列起点）
+  ✓ d) 评分行右端（清除按钮）贴卡片内容右边缘
+  ✓ d) 分数右对齐 + 等宽数字
+  ✓ d) 分数贴到卡片内容右边缘
+  ✓ d) 该视口下右栏确实溢出可滚（才能量滚动条）
+  ✓ d) 右栏滚动条真实厚度 6px（offsetWidth − clientWidth − 边框）
+    📷 devtools\p524-side\out\05-scrollbar-thin.png
+    scrollbar rules: .p-side[data-v-08f52324]::-webkit-scrollbar | .p-side[data-v-08f52324]::-webkit-scrollbar-track | .p-side[data-v-08f52324]::-webkit-scrollbar-thumb | .p-side[data-v-08f52324]:hover::-webkit-scrollbar-thumb | .vp-body[data-v-1bf0d1da]::-webkit-scrollbar | .vp-body[data-v-1bf0d1da]::-webkit-scrollbar-track | .vp-body[data-v-1bf0d1da]::-webkit-scrollbar-thumb | .vp-body[data-v-1bf0d1da]:hover::-webkit-scrollbar-thumb | .vp-ctx[data-v-1bf0d1da]::-webkit-scrollbar | .vp-ctx[data-v-1bf0d1da]::-webkit-scrollbar-thumb
+  ✓ d) 右栏滚动条 CSS 宽度 = 6px
+  ✓ d) 滑块 3px 圆角
+  ✓ d) 滚动条默认半透明（--fg 混色 16%）
+  ✓ d) hover 加深（16% → 34%）
+  ✓ d) 浮层态 .vp-body 也是 6px 细滚动条
+  ✓ d) 滑条与按钮同高 28px（评分行对齐）
+    📷 devtools\p524-side\out\06-panel-beautified-light.png
+
+[I] 主题：暗色下卡片 / 文字仍成立
+    📷 devtools\p524-side\out\07-panel-beautified-dark.png
+  ✓ e) 暗色下卡片底色随主题改变（不是写死色）
+  ✓ e) 暗色下卡片仍有底色
+  ✓ e) 暗色下标题字号 / 字重不变
+  ✓ e) 暗色下卡片圆角不变
+
+[J] 窄屏 1000×800：右栏是浮层，开关贴浮层左边缘、不挤压视频
+    📷 devtools\p524-side\out\08-narrow-overlay.png
+  ✓ 不破坏：窄屏右栏 position:absolute（不占 flex 位）
+  ✓ 不破坏：窄屏收起时视频占满整行
+  ✓ b) 窄屏展开态：按钮贴浮层左边缘
+  ✓ b) 窄屏收起态：按钮贴视频右边缘
+  ✓ b) 窄屏两态只有水平位置不同（y / 宽 / 高不变）
+  ✓ 不破坏：窄屏展开时浮层覆盖视频
+  ✓ 不破坏：展开浮层不改变视频宽度（不挤压）
+  ✓ 不破坏：窄屏无横向滚动条
+  ✓ c) 窄屏收起时按钮常显（不靠 hover 才能发现）
+
+[K] 抽屉内部控件未被破坏
+    inner: {"persons":1,"personChip":1,"rate":true,"stars":10,"slider":true,"tags":2,"addTag":true,"marks":true,"studios":1,"tagPickerBtn":1}
+  ✓ 不破坏：人物 chip 仍在
+  ✓ 不破坏：10 颗星 + 评分滑条仍在
+  ✓ 不破坏：标签 chip 仍在（索引里的 2 个）
+  ✓ 不破坏：「＋ 加标签」入口仍在
+  ✓ 不破坏：标记新增表单仍在
+  ✓ 不破坏：工作室 chip 仍在
+    📷 devtools\p524-side\out\09-panel-final.png
+
+========================================
+通过 81 项，失败 3 项
+  ✗ 不破坏：头部剩下 4 个按钮且已无「信息」 → ☆ 收藏|关闭 Esc
+  ✗ d) 分区数 = 6（人物 / 工作室 / 评分 / 标签 / 标记 / 播放列表） → 7
+  ✗ d) 分区顺序与标题正确（P5.26 末位新增播放列表） → 播放列表|人物|工作室|评分|标签|标记|我的播放列表

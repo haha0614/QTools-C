@@ -452,10 +452,14 @@ try {
   ok(near(volMid, 0.65, 0.03), 'a1) 真实鼠标按下 65% 位置 → <video>.volume ≈ 0.65', String(volMid))
   ok(pctMid && pctMid.text === '65%', 'a2) 浮标签文本 = 「65%」（0–100 整数）', pctMid ? JSON.stringify(pctMid.text) : 'n/a')
   ok(pctMid && pctMid.op >= 0.99, 'a3) 拖动中标签可见（opacity ≥0.99，0.18s 过渡内实测）', pctMid ? String(pctMid.op) : 'n/a')
+  // P5.31（用户反馈 1「百分比和音量条的距离太远了」）：旧口径「标签整体在控制条之上
+  // （bottom ≤ 控制条顶）」作废 —— 标签已从滑块顶 14px 收到 5px，必然压在控制条上沿那段
+  // 透明 padding 上（那里没有任何控件）。等价新口径：标签下沿距滑块顶 ≤6px，且与滑块不相交
+  //（a5 仍然逐矩形判相交），控制条顶只作日志。
   ok(
-    pctMid && pctMid.r.bottom <= ctrlRectA.y + 1,
-    'a4) 标签在控制条**之上**（不压在控制条控件上）',
-    pctMid ? r2(pctMid.r.bottom) + ' <= 控制条顶 ' + r2(ctrlRectA.y) : 'n/a'
+    pctMid && pctMid.r.y < sliderMid.y && sliderMid.y - pctMid.r.bottom > 0 && sliderMid.y - pctMid.r.bottom <= 6,
+    'a4) 标签紧贴滑块：下沿距滑块顶 ≤6px（不再浮在控制条上方 14px）',
+    pctMid ? r2(sliderMid.y - pctMid.r.bottom) + 'px（控制条顶 ' + r2(ctrlRectA.y) + '）' : 'n/a'
   )
   ok(
     pctMid && !(pctMid.r.x < sliderMid.right && pctMid.r.right > sliderMid.x && pctMid.r.y < sliderMid.bottom && pctMid.r.bottom > sliderMid.y),

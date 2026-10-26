@@ -1,0 +1,73 @@
+
+[a] 从第 4 个视频（Delta）进入：信息栏置顶分区 = 浏览顺序上下文
+  OK  a0) 置顶分区渲染出上下文行
+  OK  a1) 正在播放的是第 4 个视频 Delta
+  OK  a2) 信息栏有多个分区块 — playlist-context / 人物0 / 评分 / 标签0 / 标记0 / playlists
+  OK  a3) 置顶分区的第一块就是「播放列表」上下文分区
+  OK  a4) 上下文分区在最上面（其后才是人物 / 评分 / 标签…）
+  OK  a5) 分区标题行 = 默认口径「按当前浏览顺序 · 共 N 条」
+  OK  a6) 上下文顺序 = 播放前页面的视频排序（标题 A→Z），不是索引 added 序
+  OK  a7) 每行带序号
+  OK  a8) 第 4 项高亮（序号 4、aria-current=true）
+    [shot] devtools\p532-context\out\01-browse-context.png
+  OK  a9) 点第 3 项（真实鼠标事件）
+  OK  a10) 点第 3 项 → 播放 id 变成前一条 Charlie
+  OK  a11) 信息栏标题跟着换成 Charlie（换片链路走的是既有流程）
+  OK  a12) 点第 5 项
+  OK  a13) 点第 5 项 → 播放 id 变成下一条 Echo
+  OK  a14) 高亮跟着移到第 5 项
+
+[b] 控制条 ⏮⏭ 与快捷键 P/N：只走上下文顺序
+  OK  b1) 点控制条 ⏮
+  OK  b2) ⏮ → 上一条 Delta（不是索引序里的 Echo）
+  OK  b3) 点控制条 ⏭
+  OK  b4) ⏭ → 下一条 Echo（不是索引序里的 Charlie）
+  OK  b5) 快捷键 P → 上一条 Delta
+  OK  b6) 快捷键 N → 下一条 Echo
+
+[c] 越界禁用：第一条 ⏮ / 最后一条 ⏭
+  OK  c0) 打开第一条 Alpha
+  OK  c1) 第 1 项高亮
+  OK  c2) 第一条：⏮ 禁用（常驻，不是消失）
+  OK  c3) 第一条：⏭ 可用
+  OK  c4) 点一下禁用态的 ⏮
+  OK  c5) 禁用态点了不动（不会跳到无关视频）
+  OK  c6) 打开最后一条 Hotel
+  OK  c7) 最后一条：⏮ 可用
+  OK  c8) 最后一条：⏭ 禁用
+    [shot] devtools\p532-context\out\02-bounds-last.png
+
+[d] 从播放列表进入：分区标题显示播放列表名、顺序 = 列表顺序
+  OK  d0) 从 ?playlist=p1 深链打开 Delta
+  OK  d1) 分区标题行 = 来自播放列表：周末片单 · 共 3 条
+  OK  d2) 上下文顺序 = 播放列表顺序（Echo / Alpha / Delta），不是浏览顺序
+  OK  d3) 当前项是列表第 3 条
+  OK  d4) 列表最后一条：⏭ 禁用
+  OK  d5) 点 ⏮
+  OK  d6) ⏮ → 列表里的上一条 Alpha（不是浏览序里的 Echo）
+  OK  d7) 置顶分区标题 = 播放列表 — 播放列表3
+  OK  d8) 下方独立分区 = 我的播放列表（两者不混淆） — 我的播放列表1
+  OK  d9) 我的播放列表分区仍渲染服务端列表（可编辑分区没被顶部分区挤掉） — 1 行
+  OK  d10) 在上下文内换片后，来源与顺序都不变（快照语义）
+    [shot] devtools\p532-context\out\03-playlist-context.png
+  OK  d11) URL 上的 ?playlist 已去掉（真实路由变化）
+  OK  d12) 退出后上下文回落到浏览顺序（共 8 条）
+  OK  d13) 当前片在浏览序里是第 1 条（高亮跟着重算）
+
+[e] 上下文缺失：按钮禁用且不报错
+  OK  e1) 索引为空 → 没有播放器 / 没有上下文分区（不抛错） — {"player":false,"ctx":false,"empty":true,"msg":"没有符合条件的视频","errors":0}
+  OK  e2) 页面正常显示空态，没有崩 — 没有符合条件的视频
+  OK  e3) bare 证据台就绪（同一份 MediaPlayer.vue）
+  OK  e4) hasPrev=false：⏮ 在 DOM 里且禁用
+  OK  e5) hasNext=false：⏭ 在 DOM 里且禁用
+  OK  e6) 点禁用按钮不 emit prev/next（页面不会去乱找片）
+  OK  e7) 有上下文时 ⏮ 立即可用（禁用不是死状态）
+  OK  e8) 有上下文时 ⏭ 立即可用
+  OK  e9) 可用时点击正常 emit（事件链没被禁用改造破坏）
+  OK  e10) bare 台无未捕获错误
+  OK  f1) 全程无未捕获异常
+    [console] 无错误日志
+
+P5.32 播放上下文实测：55 passed, 0 failed
+截图：devtools\p532-context\out\01-browse-context.png, devtools\p532-context\out\02-bounds-last.png, devtools\p532-context\out\03-playlist-context.png
+EXIT=0

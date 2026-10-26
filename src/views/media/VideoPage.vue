@@ -271,6 +271,8 @@
           :all-persons="personList || EMPTY_LIST"
           :persons-loading="personsLoading"
           :persons-unavailable="personsUnavailable"
+          :context="ctxView"
+          @pick="playFromContext"
           @close="closeMeta"
           @updated="onMetaUpdated"
           @markers="onMetaMarkers"
@@ -325,7 +327,16 @@ import BatchBar from './video/BatchBar.vue'
 import VideoMetaPanel from './video/VideoMetaPanel.vue'
 // P5-B：加入播放列表弹层 + 播放列表顺序纯逻辑（归一化 / 保序重排 / 上一部下一部）
 import PlaylistPicker from './video/PlaylistPicker.vue'
-import { normalizePlaylistDetail, playlistNav } from './video/playlistOrder'
+import { normalizePlaylistDetail } from './video/playlistOrder'
+// P5.32：播放上下文（从哪个列表点进来就按那个顺序上/下一部 + 信息栏置顶分区）
+import {
+  contextLabel,
+  contextRows,
+  makePlaybackContext,
+  navFromContext,
+  pickPlaybackContext,
+  stepContextId
+} from './video/playbackContext'
 
 const api = useMediaApi()
 const tk = useMediaTrack()
@@ -897,14 +908,6 @@ const playlistId = computed(() => {
 /** { id, name, ids } —— ids 是服务端给的有序集合（顺序即播放顺序） */
 const playlistCtx = ref(null)
 
-/** 顺序里确实存在于索引的视频对象：缺索引的条目只跳过该条，不打断整条顺序 */
-const playlistVideos = computed(() => {
-  const ctx = playlistCtx.value
-  if (!ctx) return []
-  const map = byId.value
-  return ctx.ids.map((id) => map.get(id)).filter(Boolean)
-})
-
 function openPlaylistPicker() {
   if (readOnlyEdit.value) {
     showToast(HINT_OFF)
@@ -925,6 +928,8 @@ function onPlaylistAdded(msg) {
 
 /** 退出播放列表上下文：只去掉 URL 上的 ?playlist，不影响筛选 hash 与当前播放位置 */
 function exitPlaylistMode() {
+  // 上下文回落由下面的 watch(playlistCtx) 统一负责（清空 → 当前上下文来自播放列表时重新定位），
+  // 这里只改 URL：单一实现，避免两处各算一次
   playlistCtx.value = null
   const q = Object.assign({}, route.query)
   delete q.playlist
@@ -956,6 +961,13 @@ const cols3 = ref(lsGet(KEY_COLS) === '3')
 const quality = ref(loadQ())
 
 const curVideo = ref(null)
+/**
+ * P5.32：本次播放的上下文快照（{ ids, index, source, name, playlistId, hasPrev, hasNext }）。
+ * openPlayer 时按 playlist > browse > recent > library 定一次，之后换片只换 index；
+ * 播放中改筛选**不重算**（快照语义：从哪个列表点进来就按那个顺序走）。
+ * null = 上下文缺失（上/下一部禁用，信息栏分区只显示一句说明）。
+ */
+const pbCtx = ref(null)
 const openSeq = ref(0)
 const startPos = ref(0)
 const playerRef = ref(null)
@@ -1138,30 +1150,57 @@ const recentItems = computed(() => {
   return out
 })
 
+/* =========================================================================
+   P5.32：播放上下文（信息栏置顶「播放列表」+ 上/下一部 + 快捷键 P/N）
+   ========================================================================= */
+
+/** 当前筛选 + 排序结果的完整有序 id（网格的完整顺序；visibleLimit 只是渲染分块，不影响顺序） */
+const viewIds = computed(() => view.value.map((v) => v.id))
+/** 全库索引序：深链进来、不在当前筛选里的片子仍能照旧上/下一部（既有行为，收成一档「其它」来源） */
+const libraryIds = computed(() => videos.value.map((v) => v.id))
+/** 「最近观看」条的顺序（网格之外唯一能点进播放器的入口） */
+const recentIds = computed(() => recentItems.value.map((r) => r.id))
+
 /**
- * 上一部 / 下一部可用性
- *   1) 当前视频来自播放列表（URL ?playlist=<id>）→ 严格按播放列表顺序走（P5-B）；
- *   2) 否则照旧：优先在「当前筛选结果」里走，找不到退回全库（app.js:1002-1007）。
+ * 为某个 id 定上下文快照，来源优先级：playlist > browse > recent > library。
+ * 每一档都必须「确实包含这部片」才算命中 —— 从播放列表点进来时永远先按该列表顺序走，
+ * 没有播放列表时的默认口径就是 browse（= 播放前页面的视频排序）。
  */
-const navState = computed(() => {
-  const id = curVideo.value ? curVideo.value.id : ''
-  if (!id) return { hasPrev: false, hasNext: false, list: [], i: -1 }
-  if (playlistCtx.value) {
-    const vids = playlistVideos.value
-    const nav = playlistNav(
-      vids.map((v) => v.id),
-      id
-    )
-    if (nav.i >= 0) return { hasPrev: nav.hasPrev, hasNext: nav.hasNext, list: vids, i: nav.i, source: 'playlist' }
+function contextFor(id) {
+  const sources = []
+  const pl = playlistCtx.value
+  if (pl && Array.isArray(pl.ids) && pl.ids.length) {
+    sources.push({ source: 'playlist', ids: pl.ids, name: pl.name, playlistId: pl.id })
   }
-  let list = view.value
-  let i = list.findIndex((v) => v.id === id)
-  if (i < 0) {
-    list = videos.value
-    i = list.findIndex((v) => v.id === id)
+  sources.push({ source: 'browse', ids: viewIds.value })
+  sources.push({ source: 'recent', ids: recentIds.value })
+  sources.push({ source: 'library', ids: libraryIds.value })
+  return pickPlaybackContext(sources, id)
+}
+
+/** 信息栏置顶分区的数据模型：一行来源文案 + 行（序号用上下文真实下标，当前项高亮） */
+const ctxView = computed(() => {
+  const c = pbCtx.value
+  if (!c || c.index < 0) return null
+  const map = byId.value
+  return {
+    label: contextLabel(c),
+    source: c.source,
+    name: c.name,
+    total: c.total,
+    index: c.index,
+    rows: contextRows(c, (id) => {
+      const v = map.get(id)
+      return v ? v.title || '#' + id : ''
+    })
   }
-  return { hasPrev: i > 0, hasNext: i >= 0 && i < list.length - 1, list, i }
 })
+
+/**
+ * 上一部 / 下一部可用性：完全由上下文决定（越界即禁用，绝不跳到无关视频）。
+ * 上下文缺失（索引没加载出来 / 来源列表为空）时两个方向都禁用。
+ */
+const navState = computed(() => (curVideo.value ? navFromContext(pbCtx.value) : navFromContext(null)))
 
 /** 筛选/排序变化才算「换了一批卡片」：play 段不参与比较，避免看片回来丢位置（app.js:1661-1663） */
 const filterSig = computed(() => buildHash(Object.assign({}, state, { play: '' })))
@@ -1748,7 +1787,13 @@ function openPerson(id) {
   router.push('/media/person/' + encodeURIComponent(String(id)))
 }
 
-function openPlayer(id) {
+/**
+ * 打开播放器。
+ * @param {string} id 目标视频 id
+ * @param {object} [reuseCtx] 在**同一上下文内**换片时把上一份快照传回来（面板点击 / 上/下一部）；
+ *   缺省按来源优先级重新定一份（网格卡片 / 最近观看 / 深链都走这条）
+ */
+function openPlayer(id, reuseCtx) {
   const v = byId.value.get(id)
   if (!v) return
   // P5.23：右栏常驻 → 打开播放器即预热信息栏所需的两份数据（标签库 / 人物库）
@@ -1762,23 +1807,54 @@ function openPlayer(id) {
   playerMarkers.value = readMarkerCache(markerStorage(), v.id)
   curVideo.value = v
   openSeq.value += 1
+  // 上下文快照：同一上下文内换片沿用原 ids（只重算 index），否则按优先级重新定
+  const base = reuseCtx && Array.isArray(reuseCtx.ids) ? reuseCtx : null
+  pbCtx.value = base
+    ? makePlaybackContext(base.ids, v.id, {
+        source: base.source,
+        name: base.name,
+        playlistId: base.playlistId
+      })
+    : contextFor(v.id)
   state.play = v.id
   writeHash()
 }
 
 function closePlayer() {
   curVideo.value = null
+  pbCtx.value = null
   if (state.play) {
     state.play = ''
     writeHash()
   }
 }
 
+/**
+ * 上/下一部（控制条 ⏮⏭ 与快捷键 P/N 共用）：只走当前上下文顺序，越界直接不动。
+ * 上下文里个别 id 在索引中缺失（视频下架 / 索引未加载完）时顺着同一方向跳过它们，
+ * 但绝不跳到上下文之外的视频。
+ */
 function step(dir) {
   if (!curVideo.value) return
-  const { list, i } = navState.value
-  const j = i + dir
-  if (i >= 0 && j >= 0 && j < list.length) openPlayer(list[j].id)
+  const map = byId.value
+  let cur = pbCtx.value
+  while (cur && cur.index >= 0) {
+    const next = stepContextId(cur, dir)
+    if (!next) return // 越界：按钮已禁用，这里也不动
+    if (map.has(next)) {
+      openPlayer(next, pbCtx.value)
+      return
+    }
+    // 目标 id 不在索引里（下架 / 索引未加载完）：把游标推到它上面，继续同方向找
+    cur = Object.assign({}, cur, { index: cur.ids.indexOf(next) })
+  }
+}
+
+/** 信息栏置顶分区点了某一条：切到该片，上下文保持（只换 index） */
+function playFromContext(id) {
+  if (!id) return
+  if (curVideo.value && curVideo.value.id === id) return
+  openPlayer(id, pbCtx.value)
 }
 
 function loadQ() {
@@ -2300,6 +2376,26 @@ async function loadPlaylistContext() {
 }
 
 watch(playlistId, () => loadPlaylistContext())
+
+/**
+ * P5.32：播放列表上下文是异步到的，而深链 #play=<id> 在索引一到就开播 —— 首帧可能只有浏览顺序。
+ *   - 到了且确实包含当前片 → 升级成播放列表顺序（优先级最高）；
+ *   - 被清空 / 换成别的列表且当前上下文正来自播放列表 → 回落重新定位（退出播放列表模式、
+ *     浏览器前进后退、手改地址栏都走这里）。
+ * 播放中改筛选 / 收藏等**不**触发重算：快照语义，从哪个列表点进来就按那个顺序。
+ */
+watch(playlistCtx, (ctx) => {
+  const id = curVideo.value ? curVideo.value.id : ''
+  if (!id) return
+  if (ctx && Array.isArray(ctx.ids) && ctx.ids.length) {
+    const up = makePlaybackContext(ctx.ids, id, { source: 'playlist', name: ctx.name, playlistId: ctx.id })
+    if (up.index >= 0) {
+      pbCtx.value = up
+      return
+    }
+  }
+  if (pbCtx.value && pbCtx.value.source === 'playlist') pbCtx.value = contextFor(id)
+})
 
 /* =========================================================================
    键盘

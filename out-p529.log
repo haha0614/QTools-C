@@ -1,0 +1,110 @@
+
+[A] 音量 65%：浮标签锚在音量滑块的 thumb 上方，不与任何控件重叠
+    标签 {"x":136.95,"y":946,"w":38,"h":16,"right":174.95,"bottom":962} 文字="65%" opacity=1
+    滑块 {"x":101.86,"y":967,"w":86,"h":20,"right":187.86,"bottom":987} thumb 中心 x=155.96 标签中心 x=155.95 (left=54.1px)
+  OK  a1) 浮标签显示 65% — 65%
+  OK  a2) 拖动中标签可见（opacity=1） — 1
+  OK  a3) 标签中心对准滑块 thumb 中心（±2px） — 标签 155.95 vs thumb 155.96
+  OK  a4) 标签紧贴滑块：下沿距滑块顶 ≤6px（同一列，不压滑块） — gap=5 控制条顶=954
+  OK  a4b) 标签水平不越出滑块左右（clamp 生效，不碰静音键 / 时间码） — [136.95,101.86,174.95,187.86]
+  OK  a5) 与控件零重叠（比对 12 个控件 rect）
+  OK  a6) 无横向溢出 — 1585 <= 1600
+  OK  a7) 松手约 700ms 后浮标签淡出（P5.26 行为保留） — 0
+
+[B] 控制条底座 = 竖向渐变（底部深、顶部完全透明）
+    [light] backgroundColor=rgba(0, 0, 0, 0)
+    [light] backgroundImage=linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)
+    [light] backdrop-filter=none border-top=0px rgb(48, 49, 51)
+    像素：条顶行 y=956 rgb=[255,255,255] → alpha=0
+    像素：条底行 y=997 rgb=[118,118,118] → alpha=0.54
+    像素：画面中部 rgb=[255,255,255]（白帧背衬，应仍为 255）
+  OK  b1[light]) background-color 完全透明（alpha 0） — rgba(0, 0, 0, 0)
+  OK  b2[light]) background-image 是竖向渐变，最上面那一档 alpha = 0（82%→100% 完全透明） — linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)
+  OK  b3[light]) 实测：渐变最上端 alpha = 0（像素 255 → 0） — rgb [255,255,255]
+  OK  b4[light]) 实测：底部一小段有值（alpha 0.54） — rgb [118,118,118]
+  OK  b5[light]) 顶 / 底 alpha 差 ≥ 0.4（真的是竖向渐变，不是整块色）
+  OK  b6[light]) 画面中部完全不被压暗（像素 [255,255,255]）
+    [dark] backgroundColor=rgba(0, 0, 0, 0)
+    [dark] backgroundImage=linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)
+    [dark] backdrop-filter=none border-top=0px rgb(229, 234, 243)
+    像素：条顶行 y=956 rgb=[255,255,255] → alpha=0
+    像素：条底行 y=997 rgb=[118,118,118] → alpha=0.54
+    像素：画面中部 rgb=[255,255,255]（白帧背衬，应仍为 255）
+  OK  b1[dark]) background-color 完全透明（alpha 0） — rgba(0, 0, 0, 0)
+  OK  b2[dark]) background-image 是竖向渐变，最上面那一档 alpha = 0（82%→100% 完全透明） — linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)
+  OK  b3[dark]) 实测：渐变最上端 alpha = 0（像素 255 → 0） — rgb [255,255,255]
+  OK  b4[dark]) 实测：底部一小段有值（alpha 0.54） — rgb [118,118,118]
+  OK  b5[dark]) 顶 / 底 alpha 差 ≥ 0.4（真的是竖向渐变，不是整块色）
+  OK  b6[dark]) 画面中部完全不被压暗（像素 [255,255,255]）
+
+[C] 时间码：03:21:17 / 120:00:00（分钟不折成小时、无「位置」前缀）
+    控制条时间码="03:21:17 / 120:00:00"
+    aria-valuetext="03:21:17（第 6047 帧） / 120:00:00"
+    滑块 value=201.566666666667（应落在 1/30 帧栅格上）
+  OK  c1) 控制条时间码 = 03:21:17 / 120:00:00（两小时片不折成 2:00:00:00） — 03:21:17 / 120:00:00
+  OK  c2) 文案里没有「位置」两个字 — 03:21:17 / 120:00:00
+  OK  c3) aria-valuetext 与控制条同一口径（含帧号） — 03:21:17（第 6047 帧） / 120:00:00
+  OK  c4) 形如 mm:ss:ff / mm:ss:ff（不是 hh:mm:ss:ff） — 03:21:17 / 120:00:00
+  OK  c5) title 说明口径是 mm:ss:ff — 分:秒:帧（mm:ss:ff），帧号按该片探测到的帧率换算，暂停 / 播放 / 拖动都显示
+    预览框可见=true 时间条文字="59:48:12" rect={"x":525,"y":939.63,"w":160,"h":18.38}
+  OK  c6) 悬停出预览框（.p-preview-bar 在 DOM 里）
+  OK  c7) 预览框时间同样是 mm:ss:ff（ratio 0.5 × 7200s → 60:00:00） — 59:48:12
+    预览框时间换算=3588.4s（指针在轨道中点，期望 ≈ 3600s）
+  OK  c8) 预览框时间 ≈ 指针比例 × 7200s（中点 ≈ 3600s = 60:00，分钟不折成小时） — 3588.4s
+
+[D] 预览框里「片段 0:0x / 0:0x」小字已删除
+  OK  d1) 预览框时间条 DOM 里没有「片段」字样 — <span data-v-5897d51f="" class="p-preview-t" title="分:秒:帧（mm:ss:ff），帧号按该片探测到的帧率换算，暂停 / 播放 / 拖动都显示">59:48:12</span>
+  OK  d2) 小字元素 .p-preview-sub 不在 DOM 里
+
+[E] 预览框时间条与控制条同一套材质（同一个 --p-grad / --p-shadow）
+    控制条渐变=linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)
+    预览条渐变=linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)
+    控制条 --p-grad=linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)
+    预览条 --p-shadow 解析后 text-shadow=rgba(0, 0, 0, 0.5) 0px 1px 3px / 控制条 chip 上=rgba(0, 0, 0, 0.5) 0px 1px 3px
+  OK  e1) 两个元素的 computed background-image 逐字相同（同一个渐变令牌） — linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)
+  OK  e2) 预览条继承到的 --p-grad 与控制条完全相同 — linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 82%)
+  OK  e3) 文字投影 = 控制条 chip 同一个 --p-shadow — rgba(0, 0, 0, 0.5) 0px 1px 3px
+    预览条像素：顶=[255,0,0] 底=[117,0,0]
+  OK  e4) 预览条同样是「下深上浅」的渐变（像素顶 255 > 底 117）
+
+[C2] 转码档拖动跟随层的帧号徽标（.p-scrub-tc）
+    拖动前 .p-seek rect={"x":332.02,"y":983,"w":547.69,"h":4,"right":879.7,"bottom":987}
+    真实鼠标拖动：pointerdown=1001 input 事件=2 滑块值=2562.23333333333
+    跟随层徽标="42:42:07" title="分:秒:帧（mm:ss:ff），帧号按该片探测到的帧率换算，暂停 / 播放 / 拖动都显示" 跟随层存在=true 拖动中滑块值=2562.23333333333 控制条=p-fs-wrap
+  OK  c9) 拖动跟随层帧号与进度条同形 mm:ss:ff — 42:42:07
+  OK  c10) 跟随层 title 同一口径 — 分:秒:帧（mm:ss:ff），帧号按该片探测到的帧率换算，暂停 / 播放 / 拖动都显示
+
+[C3] 缺帧率退化（fps 置 0）—— 见下方 containment 段，本段只记录当前文案："46:03:24 / 120:00:00"
+
+[F] header logo 点击回首页（路由 push，不整页刷新）
+    标签=A href=/ title="青兔在线工具箱 · 返回首页" tabIndex=0
+  OK  f1) .p-brand 是 <a>（原生链接语义：可 Tab 聚焦 / 回车触发 / 中键新开） — A
+  OK  f2) href="/"（无 router 时也有可见的落点，不是死链） — /
+  OK  f3) 可键盘聚焦（tabIndex=0） — 0
+    hover 前徽标底色=color(srgb 0.25098 0.619608 1 / 0.16) hover 后=rgb(64, 158, 255)
+  OK  f4) hover 有轻微反馈（徽标底色变化） — color(srgb 0.25098 0.619608 1 / 0.16) -> rgb(64, 158, 255)
+    push 调用=["/"] currentRoute=/ location.pathname=/
+  OK  f5) 点击走 router.push("/") — ["/"]
+  OK  f6) 路由真的切到 /（不是只改了地址栏） — /
+  OK  f7) 没有整页刷新（bootId 不变） — 6rzy9g8x2vl
+    回车前 push 数=1 回车后=2 activeElement=p-brand
+  OK  f8) 键盘回车同样触发回首页（<a> 原生行为） — 1 -> 2
+
+[G] containment：本次改动没有碰到的既有能力仍在
+    舞台高=935.67 进度条 step=0.03333333333333333 音量 max=1 标记轨=0 设置/全屏/两栏=true/true/true
+  OK  g1) 舞台仍是定高（未被控制条压扁） — 935.67
+  OK  g2) 进度条仍是帧级 step（1/30） — 0.03333333333333333
+  OK  g3) 音量滑块端点仍是 max=1（P5.25 的可拖到头没有回退） — 1
+  OK  g4) 设置浮层入口（.p-gear）/ 全屏按钮（[data-qt-fs]）仍在
+  OK  g5) 两栏布局（.p-main + 信息栏）仍在
+
+[H] 窄屏 375：.p-vol 按既有规则隐藏，百分比浮标签退到静音按钮右侧（不溢出 / 不遮挡）
+    标签 {"x":147.7,"y":654,"w":38,"h":16,"right":185.7,"bottom":670} 滑块 display=none 静音按钮 {"x":68,"y":656,"w":38.61,"h":38,"right":106.61,"bottom":694}
+  OK  h1) 375 宽仍按既有规则隐藏音量滑块（窄屏让位给静音按钮） — none
+  OK  h2) 百分比仍然显示（键盘 / 滚轮调音量时看得到数字） — 1
+  OK  h3) 窄屏下浮标签不出视口（贴静音按钮右侧，仍在控制条之上） — {"x":147.7,"y":654,"w":38,"h":16,"right":185.7,"bottom":670}
+  OK  h4) 375 宽无横向溢出 — 360 <= 375
+  OK  g6) 页面零运行时异常 — []
+  OK  g7) 控制台零 error / 异常
+
+P5.29 真浏览器实测：55 passed, 0 failed

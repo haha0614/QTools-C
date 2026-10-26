@@ -1,0 +1,255 @@
+{
+  "static": [
+    {
+      "name": "logo-mark.svg",
+      "bytes": 1281,
+      "viewBox": "0 0 64 64",
+      "externalOrInline": [],
+      "hasXmlns": true
+    },
+    {
+      "name": "logo-mark-mono.svg",
+      "bytes": 914,
+      "viewBox": "0 0 64 64",
+      "externalOrInline": [],
+      "hasXmlns": true
+    },
+    {
+      "name": "favicon-16.svg",
+      "bytes": 380,
+      "viewBox": "0 0 16 16",
+      "externalOrInline": [],
+      "hasXmlns": true
+    },
+    {
+      "name": "favicon-32.svg",
+      "bytes": 355,
+      "viewBox": "0 0 32 32",
+      "externalOrInline": [],
+      "hasXmlns": true
+    },
+    {
+      "name": "logo-lockup.svg",
+      "bytes": 1594,
+      "viewBox": "0 0 220 64",
+      "externalOrInline": [],
+      "hasXmlns": true
+    },
+    {
+      "name": "logo-dark.svg",
+      "bytes": 1594,
+      "viewBox": "0 0 220 64",
+      "externalOrInline": [],
+      "hasXmlns": true
+    },
+    {
+      "name": "logo-light.svg",
+      "bytes": 1594,
+      "viewBox": "0 0 220 64",
+      "externalOrInline": [],
+      "hasXmlns": true
+    }
+  ],
+  "render": [
+    {
+      "name": "logo-mark.svg",
+      "tag": "svg",
+      "ns": "http://www.w3.org/2000/svg",
+      "vb": "0 0 64 64",
+      "w": "64",
+      "h": "64",
+      "parser": false,
+      "rects": 3,
+      "bbox": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "screen": [
+        64,
+        64
+      ],
+      "errors": []
+    },
+    {
+      "name": "logo-mark-mono.svg",
+      "tag": "svg",
+      "ns": "http://www.w3.org/2000/svg",
+      "vb": "0 0 64 64",
+      "w": "64",
+      "h": "64",
+      "parser": false,
+      "rects": 1,
+      "bbox": [
+        12,
+        8,
+        40,
+        47
+      ],
+      "screen": [
+        64,
+        64
+      ],
+      "errors": []
+    },
+    {
+      "name": "favicon-16.svg",
+      "tag": "svg",
+      "ns": "http://www.w3.org/2000/svg",
+      "vb": "0 0 16 16",
+      "w": "16",
+      "h": "16",
+      "parser": false,
+      "rects": 2,
+      "bbox": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "screen": [
+        16,
+        16
+      ],
+      "errors": []
+    },
+    {
+      "name": "favicon-32.svg",
+      "tag": "svg",
+      "ns": "http://www.w3.org/2000/svg",
+      "vb": "0 0 32 32",
+      "w": "32",
+      "h": "32",
+      "parser": false,
+      "rects": 2,
+      "bbox": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "screen": [
+        32,
+        32
+      ],
+      "errors": []
+    },
+    {
+      "name": "logo-lockup.svg",
+      "tag": "svg",
+      "ns": "http://www.w3.org/2000/svg",
+      "vb": "0 0 220 64",
+      "w": "220",
+      "h": "64",
+      "parser": false,
+      "rects": 2,
+      "bbox": [
+        0,
+        8,
+        179.5,
+        48
+      ],
+      "screen": [
+        220,
+        64
+      ],
+      "errors": []
+    },
+    {
+      "name": "logo-dark.svg",
+      "tag": "svg",
+      "ns": "http://www.w3.org/2000/svg",
+      "vb": "0 0 220 64",
+      "w": "220",
+      "h": "64",
+      "parser": false,
+      "rects": 2,
+      "bbox": [
+        0,
+        8,
+        179.5,
+        48
+      ],
+      "screen": [
+        220,
+        64
+      ],
+      "errors": []
+    },
+    {
+      "name": "logo-light.svg",
+      "tag": "svg",
+      "ns": "http://www.w3.org/2000/svg",
+      "vb": "0 0 220 64",
+      "w": "220",
+      "h": "64",
+      "parser": false,
+      "rects": 2,
+      "bbox": [
+        0,
+        8,
+        179.5,
+        48
+      ],
+      "screen": [
+        220,
+        64
+      ],
+      "errors": []
+    }
+  ],
+  "shots": [
+    {
+      "file": "out/preview.png",
+      "w": 1400,
+      "h": 2294
+    }
+  ],
+  "errors": [],
+  "page": {
+    "scrollHeight": 2294,
+    "scrollWidth": 1400,
+    "images": [
+      "logo-mark 16=64x64",
+      "logo-mark 22=64x64",
+      "logo-mark 32=64x64",
+      "logo-mark 64=64x64",
+      "logo-mark 180=64x64",
+      "logo-mark=64x64",
+      "logo-mark mono=64x64",
+      "favicon16=16x16",
+      "favicon16 big=16x16",
+      "favicon32=32x32",
+      "favicon32 big=32x32",
+      "lockup=220x64",
+      "light=220x64",
+      "mono invert=64x64",
+      "m=64x64",
+      "m2=64x64",
+      "d16=64x64",
+      "d22=64x64",
+      "d32=64x64",
+      "d64=64x64",
+      "d180=64x64",
+      "dm=64x64",
+      "dmono=64x64",
+      "df32=32x32",
+      "df32 big=32x32",
+      "dark=220x64"
+    ],
+    "canvases": [
+      "logo-mark.svg@16=128x128",
+      "favicon-16.svg@16=128x128",
+      "logo-mark.svg@22=132x132",
+      "logo-mark.svg@32=128x128",
+      "favicon-32.svg@32=128x128",
+      "logo-mark.svg@16=128x128",
+      "favicon-16.svg@16=128x128",
+      "logo-mark.svg@22=132x132",
+      "logo-mark.svg@32=128x128",
+      "favicon-32.svg@32=128x128"
+    ],
+    "consoleErrors": []
+  }
+}

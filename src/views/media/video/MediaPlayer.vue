@@ -1,7 +1,7 @@
 <!--
   MediaPlayer.vue —— 播放层（app.js 播放器部分的等价实现）
   覆盖：进度记忆与续播、清晰度切换（原画直连 / 实时转码 + 内容偏移）、原画与转码统一的自绘控制条
-        （播放/暂停 · 进度 · 时间 · 音量 · 画质 · 上一部/下一部 · 全屏，两种模式同一套 UI，不再使用原生 controls）、
+        （播放/暂停 · 进度 · 时间 · 音量 · 上下集 · 设置 · 全屏；画质切换在头部，两种模式同一套 UI，不再使用原生 controls）、
         进度条悬停 / 拖动共用的预览浮层（pv2 片段，无则降级精灵图）、seek（转码重开流 + pendingSeek / 原画直写 currentTime）、
         上一个 / 下一个、收藏、字幕轨注入、异常编码回退、播放器会话式 play 埋点与 play_end 结算。
    P4.4：全屏下控制条 2.5s 无操作自动淡出（判定在 playerExtras.createCtrlAutoHide），
@@ -12,9 +12,10 @@
 -->
 <template>
   <div class="player" role="dialog" aria-modal="true" aria-label="播放器">
-    <!-- P5.24-A 头部：标题（加粗、单行省略）+ 一行中点分隔的元信息 + 右侧三组按钮。
+    <!-- P5.24-A 头部：标题（加粗、单行省略）+ 一行中点分隔的元信息 + 右侧三组控件。
          分组由 .p-act-group 承担，组间 .p-act-sep 画 1px 竖线；按钮高度 / 圆角 / 内边距统一由
-         .p-actions .btn 定义，宽度不再随文案长短跳动。 -->
+         .p-actions .btn 定义，宽度不再随文案长短跳动。
+         P5.31 起三组是「收藏 | 画质切换 | 关闭 Esc」（画质下拉与 .btn 同高 30px，见 .p-qsel）。 -->
     <div class="p-head">
       <!-- P5.25（用户反馈 7）：头部左侧补站点标识，与布局左栏的 Logo 同一套语言（首字徽标 + 站点名）。
            名称只从 APP_INFO.name 取（src/utils/constants.js 是全站唯一来源），这里不再硬编码第二份品牌名。
@@ -53,13 +54,26 @@
           </button>
         </div>
         <span class="p-act-sep" aria-hidden="true"></span>
-        <div class="p-act-group">
-          <button class="btn" type="button" :disabled="!hasPrev" title="上一部（快捷键 P）" @click="emit('prev')">
-            ‹ 上一部
-          </button>
-          <button class="btn" type="button" :disabled="!hasNext" title="下一部（快捷键 N）" @click="emit('next')">
-            下一部 ›
-          </button>
+        <!-- P5.31（用户反馈 4「把上一部 / 下一部换成画质切换」）：这一格原来是 ‹ 上一部 / 下一部 ›，
+             现在换成画质下拉 —— 与设置浮层里的画质**同源**：
+               选项都来自 qualityOptions（Q_VALUES → 文案 Q_LABELS），
+               切换都走 onQualityPick（先按旧档取绝对位置 → 换流 → 恢复播放状态），
+             所以头部与浮层永远是同一份档位表，不存在第二套画质逻辑。
+             上 / 下一集没有消失：控制条上的 ⏮ / ⏭ 与快捷键 P / N 一个都没动（那是播放列表上下文的操作），
+             头部只是不再重复放一份文案按钮。data-qt-quality 是证据脚本的锚点。 -->
+        <div class="p-act-group p-act-q">
+          <label class="p-act-lab" for="pHeadQ">画质</label>
+          <select
+            id="pHeadQ"
+            class="p-qsel"
+            data-qt-quality
+            :value="curQ"
+            aria-label="画质"
+            title="画质：原画直连，或实时转码到 720p / 480p / 360p"
+            @change="onQualityPick($event.target.value)"
+          >
+            <option v-for="o in qualityOptions" :key="'hq' + o.value" :value="o.value">{{ o.label }}</option>
+          </select>
         </div>
         <span class="p-act-sep" aria-hidden="true"></span>
         <div class="p-act-group">
@@ -193,8 +207,12 @@
                      P5.29（用户反馈 1「音量百分比出现的位置不好，放在音量条附近吧」）：
                      浮标签的锚点从**静音按钮**换成**音量滑块**，并且 left 由 volPctStyle 算成
                      「当前 thumb 中心」—— 65% 时标签正对 thumb 上方，仍不占控制条布局
-                     （absolute + pointer-events:none），压在控制条之上 8px 处、不遮任何控件。 -->
-                <span class="p-vol-wrap" :style="{ '--p-vol-ratio': volRatio }">
+                     （absolute + pointer-events:none），不遮任何控件。
+                     P5.31（用户反馈 1「百分比和音量条的距离太远了」）：垂直间距 14px → 5px、
+                     标签盒 20.8px → 16px（见 .p-vol-pct），视觉上就是紧贴滑块。
+                     同一个 style 里给出 --p-vol-pct（已填充段的百分比断点）：音量滑块的填色
+                     与进度条同款 —— chip 底 + 轨道底灰 + 已播放段 --accent，分界就是这个变量。 -->
+                <span class="p-vol-wrap" :style="{ '--p-vol-ratio': volRatio, '--p-vol-pct': volFillPct }">
                   <span class="p-vol-pct" :class="{ on: volPctShown }" aria-hidden="true">{{ volPct }}%</span>
                   <input
                     class="p-vol"
@@ -254,7 +272,7 @@
                       :step="seekStep"
                       :value="seekPos"
                       :style="seekFillStyle"
-                      :title="seekTipText || seekTitle"
+                      :title="seekTitle"
                       aria-label="播放位置"
                       :aria-valuetext="seekAriaText"
                       @pointerdown="onSeekPointerDown"
@@ -262,8 +280,11 @@
                       @change="onSeekCommit"
                       @keydown="onSeekKey"
                     />
-                    <!-- P5.16 精细拖动提示：pointer-events:none 不挡拖动 / hover 浮层；移动端无 Shift，整块不渲染 -->
-                    <div v-if="seekTipText" class="p-fine-tip" :class="{ on: fineDragging }">{{ seekTipText }}</div>
+                    <!-- P5.31（用户反馈 3「图二的提示可以去掉了」）：原来常驻在进度条上方的那条
+                         精细拖动提示已整块删除 —— 悬停时不再出现，拖动中也不再出现。
+                         **手势本身没有删**：Shift + 拖动仍是 1/10 灵敏度、落点吸附到帧
+                         （见 onSeekPointerDown / onFineDragMove），说明改到了设置浮层的快捷键表里
+                         （SHORTCUTS 的「Shift+拖动进度条」一行）。 -->
                     <!-- P4-B 标记刻度提示：hover 到刻度附近（单点 ±1.2%、区间整段）时在刻度上方显示 'mm:ss–mm:ss · 说明'。
                          刻度本身 pointer-events:none，所以不会挡 range 的 hover 预览与拖动 -->
                     <div v-if="markerHover" class="p-marker-tip" :style="floatStyle(markerHover.left / 100)">
@@ -357,9 +378,31 @@
                   <button class="p-btn" type="button" aria-label="上一帧" title="上一帧（快捷键 , 或 Shift+←）" @click="stepFrame(-1)">⏴</button>
                   <button class="p-btn" type="button" aria-label="下一帧" title="下一帧（快捷键 . 或 Shift+→）" @click="stepFrame(1)">⏵</button>
                 </span>
-                <span v-if="hasPrev || hasNext" class="p-sep" aria-hidden="true"></span>
-                <button v-if="hasPrev" class="p-btn" type="button" aria-label="上一部" title="上一部（快捷键 P）" @click="emit('prev')">⏮</button>
-                <button v-if="hasNext" class="p-btn" type="button" aria-label="下一部" title="下一部（快捷键 N）" @click="emit('next')">⏭</button>
+                <!-- P5.32：上/下一部按**播放上下文**（从哪个列表点进来就按那个顺序）走；越界时禁用而不是消失 ——
+                     按钮常驻，位置不跳、Tab 顺序稳定；上下文缺失时两个都禁用（hasPrev/hasNext 都是 false）。 -->
+                <span class="p-sep" aria-hidden="true"></span>
+                <button
+                  class="p-btn"
+                  type="button"
+                  aria-label="上一部"
+                  :aria-disabled="hasPrev ? null : 'true'"
+                  :disabled="!hasPrev"
+                  :title="hasPrev ? '上一部（快捷键 P）' : '已经是列表第一条'"
+                  @click="emit('prev')"
+                >
+                  ⏮
+                </button>
+                <button
+                  class="p-btn"
+                  type="button"
+                  aria-label="下一部"
+                  :aria-disabled="hasNext ? null : 'true'"
+                  :disabled="!hasNext"
+                  :title="hasNext ? '下一部（快捷键 N）' : '已经是列表最后一条'"
+                  @click="emit('next')"
+                >
+                  ⏭
+                </button>
                 <span class="p-sep" aria-hidden="true"></span>
                 <!-- 设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键说明都收在这个齿轮里。
                      data-qt-gear 是证据脚本的锚点（点它 = 走真实事件链打开面板）。 -->
@@ -850,9 +893,13 @@ const seekNowText = computed(() => seekTimecodeText(seekTextPos.value, seekDur.v
 /** 时间码的 title：有帧率写清四位含义，缺帧率如实说明「该片缺帧率数据」 */
 const seekNowTitle = computed(() => seekTimecodeTitle(frameFps.value))
 
-/** 进度条 title：无 fps 时不能承诺「精细」，如实说明按整秒拖动 */
+/**
+ * 进度条 title（原生 hover 提示，不是那条浮条）：无 fps 时不能承诺「精细」，如实说明按整秒拖动。
+ * P5.31：有 fps 的一侧不再重复「Shift+拖动 = 精细」—— 该说明已收进设置浮层的快捷键表，
+ * 播放器 DOM 里不再出现这句文案。
+ */
 const seekTitle = computed(() =>
-  hasFps.value ? 'Shift+拖动 = 精细（落到帧）' : '播放位置（该片缺帧率数据，按整秒拖动、不显示帧号）'
+  hasFps.value ? '播放位置（拖动定位；精细拖动的用法见 ? 快捷键说明）' : '播放位置（该片缺帧率数据，按整秒拖动、不显示帧号）'
 )
 
 /** 无障碍文本：知道帧率时补上时间码与帧号（读屏用户也能听到落在哪一帧），两侧都带帧号 */
@@ -1172,8 +1219,6 @@ function hidePreview() {
 
 /** 悬停进度条（不按下）：显示预览；节流到 80ms 一次，避免疯狂 seek */
 function onSeekHover(e) {
-  // P5.16「Shift+拖动 = 精细」提示：只要指针在进度条区域就出，与有没有预览资源无关
-  seekTipOn.value = true
   if (!canHover.value || !previewAvailable.value) return
   if (qSeekDragging) return // 拖动中由 onSeekInput 收掉浮层，别互相抢
   const ratio = ratioFromEvent(e)
@@ -1181,7 +1226,6 @@ function onSeekHover(e) {
 }
 
 function onSeekLeave() {
-  seekTipOn.value = false
   hoverPreview.cancel()
   if (qSeekDragging) return // 拖动中指针可能拖出条外：由 onSeekInput / onSeekCommit 管
   hidePreview()
@@ -1956,17 +2000,9 @@ function commitSeekTo(target) {
  * 移动端不启用（没有 Shift），知道帧率才启用（否则 step=1，落点本来就只能是整秒）。
  */
 const fineDrag = { active: false, startX: 0, startTime: 0, trackW: 0, duration: 0 }
-const fineDragging = ref(false)
-/** 指针是否停在进度条区域（决定「Shift+拖动 = 精细」提示什么时候出现） */
-const seekTipOn = ref(false)
-
-/** 提示文案：画在进度条上方，不抢拖动与浮层（pointer-events:none） */
-const seekTipText = computed(() => {
-  if (isMobile.value || !hasFps.value) return ''
-  if (fineDragging.value) return '精细拖动 ×1/10（Shift）'
-  if (seekTipOn.value || qSeekDragging) return 'Shift+拖动 = 精细'
-  return ''
-})
+/* P5.31（用户反馈 3）：这里原来还有 fineDragging / seekTipOn / seekTipText 三个响应式状态，
+   只服务于进度条上方那条「Shift+拖动 = 精细」提示。提示条删除后它们没有第二个消费者，
+   一并删掉 —— 精细拖动只用下面这份普通对象 fineDrag（不参与渲染，因此不再触发重渲染）。 */
 
 function onSeekPointerDown(e) {
   if (!hasFps.value || isMobile.value) return
@@ -1983,7 +2019,6 @@ function onSeekPointerDown(e) {
   fineDrag.startTime = Math.max(0, Math.min(dur, absPos()))
   fineDrag.trackW = geom.trackW
   fineDrag.duration = dur
-  fineDragging.value = true
   qSeekDragging = true
   syncCtrlState()
   // P5.22：Shift 精细拖动同样停 rAF（与 onSeekInput 同一条口径）
@@ -2011,7 +2046,6 @@ function onFineDragMove(e) {
 function onFineDragEnd() {
   if (!fineDrag.active) return
   fineDrag.active = false
-  fineDragging.value = false
   window.removeEventListener('pointermove', onFineDragMove)
   window.removeEventListener('pointerup', onFineDragEnd)
   window.removeEventListener('pointercancel', onFineDragEnd)
@@ -2738,6 +2772,15 @@ const volRatio = computed(() => {
 })
 
 /**
+ * 已填充段的百分比断点（P5.31 用户反馈 2「音量进度条加颜色，就像进度条一样」）。
+ *
+ * 原生 range 没法只给「已播放段」上色，但滑块自己的背景可以：把 fill / rail 两段写成一个
+ * 横向 linear-gradient，断点就是这里给出的百分比（--p-vol-pct，与 --p-vol-ratio 同一个数）。
+ * 33% / 65% / 100% 三档的分界因此与 thumb 位置严格同源，不存在第二处手算。
+ */
+const volFillPct = computed(() => (Number(volRatio.value) * 100).toFixed(2) + '%')
+
+/**
  * 显示百分比。autoHide=true → delay 后淡出（滚轮 / 键盘 / 松手）；
  * autoHide=false → 保持（按住滑块拖动期间，每一步 input 都刷新数字但不会半路消失）。
  */
@@ -3370,8 +3413,9 @@ defineExpose({
   opacity: 0.8;
 }
 
-/* P5.24-A：右侧按钮分三组（收藏 | ‹上一部 / 下一部› | 关闭 Esc），组间 1px 竖线，
-   组内 6px —— 按钮不再是一排等距的方块，层次一眼可读 */
+/* P5.24-A：右侧按钮分三组，组间 1px 竖线、组内 6px —— 不再是一排等距的方块，层次一眼可读。
+   P5.31 起三组是「收藏 | 画质切换（.p-act-q，见下方 .p-qsel）| 关闭 Esc」：
+   原来的 ‹上一部 / 下一部› 让位给画质 —— 上下集仍在控制条 ⏮ / ⏭ 与快捷键 P / N 上。 */
 .p-actions {
   flex: 0 0 auto;
   display: flex;
@@ -3443,6 +3487,46 @@ defineExpose({
   font-weight: 600;
   line-height: 1.35;
   letter-spacing: 0.4px;
+}
+
+/* P5.31（用户反馈 4）：头部「画质切换」= 一个小标签 + 原生 <select>。
+   高度 30px / 圆角 8px / 12.5px 字号与 .btn 逐字对齐，于是「收藏 | 画质 | 关闭」三格一排齐平；
+   配色只读主题令牌（--bg-3 / --line / --fg / --accent），亮暗两套主题自动跟随，
+   不写任何一处硬编码颜色。原生下拉箭头保留：这是唯一「点开就能改片源」的控件，
+   自绘箭头会白丢一层系统级可达性（键盘 / 触屏 / 读屏都走原生）。 */
+.p-act-q {
+  gap: 8px;
+}
+
+.p-act-lab {
+  color: var(--fg-dim);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.p-qsel {
+  height: 30px;
+  max-width: 132px;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-3);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
+}
+
+.p-qsel:hover {
+  border-color: var(--line-2);
+}
+
+.p-qsel:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .p-close {
@@ -3587,6 +3671,18 @@ defineExpose({
   outline-offset: 2px;
 }
 
+/* P5.32：上/下一部在上下文边界上**禁用**（不再是消失）。禁用态压暗、去掉 hover 反馈与手型，
+   否则看起来仍可点，用户会以为点了没反应。 */
+.p-btn:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.p-btn:disabled:hover {
+  background: var(--p-chip);
+  border-color: var(--p-edge);
+}
+
 /* 齿轮：开着的时候保持高亮，用户能看出「面板是我点开的」 */
 .p-gear.on {
   border-color: var(--accent);
@@ -3628,20 +3724,24 @@ defineExpose({
     calc(var(--p-vol-knob) / 2 + var(--p-vol-ratio, 0) * (var(--p-vol-track-w) - var(--p-vol-knob))),
     calc(var(--p-vol-track-w) - 20px)
   );
-  /* 14px 而不是 8px：滑块只有 20px 高（比静音按钮矮一档），8px 会让标签压进控制条顶部 5px。
-     抬到 14px 后标签整体落在控制条之上（不压任何控件），水平仍对准 thumb。 */
-  bottom: calc(100% + 14px);
+  /* P5.31（用户反馈 1「百分比和音量条的距离太远」）：14px → **5px**。
+     滑块只有 20px 高（比静音按钮矮一档），旧值 14px + 20.8px 高的标签盒，看上去离条子很远；
+     现在标签下沿距滑块顶 5px，盒子本身也收成 16px 的紧凑气泡（字号 11 / 行高 12 / 上下各 1px 内边距），
+     视觉间隙就是这 5px，而且水平仍对准 thumb、与任何控件零相交（实测见 devtools/p531-player）。 */
+  bottom: calc(100% + 5px);
   transform: translateX(-50%);
   z-index: 6;
-  min-width: 40px;
-  padding: 2px 6px;
+  min-width: 38px;
+  padding: 1px 5px;
   border: 1px solid var(--p-edge);
   border-radius: 6px;
   background: var(--p-pct-bg);
   color: var(--p-ink);
   font-size: 11px;
   font-weight: 600;
-  line-height: 1.35;
+  /* P5.31：行高 1.35 → 12px。盒子高度 = 12 + 上下内边距 2 + 边框 2 = 16px（原 20.85px），
+     「紧贴滑块」才不会被一圈空白吃掉。 */
+  line-height: 12px;
   letter-spacing: 0;
   text-align: center;
   white-space: nowrap;
@@ -3664,15 +3764,25 @@ defineExpose({
   padding: 0;
   border-radius: 999px;
   /* 底座 chip + 4px 轨道画成「垂直居中的背景线」：轨道由背景承担，滑块盒始终
-     var(--p-vol-track-w) × 20（宽度与浮标签的定位量是同一个变量，改一处两边一起变） */
+     var(--p-vol-track-w) × 20（宽度与浮标签的定位量是同一个变量，改一处两边一起变）。
+     P5.31（用户反馈 2「音量进度条加颜色，就像进度条一样」）：轨道不再是单色的一条 ——
+     与 .p-seek 同款的一段式横向渐变：0 → --p-vol-pct 是**已填充段**（--accent），
+     之后是底灰（--p-vol-rail）。断点来自 volFillPct（= volRatio × 100%），
+     于是「填到哪儿」与 thumb 停在哪儿永远同一个数，25% / 65% / 100% 三档都对得上。 */
   background-color: var(--p-chip);
-  background-image: linear-gradient(var(--p-vol-rail), var(--p-vol-rail));
+  background-image: linear-gradient(
+    to right,
+    var(--p-vol-fill) 0 var(--p-vol-pct, 0%),
+    var(--p-vol-rail) var(--p-vol-pct, 0%) 100%
+  );
   background-size: 100% 4px;
   background-position: center;
   background-repeat: no-repeat;
   box-shadow: var(--p-shadow);
-  /* thumb 与进度条同一个强调色；--p-vol-thumb 只作证据脚本取像素用，不改几何 */
+  /* thumb 与进度条同一个强调色；--p-vol-thumb 只作证据脚本取像素用，不改几何；
+     --p-vol-fill 同理 —— 它就是进度条的 --accent，亮暗主题各自由 mediaTheme 给出 */
   --p-vol-thumb: var(--accent);
+  --p-vol-fill: var(--accent);
   --p-vol-rail: color-mix(in srgb, var(--p-ink) 34%, transparent);
   -webkit-appearance: none;
   appearance: none;
@@ -3964,29 +4074,10 @@ defineExpose({
   letter-spacing: 0.2px;
 }
 
-/* P5.16「Shift+拖动 = 精细」提示：绝对贴在进度条上方，pointer-events:none 所以不挡拖动、不挡浮层。
-   宽度不够时（窄屏）样式兜底隐藏 —— 移动端本来也没有 Shift。 */
-.p-fine-tip {
-  position: absolute;
-  right: 0;
-  top: -16px;
-  padding: 1px 6px;
-  border-radius: 6px;
-  font-size: 10.5px;
-  line-height: 14px;
-  color: var(--fg-dim);
-  background: var(--bg-3);
-  pointer-events: none;
-  white-space: nowrap;
-  z-index: 5;
-}
-
-/* 精细拖动进行中：提示变成「已生效」的强调色，用户能确认手势被接管了 */
-.p-fine-tip.on {
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  padding: 0 5px;
-}
+/* P5.31（用户反馈 3）：进度条上方那条提示条（旧的精细拖动浮条，含 .on 态）已整体删除，
+   播放器 DOM 里不再有这条提示、也不再出现它的文案；Shift 精细拖动的手势与落点逻辑
+   （onSeekPointerDown / onFineDragMove）一行未动，用法说明改到设置浮层的快捷键表
+   （SHORTCUTS「Shift+拖动进度条」一行）。 */
 
 /* P4.3 全屏容器：包住 .p-stage（<video>）与 .p-ctrl（自绘控制栏）。
    平时它就是 .player 里的弹性列（顶替原来 .p-stage 占的那一格），视觉与改动前一致。 */
@@ -4230,6 +4321,23 @@ defineExpose({
     font-size: 12px;
   }
 
+  /* P5.31：窄屏下画质下拉与按钮同权分摊宽度 —— 标签「画质」让位（下拉自己就带档位文案），
+     高度仍是 30px、无 max-width，于是 375px 上「收藏 | 画质 | 关闭」仍是一行且不横向溢出 */
+  .p-act-q {
+    gap: 6px;
+  }
+
+  .p-act-lab {
+    display: none;
+  }
+
+  .p-qsel {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: none;
+    font-size: 12px;
+  }
+
 
 
   .p-restart {
@@ -4293,10 +4401,6 @@ defineExpose({
 
 
 
-
-  .p-fine-tip {
-    display: none;
-  }
 
   /* 常显的「mm:ss:ff / mm:ss:ff」比原来的 mm:ss 长（P5.29 起分钟位可以是 3 位，如 120:00:00）。
      窄屏再大字号会把进度条轨道压到很窄，这里降一档（仍然 ≥11px，可读），

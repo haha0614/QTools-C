@@ -325,8 +325,12 @@ try {
   ok(near(vol.opacity, 1, 0.02), 'a2) 拖动中标签可见（opacity=1）', String(vol.opacity))
   ok(Math.abs(vol.labelCx - vol.thumbCx) <= 2, 'a3) 标签中心对准滑块 thumb 中心（±2px）', '标签 ' + vol.labelCx + ' vs thumb ' + r2(vol.thumbCx))
   const ctrlTop = await js('+document.querySelector(".p-ctrl").getBoundingClientRect().top.toFixed(2)')
-  ok(vol.label.bottom < vol.slider.y && near(vol.slider.y - vol.label.bottom, 14, 1.5), 'a4) 标签在滑块正上方 14px（同一列，不压滑块）', 'gap=' + r2(vol.slider.y - vol.label.bottom))
-  ok(vol.label.bottom <= ctrlTop + 0.5, 'a4b) 标签整体位于控制条之上（不压控制条任何像素）', 'labelBottom=' + vol.label.bottom + ' <= ctrlTop=' + ctrlTop)
+  // P5.31（用户反馈 1「百分比和音量条的距离太远了」）：14px 的旧口径作废 —— 标签下沿距滑块顶
+  // 收到 5px（≤6px），盒子也从 20.85px 收成 16px。旧断言 a4b「标签整体在控制条之上」一并作废：
+  // 紧贴滑块之后，标签必然压在控制条**上沿那段透明 padding** 上（那里没有任何控件），
+  // 新的等价口径是「水平不越出滑块 + 与任何控件矩形零相交」（a4b + a5）。
+  ok(vol.label.bottom < vol.slider.y && vol.slider.y - vol.label.bottom <= 6, 'a4) 标签紧贴滑块：下沿距滑块顶 ≤6px（同一列，不压滑块）', 'gap=' + r2(vol.slider.y - vol.label.bottom) + ' 控制条顶=' + ctrlTop)
+  ok(vol.label.x >= vol.slider.x - 0.5 && vol.label.right <= vol.slider.right + 0.5, 'a4b) 标签水平不越出滑块左右（clamp 生效，不碰静音键 / 时间码）', JSON.stringify([vol.label.x, vol.slider.x, vol.label.right, vol.slider.right]))
   const overlaps = vol.others.filter((o) => {
     const a = vol.label
     const b = o.r

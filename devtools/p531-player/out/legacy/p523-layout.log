@@ -1,0 +1,61 @@
+
+[A] 桌面 1600×1000：左视频 + 右常驻栏同一行 flex
+    📷 devtools\p523-layout\out\01-desktop-open.png
+    rects: main={"x":0,"y":64.33,"w":1169,"h":935.67,"right":1169,"bottom":1000} side={"x":1169,"y":64.33,"w":416,"h":935.67,"right":1585,"bottom":1000}
+  ✓ a) .p-body 是 flex 行容器
+  ✓ a) 视频列与右栏不交叠（main.right ≤ side.x）
+  ✓ a) 两者同一行、等高（y 与 h 一致）
+  ✓ a) 舞台在视频列内
+  ✓ b) 右栏 overflow-y:auto
+  ✓ b) 右栏高度 = 可用高度（.p-body）
+  ✓ b) 右栏 clientHeight = 可用高度
+  ✓ b) 右栏宽度落在 320–420px
+  ✓ b) 默认展开（localStorage 未存过 / 存的是展开）
+  ✓ d) 控制条 position:absolute
+  ✓ d) 控制条贴在视频容器内下沿（在 .p-fs-wrap 里、不到外面）
+  ✓ d) 控制条覆盖在舞台画面之上（与舞台纵向相交）
+  ✓ d/3) 控制条不再占一行（.p-fs-wrap 高 = .p-stage 高）
+  ✓ 2) video 绝对铺满舞台（rect 与舞台一致）
+  ✓ 2) video object-fit:contain（不变形）
+  ✓ 6) 停靠态面板不再是 fixed 浮层
+  ✓ 6) 滚动交给右栏（.vp-body overflow:visible，不造第二条滚动条）
+  ✓ 无横向滚动条（scrollWidth ≤ innerWidth）
+
+[B] 折叠：点面板头部「›」→ 视频占满宽度、无重叠；状态存 localStorage
+    📷 devtools\p523-layout\out\02-desktop-collapsed.png
+  ✗ c) 面板头部存在折叠按钮（.vp-x）且可点
+  ✗ c) 折叠后右栏宽度 0 → 416
+  ✗ c) 折叠后视频列 = 整行宽度 → 1169 vs 1585
+  ✗ c) 折叠后视频变宽 → 1169 > 1169
+  ✓ c) 折叠后仍不重叠（side.x 贴在右边缘）
+  ✗ c) 折叠后出现唤出把手（贴右边缘） → null
+  ✗ c) 折叠状态写入 localStorage → null
+  ✗ c) .p-side 带 is-closed 类 → p-side
+  ✗ c) 点把手可重新展开 → true
+  ✓ c) 重新展开后宽度还原
+  ✗ c) 展开状态也写回 localStorage → null
+
+[C] 控制条：hover 视频区出现 / 移出消失（class + opacity）
+    📷 devtools\p523-layout\out\03-desktop-ctrl-shown.png
+  ✓ d) 指针进入视频区 → 控制条显示（无 is-ctrl-hidden，opacity 1）
+    📷 devtools\p523-layout\out\04-desktop-ctrl-hidden.png
+  ✓ d) 指针移出视频区 → 加 is-ctrl-hidden
+  ✓ d) 隐藏态 opacity 0
+  ✓ d) 隐藏态整体下沉出画面（translateY(100%)）
+  ✓ d) 隐藏/显示都不改变舞台高度
+
+[D] 换源（openSeq++ → applySource）与改尺寸：舞台高度
+  ✓ 3) 换源前后舞台 rect 完全一致
+  ✓ 3) 换源后与初始舞台高度一致（935.67px）
+实测失败：Cannot read properties of null (reading 'h')
+
+FAIL 27/36 (P5.23 布局实测)
+  · c) 面板头部存在折叠按钮（.vp-x）且可点
+  · c) 折叠后右栏宽度 0 → 416
+  · c) 折叠后视频列 = 整行宽度 → 1169 vs 1585
+  · c) 折叠后视频变宽 → 1169 > 1169
+  · c) 折叠后出现唤出把手（贴右边缘） → null
+  · c) 折叠状态写入 localStorage → null
+  · c) .p-side 带 is-closed 类 → p-side
+  · c) 点把手可重新展开 → true
+  · c) 展开状态也写回 localStorage → null
