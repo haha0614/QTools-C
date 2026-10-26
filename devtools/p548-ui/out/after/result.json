@@ -1,0 +1,113 @@
+{
+  "person": "111",
+  "facts": {
+    "smoke_人物墙": {
+      "path": "/media/persons",
+      "textLen": 564,
+      "errors": []
+    },
+    "smoke_人物详情": {
+      "path": "/media/person/111",
+      "textLen": 415,
+      "errors": []
+    },
+    "cards": 15,
+    "buttonsFull": 15,
+    "before": {
+      "src": "/api/media/thumb/p/a164/0000",
+      "kind": "album"
+    },
+    "btnOpacityHover": "1",
+    "grid": {
+      "cols": 6,
+      "cells": 24,
+      "firstImg": "/api/media/thumb/p/a164/0000"
+    },
+    "afterPhoto": {
+      "src": "/api/media/thumb/p/a164/0004",
+      "kind": "profile",
+      "picked": "用这张：a164/4",
+      "call": {
+        "method": "PUT",
+        "id": "111",
+        "kind": "photo",
+        "ref": "a164:4"
+      }
+    },
+    "expectedUrl": "/api/media/thumb/p/a164/0004",
+    "afterReload": {
+      "ok": true,
+      "cards": 15,
+      "kind": "album"
+    },
+    "urlInvalid": {
+      "disabled": true,
+      "msg": "只接受 http:// / https:// / data:image/ 开头的地址"
+    },
+    "urlValid": {
+      "disabled": false,
+      "preview": "https://cdn.example.com/p548-avatar.png"
+    },
+    "afterUrl": {
+      "src": "https://cdn.example.com/p548-avatar.png",
+      "kind": "profile"
+    },
+    "afterClear": {
+      "src": "/api/media/thumb/p/a164/0000",
+      "kind": "album"
+    },
+    "afterFailure": {
+      "src": "/api/media/thumb/p/a164/0000",
+      "kind": "album",
+      "stable": "/api/media/thumb/p/a164/0000"
+    },
+    "failToast": "头像更新失败：Request failed with status code 500",
+    "pdBefore": {
+      "src": "/api/media/thumb/p/a164/0000",
+      "state": "ready"
+    },
+    "pdAfter": {
+      "src": "/api/media/thumb/p/a164/0004"
+    },
+    "buttons_off": 0,
+    "buttons_local": 0,
+    "smoke_视频库": {
+      "path": "/media",
+      "textLen": 3258,
+      "errors": []
+    }
+  },
+  "passed": 39,
+  "failures": [],
+  "stubCalls": [
+    {
+      "method": "PUT",
+      "id": "111",
+      "kind": "photo",
+      "ref": "a164:4"
+    },
+    {
+      "method": "PUT",
+      "id": "111",
+      "kind": "url",
+      "ref": "https://cdn.example.com/p548-avatar.png"
+    },
+    {
+      "method": "DELETE",
+      "id": "111",
+      "kind": null,
+      "ref": null
+    },
+    {
+      "method": "PUT",
+      "id": "111",
+      "failed": true
+    },
+    {
+      "method": "PUT",
+      "id": "111",
+      "kind": "photo",
+      "ref": "a164:4"
+    }
+  ]
+}

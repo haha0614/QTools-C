@@ -1,0 +1,2 @@
+mysqldump: [ERROR] Failed to open required defaults file: E:\111\project\QTools\QTools-C\tmp\p550\my.cnf
+mysqldump: [ERROR] Fatal error in defaults handling. Program aborted!

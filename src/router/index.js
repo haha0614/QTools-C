@@ -85,13 +85,20 @@ const routes = [
         component: () => import('../views/media/PersonDetailPage.vue'),
         meta: { title: '媒体站 · 人物详情', bleed: true }
       },
-      // 播放列表（P5-B）：列表 + 保序详情；接口未就绪时页面自己显示「接口未就绪」。
-      // 同样标 bleed：整幅左右分栏，与视频库 / 图片站同一套贴边规则。
+      // 播放列表（P5.46）：独占页面取消 —— 它降级成视频库筛选条上的一个维度。
+      // 旧地址保留为**重定向**（书签 / 外部链接不留死链）：跳到视频库并打开播放列表筛选下拉；
+      // 带 ?playlist=<id> 的老链接把 id 一并带过去（它仍是播放器上下文的来源）。
+      // plf 是一次性聚焦信号（下拉开一次就从地址栏抹掉，见 VideoPage.consumePlaylistFocus）。
       {
         path: 'media/playlists',
         name: 'MediaPlaylists',
-        component: () => import('../views/media/PlaylistsPage.vue'),
-        meta: { title: '媒体站 · 播放列表', bleed: true }
+        redirect: (to) => {
+          const raw = to && to.query ? to.query.playlist : ''
+          const id = Array.isArray(raw) ? raw[0] : raw
+          const query = { plf: String(Date.now()) }
+          if (id) query.playlist = String(id)
+          return { path: '/media', query }
+        }
       },
       // 旧的媒体站「我的」已升级为全站个人中心 /me，旧链接不失效
       { path: 'media/me', redirect: '/me' },

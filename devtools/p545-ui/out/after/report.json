@@ -1,0 +1,121 @@
+{
+  "tag": "after",
+  "passed": 64,
+  "failed": 0,
+  "failures": [],
+  "facts": {
+    "avatarKinds": {
+      "video": 4,
+      "album": 10,
+      "initial": 1
+    },
+    "avatarHit": "14/15",
+    "samples": [
+      {
+        "id": "119",
+        "kind": "album",
+        "src": "/api/media/thumb/p/a153/0000",
+        "natural": 400,
+        "text": "",
+        "name": "梨霜儿",
+        "counts": "0 部视频 · 1 本相册 · 2 张照片",
+        "countsClip": 0,
+        "chips": [],
+        "chipH": 0,
+        "recent": "",
+        "h": 99.4,
+        "overflow": 0
+      },
+      {
+        "id": "125",
+        "kind": "video",
+        "src": "/api/media/thumb/v/1d74d2cc5d20",
+        "natural": 480,
+        "text": "",
+        "name": "素人",
+        "counts": "159 部视频 · 0 本相册 · 0 张照片",
+        "countsClip": 0,
+        "chips": [],
+        "chipH": 0,
+        "recent": "",
+        "h": 99.4,
+        "overflow": 0
+      },
+      {
+        "id": "125",
+        "kind": "video",
+        "src": "/api/media/thumb/v/1d74d2cc5d20",
+        "natural": 480,
+        "text": "",
+        "name": "素人",
+        "counts": "159 部视频 · 0 本相册 · 0 张照片",
+        "countsClip": 0,
+        "chips": [],
+        "chipH": 0,
+        "recent": "",
+        "h": 99.4,
+        "overflow": 0
+      }
+    ],
+    "wallWide": {
+      "cards": 15,
+      "spread": 0,
+      "kinds": {
+        "video": 4,
+        "album": 10,
+        "initial": 1
+      },
+      "cols": 6,
+      "height": 99.4
+    },
+    "wallNarrow": {
+      "cols": 2,
+      "spread": 0,
+      "pageOverflow": -15
+    },
+    "richCard": {
+      "name": "念念（念念 Nian Nian）",
+      "counts": "0 部视频 · 144 本相册 · 9017 张照片",
+      "chips": [
+        "身高 165cm",
+        "体重 48kg",
+        "三围 B88/W58/H88"
+      ],
+      "recent": "最近 2026-10-17"
+    },
+    "panelOrder": [
+      "作品简介",
+      "播放列表",
+      "人物",
+      "评分",
+      "标签",
+      "标记"
+    ],
+    "panelOrderFull": [
+      "作品简介",
+      "播放列表",
+      "人物",
+      "工作室",
+      "评分",
+      "标签",
+      "标记"
+    ],
+    "note": {
+      "text": "标记需要管理员身份读取，站端暂不展示；评分与标签按索引显示，仍可直接编辑",
+      "fontSize": "11.5px",
+      "isLast": true,
+      "afterMark": true
+    }
+  },
+  "logs": [
+    "[warning] [Vue warn]: Extraneous non-props attributes (create-mode) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes. \n  at <PlaylistManageDialog open=false lists= Array(0) videos= Array(0)  ... > \n  at <VideoPage onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< undefined > > \n  at <RouterView> \n  at <AppShell onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< undefined > > \n  at <RouterView> \n  at <App>",
+    "[warning] [Vue warn]: Extraneous non-props attributes (create-mode) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes. \n  at <PlaylistManageDialog open=false lists= Array(0) videos= Array(0)  ... > \n  at <VideoPage onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > \n  at <RouterView> \n  at <AppShell onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > \n  at <RouterView> \n  at <App>",
+    "[warning] [Vue warn]: Extraneous non-props attributes (create-mode) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes. \n  at <PlaylistManageDialog open=false lists= Array(0) videos= Array(176)  ... > \n  at <VideoPage onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > \n  at <RouterView> \n  at <AppShell onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > \n  at <RouterView> \n  at <App>",
+    "[warning] [Vue warn]: Extraneous non-props attributes (create-mode) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes. \n  at <PlaylistManageDialog open=false lists= Array(0) videos= Array(0)  ... > \n  at <VideoPage onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< undefined > > \n  at <RouterView> \n  at <AppShell onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< undefined > > \n  at <RouterView> \n  at <App>",
+    "[warning] [Vue warn]: Extraneous non-props attributes (create-mode) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes. \n  at <PlaylistManageDialog open=false lists= Array(0) videos= Array(0)  ... > \n  at <VideoPage onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > \n  at <RouterView> \n  at <AppShell onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > \n  at <RouterView> \n  at <App>",
+    "[warning] [Vue warn]: Extraneous non-props attributes (create-mode) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes. \n  at <PlaylistManageDialog open=false lists= Array(0) videos= Array(176)  ... > \n  at <VideoPage onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > \n  at <RouterView> \n  at <AppShell onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > \n  at <RouterView> \n  at <App>",
+    "[warning] [Vue warn]: Extraneous non-props attributes (create-mode) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes. \n  at <PlaylistManageDialog open=false lists= Array(0) videos= Array(0)  ... > \n  at <VideoPage onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< undefined > > \n  at <RouterView> \n  at <AppShell onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< undefined > > \n  at <RouterView> \n  at <App>",
+    "[warning] [Vue warn]: Extraneous non-props attributes (create-mode) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes. \n  at <PlaylistManageDialog open=false lists= Array(0) videos= Array(176)  ... > \n  at <VideoPage onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > \n  at <RouterView> \n  at <AppShell onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > \n  at <RouterView> \n  at <App>",
+    "[warning] [Vue warn]: Extraneous non-props attributes (create-mode) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes. \n  at <PlaylistManageDialog open=false lists= Array(0) videos= Array(176)  ... > \n  at <VideoPage onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > \n  at <RouterView> \n  at <AppShell onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > \n  at <RouterView> \n  at <App>"
+  ]
+}

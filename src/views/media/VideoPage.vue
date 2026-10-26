@@ -41,6 +41,18 @@
           >
             加入播放列表
           </button>
+          <!-- P5.47 批量生成简介：站端唯一的批量入口（选择模式有选中项 → 只处理选中项，
+               否则 → 全库补空；overwrite=false，已有简介的不动）。逐个生成、每完成一个立刻落库。 -->
+          <button
+            class="icon-btn syn-batch-btn"
+            type="button"
+            data-syn-batch
+            :disabled="readOnlyEdit || synopsisBatchBusy"
+            :title="synopsisBatchTitle"
+            @click="startSynopsisBatch"
+          >
+            {{ synopsisBatchBusy ? '生成中…' : '⚡ 批量生成简介' }}
+          </button>
           <button
             class="icon-btn sel-btn"
             type="button"
@@ -96,7 +108,33 @@
           />
         </div>
 
+        <!-- 筛选维度（P5.46）：播放列表与时长 / 分辨率 / 体积同一行（同一「筛选条」区域） -->
+        <!-- 批量简介任务进度：处理中途也能看到「已处理 N/共 M」，完成后可关闭 -->
+        <div v-if="synopsisBatchText" class="tb-row tb-syn-batch">
+          <span class="syn-batch-progress" data-syn-batch-progress>{{ synopsisBatchText }}</span>
+          <button v-if="synopsisBatchFinished" class="chip chip-x" type="button" @click="clearSynopsisBatch">
+            关闭<span class="x">×</span>
+          </button>
+        </div>
+
         <div v-if="!isMobile" class="tb-row tb-filters">
+          <PlaylistFilter
+            ref="plFilterRef"
+            :lists="plList"
+            :current="String(state.pl || '')"
+            :loading="plListLoading"
+            :unavailable="plListUnavailable"
+            :total="videos.length"
+            @select="applyPlaylistFilter"
+            @manage="openPlaylistManage"
+            @create="openPlaylistCreate"
+          />
+          <span
+            v-if="plFilterOn"
+            class="pl-order-note"
+            title="已按播放列表筛选：网格顺序 = 列表顺序，排序下拉此时不生效"
+            >按列表顺序</span
+          >
           <QuickFilters
             :groups="quickGroups"
             :selected="state"
@@ -119,7 +157,7 @@
         </div>
 
         <!-- 播放列表上下文：URL 带 ?playlist=<id> 时，播放器的上一个/下一个按该列表顺序走 -->
-        <div v-if="playlistCtx" class="chips chips-sm playlist-mode">
+        <div v-if="playlistCtx && !plFilterOn" class="chips chips-sm playlist-mode">
           <span class="pl-tag" :title="playlistCtx.name">
             播放列表：{{ playlistCtx.name }}（{{ playlistCtx.ids.length }} 个 · 按列表顺序）
           </span>
@@ -202,6 +240,24 @@
             <h2>快捷筛选</h2>
           </div>
           <div v-if="isMobile" class="quick-body">
+            <!-- 移动端：快捷筛选在抽屉里，播放列表维度同区（与桌面同一条筛选条的口径） -->
+            <PlaylistFilter
+              ref="plFilterDrawerRef"
+              :lists="plList"
+              :current="String(state.pl || '')"
+              :loading="plListLoading"
+              :unavailable="plListUnavailable"
+              :total="videos.length"
+              @select="applyPlaylistFilter"
+              @manage="openPlaylistManage"
+              @create="openPlaylistCreate"
+            />
+            <span
+              v-if="plFilterOn"
+              class="pl-order-note"
+              title="已按播放列表筛选：网格顺序 = 列表顺序，排序下拉此时不生效"
+              >按列表顺序</span
+            >
             <QuickFilters
               :groups="quickGroups"
               :selected="state"
@@ -293,6 +349,20 @@
       @notify="showToast"
     />
 
+    <!-- 管理播放列表（P5.46）：改名 / 删除 / 拖拽排序 / 复制列表名 —— 原独占页的能力搬进弹层 -->
+    <PlaylistManageDialog
+      :open="plManageOpen"
+      :lists="plList"
+      :videos="videos"
+      :initial-id="String(state.pl || '')"
+      :create-mode="plManageCreate"
+      :level="editLevel"
+      @close="plManageOpen = false"
+      @select="applyPlaylistFilter"
+      @changed="onPlaylistDataChanged"
+      @notify="showToast"
+    />
+
     <!-- 页面级轻提示：批量结果 / 接口未就绪都在这里反馈（与播放列表页同一套组件） -->
     <PageToast :toasts="toasts" />
   </div>
@@ -326,12 +396,16 @@ import VideoCard from './video/VideoCard.vue'
 import RecentStrip from './video/RecentStrip.vue'
 import MediaPlayer from './video/MediaPlayer.vue'
 import BatchBar from './video/BatchBar.vue'
+import { batchFinished, batchProgressText, errorText, resolveMode } from './video/synopsisGenerate'
 import VideoMetaPanel from './video/VideoMetaPanel.vue'
 // P5-B：加入播放列表弹层 + 播放列表顺序纯逻辑（归一化 / 保序重排 / 上一部下一部）
 import PlaylistPicker from './video/PlaylistPicker.vue'
+// P5.46：播放列表降级成「筛选维度」—— 筛选条下拉 + 管理弹层（原独占页取消）
+import PlaylistFilter from './video/PlaylistFilter.vue'
+import PlaylistManageDialog from './video/PlaylistManageDialog.vue'
 import PageToast from './PageToast.vue'
 import { usePageToast } from './usePageToast.js'
-import { normalizePlaylistDetail } from './video/playlistOrder'
+import { normalizePlaylistDetail, normalizePlaylistList, orderByPlaylistIds } from './video/playlistOrder'
 // P5.32：播放上下文（从哪个列表点进来就按那个顺序上/下一部 + 信息栏置顶分区）
 // P5.35：来源驱动 —— 多了 person / tag 两档来源，标题与顺序都由来源页给
 import {
@@ -656,7 +730,9 @@ function defaultState() {
     unsafe: false,
     sort: 'added',
     sortPinned: false,
-    play: ''
+    play: '',
+    // 播放列表筛选维度（P5.46）：'' = 全部；非空 = 该列表 id（网格按列表顺序）
+    pl: ''
   }
 }
 
@@ -705,6 +781,9 @@ function parseHash(hash) {
   if (p.get('unsafe') === '1') st.unsafe = true
   const play = p.get('play')
   if (play) st.play = play // 播放深链 /#play=<videoId>
+  // 播放列表筛选（P5.46）：hash 段名 pl，写的是列表 id
+  const pl = p.get('pl')
+  if (pl) st.pl = pl
   const sort = p.get('sort')
   if (sort && SORTS.some((s) => s.key === sort)) {
     st.sort = sort
@@ -740,6 +819,7 @@ function buildHash(st) {
   if (s.ress && s.ress.length) p.set('res', s.ress.join(','))
   if (s.sizes && s.sizes.length) p.set('size', s.sizes.join(','))
   if (s.unsafe) p.set('unsafe', '1')
+  if (s.pl) p.set('pl', s.pl)
   if (s.play) p.set('play', s.play)
   // 只有「用户/首屏随机结果固定下来的」排序才写进 hash；清空后不带 sort，刷新重新随机
   if (s.sort && s.sortPinned) p.set('sort', s.sort)
@@ -949,6 +1029,141 @@ function exitPlaylistMode() {
   router.replace({ path: route.path, query: q, hash: window.location.hash || undefined }).catch(() => {})
 }
 
+/* ------------------------------------------- 播放列表 = 筛选维度（P5.46） */
+/* 用户决定：播放列表形态用 C —— 不再独占一个大页面，而是视频库筛选条上的一个维度
+   （与时长 / 分辨率 / 体积并列）。state.pl 存选中的列表 id，'' = 全部：
+     · 网格：只显示该列表的片子，顺序 = 列表顺序（覆盖排序下拉，见上面的 view）；
+     · 播放：点击卡片进播放器时上下文就是该列表（标题 = 列表名、顺序 = 列表顺序）；
+     · 管理：重命名 / 删除 / 拖拽排序 / 复制列表名都收进 PlaylistManageDialog 弹层。
+   数据只有两份：plList（清单，下拉 + 弹层共用）与 plView（选中列表的有序条目）。 */
+
+/** 桌面筛选条 / 移动抽屉里的两个下拉实例（同一条筛选条的两处渲染，与 QuickFilters 同构） */
+const plFilterRef = ref(null)
+const plFilterDrawerRef = ref(null)
+/** 清单：[{ id, name, count }]（GET /api/media/playlists 归一化） */
+const plList = ref([])
+const plListLoading = ref(false)
+/** 非空 = 清单接口未就绪的可读提示（只在下拉与弹层里显示，不影响库） */
+const plListUnavailable = ref('')
+/** 选中列表的有序条目：{ id, name, ids }；null = 未选 / 未加载完成 */
+const plView = ref(null)
+const plLoading = ref(false)
+const plUnavailable = ref('')
+/** 管理弹层开关 + 「新建」聚焦标记（下拉开「新建播放列表…」时把光标送进名称输入框） */
+const plManageOpen = ref(false)
+const plManageCreate = ref(false)
+
+function openPlaylistManage() {
+  plManageCreate.value = false
+  plManageOpen.value = true
+}
+
+function openPlaylistCreate() {
+  plManageCreate.value = true
+  plManageOpen.value = true
+}
+
+/** 是否正在按播放列表筛选（网格顺序因此被列表顺序覆盖） */
+const plFilterOn = computed(() => !!state.pl)
+
+/** 选中列表的显示名：详情没到时退化成清单里的名字，再退化成 #id */
+const plFilterName = computed(() => {
+  const id = String(state.pl || '')
+  if (!id) return ''
+  const v = plView.value
+  if (v && String(v.id) === id && v.name) return v.name
+  const hit = plList.value.find((p) => String(p.id) === id)
+  return hit ? hit.name : '#' + id
+})
+
+async function loadPlaylistList() {
+  plListLoading.value = true
+  plListUnavailable.value = ''
+  try {
+    const res = await api.listPlaylists({ silent: true })
+    plList.value = normalizePlaylistList(res)
+  } catch {
+    plList.value = []
+    plListUnavailable.value = '播放列表接口未就绪（GET /api/media/playlists）'
+  } finally {
+    plListLoading.value = false
+  }
+}
+
+async function loadPlaylistView() {
+  const id = String(state.pl || '')
+  if (!id) {
+    plView.value = null
+    plUnavailable.value = ''
+    plLoading.value = false
+    return
+  }
+  plLoading.value = true
+  plUnavailable.value = ''
+  try {
+    const res = await api.getPlaylist(id, { silent: true })
+    const d = normalizePlaylistDetail(res)
+    if (String(state.pl) !== id) return // 期间又换了列表：丢弃旧响应
+    plView.value = { id, name: d.name || '#' + id, ids: d.ids }
+  } catch {
+    plView.value = null
+    plUnavailable.value = '播放列表详情接口未就绪（GET /api/media/playlist/{id}）：暂时无法按列表筛选'
+  } finally {
+    plLoading.value = false
+  }
+}
+
+// 选中的列表变了就重拉有序条目（下拉选择、清空筛选、手改 hash 都走这里）
+watch(() => state.pl, () => loadPlaylistView(), { immediate: true })
+
+/** 下拉 / 侧栏 / 弹层共用的唯一入口：设置筛选（'' = 回到全库） */
+function applyPlaylistFilter(id) {
+  const next = id ? String(id) : ''
+  plManageOpen.value = false
+  if (next === String(state.pl || '')) return
+  state.pl = next
+}
+
+/**
+ * 管理弹层的写操作回执：清单总是重拉；
+ * 被改的正好是当前筛选的列表时，条目也要重拉（重命名改标题、拖拽排序改网格顺序）。
+ */
+function onPlaylistDataChanged(payload) {
+  const p = payload || {}
+  loadPlaylistList()
+  if (p.kind === 'delete' && String(state.pl) === String(p.id)) {
+    state.pl = ''
+    return
+  }
+  if (String(state.pl) === String(p.id)) loadPlaylistView()
+}
+
+/**
+ * 侧栏「播放列表」入口（P5.46）：不再跳独立页，而是「跳视频库 + 打开播放列表下拉」。
+ * 信号走一次性查询参数 ?plf=<token>（token 每次点击都不同，重复点击也能再次触发）；
+ * 消费后立刻从地址栏抹掉，刷新不会又弹一次。
+ */
+const plfToken = computed(() => {
+  const q = (route && route.query) || {}
+  const v = Array.isArray(q.plf) ? q.plf[0] : q.plf
+  return v == null ? '' : String(v)
+})
+
+function consumePlaylistFocus() {
+  if (!plfToken.value) return
+  const q = Object.assign({}, route.query)
+  delete q.plf
+  router.replace({ path: route.path, query: q, hash: window.location.hash || undefined }).catch(() => {})
+  nextTick(() => {
+    // 桌面与移动是两处渲染（互斥），哪个在就开哪个
+    for (const c of [plFilterRef.value, plFilterDrawerRef.value]) {
+      if (c && typeof c.open === 'function') c.open()
+    }
+  })
+}
+
+watch(plfToken, () => consumePlaylistFocus())
+
 const quickGroups = [
   { field: 'durs', items: DUR_BUCKETS },
   { field: 'ress', items: RES_TIERS },
@@ -1083,6 +1298,93 @@ function currentPlayDur() {
 }
 /* 提示统一走 usePageToast（与播放列表页同一套组件 PageToast） */
 const { toasts, push: showToast } = usePageToast()
+
+/* ---------------------------------------------------------- 批量生成简介（P5.47） */
+
+/** 当前批量任务节点（null = 没有任务在跑/没跑过） */
+const synopsisBatchJob = ref(null)
+/** 提交中 / 轮询中（按钮 loading） */
+const synopsisBatchBusy = ref(false)
+let synopsisBatchTimer = null
+
+const synopsisBatchText = computed(() => batchProgressText(synopsisBatchJob.value))
+const synopsisBatchFinished = computed(() => batchFinished(synopsisBatchJob.value))
+const synopsisBatchTitle = computed(() =>
+  synopsisBatchBusy.value
+    ? '批量生成进行中…'
+    : '为缺少简介的视频批量生成简介（已有简介的不覆盖；后台逐个处理，每完成一个立刻保存）'
+)
+
+function stopSynopsisBatchPoll() {
+  if (synopsisBatchTimer) {
+    clearInterval(synopsisBatchTimer)
+    synopsisBatchTimer = null
+  }
+}
+
+/** 轮询任务进度：1.5s 一次，结束后停表并 toast 汇总 */
+function pollSynopsisBatch(jobId) {
+  stopSynopsisBatchPoll()
+  synopsisBatchTimer = setInterval(async () => {
+    try {
+      const job = await api.getSynopsisJob(jobId, { silent: true })
+      synopsisBatchJob.value = job
+      if (batchFinished(job)) {
+        stopSynopsisBatchPoll()
+        synopsisBatchBusy.value = false
+        showToast(batchProgressText(job))
+      }
+    } catch {
+      stopSynopsisBatchPoll()
+      synopsisBatchBusy.value = false
+      showToast('批量生成进度查询失败（任务可能已随后端重启作废）')
+    }
+  }, 1500)
+}
+
+/**
+ * 触发批量生成
+ *   选中项非空（选择模式）→ 只处理这些 id；否则 → all:true（全库补空）
+ *   mode：本地模型可用走 llm，否则模板（与单条「⚡ 自动生成」同一套判定）
+ *   overwrite 固定 false：这个按钮的语义是「补空」，不是「覆盖所有人写好的简介」
+ */
+async function startSynopsisBatch() {
+  if (synopsisBatchBusy.value || readOnlyEdit.value) return
+  synopsisBatchBusy.value = true
+  try {
+    let capabilities = null
+    try {
+      capabilities = await api.getSynopsisCapabilities({ silent: true })
+    } catch {
+      capabilities = null
+    }
+    const mode = resolveMode(capabilities)
+    const picked = selectMode.value && selectedIds.value.length ? selectedIds.value.slice() : null
+    const payload = picked
+      ? { videoIds: picked, mode, overwrite: false }
+      : { all: true, mode, overwrite: false }
+    const job = await api.generateSynopsisBatch(payload)
+    synopsisBatchJob.value = job
+    showToast(
+      '批量生成已开始：' +
+        (job.total || 0) +
+        ' 条（' +
+        (mode === 'llm' ? '本地模型' : '模板') +
+        '，已有简介的跳过）'
+    )
+    pollSynopsisBatch(job.jobId)
+  } catch (err) {
+    synopsisBatchBusy.value = false
+    showToast('批量生成失败：' + errorText(err))
+  }
+}
+
+/** 关闭进度条（任务本身已在后端跑完，这里只清 UI） */
+function clearSynopsisBatch() {
+  synopsisBatchJob.value = null
+}
+
+onBeforeUnmount(stopSynopsisBatchPoll)
 /** 播放层只借用播放会话相关的三个方法（不能让它自己调 useMediaTrack，否则卸载时会 dispose 页面级监听） */
 const tracker = {
   openPlaySession: tk.openPlaySession,
@@ -1114,7 +1416,16 @@ const countText = computed(() => {
   return '显示 ' + view.value.length + ' / ' + videos.value.length
 })
 
-const emptyText = computed(() => errorMsg.value || '没有符合条件的视频')
+const emptyText = computed(() => {
+  if (errorMsg.value) return errorMsg.value
+  // 播放列表维度（P5.46）：把「加载中 / 未就绪 / 空列表 / 被其它筛选挡掉」四种空态说清楚
+  if (state.pl) {
+    if (plUnavailable.value) return plUnavailable.value
+    if (plLoading.value || !plView.value) return '正在加载播放列表…'
+    return plView.value.ids.length ? '这个播放列表里的视频都被当前筛选挡掉了' : '这个播放列表还没有视频'
+  }
+  return '没有符合条件的视频'
+})
 
 /** 排序上下文：最近观看顺序 / 续播位置 / 本次会话固定的随机名次 */
 const sortCtx = computed(() => {
@@ -1123,11 +1434,24 @@ const sortCtx = computed(() => {
   return ctx
 })
 
-const view = computed(() => queryVideos(videos.value, state, sortCtx.value))
+/**
+ * 网格结果。P5.46：选中播放列表时，先按其它筛选（分类 / 时长 / 搜索 …）出候选，
+ * 再交给 orderByPlaylistIds 做「只留列表内 + 严格按列表顺序」——排序下拉此时不生效。
+ * 列表还没加载完时返回空数组：宁可短暂空网格，也不让「已筛选却看到全库」误导。
+ */
+const view = computed(() => {
+  const base = queryVideos(videos.value, state, sortCtx.value)
+  if (!state.pl) return base
+  const d = plView.value
+  if (!d || String(d.id) !== String(state.pl)) return []
+  return orderByPlaylistIds(base, d.ids)
+})
 const visibleVideos = computed(() => view.value.slice(0, visibleLimit.value))
 
 const activeEntries = computed(() => {
   const out = []
+  // 播放列表维度排在最前：它决定了整张网格的顺序（「按列表顺序」写在 chip 上）
+  if (state.pl) out.push({ kind: 'pl', key: String(state.pl), label: '播放列表：' + plFilterName.value + '（按列表顺序）' })
   if (state.q) out.push({ kind: 'q', key: '', label: '搜索：' + state.q })
   for (const c of state.cats) out.push({ kind: 'cat', key: c, label: c })
   for (const f of Object.keys(state.facets)) {
@@ -1213,6 +1537,24 @@ const libraryIds = computed(() => videos.value.map((v) => v.id))
 const recentIds = computed(() => recentItems.value.map((r) => r.id))
 
 /**
+ * 播放列表档的来源（P5.46）：**筛选维度优先**（它代表「用户此刻正在看的这个列表」），
+ * 其次是 URL ?playlist=<id>（旧深链 / 其它页面带进来的上下文）。
+ * 两档都要求列表里有当前片才算命中（由 pickPlaybackContext 统一判定，顺序与标题同进同出）。
+ * @returns {{source:string, ids:string[], name:string, playlistId:string}|null}
+ */
+function playlistContextSource() {
+  const d = plView.value
+  if (state.pl && d && String(d.id) === String(state.pl) && Array.isArray(d.ids) && d.ids.length) {
+    return { source: CTX_PLAYLIST, ids: d.ids, name: d.name, playlistId: d.id }
+  }
+  const pl = playlistCtx.value
+  if (pl && Array.isArray(pl.ids) && pl.ids.length) {
+    return { source: CTX_PLAYLIST, ids: pl.ids, name: pl.name, playlistId: pl.id }
+  }
+  return null
+}
+
+/**
  * 为某个 id 定上下文快照，来源优先级（P5.35：来源驱动，从哪里进来就按哪里的顺序与名字）：
  *   playlist > person > tag > browse > recent > library。
  * 每一档都必须「确实包含这部片」才算命中 —— 从播放列表点进来时永远先按该列表顺序走；
@@ -1222,10 +1564,8 @@ const recentIds = computed(() => recentItems.value.map((r) => r.id))
  */
 function contextFor(id, ignoreSource) {
   const sources = []
-  const pl = playlistCtx.value
-  if (pl && Array.isArray(pl.ids) && pl.ids.length) {
-    sources.push({ source: CTX_PLAYLIST, ids: pl.ids, name: pl.name, playlistId: pl.id })
-  }
+  const plc = playlistContextSource()
+  if (plc) sources.push(plc)
   const snap = ignoreSource ? null : sourceSnapshot()
   if (snap) sources.push({ source: CTX_PERSON, ids: snap.ids, name: snap.name })
   // 标签档：只有「恰好一个筛选条件」才有名字可用（组合筛选 → 无名可用，回落到 browse）
@@ -1466,7 +1806,10 @@ function writeHash() {
   const h = buildHash(state)
   if (window.location.hash === h) return
   try {
-    history.replaceState(null, '', window.location.pathname + window.location.search + h)
+    // P5.46：state 必须原样带回 —— 传 null 会让 vue-router 的 history 状态丢失
+    // （控制台会 warn「history.state seems to have been manually replaced」），
+    // 前进 / 后退时的路由状态也不再可靠。只改 URL，不动 state。
+    history.replaceState(history.state, '', window.location.pathname + window.location.search + h)
   } catch {
     window.location.hash = h // history API 不可用时的兜底
   }
@@ -1551,6 +1894,10 @@ function onFacetToggle(facet, name) {
 }
 
 function removeActive(x) {
+  if (x.kind === 'pl') {
+    applyPlaylistFilter('')
+    return
+  }
   if (x.kind === 'q') {
     state.q = ''
     searchInput.value = ''
@@ -2477,11 +2824,12 @@ watch(playlistId, () => loadPlaylistContext())
  *     浏览器前进后退、手改地址栏都走这里）。
  * 播放中改筛选 / 收藏等**不**触发重算：快照语义，从哪个列表点进来就按那个顺序。
  */
-watch(playlistCtx, (ctx) => {
+watch([playlistCtx, plView, () => state.pl], () => {
   const id = curVideo.value ? curVideo.value.id : ''
   if (!id) return
-  if (ctx && Array.isArray(ctx.ids) && ctx.ids.length) {
-    const up = makePlaybackContext(ctx.ids, id, { source: 'playlist', name: ctx.name, playlistId: ctx.id })
+  const src = playlistContextSource()
+  if (src) {
+    const up = makePlaybackContext(src.ids, id, { source: 'playlist', name: src.name, playlistId: src.playlistId })
     if (up.index >= 0) {
       pbCtx.value = up
       return
@@ -2657,6 +3005,9 @@ onMounted(() => {
   // 工作室（P5-A）与播放列表上下文（P5-B）：同样并行，失败只降级不阻塞
   loadStudios()
   loadPlaylistContext()
+  // P5.46：播放列表筛选维度 —— 清单（下拉 / 管理弹层共用）+ 侧栏入口带来的聚焦信号
+  loadPlaylistList()
+  consumePlaylistFocus()
 })
 
 /** 策略晚于首屏到达（full → off/local）时补拉一次标签库：local 档要并入本机标签 */
@@ -2872,6 +3223,25 @@ watch(
   min-width: 0;
 }
 
+/* P5.47 批量生成简介：进度行与工具栏其它行同宽，弱色不加粗（它是状态不是操作） */
+.tb-syn-batch {
+  align-items: center;
+  gap: 8px;
+}
+
+.syn-batch-progress {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--fg-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 生成中时按钮保持可见（防止用户以为没点上）；禁用态由 :disabled 统一处理 */
+.syn-batch-btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
 .cols-btn {
   display: none;
 }
@@ -2924,6 +3294,18 @@ watch(
 .chip-x .x {
   font-size: 13px;
   opacity: 0.7;
+}
+
+/* 播放列表维度（P5.46）：顺序被列表顺序覆盖时的一行说明（与 chip 同区、同字号） */
+.pl-order-note {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  border: 1px dashed var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 11.5px;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
 .grid {
@@ -3165,14 +3547,18 @@ watch(
     padding: 3px 8px;
   }
 
+  /* P5.46 实测：repeat(2, 1fr) 的 1fr 最小值是 auto（= 卡片内容的 max-content），
+     窄屏下只要某张卡有不可断行的内容（长标题 / 人物行），整条轨道就会被撑到几百 px，
+     页面因此横向滚动。minmax(0, 1fr) 把最小值钉成 0，卡片才真的等分两列，
+     卡内长文本由既有的 text-overflow: ellipsis 截断。 */
   .grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
     padding: 10px var(--ms-gutter) calc(12px + env(safe-area-inset-bottom, 0px));
   }
 
   .grid.cols-3 {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
   }
 }

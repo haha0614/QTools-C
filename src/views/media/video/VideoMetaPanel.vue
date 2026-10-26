@@ -6,8 +6,10 @@
     off   —— 全部编辑控件禁用，只展示评分 / 标签 / 标记，并提示「仅私有部署可编辑…」；
     local —— 只读写 localStorage（ms.org.<ownerKey>.<videoId>），不发任何请求，标题旁显示「本地」；
     full  —— 走接口（PUT /api/media/video/{id}/meta）。
-  分区（自上而下）：**收藏**（P5.34 置顶一行，状态与 API 在 VideoPage）→
-         播放列表（P5.32 置顶 = 本次播放的上/下文，只读导航）→ 人物 → 工作室 → 评分 → 标签 → 标记。
+  分区（自上而下，P5.45 定稿）：**收藏**（P5.34 置顶一行，状态与 API 在 VideoPage）→
+          **作品简介**（P5.45 提到第二位：先回答「这部片是什么」，再给导航）→
+         播放列表（本次播放的上/下文，只读导航）→ 人物 → 工作室 → 评分 → 标签 → 标记，
+         最后一行是「标记读不到」的中性说明（P5.45 从顶部挪到底部，弱化为次要注释）。
   P5.35：置顶分区每行带「缩略图 + 序号 + 标题 + 时长」；标题行与顺序都由**来源页**决定
          （播放列表名 / 人物名 / 标签名 / 按当前浏览顺序）。原「我的播放列表」分区（P5.26）整块删除 ——
          加入 / 移出 / 新建仍在卡片右下角菜单与工具栏 PlaylistPicker 里，信息栏不再重复一份。
@@ -49,10 +51,9 @@
       <p v-else-if="isLocal" class="vp-hint vp-policy">{{ HINT_LOCAL }}</p>
 
       <div v-if="loading" class="vp-hint">加载中…</div>
-      <p v-if="readNote" class="vp-hint vp-note">{{ readNote }}</p>
 
       <!-- P5.34（用户纠正 4「header 里面的收藏放到信息栏里面」）：
-           收藏从播放器头部搬到这里 —— 信息栏顶部**第一行**（提示语之后、播放列表分区之前）。
+           收藏从播放器头部搬到这里 —— 信息栏顶部**第一行**（策略提示之后、作品简介与播放上下文之前）。
            本组件只渲染态 + emit('toggle-fav')，收藏状态与 API 仍由页面持有（VideoPage.toggleFav：
            乐观更新 + 失败回滚 + toast），所以和列表卡片上的 ☆ 是**同一个**数据源，两处不会不一致。
            为什么不按编辑策略禁用：收藏写的是「用户偏好」（/api/media/user），不是媒体库元数据
@@ -73,6 +74,101 @@
           <span class="vp-fav-t">{{ fav ? '已收藏' : '收藏' }}</span>
         </button>
       </div>
+
+      <!-- 作品简介 / 剧情梗概（P5.38，用户需求「信息栏补作品简介，剧情梗概」）：
+           P5.45（用户需求 1）位置从「评分之后」提到**第二位**：收藏 → 简介 → 播放列表（上下文）→
+           人物 → 工作室 → 评分 → 标签 → 标记。理由：简介是「这部片是什么」（内容），上下文列表是
+           「怎么走到这里的」（导航）；内容先于导航，且它在首屏就不用往下滚。
+           三档与其它控件完全一致：off 没有编辑入口（只有正文）、local 只写 localStorage、full 走 PUT。
+           折叠规则：逻辑行 > 6 行折叠 + 「展开」（单行长文由 CSS line-clamp 视觉截断，
+           组件再按 scrollHeight 复测一次真实溢出，两者任一成立就给「展开」）。 -->
+      <section class="vp-sec vp-sec-syn" data-vp-sec="synopsis">
+        <h3 class="vp-h3">
+          作品简介
+          <span v-if="isLocal" class="vp-h3-local" :title="HINT_LOCAL">本地</span>
+          <!-- P5.47「⚡ 自动生成」：单一入口。本地模型可用 → 默认走模型；否则走模板。
+               生成结果只进**可编辑预览态**，不自动落库（保存仍走既有的「保存」）。 -->
+          <button
+            v-if="synopsisEditable && !synopsisEditing"
+            class="vp-mini vp-syn-gen"
+            type="button"
+            data-vp-syn-generate
+            :disabled="locked || synopsisGenerating"
+            :title="synopsisGenerateTitle"
+            @click="generateSynopsisPreview"
+          >
+            {{ synopsisGenerating ? '生成中…' : generateLabel(!!synopsisValue) }}
+          </button>
+          <button
+            v-if="synopsisEditable && !synopsisEditing"
+            class="vp-mini vp-syn-edit"
+            type="button"
+            :disabled="locked"
+            :title="synopsisValue ? '编辑作品简介 / 剧情梗概' : '写作品简介 / 剧情梗概'"
+            @click="startSynopsisEdit"
+          >
+            {{ synopsisValue ? '编辑' : '＋ 写简介' }}
+          </button>
+        </h3>
+
+        <template v-if="!synopsisEditing">
+          <p v-if="synopsisValue" ref="synopsisTextEl" class="vp-syn" :class="{ 'is-fold': synopsisFolded }">{{ synopsisValue }}</p>
+          <p v-else class="vp-syn-empty">暂无简介</p>
+          <button
+            v-if="synopsisFoldable"
+            class="vp-mini vp-syn-more"
+            type="button"
+            :aria-expanded="synopsisExpanded ? 'true' : 'false'"
+            :title="synopsisExpanded ? '收起简介' : '展开完整简介'"
+            @click="toggleSynopsisFold"
+          >
+            {{ synopsisExpanded ? '收起' : '展开' }}
+          </button>
+          <p v-if="synopsisNote" class="vp-hint">{{ synopsisNote }}</p>
+        </template>
+
+        <!-- 编辑态：textarea 行高 1.6 / min-height 96px / 可纵向拉高；换行原样提交 -->
+        <template v-else>
+          <textarea
+            ref="synopsisInputEl"
+            v-model="synopsisDraft"
+            class="vp-syn-input"
+            rows="5"
+            placeholder="写作品简介 / 剧情梗概（可换行，最多 8000 字符）"
+            aria-label="作品简介 / 剧情梗概"
+            :disabled="saving"
+            @keydown.esc.stop="cancelSynopsisEdit"
+          ></textarea>
+          <!-- 预览态来源提示：「由字幕内容生成 · {model}」/「由画面内容生成 · {model}」/「按现有信息生成（模板）」 -->
+          <p v-if="synopsisSourceHintText" class="vp-hint vp-syn-src" data-vp-syn-source>{{ synopsisSourceHintText }}</p>
+          <p v-if="synopsisGenerateNotice" class="vp-hint vp-syn-notice" data-vp-syn-notice>{{ synopsisGenerateNotice }}</p>
+          <!-- P5.53：素材不足（无字幕 / 无可识别画面）时不塞空串，给出模板退路 -->
+          <button
+            v-if="synopsisInsufficient"
+            class="vp-mini vp-syn-template"
+            type="button"
+            data-vp-syn-template
+            :disabled="synopsisGenerating || saving"
+            :title="'模板只写客观信息（人物 / 分类 / 时长 / 标签），不写剧情'"
+            @click="applyTemplateSynopsis"
+          >
+            {{ TEMPLATE_FALLBACK_LABEL }}
+          </button>
+          <div class="vp-syn-bar">
+            <span class="vp-syn-count" :class="{ over: synopsisTooLong }">{{ synopsisChars }} / {{ SYNOPSIS_MAX }}</span>
+            <button
+              class="vp-mini vp-mini-ok"
+              type="button"
+              :disabled="saving || synopsisTooLong"
+              :title="synopsisTooLong ? '超过 ' + SYNOPSIS_MAX + ' 字符，无法保存' : '保存（Ctrl+Enter）'"
+              @click="saveSynopsisEdit"
+            >
+              保存
+            </button>
+            <button class="vp-mini" type="button" :disabled="saving" @click="cancelSynopsisEdit">取消</button>
+          </div>
+        </template>
+      </section>
 
       <!-- P5.32（用户需求「信息栏播放列表置顶」）：置顶的「播放列表」= **本次播放的上/下文** ——
            从哪个来源点进来就按那个顺序列出，当前项高亮 + 序号，点任一项直接切到该片。
@@ -226,73 +322,6 @@
         </div>
       </section>
 
-      <!-- 作品简介 / 剧情梗概（P5.38，用户需求「信息栏补作品简介，剧情梗概」）：
-           位置放在**评分之后、标签之前** —— 阅读顺序是「人物 → 工作室 → 评分 → 简介 → 标签 → 标记」：
-           简介是这一片的**正文**，评分类属性挨着它、可枚举的 chips（标签 / 标记）排在它后面；
-           放在最上面会把置顶的收藏 / 播放上下文挤下去，放在最下面则要滚动才看得到（简介是首屏信息）。
-           三档与其它控件完全一致：off 没有编辑入口（只有正文）、local 只写 localStorage、full 走 PUT。
-           折叠规则：逻辑行 > 6 行折叠 + 「展开」（单行长文由 CSS line-clamp 视觉截断，
-           组件再按 scrollHeight 复测一次真实溢出，两者任一成立就给「展开」）。 -->
-      <section class="vp-sec vp-sec-syn" data-vp-sec="synopsis">
-        <h3 class="vp-h3">
-          作品简介
-          <span v-if="isLocal" class="vp-h3-local" :title="HINT_LOCAL">本地</span>
-          <button
-            v-if="synopsisEditable && !synopsisEditing"
-            class="vp-mini vp-syn-edit"
-            type="button"
-            :disabled="locked"
-            :title="synopsisValue ? '编辑作品简介 / 剧情梗概' : '写作品简介 / 剧情梗概'"
-            @click="startSynopsisEdit"
-          >
-            {{ synopsisValue ? '编辑' : '＋ 写简介' }}
-          </button>
-        </h3>
-
-        <template v-if="!synopsisEditing">
-          <p v-if="synopsisValue" ref="synopsisTextEl" class="vp-syn" :class="{ 'is-fold': synopsisFolded }">{{ synopsisValue }}</p>
-          <p v-else class="vp-syn-empty">暂无简介</p>
-          <button
-            v-if="synopsisFoldable"
-            class="vp-mini vp-syn-more"
-            type="button"
-            :aria-expanded="synopsisExpanded ? 'true' : 'false'"
-            :title="synopsisExpanded ? '收起简介' : '展开完整简介'"
-            @click="toggleSynopsisFold"
-          >
-            {{ synopsisExpanded ? '收起' : '展开' }}
-          </button>
-          <p v-if="synopsisNote" class="vp-hint">{{ synopsisNote }}</p>
-        </template>
-
-        <!-- 编辑态：textarea 行高 1.6 / min-height 96px / 可纵向拉高；换行原样提交 -->
-        <template v-else>
-          <textarea
-            ref="synopsisInputEl"
-            v-model="synopsisDraft"
-            class="vp-syn-input"
-            rows="5"
-            placeholder="写作品简介 / 剧情梗概（可换行，最多 8000 字符）"
-            aria-label="作品简介 / 剧情梗概"
-            :disabled="saving"
-            @keydown.esc.stop="cancelSynopsisEdit"
-          ></textarea>
-          <div class="vp-syn-bar">
-            <span class="vp-syn-count" :class="{ over: synopsisTooLong }">{{ synopsisChars }} / {{ SYNOPSIS_MAX }}</span>
-            <button
-              class="vp-mini vp-mini-ok"
-              type="button"
-              :disabled="saving || synopsisTooLong"
-              :title="synopsisTooLong ? '超过 ' + SYNOPSIS_MAX + ' 字符，无法保存' : '保存（Ctrl+Enter）'"
-              @click="saveSynopsisEdit"
-            >
-              保存
-            </button>
-            <button class="vp-mini" type="button" :disabled="saving" @click="cancelSynopsisEdit">取消</button>
-          </div>
-        </template>
-      </section>
-
       <!-- 标签：chips + 加标签入口 -->
       <section class="vp-sec">
         <h3 class="vp-h3">
@@ -345,7 +374,9 @@
             </button>
           </li>
         </ul>
-        <div v-else class="vp-hint">暂无标记</div>
+        <!-- P5.51：只有「读接口成功 / 本机覆盖权威」才敢说「暂无标记」；
+             读失败时下面 readNote 那条提示才是解释，不再顺手谎称没有标记。 -->
+        <div v-else-if="markersKnownEmpty" class="vp-hint">暂无标记</div>
 
         <!-- P5.25（用户反馈 5「标记区域布局应当优化」）：一行七件的横排拆成三行分组 ——
              1) 类型分段控件（单点 / 区间）+ 右侧「＋ 加标记」
@@ -456,6 +487,11 @@
       </section>
 
       <div v-if="saving" class="vp-hint">保存中…</div>
+
+      <!-- P5.45（用户需求 2）：站端读不到元信息的中性提示从**顶部**挪到**最底部**（标记分区之后）。
+           它是「为什么标记看不到」的解释，不是必须先读的操作指引：第一眼该看到的是简介与上下文，
+           而「标记在不在」这件事的判定（locked / readOnly）不受这条提示影响 —— 提示只是说明文字。 -->
+      <p v-if="readNote" class="vp-hint vp-note">{{ readNote }}</p>
     </div>
   </aside>
 </template>
@@ -483,6 +519,13 @@ import { readLocalPersons, writeLocalPersons } from './personLocal'
 /* P5.38 作品简介 / 剧情梗概：规则（长度 / 换行 / 折叠 / 三档）与 local 档存储 */
 import { SYNOPSIS_MAX, canEditSynopsis, countSynopsisChars, shouldFold, trimSynopsis, validateSynopsis, writeMode } from './synopsisRules'
 import { readLocalSynopsis, writeLocalSynopsis } from './synopsisLocal'
+import {
+  TEMPLATE_FALLBACK_LABEL,
+  generateLabel,
+  generateSynopsis,
+  generateTemplateSynopsis,
+  sourceHint
+} from './synopsisGenerate'
 // P5.3-B：站端演员接口（PUT /video/{id}/persons、POST /persons）；未就绪只提示
 import { PERSON_NOT_READY, errorText, isNotReady, saveVideoPersons } from './personApi'
 // P5-C：标记预览帧（精灵图按时间取格，几何唯一实现在 spriteCell.js）
@@ -602,11 +645,23 @@ const markers = ref(seed && Array.isArray(seed.markers) ? seed.markers.filter((m
 /**
  * P4.3：当前这份 markers 是否「权威」（可以写进前端按 videoId 的标记缓存）。
  *   - local 档：markers 来自本机 localStorage 组织覆盖，本身就是权威值 → 初始 true；
- *   - full/off 档：初始 false —— 站端没有匿名读元信息的接口，读失败时 markers 只是空种子，
- *     若把这种「读不到」当成「没有标记」写进缓存，就会把播放器已有的刻度擦掉。
+ *   - full/off 档：初始 false —— 读失败时 markers 只是空种子，若把这种「读不到」当成
+ *     「没有标记」写进缓存，就会把播放器已有的刻度擦掉。
+ *     P5.50 起站端 GET /api/media/video/{id}/meta 是 @Anonymous 只读（hidden 与不存在同为 404），
+ *     所以 full 档读成功即权威（markers 为空也权威 = 真的没有标记）；只有读失败才保持 false。
  *     只有 applyMeta（读接口成功 / 写接口回读成功）与 saveLocal 之后才置 true。
  */
 const markersTrusted = ref(isLocal.value)
+
+/**
+ * P5.51：标记列表的「空态」只有这两种情形能说是「没有标记」——
+ *   · markersTrusted（读接口成功 / 本机覆盖 / 写回成功）且 markers 为空 → 真·暂无标记；
+ *   · off 档压根不发读请求（沿用改动前的展示，不新增提示）。
+ * 读失败（404 / 网络 / 非 200，含 /admin 回退也失败）时 markersTrusted 仍为 false，
+ * 空态交给 readNote 那条「标记需要管理员身份读取…」——它才是那句「看不到标记」的解释。
+ */
+// P5.54：off 档也允许**只读**标记（读接口本身不受编辑策略限制）；空态只认「权威为空」
+ const markersKnownEmpty = computed(() => markersTrusted.value)
 
 /** 新增标记的最小表单：mm:ss + 说明 + 颜色 */
 const markAt = ref('')
@@ -686,7 +741,9 @@ function applyMeta(body, quiet) {
 
 /**
  * 只有 full 档读接口：off 档禁写、local 档不碰网络（本地覆盖已经是最新值）。
- * 读失败（站端没有匿名 GET 元信息接口）时保留索引兜底值，只提示标记不可见。
+ * P5.51：站端 GET /api/media/video/{id}/meta 已是匿名只读（P5.50），读成功即把 markers 当权威值——
+ * markers:[] 就是「真的没有标记」（显示「暂无标记」），不再当成「读不到」。
+ * 只有真的失败（404 / 网络 / 非 200，含 getVideoMeta 内 /admin 回退也失败）才落回原提示。
  */
 async function load() {
   loading.value = true
@@ -851,6 +908,9 @@ function toggleSynopsisFold() {
 function startSynopsisEdit() {
   if (!synopsisEditable.value || locked.value) return
   synopsisDraft.value = synopsisValue.value
+  synopsisSource.value = null
+  synopsisGenerateNotice.value = ''
+  synopsisInsufficient.value = false
   synopsisEditing.value = true
   nextTick(() => {
     const el = synopsisInputEl.value
@@ -860,6 +920,9 @@ function startSynopsisEdit() {
 
 function cancelSynopsisEdit() {
   synopsisDraft.value = synopsisValue.value
+  synopsisSource.value = null
+  synopsisGenerateNotice.value = ''
+  synopsisInsufficient.value = false
   synopsisEditing.value = false
 }
 
@@ -887,6 +950,9 @@ async function saveSynopsisEdit() {
 
   if (synopsisMode.value === 'local') {
     writeLocalSynopsis(props.video.id, next)
+    synopsisSource.value = null
+    synopsisGenerateNotice.value = ''
+    synopsisInsufficient.value = false
     emit('notify', okMsg + '（仅本机）')
     measureSynopsis()
     return
@@ -899,6 +965,9 @@ async function saveSynopsisEdit() {
     synopsisValue.value = echoed
     synopsisDraft.value = echoed
     synopsisNote.value = ''
+    synopsisSource.value = null
+    synopsisGenerateNotice.value = ''
+    synopsisInsufficient.value = false
     emit('notify', echoed ? okMsg : '简介已清空')
   } catch {
     // 回滚：正文回到保存前，编辑态恢复（草稿还在，用户可以直接重试）
@@ -909,6 +978,117 @@ async function saveSynopsisEdit() {
   } finally {
     saving.value = false
     measureSynopsis()
+  }
+}
+
+/* ------------------------------------------------------------------ 「⚡ 自动生成」（P5.47） */
+
+/** 生成中（按钮 loading，防重复点击） */
+const synopsisGenerating = ref(false)
+
+/** 这次预览的来源：{kind:'llm', model} / {kind:'template'}；null = 用户自己写的 */
+const synopsisSource = ref(null)
+
+/** 回退提示（本地模型没就绪 → 用了模板），保存/取消后清空 */
+const synopsisGenerateNotice = ref('')
+
+/** 素材不足（无字幕 / 无可识别画面）：显示「用模板生成客观信息」退路，不把空串塞进编辑框（P5.53） */
+const synopsisInsufficient = ref(false)
+
+/** 服务器生成能力（{template:{maxChars}, llm:{enabled,provider,model}}），每次打开信息栏最多探一次 */
+const synopsisCapabilities = ref(null)
+let synopsisCapsProbed = false
+
+/** 按钮 title：模型可用时说清走哪条路，用户不必猜 */
+const synopsisGenerateTitle = computed(() => {
+  if (synopsisGenerating.value) return '正在生成…'
+  const llm = synopsisCapabilities.value && synopsisCapabilities.value.llm
+  return llm && llm.enabled
+    ? '用本地模型生成一段简介（可编辑后再保存）'
+    : '按现有信息拼一段简介（可编辑后再保存）'
+})
+
+/** 预览态来源提示；非预览态不显示 */
+const synopsisSourceHintText = computed(() => (synopsisEditing.value ? sourceHint(synopsisSource.value) : ''))
+
+/**
+ * 探测生成能力（读接口，不看编辑策略；失败就当「只有模板」）
+ * 只看一次：能力在运行期不会变（改配置要重启后端）。
+ */
+async function ensureSynopsisCapabilities() {
+  if (synopsisCapsProbed) return synopsisCapabilities.value
+  synopsisCapsProbed = true
+  try {
+    synopsisCapabilities.value = await api.getSynopsisCapabilities({ silent: true })
+  } catch {
+    synopsisCapabilities.value = null
+  }
+  return synopsisCapabilities.value
+}
+
+/**
+ * 点「⚡ 自动生成」：生成一段草稿 → 进**可编辑预览态**（绝不自动落库）
+ *
+ * 模型不可用（503 / 超时）时 synopsisGenerate 内部自动回退模板，并把提示带回 notice：
+ * 用户始终拿到一段可编辑的文字，同时知道这次不是模型写的。
+ */
+async function generateSynopsisPreview() {
+  if (!synopsisEditable.value || locked.value || synopsisGenerating.value || saving.value) return
+  synopsisGenerating.value = true
+  synopsisGenerateNotice.value = ''
+  synopsisInsufficient.value = false
+  try {
+    const capabilities = await ensureSynopsisCapabilities()
+    const result = await generateSynopsis(api, props.video.id, capabilities)
+    // 素材不足：保留用户原有草稿（绝不覆盖成空），只给提示与模板退路
+    if (result.insufficient) {
+      synopsisInsufficient.value = true
+      synopsisSource.value = null
+      synopsisGenerateNotice.value = result.notice || ''
+      synopsisEditing.value = true
+      emit('notify', result.notice || '该片缺少可概括的内容素材')
+      return
+    }
+    synopsisDraft.value = result.text
+    synopsisSource.value = result.source
+    synopsisGenerateNotice.value = result.notice || ''
+    synopsisEditing.value = true
+    if (result.notice) emit('notify', result.notice)
+    nextTick(() => {
+      const el = synopsisInputEl.value
+      if (el && el.focus) el.focus()
+    })
+  } catch (err) {
+    emit('notify', '生成简介失败：' + errorText(err))
+  } finally {
+    synopsisGenerating.value = false
+  }
+}
+
+/**
+ * 素材不足的退路：用模板生成客观信息（P5.53）
+ *
+ * 模板只写「谁 + 什么分类 + 多长 + 标签」，来源标注为「按现有信息生成（模板）」，
+ * 用户一眼能看出这不是内容梗概，而是按现有字段拼的。
+ */
+async function applyTemplateSynopsis() {
+  if (!synopsisEditable.value || locked.value || synopsisGenerating.value || saving.value) return
+  synopsisGenerating.value = true
+  synopsisGenerateNotice.value = ''
+  try {
+    const result = await generateTemplateSynopsis(api, props.video.id)
+    synopsisDraft.value = result.text
+    synopsisSource.value = result.source
+    synopsisInsufficient.value = false
+    synopsisEditing.value = true
+    nextTick(() => {
+      const el = synopsisInputEl.value
+      if (el && el.focus) el.focus()
+    })
+  } catch (err) {
+    emit('notify', '模板生成失败：' + errorText(err))
+  } finally {
+    synopsisGenerating.value = false
   }
 }
 
@@ -1249,10 +1429,8 @@ onMounted(() => {
   revealContextCurrent()
   // P5.38：简介走自己的接口（full / off 都读；local 档只读本机，不发请求）
   loadSynopsis()
-  if (!isFull.value) {
-    loading.value = false
-    return
-  }
+  // P5.54：读（标记/评分/标签）与写分开——读接口不受编辑策略限制，off/local 档也读，
+  // 只是不渲染写入口（各分区自己的 isFull 判定不动）。
   load()
 })
 </script>
@@ -1903,9 +2081,16 @@ onMounted(() => {
   background: var(--bg-3);
 }
 
-/* 站端读不到元信息（没有匿名 GET）时的中性提示 */
+/* 站端读不到元信息（没有匿名 GET）时的中性提示。
+   P5.45：从信息栏顶部挪到最底部（标记分区之后）并**弱化**成次要注释 ——
+   它只是解释「为什么标记看不到」，不是必须先读的操作指引，所以不给 --warn 的橙色（那会把
+   视线从简介 / 上下文上抢走），改用 --fg-dim + 11.5px + 弱一点的行高，纯说明文字。
+   提示有无与编辑能力判定无关：locked / readOnly 仍只看编辑策略。 */
 .vp-note {
-  color: var(--warn);
+  color: var(--fg-dim);
+  font-size: 11.5px;
+  line-height: 1.5;
+  padding-top: 2px;
 }
 
 /* 新增标记（P5.25 用户反馈 5）：三行分组 —— 类型+加标记 / 起终点 / 颜色+说明。
@@ -2173,6 +2358,37 @@ onMounted(() => {
 .vp-syn-edit,
 .vp-syn-more {
   margin-left: auto;
+}
+
+/* P5.47「⚡ 自动生成」：与「编辑」同排，自动生成在左、编辑在右（主操作先出现）；
+   「编辑」的 margin-left:auto 会把整排推到右侧，所以这里只吃掉它左边的空隙。 */
+.vp-syn-gen {
+  margin-left: auto;
+}
+
+/* 生成按钮后面紧跟「编辑」时不再重复推一次（否则两个按钮被撑到两端） */
+.vp-syn-gen + .vp-syn-edit {
+  margin-left: 6px;
+}
+
+/* 预览态来源提示（由本地模型生成 · 模型名 / 按现有信息生成）与回退提示：
+   11.5px 弱色，与「标记看不到」那类说明文字同一档，不抢正文。 */
+.vp-syn-src,
+.vp-syn-notice {
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--fg-dim);
+}
+
+/* 回退提示要能被看见（它是「这次为什么不是模型写的」），但不要变成红色警报 */
+.vp-syn-notice {
+  color: var(--warn, #d69e2e);
+}
+
+/* 素材不足时的模板退路按钮（P5.53）：独立一行、靠左，不跟「保存/取消」挤在一起 */
+.vp-syn-template {
+  margin-top: 6px;
 }
 
 /* 编辑态输入框：行高 1.6、min-height 96px、纵向可拉高（横向拉宽会把信息栏撑破） */

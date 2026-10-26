@@ -1,0 +1,92 @@
+dev server: http://127.0.0.1:63842（端口 63842 来自系统）
+真实索引：176 条视频（筛选维度就在这份数据上生效）
+CDP 端口：63871（同样来自系统）
+
+[S] 页面身份自检 + 筛选条下拉内容（真实索引 176 条）
+  PASS 页面身份自检（/media）  — {"url":"http://127.0.0.1:63842/media?_s=p546s#sort=name-desc","title":"媒体站 · 视频库","anchor":true,"target":"http://127.0.0.1:63842/media?_s=p546s#sort=name-desc"}
+  PASS S1 全库默认态：首屏分块 48 张 / 共 176（真实索引）  — {"count":48,"countText":"显示 176 / 176"}
+  PASS S2 筛选条上出现「播放列表」维度按钮，默认值 = 全部  — 播放列表全部▾
+  PASS S3 未筛选时不显示「按列表顺序」提示
+  PASS S4 点击按钮展开下拉
+  PASS S5 下拉第一项 = 全部（默认）  — ["全部176","验收列表A4","验收列表B2","空列表0"]
+  PASS S6 各列表带条目数（验收列表A 4）  — 验收列表A4
+  PASS S7 各列表带条目数（验收列表B 2）  — 验收列表B2
+  PASS S8 列表与动作之间有分隔线（.plf-sep）
+  PASS S9 分隔线下是两个动作：管理播放列表… / 新建播放列表…  — [{"act":"manage","text":"管理播放列表…"},{"act":"create","text":"新建播放列表…"}]
+  PASS S10 宽屏不横向溢出  — overflow=-15
+
+[A] 选「验收列表A」-> 网格 = 该列表条目，顺序 = 列表顺序
+  PASS A1 网格只剩该列表的 4 条  — count=4
+  PASS A2 前 3 个 id 与列表序一致（顺序 = 列表顺序）  — ["9720b07923ef","1d74d2cc5d20","fc4cce426d14","1e63e13a4a47"] vs ["9720b07923ef","1d74d2cc5d20","fc4cce426d14","1e63e13a4a47"]
+  PASS A3 全部 4 条都按列表序（不是索引序 / 标题序）
+  PASS A4 计数文本 = 显示 4 / 176  — 显示 4 / 176
+  PASS A5 UI 明确提示「按列表顺序」  — 按列表顺序
+  PASS A6 激活 chip 写明「播放列表：名称（按列表顺序）」  — ["播放列表：验收列表A（按列表顺序）×"]
+  PASS A7 下拉按钮进入选中态并显示列表名  — 播放列表验收列表A▾
+  PASS A8 筛选写进 hash（可刷新 / 可分享）  — #pl=p1&sort=name-desc
+  PASS A9 切到「名称 A→Z」后仍按列表顺序（排序被覆盖）  — ["9720b07923ef","1d74d2cc5d20","fc4cce426d14","1e63e13a4a47"]
+  PASS A10 排序确实切过去了（hash 带 sort），只是被列表顺序覆盖  — #pl=p1&sort=name
+  PASS A11 刷新后仍按列表顺序（hash 恢复筛选）  — ["9720b07923ef","1d74d2cc5d20","fc4cce426d14","1e63e13a4a47"]
+  PASS A13 播放列表 + 搜索是「与」：只剩命中那 1 条（且就是列表第 3 条）  — ["fc4cce426d14"] want [fc4cce426d14]
+  PASS A14 清空搜索 -> 回到该列表的 4 条且顺序不变  — ["9720b07923ef","1d74d2cc5d20","fc4cce426d14","1e63e13a4a47"]
+  PASS A12 亮 / 暗两套主题都正常渲染（背景色不同，截图各一张）  — rgb(245, 247, 250) vs rgb(20, 20, 20)
+
+[B] 清空筛选 -> 回到全库
+  PASS B1 下拉选「全部」-> 回到全库 176 条  — {"count":96,"countText":"显示 176 / 176"}
+  PASS B2 筛选清干净：hash 无 pl / 无激活 chip / 无「按列表顺序」  — #sort=name
+  PASS B3 换到「验收列表B」-> 2 条且顺序一致  — ["3af30c4342e0","d6226ff91c1b"]
+  PASS B4 工具栏「清空」也回到全库  — {"count":96,"countText":"显示 176 / 176"}
+  PASS B5 「清空」后 hash 里没有 pl
+
+[C] 管理弹层：重命名 / 删除 / 拖拽排序 / 复制列表名
+  PASS C1 下拉「管理播放列表…」打开弹层（.md）
+  PASS C2 弹层左栏列出 3 个列表  — ["验收列表A4","验收列表B2","空列表0"]
+  PASS C3 打开时默认选中当前筛选的那个列表（p1）  — p1
+  PASS C4 右栏渲染该列表的 4 个有序条目  — ["9720b07923ef","1d74d2cc5d20","fc4cce426d14","1e63e13a4a47"]
+  PASS C5 弹层内部不横向溢出  — overflow=0
+  PASS C6 重命名 -> PUT /api/media/playlist/p1 {name:"验收列表A改名"}  — {"name":"验收列表A改名"}
+  PASS C7 弹层标题即时更新为新名字  — 验收列表A改名 ✎
+  PASS C8 关弹层后下拉里的列表名同步为新名（真链路重拉）  — 验收列表A改名4
+  PASS C9 筛选按钮上的列表名也同步  — 播放列表验收列表A改名▾
+  PASS C10 删除是两步确认（第一次点击变成「确认删除？」）  — 确认删除？
+  PASS C11 删除 -> DELETE /api/media/playlist/p3  — /api/media/playlist/p3
+  PASS C12 删除后清单只剩 2 个列表（不含 p3）  — ["p1","p2"]
+  PASS C13 选中 p1 -> 右栏 4 条  — ["9720b07923ef","1d74d2cc5d20","fc4cce426d14","1e63e13a4a47"]
+  PASS C14 对第 1 张卡片发起拖拽并落到第 3 位（原生 HTML5 DnD 事件）  — dragged
+  PASS C15 拖拽排序 -> PUT videoIds 为拖拽后的完整有序集合（顺序写回后端）  — ["1d74d2cc5d20","fc4cce426d14","9720b07923ef","1e63e13a4a47"] vs ["1d74d2cc5d20","fc4cce426d14","9720b07923ef","1e63e13a4a47"]
+  PASS C16 弹层内条目顺序即时更新为拖拽结果  — ["1d74d2cc5d20","fc4cce426d14","9720b07923ef","1e63e13a4a47"]
+  PASS C17 序号 1..4 连续（顺序徽标跟新序）  — ["1","2","3","4"]
+  PASS C18 复制列表名 -> 提示里带上列表名（Clipboard 不可用时有兜底）  — 列表名：验收列表A改名
+  PASS C19 弹层里改完顺序 -> 视频库网格顺序同步（同一份列表序）  — ["1d74d2cc5d20","fc4cce426d14","9720b07923ef","1e63e13a4a47"]
+
+[D] 侧栏「播放列表」入口 = 展开/聚焦筛选，不再产生独立页面
+  PASS D1 侧栏只有「视频库」高亮（播放列表是动作项，不参与高亮）  — ["视频库"]
+  PASS D2 侧栏「播放列表」入口存在且可点（动作项）
+  PASS D3 从图片站点击侧栏入口 -> URL 落在 /media（不是 /media/playlists）  — /media?_s=p546d
+  PASS D4 到达视频库后播放列表下拉自动展开（聚焦筛选）
+  PASS D5 一次性参数 plf 已被消费并从地址栏抹掉（刷新不会又弹一次）  — ?_s=p546d
+  PASS D6 不再渲染原播放列表独占页（.pl-page 不存在）
+  PASS D7 侧栏仍是只有「视频库」高亮  — ["视频库"]
+  PASS D8 旧地址 /media/playlists -> 重定向到 /media（不留死链）  — redirected=true path=/media
+  PASS D9 重定向后同样把播放列表下拉打开
+  PASS D10 重定向后是正常的视频库网格（不是空白页 / 404）  — count=48
+
+[E] 从播放列表筛选进播放器：上下文标题 = 列表名，顺序 = 列表序
+  PASS E1 回到 p1 筛选：网格顺序 = 列表顺序（含 C 阶段的拖拽结果）  — ["1d74d2cc5d20","fc4cce426d14","9720b07923ef","1e63e13a4a47"]
+  PASS E2 点第一张卡片 -> 播放器打开
+  PASS E3 上下文标题 = 列表名 · 共 4 条  — 验收列表A改名 · 共 4 条
+  PASS E4 当前播放的就是列表第 1 条  — 1d74d2cc5d20
+  PASS E5 上下文行顺序 = 列表顺序（标题逐条对齐）  — ["ASMR_18禁_豹纹内衣_19m","ASMR_天使なの_日语_61m","ASMR_双耳麦克风_白内衣_28m","ASMR_剧情_灰丝床戏_15m"] vs ["ASMR_18禁_豹纹内衣_19m","ASMR_天使なの_日语_61m","ASMR_双耳麦克风_白内衣_28m","ASMR_剧情_灰丝床戏_15m"]
+  PASS E6 当前行高亮在序号 1  — {"n":"1","onIdx":0}
+  PASS E7 点「下一条」-> 列表第 2 条（顺序 = 列表序）  — fc4cce426d14 want fc4cce426d14
+  PASS E8 上下文里高亮移到第 2 条  — 1
+
+[F] 窄屏 375：抽屉里也有这个维度 + 无横向溢出
+  PASS F1 窄屏页面不横向滚动  — overflow=0 worst=[{"cls":"filter-drawer","right":720,"w":360},{"cls":"drawer-head","right":720,"w":360},{"cls":"fs-scope","right":720,"w":360},{"cls":"side-scroll","right":720,"w":360},{"cls":"saved-filters","right":720,"w":360},{"cls":"drawer-foot","right":720,"w":360}]
+  PASS F2 窄屏抽屉的快捷筛选里有「播放列表」维度  — {"buttons":1,"inDrawer":true,"right":178,"vw":375,"overflow":0}
+  PASS F3 抽屉里的维度按钮不超出视口  — {"right":178,"vw":375}
+  PASS F4 抽屉展开后仍无横向溢出  — overflow=0
+
+  PASS G1 全程没有未捕获的页面异常  — none
+PASS 72/72 (p546-ui)
+结果：E:\111\project\QTools\QTools-C\devtools\p546-ui\out\after\result.json

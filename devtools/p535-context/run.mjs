@@ -551,7 +551,10 @@ try {
   )
   ok(removed.heads[0].indexOf('播放列表') === 0, 'b5) 置顶分区仍是第一块（P5.32 置顶不变量）', removed.heads[0])
   const beforeHits = hits.filter((h) => h.indexOf('/api/media/playlists') >= 0).length
-  ok(beforeHits === 0, 'b6) 打开播放器不再请求 GET /api/media/playlists（死请求随分区一起删掉）', 'hits=' + beforeHits)
+  /* P5.46 调整（旧断言作废的原因）：这条请求不再是「信息栏分区的死请求」——
+     播放列表降级成视频库筛选维度后，首屏必须取一次清单（下拉里的各列表 + 条目数）。
+     因此断言从「0 次」改成「本段页面加载里恰好 1 次」：仍然能挡住「打开播放器 / 换片时重复拉清单」。 */
+  ok(beforeHits === 1, 'b6) GET /api/media/playlists 只在视频库首屏取一次（播放列表筛选的清单，不再随播放器重复请求）', 'hits=' + beforeHits)
 
   /* ================================================= c) 人物来源 */
   console.log('\n[c] 从人物页进入：标题 = 人物名、顺序 = 该页展示顺序、⏮⏭ 走该顺序')

@@ -15,6 +15,10 @@
  *       后端未就绪（404 / 405 / 501）时 isNotReady 为真，调用方显示「暂只能查看」而不是报错。
  */
 import request from '@/utils/request'
+/* P5.48：失败提示文案的实现只有一份（synopsisGenerate.js，P5.47 统一）。
+   这里 import 进来再转出，而不是 `export … from`：`export {x} from` 只建导出条目、**不建本地绑定**，
+   下面的 export default 对象里再写 errorText 就是一个 ReferenceError（模块初始化即抛）。 */
+import { errorText } from './synopsisGenerate'
 
 const API_MEDIA = '/media'
 const OWNER_STORE_KEY = 'ms.owner'
@@ -83,6 +87,26 @@ export function createPerson(payload) {
   return mediaCall({ url: '/persons', method: 'post', data })
 }
 
+/**
+ * 手动指定人物头像（P5.48） 后端：PUT /api/media/person/{id}/avatar body { kind, ref }
+ *
+ * kind = 'photo' → ref = '<albumId>:<seq>'（该人物名下相册里的一张图）
+ * kind = 'url'   → ref = http(s):// 或 data:image/… 地址
+ * 回包是**解析好 avatarUrl 的整个人物节点**（后端拼 URL，前端不拼）。
+ */
+export function setPersonAvatar(id, kind, ref) {
+  return mediaCall({
+    url: '/person/' + encodeId(id) + '/avatar',
+    method: 'put',
+    data: { kind: String(kind == null ? '' : kind), ref: String(ref == null ? '' : ref) }
+  })
+}
+
+/** 清除手动头像（回退三级自动：相册首图 → 视频封面 → 首字占位） 后端：DELETE /api/media/person/{id}/avatar */
+export function clearPersonAvatar(id) {
+  return mediaCall({ url: '/person/' + encodeId(id) + '/avatar', method: 'delete' })
+}
+
 /** HTTP 状态码（axios 错误 / 业务错误两种形态都取得到） */
 export function httpStatus(err) {
   if (!err) return 0
@@ -100,18 +124,24 @@ export function isNotReady(err) {
   return s === 404 || s === 405 || s === 501
 }
 
-/** 失败提示文案：优先后端原文（AjaxResult 的 msg），其次网络异常 */
-export function errorText(err) {
-  if (err && typeof err.message === 'string' && err.message.trim()) return err.message
-  const body = err && err.response && err.response.data
-  if (body && typeof body === 'object' && typeof body.msg === 'string' && body.msg.trim()) return body.msg
-  return '网络异常或接口未就绪'
-}
+/**
+ * 失败提示文案 —— **实现只有一份**，在 synopsisGenerate.js（P5.47 统一，P5.48 明确边界）
+ *
+ * 为什么不再各写一份：站端错误体有三种形状（本模块的 {error:"..."} / AjaxResult {msg} /
+ * axios 网络异常），两份实现迟早分叉，症状是「同一个失败在人物面板说 A、在简介面板说 B」。
+ *
+ * 这里只做**转出**（本地 import + 本地 export，见文件顶部）：既有的三个调用方
+ * （PersonsPage / PersonDetailPage / PersonPicker / VideoMetaPanel）import 路径与语义都不变。
+ * 想彻底断开这层转出时，改 4 处 import 即可 —— 但那是跨模块改动，不在本文件边界内。
+ */
+export { errorText }
 
 export default {
   PERSON_NOT_READY,
   saveVideoPersons,
   createPerson,
+  setPersonAvatar,
+  clearPersonAvatar,
   httpStatus,
   isNotReady,
   errorText

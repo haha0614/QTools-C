@@ -6,6 +6,9 @@
  * 六条路径的高亮对照表可以用 node 直跑断言（见 p43-evidence/test-nav-active.mjs）。
  *
  * 规则（P4.3 修掉「/media 吞掉 /media/photos」的旧问题）：
+ *   - item.action    **动作项**，永远不高亮（P5.46：侧栏「播放列表」不再是页面，而是
+ *                   「跳到视频库并打开播放列表筛选」的动作；它 to 指向 /media，
+ *                   若参与匹配就会和「视频库」双亮）；
  *   - '/'(首页)      只认路径恰为 '/'；
  *   - item.exact    只认路径恰为 item.to（视频库 /media 用它，否则 /media/photos 会同时点亮它）；
  *   - item.also     额外认这些前缀的子路径（人物 /media/persons 追加 /media/person，
@@ -24,11 +27,13 @@ export function normalizeNavPath(path) {
 
 /**
  * 单个侧栏项在当前路径下是否高亮。
- * @param {{to:string, exact?:boolean, also?:string[]}} item 侧栏项（to 必填）
+ * @param {{to:string, exact?:boolean, also?:string[], action?:string}} item 侧栏项（to 必填）
  * @param {string} path 当前路径（通常传 route.path）
  */
 export function isNavActive(item, path) {
   if (!item) return false
+  // 动作项（item.action）不是「位置」，没有自己的路径：任何路径下都不高亮
+  if (item.action) return false
   const cur = normalizeNavPath(path)
   const to = normalizeNavPath(item.to)
   if (!to) return false

@@ -1,0 +1,99 @@
+{
+ "facts": {
+  "wide": {
+   "count": 48,
+   "countText": "显示 176 / 176",
+   "popItems": [
+    {
+     "id": "",
+     "text": "全部176"
+    },
+    {
+     "id": "p1",
+     "text": "验收列表A4"
+    },
+    {
+     "id": "p2",
+     "text": "验收列表B2"
+    },
+    {
+     "id": "p3",
+     "text": "空列表0"
+    }
+   ]
+  },
+  "themeBg": {
+   "light": "rgb(245, 247, 250)",
+   "dark": "rgb(20, 20, 20)"
+  },
+  "dialog": {
+   "renamed": "验收列表A改名 ✎",
+   "deleted": "p3",
+   "order": [
+    "1d74d2cc5d20",
+    "fc4cce426d14",
+    "9720b07923ef",
+    "1e63e13a4a47"
+   ]
+  },
+  "railActive": [
+   "视频库"
+  ],
+  "sidebar": {
+   "path": "/media",
+   "query": "?_s=p546d",
+   "popOpen": true,
+   "railActive": [
+    "视频库"
+   ]
+  },
+  "narrowOverflow": {
+   "vw": 375,
+   "worst": [
+    {
+     "cls": "filter-drawer",
+     "right": 720,
+     "w": 360
+    },
+    {
+     "cls": "drawer-head",
+     "right": 720,
+     "w": 360
+    },
+    {
+     "cls": "fs-scope",
+     "right": 720,
+     "w": 360
+    },
+    {
+     "cls": "side-scroll",
+     "right": 720,
+     "w": 360
+    },
+    {
+     "cls": "saved-filters",
+     "right": 720,
+     "w": 360
+    },
+    {
+     "cls": "drawer-foot",
+     "right": 720,
+     "w": 360
+    }
+   ],
+   "total": 748
+  },
+  "consoleErrors": [],
+  "stubWrites": [
+   "PUT /api/media/playlist/p1",
+   "DELETE /api/media/playlist/p3",
+   "PUT /api/media/playlist/p1"
+  ],
+  "indexCount": 176
+ },
+ "passed": 72,
+ "failures": [],
+ "logs": [
+  "[warning] [Vue Router warn]: history.state seems to have been manually replaced without preserving the necessary values. Make sure to preserve existing history state if you are manually calling history.replaceState:\n\nhistory.replaceState(history.state, '', url)\n\nYou can find more information at https://router.vuejs.org/guide/migration/#Usage-of-history-state"
+ ]
+}

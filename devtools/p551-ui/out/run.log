@@ -1,0 +1,47 @@
+dev server: http://127.0.0.1:61321
+
+[A] stub：meta 200 + 1 条标记（pos 4698 / label P551甲标记）→ 渲染出标记、无提示
+  PASS 页面身份自检（/media）  — {"url":"http://127.0.0.1:61321/media?_s=p551a#play=00b0143dfc10&sort=name","anchor":true}
+  PASS A1 信息栏渲染出 .vp-body
+  PASS A2 标记列表渲染出 1 条：pos=78:18（4698s）、label=P551甲标记  — [{"pos":"78:18","isRange":false,"label":"P551甲标记"}]
+  PASS A3 标记分区标题计数 = 1  — 1
+  PASS A4 读成功时没有那句「标记需要管理员身份读取…」  — null
+  PASS A5 有标记时不显示「暂无标记」  — false
+  PASS A6 studios 对象形态 [{id,name}] → 工作室 chip 渲染  — ["P550甲工作室"]
+  PASS A7 评分按 meta.rating=80 渲染（8 颗亮星）  — 80 分 / 100
+  PASS A8 标签按 meta.tags 渲染  — ["P551甲标签"]
+  PASS A9 标记 / 标签入口仍在，full 档评分可点（编辑策略没被碰）  — {"addMark":true,"addTag":true,"disabled":0}
+
+[B] stub：meta 200 + markers:[] → 「暂无标记」，同样无提示
+  PASS B1 空标记 → 渲染出 0 条标记  — []
+  PASS B2 空标记且请求成功 → 显示「暂无标记」  — true
+  PASS B3 请求成功时没有提示行（提示只由失败触发）  — null
+  PASS B4 标记分区标题计数 = 0  — 0
+  PASS B5 studios 字符串形态 [name] → 工作室 chip 渲染  — ["P551乙工作室"]
+
+[C] stub：站端 /meta 404 + /admin 一路也失败 → 保留原提示，且不谎称「暂无标记」
+  PASS C1 读失败 → 原提示逐字出现  — "标记需要管理员身份读取，站端暂不展示；评分与标签按索引显示，仍可直接编辑"
+  PASS C2 读失败时不显示「暂无标记」（不再把「读不到」说成「没有」）  — false
+  PASS C3 读失败时标记列表为空（沿用索引兜底）  — 0
+  PASS C4 读失败 → 评分 / 标签回落索引值（80 分、5 个标签）  — {"rate":"80 分 / 100","tags":5}
+  PASS C5 提示只是说明文字，标记 / 标签入口照旧在  — {"addMark":true,"addTag":true}
+
+[D] studios 两种形态 × 三处归一化（VideoCard / FilterSidebar / VideoMetaPanel）
+  PASS D[p551d1] FilterSidebar 工作室分组（VideoPage.videoStudioNames 现推）列出名称与计数  — [{"name":"P550甲工作室","count":"1"}]
+  PASS D[p551d1] 按工作室筛选生效且该片的 .cp-studio 渲染（videoStudioNames 判名命中，只剩 1 部）  — {"chip":"P550甲工作室","cards":1}
+  PASS D[p551d1] VideoCard normStudios 吃 [{"id":1,"name":"P550甲工作室"}] → .cp-studio = P550甲工作室  — "P550甲工作室"
+  PASS D[p551d2] FilterSidebar 工作室分组（VideoPage.videoStudioNames 现推）列出名称与计数  — [{"name":"P551乙工作室","count":"1"}]
+  PASS D[p551d2] 按工作室筛选生效且该片的 .cp-studio 渲染（videoStudioNames 判名命中，只剩 1 部）  — {"chip":"P551乙工作室","cards":1}
+  PASS D[p551d2] VideoCard normStudios 吃 ["P551乙工作室"] → .cp-studio = P551乙工作室  — "P551乙工作室"
+
+[E] 打桩捕获 PUT：新增标记仍是 { markers:[{pos,label,color}] }，回包照旧当权威值
+  PASS E1 增标记发出了 PUT（被 CDP 拦下，未落库）  — {"method":"PUT"}
+  PASS E2 仍走原 PUT /api/media/video/{id}/meta（不回退 /admin）  — PUT http://127.0.0.1:61321/api/media/video/00b0143dfc10/meta
+  PASS E3 请求体是「整表覆盖」的 2 条标记  — ["P551甲标记","P551新增"]
+  PASS E4 新标记只带 pos/label/color（本机 id 不外泄）  — {"pos":62,"label":"P551新增","color":"#4f9cf9"}
+  PASS E5 字段名仍是 pos/endPos（没有 at/note/endAt 这类旧名）  — ["pos","label","color"]
+  PASS E6 已有标记的 id 原样回传  — {"pos":4698,"label":"P551甲标记","color":"#4f9cf9","id":7}
+  PASS E7 PUT 回包被当权威值渲染（2 条，末条 = P551新增）  — [{"pos":"78:18","isRange":false,"label":"P551甲标记"},{"pos":"01:02","isRange":false,"label":"P551新增"}]
+
+P5.51 实测：33 通过 / 0 失败
+产物：E:\111\project\QTools\QTools-C\devtools\p551-ui\out\after

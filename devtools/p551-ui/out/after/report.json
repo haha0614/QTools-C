@@ -1,0 +1,117 @@
+{
+  "tag": "after",
+  "passed": 33,
+  "failed": 0,
+  "failures": [],
+  "facts": {
+    "indexEntry": {
+      "rating": 80,
+      "tags": 5,
+      "hasSprite": true
+    },
+    "stateA": {
+      "marks": [
+        {
+          "pos": "78:18",
+          "isRange": false,
+          "label": "P551甲标记"
+        }
+      ],
+      "markCount": 1,
+      "markHead": "1",
+      "noMarkHint": false,
+      "note": null,
+      "studios": [
+        "P550甲工作室"
+      ],
+      "starsOn": 8,
+      "starsDisabled": 0,
+      "rateVal": "80 分 / 100",
+      "tags": [
+        "P551甲标签"
+      ],
+      "addMark": true,
+      "addTag": true
+    },
+    "stateB": {
+      "marks": [],
+      "markCount": 0,
+      "markHead": "0",
+      "noMarkHint": true,
+      "note": null,
+      "studios": [
+        "P551乙工作室"
+      ],
+      "starsOn": 0,
+      "starsDisabled": 0,
+      "rateVal": "未评分",
+      "tags": [],
+      "addMark": true,
+      "addTag": true
+    },
+    "stateC": {
+      "marks": [],
+      "markCount": 0,
+      "markHead": "0",
+      "noMarkHint": false,
+      "note": "标记需要管理员身份读取，站端暂不展示；评分与标签按索引显示，仍可直接编辑",
+      "studios": [],
+      "starsOn": 8,
+      "starsDisabled": 0,
+      "rateVal": "80 分 / 100",
+      "tags": [
+        "ASMR",
+        "E2E验证",
+        "ASMR",
+        "asmr音声",
+        "直播"
+      ],
+      "addMark": true,
+      "addTag": true
+    },
+    "normalizers": {
+      "object": {
+        "card": true,
+        "chip": "P550甲工作室",
+        "items": [
+          {
+            "name": "P550甲工作室",
+            "count": "1"
+          }
+        ],
+        "cards": 1
+      },
+      "string": {
+        "card": true,
+        "chip": "P551乙工作室",
+        "items": [
+          {
+            "name": "P551乙工作室",
+            "count": "1"
+          }
+        ],
+        "cards": 1
+      }
+    },
+    "put": {
+      "url": "http://127.0.0.1:61321/api/media/video/00b0143dfc10/meta",
+      "method": "PUT",
+      "body": {
+        "markers": [
+          {
+            "pos": 4698,
+            "label": "P551甲标记",
+            "color": "#4f9cf9",
+            "id": 7
+          },
+          {
+            "pos": 62,
+            "label": "P551新增",
+            "color": "#4f9cf9"
+          }
+        ]
+      }
+    }
+  },
+  "logs": []
+}

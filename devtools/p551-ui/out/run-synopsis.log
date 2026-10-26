@@ -1,0 +1,63 @@
+vite dev：http://127.0.0.1:62730/evidence/synopsisHarness.html
+身份自检：http://127.0.0.1:62730/evidence/synopsisHarness.html
+
+[A] 显示态（7 行 → 折叠到 6 行 + 「展开」）
+  ✓ A1 渲染出 .vp-syn 正文
+  ✓ A1 折叠态带 is-fold 类 — vp-syn is-fold
+  ✓ A1 正文全文在 DOM 里（CSS 截断，不是 JS 截断）
+  ✓ A1 折叠高度 = 6 行 × 行高（实测 120.0px / 行高 20px）
+  ✓ A1 正文 white-space: pre-wrap（换行可见） — pre-wrap
+  ✓ A1 有且只有一个「展开」按钮
+  ✓ A1 按钮文案 = 展开
+  ✓ A1 打开信息栏就 GET 了简介（首屏不需要用户操作）
+
+[B] 展开 / 收起
+  ✓ B1 展开后不再带 is-fold — vp-syn
+  ✓ B1 展开后高度变大（120.0 → 140.0px）
+  ✓ B1 按钮翻面为「收起」
+  ✓ B1 收起按钮仍在（可逆）
+  ✓ B2 再点一次回到折叠态
+
+[C] 编辑 → 保存往返（PUT + 乐观更新 + toast）
+  ✓ C1 点「编辑」出现 textarea
+  ✓ C1 textarea 行高 1.6（实测 20px / 字号 12.5px）
+  ✓ C1 textarea min-height: 96px — 96px
+  ✓ C1 textarea 可纵向拉高（resize: vertical） — vertical
+  ✓ C1 有「保存 / 取消」两个按钮
+  ✓ C2 输入过程中不发 PUT（保存才发）
+  ✓ C2 保存发出 1 次 PUT — ["p538probe01"]
+  ✓ C2 PUT 命中当前视频 id
+  ✓ C2 PUT body 的 synopsis 原样带换行 — {"synopsis":"第一行（改过）\n第二行（改过）\n\n第四段：保留空行"}
+  ✓ C2 服务端收到的就是多行正文
+  ✓ C3 保存后正文更新（乐观更新 + 回包值）
+  ✓ C3 保存后退出编辑态
+  ✓ C3 保存成功 toast — ["简介已保存"]
+
+[D] 失败回滚（PUT 500 → 正文回滚 + 编辑态恢复 + toast）
+  ✓ D1 失败后仍停在编辑态（草稿可重试）
+  ✓ D1 失败后草稿没被清掉
+  ✓ D1 失败 toast — ["简介已保存","保存简介失败：接口未就绪或网络异常"]
+  ✓ D2 取消后正文是保存前的值（失败的那条没有落进正文） — "第一行（改过）\n第二行（改过）\n\n第四段：保留空行"
+
+[E] 三档：off 只读 / local 只写本机 / full 走服务端
+  ✓ E1 off 档仍显示正文（只读 ≠ 不给看）
+  ✓ E1 off 档没有编辑入口
+  ✓ E1 off 档不可能出现 textarea
+  ✓ E1 off 档展开按钮仍在（折叠只是展示）
+  ✓ E2 local 档分区标题带「本地」徽标
+  ✓ E2 local 档不发任何 GET（只读本机）
+  ✓ E2 local 档保存不发 PUT — []
+  ✓ E2 local 档写进 ms.orgsynopsis.<owner>.<videoId> — {"synopsis":"只写本机的简介\n第二行","at":1793002432747}
+  ✓ E2 正文按本机值渲染
+  ✓ E2 local 档 toast 标注「仅本机」 — ["简介已保存（仅本机）"]
+  ✓ E3 full 档有编辑入口
+
+[F] 边界：超长禁用 + 纯空白清空
+  ✓ F1 8001 字符 → 计数变红（over） — vp-syn-count over
+  ✓ F1 计数显示 8001 / 8000 — 8001 / 8000
+  ✓ F1 超限时保存按钮禁用（后端也会 400，前端先挡一次）
+  ✓ F2 纯空白 → PUT 带空串（由服务端归一化成 NULL） — [{"id":"p538probe01","raw":"{\"synopsis\":\"\"}","body":{"synopsis":""}}]
+  ✓ F2 服务端存 NULL
+  ✓ F2 清空后显示「暂无简介」占位
+
+P5.38 真浏览器证据：47 组 / 0 失败

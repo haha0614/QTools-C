@@ -165,8 +165,9 @@ const NAV_GROUPS = [
       { to: '/media/photos', label: '图片站', icon: Picture },
       // 人物墙（P3-B）：/media/person/:id 也走这条高亮（P4.3 起由 also 显式声明，不再靠 /media 前缀兜底）
       { to: '/media/persons', label: '人物', icon: UserFilled, also: ['/media/person'] },
-      // 播放列表（P5-B）：独立页 /media/playlists，与视频库 / 图片站并列在同一条目组下
-      { to: '/media/playlists', label: '播放列表', icon: List }
+      // 播放列表（P5.46）：不再是独立页面，改为「展开/聚焦筛选」的动作项 ——
+      // 在视频库就直接打开播放列表下拉，不在就跳过去再打开（item.action 让它在任何路径都不高亮）
+      { to: '/media', label: '播放列表', icon: List, action: 'playlist-filter' }
     ]
   }
 ]
@@ -183,6 +184,24 @@ const normalizedPath = computed(() => {
 //   其余仍是「自身或子路径」匹配（/tools 命中「全部工具」，与「首页」互不误判）。
 function isActive(item) {
   return isNavActive(item, normalizedPath.value)
+}
+
+/**
+ * 动作项点击（P5.46）：item.action = 'playlist-filter' → 视频库打开播放列表筛选下拉。
+ * 为什么不直接 RouterLink 到 /media：那样只是「回到视频库」，不会把下拉弹出来，
+ * 用户还得自己再点一次。这里带一次性参数 ?plf=<token>，视频库消费后立刻从地址栏抹掉；
+ * token 取时间戳，因此「已经在 /media 上重复点击」也能每次都触发。
+ * 已在视频库时保留当前 hash（筛选 / 排序 / 播放深链都不能被这次点击清掉）。
+ */
+function onNavClick(item, ev) {
+  if (!item || !item.action) return
+  if (ev) ev.preventDefault()
+  if (drawerOpen.value) closeDrawer()
+  if (item.action === 'playlist-filter') {
+    const q = Object.assign({}, route.query, { plf: String(Date.now()) })
+    const hash = normalizedPath.value === '/media' ? window.location.hash || undefined : undefined
+    router.push({ path: '/media', query: q, hash }).catch(() => {})
+  }
 }
 
 // 底部个人入口：已登录进个人中心，未登录进登录页
@@ -305,11 +324,13 @@ onBeforeUnmount(() => {
           <p class="qt-rail__group-title">{{ group.title }}</p>
           <RouterLink
             v-for="item in group.items"
-            :key="item.to"
+            :key="item.to + (item.action || '')"
             class="qt-rail__link"
             :class="{ 'is-active': isActive(item) }"
             :to="item.to"
             :title="item.label"
+            :data-nav-action="item.action || undefined"
+            @click="onNavClick(item, $event)"
           >
             <el-icon class="qt-rail__icon" :size="18"><component :is="item.icon" /></el-icon>
             <span class="qt-rail__label">{{ item.label }}</span>

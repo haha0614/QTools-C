@@ -29,7 +29,14 @@
         <img v-if="v.thumb" :src="v.thumb" alt="" loading="lazy" decoding="async" />
       </span>
       <span class="pl-ct" :title="v.title">{{ v.title }}</span>
-      <button class="pl-x" type="button" aria-label="从播放列表移除" title="移除" @click.stop="emit('remove', v.id)">
+      <button
+        v-if="allowRemove"
+        class="pl-x"
+        type="button"
+        aria-label="从播放列表移除"
+        title="移除"
+        @click.stop="emit('remove', v.id)"
+      >
         ×
       </button>
     </article>
@@ -41,7 +48,9 @@ import { ref } from 'vue'
 
 const props = defineProps({
   /** 有序条目：[{ id, title, thumb }] —— 顺序即播放顺序，组件内部绝不重排 */
-  items: { type: Array, default: () => [] }
+  items: { type: Array, default: () => [] },
+  /** P5.46：是否显示「移出」按钮（管理弹层在只读档位下隐藏入口） */
+  allowRemove: { type: Boolean, default: true }
 })
 
 const emit = defineEmits(['play', 'remove', 'reorder'])

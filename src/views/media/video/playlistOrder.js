@@ -125,6 +125,37 @@ export function moveItem(list, from, to) {
 }
 
 /**
+ * P5.46：播放列表当「筛选维度」用时的**筛选 + 重排**一次到位。
+ *
+ * 与 browse 侧的 filterVideos/sortVideos 的关系：
+ *   - 筛选：只保留 ids 里的视频（列表外的一律不出现，与其它筛选是「与」）；
+ *   - 顺序：严格按 ids 的顺序返回，**覆盖**排序下拉（列表顺序就是播放顺序）；
+ *   - ids 里索引中不存在的条目直接跳过（下架 / 索引未加载完），不留空位；
+ *   - 同一 id 重复出现时只取首次（uniqIds 已去重）。
+ * 空 ids 返回空数组：调用方据此显示「这个播放列表还没有视频」，而不是回落到全库。
+ * @param {Array<{id:string}>} videos 已经过其它筛选的候选视频
+ * @param {string[]|Array} ids 服务端给的有序条目
+ * @returns {Array} 保序结果
+ */
+export function orderByPlaylistIds(videos, ids) {
+  const want = uniqIds(ids || [])
+  if (!want.length) return []
+  const allowed = new Set(want)
+  const byVideoId = new Map()
+  for (const v of videos || []) {
+    const id = toId(v)
+    if (!id || !allowed.has(id) || byVideoId.has(id)) continue
+    byVideoId.set(id, v)
+  }
+  const out = []
+  for (const id of want) {
+    const v = byVideoId.get(id)
+    if (v) out.push(v)
+  }
+  return out
+}
+
+/**
  * 按列表顺序算「上一部 / 下一部」（播放器的上一个/下一个、快捷键 n/p 都走这里）
  * @param {string[]} ids 播放列表的有序 id
  * @param {string} currentId
@@ -143,4 +174,4 @@ export function playlistNav(ids, currentId) {
   }
 }
 
-export default { toId, uniqIds, normalizePlaylistList, normalizePlaylistDetail, playlistMembership, moveItem, playlistNav }
+export default { toId, uniqIds, normalizePlaylistList, normalizePlaylistDetail, playlistMembership, moveItem, playlistNav, orderByPlaylistIds }

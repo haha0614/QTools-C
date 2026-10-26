@@ -66,7 +66,9 @@ async function mediaRequest(config) {
     data: config.data,
     params: config.params,
     silent: config.silent !== false,
-    headers: mediaHeaders(config.headers)
+    headers: mediaHeaders(config.headers),
+    // P5.47：本地模型单次生成可能超过 request.js 默认的 10s，按调用点放宽
+    ...(config.timeout ? { timeout: config.timeout } : {})
   })
   // 服务端首次下发的 owner 落盘（裸对象与 AjaxResult 两种形态都兼容）
   const body = unwrap(res)
@@ -270,6 +272,90 @@ export function saveVideoSynopsis(id, payload, options) {
     url: '/video/' + encodeURIComponent(String(id == null ? '' : id)) + '/synopsis',
     method: 'put',
     data: payload || {},
+    silent: opt.silent !== false
+  })
+}
+
+/* ------------------------------------------------------------ 作品简介自动生成（P5.47） */
+
+/**
+ * 本地模型单次生成的前端超时：后端默认 qtools.media.llm.timeoutMs=20000，
+ * 前端留 10s 余量（多出来的是排队 + 网络 + 后端拼素材的时间）。
+ * 超过它前端按「超时」处理并自动回退模板，与后端 503 是同一条用户体验。
+ */
+const SYNOPSIS_LLM_TIMEOUT = 30000
+
+/**
+ * 生成能力 后端：GET /api/media/synopsis/capabilities
+ * → { template:{maxChars}, llm:{enabled,provider,model} }
+ * 读接口，「⚡ 自动生成」据 llm.enabled 决定默认走本地模型还是模板。
+ * @param {{silent?:boolean}} [options]
+ */
+export function getSynopsisCapabilities(options) {
+  const opt = options || {}
+  return mediaRequest({ url: '/synopsis/capabilities', silent: opt.silent !== false })
+}
+
+/**
+ * 模板生成（预览，不落库）后端：POST /api/media/video/{id}/synopsis/template
+ * → { id, synopsis, chars, mode:'template' }
+ * 落库仍走 saveVideoSynopsis（用户改完再保存）。
+ * @param {string} id
+ * @param {{silent?:boolean}} [options]
+ */
+export function generateSynopsisTemplate(id, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/video/' + encodeURIComponent(String(id == null ? '' : id)) + '/synopsis/template',
+    method: 'post',
+    silent: opt.silent !== false
+  })
+}
+
+/**
+ * 本地模型生成（预览，不落库）后端：POST /api/media/video/{id}/synopsis/llm
+ * → { id, synopsis, chars, mode:'llm', model, provider, ms }
+ * 未启用 / Ollama 未启动 / 超时 → 503（error 体带明确文案），调用方据此回退模板。
+ * @param {string} id
+ * @param {{silent?:boolean, timeout?:number}} [options]
+ */
+export function generateSynopsisLlm(id, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/video/' + encodeURIComponent(String(id == null ? '' : id)) + '/synopsis/llm',
+    method: 'post',
+    silent: opt.silent !== false,
+    timeout: opt.timeout || SYNOPSIS_LLM_TIMEOUT
+  })
+}
+
+/**
+ * 批量生成 后端：POST /api/media/synopsis/generate（仅 full 档）
+ * body { videoIds?:string[], all?:boolean, mode?:'template'|'llm', overwrite?:boolean } → 任务节点
+ * 后端逐个处理、每完成一个立刻落库；进度用 getSynopsisJob 轮询。
+ * @param {{videoIds?:string[], all?:boolean, mode?:string, overwrite?:boolean}} payload
+ * @param {{silent?:boolean}} [options]
+ */
+export function generateSynopsisBatch(payload, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/synopsis/generate',
+    method: 'post',
+    data: payload || {},
+    silent: opt.silent !== false
+  })
+}
+
+/**
+ * 批量任务进度 后端：GET /api/media/synopsis/jobs/{jobId}
+ * → { jobId, mode, status, total, processed, generated, skipped, failed, items:[{videoId,title,status,chars,ms,message}] }
+ * @param {string} jobId
+ * @param {{silent?:boolean}} [options]
+ */
+export function getSynopsisJob(jobId, options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/synopsis/jobs/' + encodeURIComponent(String(jobId == null ? '' : jobId)),
     silent: opt.silent !== false
   })
 }
@@ -676,6 +762,12 @@ const mediaApi = {
   // 作品简介（P5.38）
   getVideoSynopsis,
   saveVideoSynopsis,
+  // 作品简介自动生成（P5.47）
+  getSynopsisCapabilities,
+  generateSynopsisTemplate,
+  generateSynopsisLlm,
+  generateSynopsisBatch,
+  getSynopsisJob,
   // 保存筛选（P2-B）
   listFilters,
   saveFilter,

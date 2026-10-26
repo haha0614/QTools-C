@@ -7,14 +7,30 @@
   降级：任一接口 404 / 连接失败 → 对应区块显示「人物数据暂不可用」，页面不白屏、不抛异常。
   深链：卡片点击沿用既有约定 —— 视频 -> /media#play=<id>，相册 -> /media/photos#album=<id>。
   主题：.media-scope + mediaTheme.scss（局部模式），只用 --bg/--fg/--line/--accent 等映射变量。
+
+  P5.52：标题区下方展示 P5-A 的 14 个资料字段 + 性别 / 生日（取值与格式化规则同样只有
+         personWall.profileFacts 一份实现；卡片是它的「最多 3 个 chip」子集）。空值整键不输出
+         → 这里一个都没填时整块不渲染，不留空行。
+  P5.48：头像支持手动指定。头像 hover 出现小「换」按钮 → 同一个 PersonAvatarDialog
+         （与人物墙共用一套弹层）→ PUT /api/media/person/{id}/avatar，保存乐观更新、失败回滚。
+         头像拼装复用人物墙的 personWall.avatarOf（手动 avatarUrl → 历史 avatarPath → 相册首图 →
+         视频封面 → 首字占位），所以两页的优先级永远一致：stats 用本页已加载的 albums[0].cover /
+         videos[0].id 现拼，不额外发请求。入口只在编辑策略 full 档渲染。
 -->
 <script setup>
-import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMediaApi } from '@/composables/useMediaApi'
 import { useMediaTrack } from '@/composables/useMediaTrack'
 import VideoCard from './video/VideoCard.vue'
 import AlbumCard from './photos/AlbumCard.vue'
+// P5.48：头像优先级与人物墙**同一份实现**（手动 → 历史 avatarPath → 相册首图 → 视频封面 → 首字占位）
+import { avatarOf, profileFacts } from './personWall.js'
+import PersonAvatarDialog from './PersonAvatarDialog.vue'
+import PageToast from './PageToast.vue'
+import { usePageToast } from './usePageToast.js'
+import { useMediaEditPolicy } from '@/composables/useMediaEditPolicy'
+import { clearPersonAvatar, errorText, setPersonAvatar } from './video/personApi'
 // P5.35：把「来源 = 本人物 + 本页展示顺序」交给播放页（顺序走 sessionStorage 快照，见 openVideo）
 import { CTX_PERSON, writeContextSnapshot } from './video/playbackContext'
 
@@ -22,6 +38,11 @@ const api = useMediaApi()
 const tk = useMediaTrack()
 const route = useRoute()
 const router = useRouter()
+/** 站端编辑策略：off / local 档不渲染「换头像」入口（local 档只写 localStorage，头像没有本地落点，故同样不开放） */
+const policy = useMediaEditPolicy()
+const { toasts, push: showToast } = usePageToast()
+/** 头像 URL 构造沿用 useMediaApi 的同名实现（与人物墙、相册卡完全同一套规则） */
+const URLS = { thumbOf: api.thumbUrlFromRel, videoThumb: api.videoThumbUrl }
 
 const PAGE_SIZE = 12
 const NOT_READY = '人物数据暂不可用：后端人物接口尚未就绪'
@@ -81,6 +102,12 @@ function countsText() {
   const a = toNum(p.albumCount != null ? p.albumCount : p.album_count)
   return '视频 ' + v + ' · 相册 ' + a
 }
+
+/**
+ * 资料字段（P5.52）：顺序 = personWall.PROFILE_FIELDS，只留**有值**的项。
+ * 后端对空值整键不输出，所以「一个都没填」时这里是空数组 → 模板整块不渲染。
+ */
+const facts = computed(() => profileFacts(person.value))
 
 function loadPerson() {
   personLoading.value = true
@@ -190,9 +217,125 @@ function openAlbum(id) {
   router.push('/media/photos#album=' + encodeURIComponent(String(id)))
 }
 
+/* --------------------------------------------------------- P5.48 手动头像 */
+
+/** 头像加载失败标记：换成碎图时回落到首字占位（换头像成功后要能重试，故不是单向置位） */
+const avatarBroken = ref(false)
+
+/**
+ * 头像 URL：与人物墙同一份 avatarOf。
+ * stats 用本页**已经加载好的** albums[0].cover / videos[0].id 现拼（不额外发请求）；
+ * 相册或视频一页都没加载完时 stats 为空，自然落到首字占位。
+ */
+const avatar = computed(() => {
+  const p = person.value || {}
+  const firstAlbum = albums.value.length ? albums.value[0] : null
+  const firstVideo = videos.value.length ? videos.value[0] : null
+  return avatarOf(
+    { id: personId.value, name: p.name },
+    p,
+    { coverRel: firstAlbum && firstAlbum.cover, posterId: firstVideo && firstVideo.id },
+    URLS
+  )
+})
+
+const avatarDialog = reactive({ open: false, saving: false })
+
+const canChangeAvatar = computed(() => policy.isFull.value && personId.value !== '' && !!person.value)
+
+const avatarCurrent = computed(() => {
+  const p = person.value || {}
+  const kind = p.avatarKind ? String(p.avatarKind) : ''
+  if (!kind) return null
+  return { kind, ref: p.avatarRef == null ? '' : String(p.avatarRef), url: avatar.value.url }
+})
+
+/** 乐观 URL：与后端 avatarUrlOf 同一规则（服务端回包会覆盖） */
+function optimisticAvatarUrl(payload) {
+  if (payload.kind === 'url') return payload.ref
+  const ref = String(payload.ref)
+  const i = ref.indexOf(':')
+  if (i <= 0) return ''
+  return api.photoThumbUrl(ref.slice(0, i), Number(ref.slice(i + 1)))
+}
+
+/** 写本地人物节点，返回回滚函数 */
+function applyLocalAvatar(patch) {
+  const before = person.value ? { ...person.value } : null
+  person.value = Object.assign({}, person.value || {}, patch)
+  avatarBroken.value = false
+  return () => {
+    person.value = before
+  }
+}
+
+function mergeServerPerson(res) {
+  const body = res && typeof res === 'object' && res.data && typeof res.data === 'object' ? res.data : res
+  if (body && typeof body === 'object' && !Array.isArray(body) && body.id != null) {
+    person.value = body
+    avatarBroken.value = false
+  }
+}
+
+function openAvatarDialog() {
+  if (!canChangeAvatar.value) return
+  avatarDialog.open = true
+}
+
+function closeAvatarDialog() {
+  if (avatarDialog.saving) return
+  avatarDialog.open = false
+}
+
+async function saveAvatar(payload) {
+  if (avatarDialog.saving || !person.value) return
+  const rollback = applyLocalAvatar({
+    avatarKind: payload.kind,
+    avatarRef: payload.ref,
+    avatarUrl: optimisticAvatarUrl(payload)
+  })
+  avatarDialog.saving = true
+  try {
+    mergeServerPerson(await setPersonAvatar(personId.value, payload.kind, payload.ref))
+    avatarDialog.open = false
+    showToast('头像已更新')
+  } catch (err) {
+    rollback()
+    showToast('头像更新失败：' + errorText(err))
+  } finally {
+    avatarDialog.saving = false
+  }
+}
+
+async function clearAvatar() {
+  if (avatarDialog.saving || !person.value) return
+  const rollback = applyLocalAvatar({ avatarKind: null, avatarRef: null, avatarUrl: null })
+  avatarDialog.saving = true
+  try {
+    mergeServerPerson(await clearPersonAvatar(personId.value))
+    avatarDialog.open = false
+    showToast('已恢复自动头像')
+  } catch (err) {
+    rollback()
+    showToast('恢复自动头像失败：' + errorText(err))
+  } finally {
+    avatarDialog.saving = false
+  }
+}
+
+/** 头像换了（乐观或服务端）就允许碎图重试一次 */
+watch(
+  () => avatar.value.url,
+  () => {
+    avatarBroken.value = false
+  }
+)
+
 function loadAll() {
   personId.value = String((route.params && route.params.id) || '')
   person.value = null
+  avatarBroken.value = false
+  avatarDialog.open = false
   videoPage.value = 1
   albumPage.value = 1
   loadPerson()
@@ -202,6 +345,7 @@ function loadAll() {
 
 onMounted(() => {
   tk.pageView()
+  policy.loadEditPolicy()
   loadAll()
 })
 
@@ -222,11 +366,32 @@ onBeforeUnmount(() => {
   <div class="media-scope person-detail" :data-state="personErr ? 'unavailable' : personLoading ? 'loading' : 'ready'">
     <header class="pd-head">
       <a class="pd-back" href="/media/persons" @click.prevent="router.push('/media/persons')">← 人物</a>
-      <span class="pd-avatar">{{ initialOf(personName()) }}</span>
+      <span class="pd-avatar-wrap">
+        <span class="pd-avatar">
+          <img v-if="avatar.url && !avatarBroken" :src="avatar.url" alt="" decoding="async" @error="avatarBroken = true" />
+          <template v-else>{{ initialOf(personName()) }}</template>
+        </span>
+        <button
+          v-if="canChangeAvatar"
+          class="pd-change"
+          type="button"
+          title="换头像"
+          data-role="avatar-change"
+          @click="openAvatarDialog"
+        >
+          换
+        </button>
+      </span>
       <div class="pd-title-box">
         <h1 class="pd-title">{{ personName() }}</h1>
         <p v-if="!personErr" class="pd-sub">{{ countsText() }}</p>
         <p v-else class="pd-sub pd-err">{{ personErr }}</p>
+        <!-- P5.52 资料字段：有值才渲染（data-field 供实测断言到具体字段） -->
+        <p v-if="facts.length" class="pd-facts" data-role="profile-facts">
+          <span v-for="f in facts" :key="f.key" class="pd-fact" :data-field="f.key">
+            <em>{{ f.label }}</em>{{ f.value }}
+          </span>
+        </p>
       </div>
     </header>
 
@@ -278,6 +443,18 @@ onBeforeUnmount(() => {
         />
       </div>
     </section>
+
+    <!-- P5.48 换头像弹层：与人物墙同一个组件（两个 tab + 恢复自动） -->
+    <PersonAvatarDialog
+      :open="avatarDialog.open"
+      :person="{ id: personId, name: personName() }"
+      :current="avatarCurrent"
+      :busy="avatarDialog.saving"
+      @close="closeAvatarDialog"
+      @save="saveAvatar"
+      @clear="clearAvatar"
+    />
+    <PageToast :toasts="toasts" />
   </div>
 </template>
 
@@ -313,9 +490,47 @@ onBeforeUnmount(() => {
   color: var(--accent);
 }
 
-.pd-avatar {
+/* 头像外层（P5.48）：只为定位「换」按钮，尺寸口径与旧 .pd-avatar 一致 */
+.pd-avatar-wrap {
+  position: relative;
   width: 52px;
   height: 52px;
+  flex: 0 0 52px;
+}
+
+.pd-change {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 21px;
+  height: 21px;
+  padding: 0;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  background: var(--bg-2);
+  color: var(--fg-dim);
+  font-size: 10.5px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.pd-avatar-wrap:hover .pd-change,
+.pd-avatar-wrap:focus-within .pd-change {
+  opacity: 1;
+}
+
+.pd-change:hover,
+.pd-change:focus-visible {
+  opacity: 1;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.pd-avatar {
+  width: 100%;
+  height: 100%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -325,6 +540,14 @@ onBeforeUnmount(() => {
   color: var(--accent);
   font-size: 21px;
   font-weight: 600;
+  overflow: hidden;
+}
+
+.pd-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .pd-title-box {
@@ -345,6 +568,30 @@ onBeforeUnmount(() => {
 
 .pd-err {
   color: var(--danger);
+}
+
+/* P5.52 资料条：与 .pd-sub 同层级的小字号行内标签，塞不下就换行（详情页不限条数） */
+.pd-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: var(--fg);
+}
+
+.pd-fact {
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.pd-fact em {
+  font-style: normal;
+  margin-right: 4px;
+  color: var(--fg-dim);
 }
 
 .pd-sec {

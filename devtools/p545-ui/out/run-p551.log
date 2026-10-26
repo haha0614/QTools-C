@@ -1,0 +1,91 @@
+dev server: http://127.0.0.1:60103（端口 60103 来自系统）
+CDP 端口：60106（同样来自系统）
+
+[A] 人物墙（真实数据：真索引 + 真 /persons + 真 /person/{id}）
+  PASS 页面身份自检（/media/persons）  — {"url":"http://127.0.0.1:60103/media/persons?_s=p545a","title":"媒体站 · 人物","anchor":true,"target":"http://127.0.0.1:60103/media/persons?_s=p545a"}
+  PASS A1 人物墙渲染 15 张卡片  — cards=15
+  PASS A2 相册封面作头像（第一档）  — album=10
+  PASS A3 视频封面作头像（第二档：无相册有视频的人）  — video=4
+  PASS A4 头像命中率 14/15（只有空壳人物回退首字）  — kinds={"video":4,"album":10,"initial":1}
+      命中率 14/15；样例 素人 → /api/media/thumb/v/1d74d2cc5d20（video） | 娜娜 → /api/media/thumb/v/485470e2cc08（video） | 深田咏美 → /api/media/thumb/v/046839cff1cd（video）
+      /api/media/thumb/p/a153/0000（album）→ HTTP 200 image/jpeg 27826B
+      /api/media/thumb/v/1d74d2cc5d20（video）→ HTTP 200 image/jpeg 23214B
+      /api/media/thumb/v/1d74d2cc5d20（video）→ HTTP 200 image/jpeg 23214B
+  PASS A5 样例头像 URL（相册封面 + 视频封面）都是真的图片（HTTP 200 + image/* + >1KB）  — ok=3/3
+  PASS A6 所有有头像的卡片图片都真实解码成功（naturalWidth > 0）  — failed=
+  PASS A7 数量文本格式「X 部视频 · Y 本相册 · Z 张照片」  — 14 张卡片带数量
+  PASS A7b 数量行完整可见（没有被 line-clamp 裁掉）  — []
+  PASS A7c 最长的数量文本（念念）也完整显示  — "0 部视频 · 144 本相册 · 9017 张照片"
+  PASS A8 全空人物不留空洞（无数量行、无 chip 行）  — {"counts":"","chips":[],"text":"E"}
+  PASS A9 卡片等高（整面墙最大高度差 ≤ 1.5px）  — min=119.2 max=119.2 spread=0
+  PASS A10 没有卡片横向溢出  — overflow=[]
+  PASS A11 chip 区是单行（高度 ≤ 20px，不换行撑高）  — chipHeights=[]
+  PASS A12 暗色主题渲染（截图 p545-persons-wide-dark.png）
+
+[B] 窄屏 375（2 列 / 等高 / 不横向滚动）
+  PASS B1 窄屏网格 = 2 列  — cols=2
+  PASS B2 窄屏卡片等高  — spread=0
+  PASS B3 窄屏页面不横向滚动  — pageOverflow=-15
+  PASS B4 窄屏卡片不横向溢出
+  PASS B5 窄屏名字仍然完整渲染（省略号由 CSS 负责）
+
+[C] 头像 404 → 回退首字占位
+  PASS 页面身份自检（/media/persons）  — {"url":"http://127.0.0.1:60103/media/persons?_s=p545c","title":"媒体站 · 人物","anchor":true,"target":"http://127.0.0.1:60103/media/persons?_s=p545c"}
+  PASS C1 仍能定位到 111 号人物卡片
+  PASS C2 头像 URL 仍在数据里但图未挂载（404 后 img 被移除）  — {"kind":"album","src":""}
+  PASS C3 回退成姓名首字占位  — text="念"
+  PASS C4 占位盒子与图片同一尺寸（48×48，不抖动）  — {"w":48,"h":48}
+  PASS C5 其它卡片不受影响（仍 13 张有头像）  — withSrc=13
+  PASS C6 剩下的头像都真实解码成功
+
+[D] 打桩注入 mtime（后端新字段）+ 资料字段 → 别名 / chip / 最近更新
+  PASS D1 111 号卡片存在（索引 / 详情都走打桩响应）
+  PASS D2 别名跟在名字后面（括号）  — name="念念（念念 Nian Nian）"
+  PASS D3 资料 chip 取有值的前 3 个（身高 / 体重 / 三围，第 4 个出生年不渲染）  — ["身高 165cm","体重 48kg","三围 B88/W58/H88"]
+  PASS D4 最近更新「最近 YYYY-MM-DD」来自 people[].mtime  — "最近 2026-10-17"
+  PASS D5 数量文本仍是真实数据（打桩只加了时间与资料）  — "0 部视频 · 144 本相册 · 9017 张照片"
+  PASS D6 信息变多后仍然等高（chip / 最近行不撑破网格）  — spread=0
+
+[E] 信息栏分区顺序（真数据，不打桩）
+  PASS 页面身份自检（/media）  — {"url":"http://127.0.0.1:60103/media?_s=p545e#play=1d74d2cc5d20&sort=progress","title":"媒体站 · 视频库","anchor":true,"target":"http://127.0.0.1:60103/media?_s=p545e#play=1d74d2cc5d20&sort=progress"}
+  PASS E1 信息栏渲染出 .vp-body
+  PASS E2 真数据分区顺序是目标顺序的子序列（收藏 → 简介 → 上下文 → 人物 → 评分 → 标签 → 标记）  — ["作品简介","播放列表","人物","评分","标签","标记"]
+  PASS E2b 「工作室」分区是否渲染与索引数据一致（带 studios 的片数 = 0；位置由 E9 打桩补证）  — ["作品简介","播放列表","人物","评分","标签","标记"]
+  PASS E3 收藏仍是 .vp-body 第一行  — ["vp-fav-row","vp-sec vp-sec-syn","vp-sec vp-sec-ctx"]
+  PASS E4 作品简介在播放上下文**之前**（简介 0 < 上下文 1）  — syn=0 ctx=1
+  PASS E5 提示行与站端读能力一致（站端 /meta 可读，markers=0；/admin 一路 401）  — {"readable":true,"note":null}
+  PASS E5b 读得到 → 标记分区按真值落地（「暂无标记」），且提示行仍在最底部（不渲染）  — {"marks":0,"hint":true,"note":null}
+  PASS E6 评分 10 颗星且 full 档可点（顺序调整没碰编辑策略）  — stars=10 disabled=0
+  PASS E7 标签 / 标记 / 简介的编辑入口都在  — {"addTag":true,"addMark":true,"synEdit":true}
+  PASS E8 简介正文与上下文行都真的渲染  — {"syn":true,"ctxRows":176,"persons":1,"tags":0}
+
+[E9] 打桩：索引补 videos[].studios + 元信息可读 → 完整 7 分区顺序（含工作室）
+  PASS 页面身份自检（/media）  — {"url":"http://127.0.0.1:60103/media?_s=p545e9#play=1d74d2cc5d20&sort=size-desc","title":"媒体站 · 视频库","anchor":true,"target":"http://127.0.0.1:60103/media?_s=p545e9#play=1d74d2cc5d20&sort=size-desc"}
+  PASS E9 完整分区顺序 = 作品简介 → 播放列表 → 人物 → 工作室 → 评分 → 标签 → 标记（收藏在分区之前）  — ["作品简介","播放列表","人物","工作室","评分","标签","标记"]
+  PASS E9b 工作室夹在人物与评分之间  — studioIdx=3
+  PASS E9c 简介仍在上下文之前  — syn=0 ctx=1
+  PASS E10 元信息读成功时没有提示行（证明提示只由「读不到」触发，不是常驻）  — null
+  PASS E10b 打桩态 meta.markers=[] → 「暂无标记」（P5.51：读成功即权威，空就是真没有，不是「读不到」）  — {"marks":0,"hint":true}
+  PASS E11 打桩态下评分 / 标记仍可编辑（提示与分区调整都没碰编辑策略）  — {"starsDisabled":0,"addMark":true}
+
+[F] 信息栏提示在最后（meta 503 → readNote 生效）
+  PASS 页面身份自检（/media）  — {"url":"http://127.0.0.1:60103/media?_s=p545f#play=1d74d2cc5d20&sort=name-desc","title":"媒体站 · 视频库","anchor":true,"target":"http://127.0.0.1:60103/media?_s=p545f#play=1d74d2cc5d20&sort=name-desc"}
+  PASS F1 读不到元信息时提示出现  — 标记需要管理员身份读取，站端暂不展示；评分与标签按索引显示，仍可直接编辑
+  PASS F9 读失败时不显示「暂无标记」（不再把「读不到」说成「没有」）  — false
+  PASS F2 提示是 .vp-body 的**最后一个子节点**（标记分区之后）  — ["vp-sec","vp-hint vp-note"]
+  PASS F3 提示在标记分区之后（compareDocumentPosition）
+  PASS F4 字号弱化为 11.5px  — 11.5px
+  PASS F5 颜色 = --fg-dim（不再用橙色 --warn）  — rgb(163, 166, 173) vs rgb(163, 166, 173)
+  PASS F6 提示挪走后分区顺序不变（仍是目标顺序的子序列）  — ["作品简介","播放列表","人物","评分","标签","标记"]
+  PASS F7 提示只是说明文字，标记 / 标签编辑入口照旧在  — {"addMark":true,"addTag":true}
+  PASS F8 窄屏（420px 浮层）提示仍在最底部  — 11.5px
+
+[G] 卡片点击 → 人物详情跳转（P3-B 既有能力不能被卡片加厚破坏）
+  PASS 页面身份自检（/media/persons）  — {"url":"http://127.0.0.1:60103/media/persons?_s=p545g","title":"媒体站 · 人物","anchor":true,"target":"http://127.0.0.1:60103/media/persons?_s=p545g"}
+  PASS G1 念念的头像 = 索引里**第一个**含她的相册的封面（数据驱动：a164）  — /api/media/thumb/p/a164/0000 vs /api/media/thumb/p/a164/0000
+  PASS G2 点卡片进入 /media/person/111  — {"path":"/media/person/111","title":"念念","state":"ready"}
+  PASS G3 人物详情页标题 = 念念，状态 ready  — {"path":"/media/person/111","title":"念念","state":"ready"}
+  PASS G4 「← 人物」回到人物墙，15 张卡片仍在  — {"path":"/media/persons","cards":15}
+
+P5.45 实测：66 通过 / 0 失败
+产物：E:\111\project\QTools\QTools-C\devtools\p545-ui\out\p551-after
