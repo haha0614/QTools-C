@@ -19,16 +19,38 @@
  * 另附：置顶分区确实在信息栏最上方、与下方「我的播放列表」分区共存不混淆。
  */
 import fs from 'node:fs'
+import net from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
 import { createServer } from 'vite'
 
 const ROOT = path.resolve(import.meta.dirname, '../..')
-const PORT = 5332
-// CDP 端口随进程走：上一轮异常退出留下的 Chrome 不会与新的一轮抢同一个端口
-const CDP_PORT = 9300 + (process.pid % 400)
+
+/**
+ * 端口一律不写死：vite 的 dev 端口与 Chrome 的 CDP 端口都向系统要空闲端口。
+ * 原因（实测踩过）：CDP 端口与别的实测台撞车时，jsonList() 会连到**别人那个 Chrome**，
+ * 页面被对方导航走后，后续 evaluate 落到别人的页面上 ——
+ * 报出来的是「getComputedStyle 参数不是 Element」「__P531 undefined」这类脏数据。
+ * 端口随机化只是第一道闸，第二道是下面的页面身份自检（identity）。
+ */
+const freePort = () =>
+  new Promise((res, rej) => {
+    const s = net.createServer()
+    s.unref()
+    s.on('error', rej)
+    s.listen(0, '127.0.0.1', () => {
+      const p = s.address().port
+      s.close(() => res(p))
+    })
+  })
+const PORT = await freePort()
+const CDP_PORT = await freePort()
 const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe'
+/** 页面身份标记：由 CDP 在**每个新文档**里注入（不改业务代码），连到别人的页就立刻对不上 */
+const HARNESS_TAG = 'p532'
+/** bare 证据台的页面标题（身份自检用；改 bare.html 的 <title> 时这里要一起改） */
+const BARE_TITLE = 'P5.32 bare player harness'
 const OUT = path.join(import.meta.dirname, 'out')
 const BASE = 'http://127.0.0.1:' + PORT
 fs.mkdirSync(OUT, { recursive: true })
@@ -215,6 +237,13 @@ class CDP {
   }
 }
 
+/** 最早的求值辅助（尚未定义 js() 之前用来做身份闸 1） */
+async function js0(client, expression) {
+  const r = await client.send('Runtime.evaluate', { expression, returnByValue: true })
+  if (r.exceptionDetails) throw new Error(r.exceptionDetails.text)
+  return r.result.value
+}
+
 let exitCode = 0
 let cdp = null
 const shots = []
@@ -224,6 +253,16 @@ try {
   await cdp.ready
   await cdp.send('Runtime.enable')
   await cdp.send('Page.enable')
+
+  /* 身份闸 1：刚起的 Chrome 只应有一个 about:blank 页；否则说明连错了 Chrome（端口撞车） */
+  const birth = await js0(cdp, 'location.href + "|" + document.title')
+  if (!/^about:blank\|/.test(String(birth))) {
+    throw new Error('连到的不是本轮新起的 Chrome（当前页 = ' + birth + '），很可能是 CDP 端口撞车')
+  }
+  /* 身份闸 2：给本浏览器的每个新文档打标记。业务代码零改动，连到别的实测台时标记必然缺失 */
+  await cdp.send('Page.addScriptToEvaluateOnNewDocument', {
+    source: 'window.__P532_TAG=' + JSON.stringify(HARNESS_TAG) + ';'
+  })
 
   /* ---- 服务端打桩：只拦 /api/media/*（组件、composables、API 层代码一行未改） ---- */
   cdp.on('Fetch.requestPaused', async (p) => {
@@ -321,18 +360,48 @@ try {
     console.log('    [shot] ' + path.relative(ROOT, file))
   }
 
+  /** 当前页身份：标记 + 标题 + 路径（连错页面时这三项必然对不上） */
+  const identity = () =>
+    js(
+      '(function(){return {tag:window.__P532_TAG||"",title:document.title||"",path:location.pathname||"",href:location.href||""};})()'
+    )
+
+  /**
+   * 页面身份自检：连错页面（别的实测台的 Chrome / 别的 harness 页）时**立刻报错**，
+   * 绝不把别人的 DOM 当自己的判据继续跑出脏数据。
+   *   app  —— 真实应用页：标记 = p532，路径 = /media，标题 = 路由 meta.title「媒体站 · 视频库」；
+   *   bare —— 只挂播放器的证据台：标记 = p532，标题 = P532 bare player harness。
+   */
+  const assertIdentity = async (kind) => {
+    const who = await identity()
+    if (who.tag !== HARNESS_TAG) {
+      throw new Error('连到了不是本轮 p532 的页面（缺身份标记）：' + JSON.stringify(who))
+    }
+    if (kind === 'app' && (who.path !== '/media' || who.title !== '媒体站 · 视频库')) {
+      throw new Error('当前页不是 p532 的 /media 应用页：' + JSON.stringify(who))
+    }
+    if (kind === 'bare' && who.title !== BARE_TITLE) {
+      throw new Error('当前页不是 p532 的 bare 证据台：' + JSON.stringify(who))
+    }
+    return who
+  }
+
   /** 打开整页应用（不同场景用不同 _s= 避免同 URL 不刷新） */
   const gotoPage = async (query, hash, sel) => {
     await cdp.send('Page.navigate', { url: BASE + '/media?' + query + '#' + hash })
     for (let i = 0; i < 220; i++) {
       await sleep(100)
       try {
-        if (await js('!!document.querySelector(' + JSON.stringify(sel) + ')')) return true
+        if (await js('!!document.querySelector(' + JSON.stringify(sel) + ')')) break
       } catch {
         /* 页面还在加载 */
       }
     }
-    return false
+    const who = await assertIdentity('app')
+    if (!(await js('!!document.querySelector(' + JSON.stringify(sel) + ')'))) {
+      throw new Error('页面上没有出现预期元素 ' + sel + '（身份 = ' + JSON.stringify(who) + '）')
+    }
+    return true
   }
 
   /** 当前正在播放的 id：VideoPage 把 state.play 写进 hash，这是页面唯一的真值出口 */
@@ -361,6 +430,8 @@ try {
   /* ============================================================ a/b/c：浏览顺序 */
   console.log('\n[a] 从第 4 个视频（Delta）进入：信息栏置顶分区 = 浏览顺序上下文')
   ok(await gotoPage('_s=1', 'sort=name&play=' + VID.Delta, '.vp-sec-ctx .vp-ctx-row'), 'a0) 置顶分区渲染出上下文行')
+  const who0 = await identity()
+  console.log('    页面身份：' + JSON.stringify(who0) + '（vite :' + PORT + ' / CDP :' + CDP_PORT + '）')
   eq(await playId(), VID.Delta, 'a1) 正在播放的是第 4 个视频 Delta')
 
   const order = await js(
@@ -412,7 +483,7 @@ try {
   /* ============================================================ d：播放列表来源 */
   console.log('\n[d] 从播放列表进入：分区标题显示播放列表名、顺序 = 列表顺序')
   ok(
-    await gotoPage('playlist=' + PLAYLIST.id + '&_s=4', 'play=' + VID.Delta, '.vp-sec-ctx .vp-ctx-row'),
+    await gotoPage('playlist=' + PLAYLIST.id + '&_s=4', 'sort=name&play=' + VID.Delta, '.vp-sec-ctx .vp-ctx-row'),
     'd0) 从 ?playlist=p1 深链打开 Delta'
   )
   eq(await ctxLabel(), '来自播放列表：周末片单 · 共 3 条', 'd1) 分区标题行 = 来自播放列表：周末片单 · 共 3 条')
@@ -446,6 +517,7 @@ try {
   stub.emptyIndex = true
   await cdp.send('Page.navigate', { url: BASE + '/media?_s=5#sort=name&play=' + VID.Delta })
   await sleep(1600)
+  const whoEmpty = await assertIdentity('app')
   const missing = await js(
     '(function(){return {player:!!document.querySelector(".p-side"),ctx:!!document.querySelector(".vp-sec-ctx"),empty:!!document.querySelector(".empty"),msg:(document.querySelector(".empty")||{}).textContent||"",errors:(window.__p532errors||[]).length};})()'
   )
@@ -459,12 +531,13 @@ try {
   for (let i = 0; i < 120 && !bareReady; i++) {
     await sleep(100)
     try {
-      bareReady = (await js('!!window.__READY')) === true
+      bareReady = (await js('!!window.__READY && window.__P532_TAG===' + JSON.stringify(HARNESS_TAG))) === true
     } catch {
       /* 还在加载 */
     }
   }
-  ok(bareReady, 'e3) bare 证据台就绪（同一份 MediaPlayer.vue）')
+  const whoBare = await assertIdentity('bare')
+  ok(bareReady, 'e3) bare 证据台就绪（同一份 MediaPlayer.vue，身份自检通过）', whoBare.tag + ' / ' + whoBare.title)
   eq(await btnState('上一部'), { disabled: true, aria: 'true', title: '已经是列表第一条' }, 'e4) hasPrev=false：⏮ 在 DOM 里且禁用')
   eq(await btnState('下一部'), { disabled: true, aria: 'true', title: '已经是列表最后一条' }, 'e5) hasNext=false：⏭ 在 DOM 里且禁用')
   await clickSel('.p-ctrl .p-btn[aria-label="上一部"]')

@@ -1,6 +1,7 @@
 
 [a] 从第 4 个视频（Delta）进入：信息栏置顶分区 = 浏览顺序上下文
   OK  a0) 置顶分区渲染出上下文行
+    页面身份：{"tag":"p532","title":"媒体站 · 视频库","path":"/media","href":"http://127.0.0.1:52416/media?_s=1#play=v5&sort=name"}（vite :52416 / CDP :52417）
   OK  a1) 正在播放的是第 4 个视频 Delta
   OK  a2) 信息栏有多个分区块 — playlist-context / 人物0 / 评分 / 标签0 / 标记0 / playlists
   OK  a3) 置顶分区的第一块就是「播放列表」上下文分区
@@ -57,7 +58,7 @@
 [e] 上下文缺失：按钮禁用且不报错
   OK  e1) 索引为空 → 没有播放器 / 没有上下文分区（不抛错） — {"player":false,"ctx":false,"empty":true,"msg":"没有符合条件的视频","errors":0}
   OK  e2) 页面正常显示空态，没有崩 — 没有符合条件的视频
-  OK  e3) bare 证据台就绪（同一份 MediaPlayer.vue）
+  OK  e3) bare 证据台就绪（同一份 MediaPlayer.vue，身份自检通过） — p532 / P5.32 bare player harness
   OK  e4) hasPrev=false：⏮ 在 DOM 里且禁用
   OK  e5) hasNext=false：⏭ 在 DOM 里且禁用
   OK  e6) 点禁用按钮不 emit prev/next（页面不会去乱找片）
