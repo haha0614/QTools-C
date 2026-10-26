@@ -1,5 +1,5 @@
 {
-  "passed": 22,
+  "passed": 23,
   "failures": [],
   "facts": {
     "avatarBefore": "/api/media/thumb/p/a164/0000",
@@ -55,6 +55,7 @@
     },
     "expectUrl": "/api/media/thumb/p/a164/0000?crop=0.2562,0.3063,0.3000,0.3000",
     "avatarAfter": "/api/media/thumb/p/a164/0000?crop=0.2562,0.3063,0.3000,0.3000",
+    "nanRequests": [],
     "croppedImage": {
       "w": 120,
       "h": 120

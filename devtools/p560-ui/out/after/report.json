@@ -1,8 +1,6 @@
 {
-  "passed": 52,
-  "failures": [
-    "GET /api/media/persons 仍返回「未归类」（容器不能删，靠前端过滤）"
-  ],
+  "passed": 73,
+  "failures": [],
   "facts": {
     "backend": "http://127.0.0.1:8080 在线",
     "viewports": {
@@ -803,61 +801,302 @@
     "apiPersons": [
       {
         "id": 125,
-        "name": "素人"
+        "name": "素人",
+        "isPlaceholder": false
       },
       {
         "id": 122,
-        "name": "娜娜"
+        "name": "娜娜",
+        "isPlaceholder": false
       },
       {
         "id": 124,
-        "name": "深田咏美"
+        "name": "深田咏美",
+        "isPlaceholder": false
       },
       {
         "id": 123,
-        "name": "河北彩花"
+        "name": "河北彩花",
+        "isPlaceholder": false
       },
       {
         "id": 111,
-        "name": "念念"
+        "name": "念念",
+        "isPlaceholder": false
       },
       {
         "id": 112,
-        "name": "Machi马吉"
+        "name": "Machi马吉",
+        "isPlaceholder": false
       },
       {
         "id": 114,
-        "name": "唐翩翩"
+        "name": "唐翩翩",
+        "isPlaceholder": false
       },
       {
         "id": 115,
-        "name": "喵小吉 Aeolian-2"
+        "name": "喵小吉 Aeolian-2",
+        "isPlaceholder": false
       },
       {
         "id": 116,
-        "name": "小鱼"
+        "name": "小鱼",
+        "isPlaceholder": false
       },
       {
         "id": 117,
-        "name": "是小逗逗"
+        "name": "是小逗逗",
+        "isPlaceholder": false
       },
       {
         "id": 118,
-        "name": "桜井宁宁"
+        "name": "桜井宁宁",
+        "isPlaceholder": false
       },
       {
         "id": 119,
-        "name": "梨霜儿"
+        "name": "梨霜儿",
+        "isPlaceholder": false
       },
       {
         "id": 120,
-        "name": "玥儿玥er"
+        "name": "玥儿玥er",
+        "isPlaceholder": false
       }
     ],
+    "ungroupedInDb": false,
+    "stub_F1": {
+      "expect": [
+        "真人甲",
+        "素人"
+      ],
+      "got": [
+        "素人",
+        "真人甲"
+      ]
+    },
+    "stub_F2": {
+      "expect": [
+        "真人甲",
+        "素人"
+      ],
+      "got": [
+        "素人",
+        "真人甲"
+      ]
+    },
+    "stub_F3": {
+      "expect": [
+        "真人甲",
+        "素人"
+      ],
+      "got": [
+        "素人",
+        "真人甲"
+      ]
+    },
+    "stub_F4": {
+      "expect": [
+        "真人甲",
+        "未归类"
+      ],
+      "got": [
+        "真人甲",
+        "未归类"
+      ]
+    },
+    "frameLazy": {
+      "firstScreen": {
+        "total": 13,
+        "frameCards": 3,
+        "inView": 3,
+        "withSrc": 3,
+        "flagged": 3,
+        "srcs": [
+          {
+            "name": "娜娜（nana）",
+            "pid": "122",
+            "inview": "1",
+            "src": "/api/media/frame/485470e2cc08?t=562&algo=f1&w=400"
+          },
+          {
+            "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+            "pid": "124",
+            "inview": "1",
+            "src": "/api/media/frame/046839cff1cd?t=2209&algo=f1&w=400"
+          },
+          {
+            "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+            "pid": "123",
+            "inview": "1",
+            "src": "/api/media/frame/d1d123208f95?t=358&algo=f1&w=400"
+          }
+        ]
+      },
+      "frameRequestsFirstScreen": 3,
+      "stub": {
+        "cards": 20,
+        "frameCards": 20,
+        "inViewFirstScreen": 12,
+        "requestsFirstScreen": 12,
+        "requestsAfterScroll": 20,
+        "flaggedFirstScreen": 12,
+        "flaggedAfterScroll": 20,
+        "withSrcFirstScreen": 12,
+        "withSrcAfterScroll": 20
+      },
+      "stubDebug": {
+        "srcsFirst": [
+          {
+            "name": "取帧人物01",
+            "pid": "9000",
+            "inview": "1",
+            "src": "/api/media/frame/sv0?t=300&algo=f1&w=400"
+          },
+          {
+            "name": "取帧人物02",
+            "pid": "9001",
+            "inview": "1",
+            "src": "/api/media/frame/sv1?t=300&algo=f1&w=400"
+          },
+          {
+            "name": "取帧人物03",
+            "pid": "9002",
+            "inview": "1",
+            "src": "/api/media/frame/sv2?t=300&algo=f1&w=400"
+          },
+          {
+            "name": "取帧人物04",
+            "pid": "9003",
+            "inview": "1",
+            "src": "/api/media/frame/sv3?t=300&algo=f1&w=400"
+          },
+          {
+            "name": "取帧人物05",
+            "pid": "9004",
+            "inview": "1",
+            "src": "/api/media/frame/sv4?t=301&algo=f1&w=400"
+          },
+          {
+            "name": "取帧人物06",
+            "pid": "9005",
+            "inview": "1",
+            "src": "/api/media/frame/sv5?t=301&algo=f1&w=400"
+          }
+        ],
+        "srcsAfter": [
+          {
+            "name": "取帧人物01",
+            "pid": "9000",
+            "inview": "1",
+            "src": "/api/media/frame/sv0?t=300&algo=f1&w=400"
+          },
+          {
+            "name": "取帧人物02",
+            "pid": "9001",
+            "inview": "1",
+            "src": "/api/media/frame/sv1?t=300&algo=f1&w=400"
+          },
+          {
+            "name": "取帧人物03",
+            "pid": "9002",
+            "inview": "1",
+            "src": "/api/media/frame/sv2?t=300&algo=f1&w=400"
+          },
+          {
+            "name": "取帧人物04",
+            "pid": "9003",
+            "inview": "1",
+            "src": "/api/media/frame/sv3?t=300&algo=f1&w=400"
+          },
+          {
+            "name": "取帧人物05",
+            "pid": "9004",
+            "inview": "1",
+            "src": "/api/media/frame/sv4?t=301&algo=f1&w=400"
+          },
+          {
+            "name": "取帧人物06",
+            "pid": "9005",
+            "inview": "1",
+            "src": "/api/media/frame/sv5?t=301&algo=f1&w=400"
+          }
+        ]
+      },
+      "realData": {
+        "frameCards": 3,
+        "withSrc": 3,
+        "srcs": [
+          {
+            "name": "娜娜（nana）",
+            "pid": "122",
+            "inview": "1",
+            "src": "/api/media/frame/485470e2cc08?t=562&algo=f1&w=400"
+          },
+          {
+            "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+            "pid": "124",
+            "inview": "1",
+            "src": "/api/media/frame/046839cff1cd?t=2209&algo=f1&w=400"
+          },
+          {
+            "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+            "pid": "123",
+            "inview": "1",
+            "src": "/api/media/frame/d1d123208f95?t=358&algo=f1&w=400"
+          }
+        ]
+      },
+      "sampleSrc": {
+        "name": "娜娜（nana）",
+        "pid": "122",
+        "inview": "1",
+        "src": "/api/media/frame/485470e2cc08?t=562&algo=f1&w=400"
+      },
+      "urlCheck": {
+        "person": "娜娜（nana）",
+        "pid": "122",
+        "videoId": "485470e2cc08",
+        "dur": 1873.79,
+        "t": 562,
+        "expectedT": 562
+      }
+    },
+    "frameVisual": {
+      "videoId": "485470e2cc08",
+      "cover": {
+        "rel": "/api/media/thumb/v/485470e2cc08",
+        "status": 200,
+        "bytes": 10735,
+        "type": "image/jpeg"
+      },
+      "frame": {
+        "rel": "/api/media/frame/485470e2cc08?t=562&w=400",
+        "status": 200,
+        "bytes": 10498,
+        "type": "image/jpeg"
+      }
+    },
+    "frameFailFallback": {
+      "frameCards": 3,
+      "withImg": 0,
+      "initialText": [
+        "娜",
+        "深",
+        "河"
+      ]
+    },
     "avatar": {
       "img": 13,
       "init": 0,
       "total": 13
+    },
+    "firstCard": {
+      "x": 359.625,
+      "y": 114.8515625,
+      "id": "125",
+      "name": "素人"
     },
     "detailRoute": "/media/person/125",
     "detailCard": {

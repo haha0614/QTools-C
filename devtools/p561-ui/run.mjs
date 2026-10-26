@@ -521,6 +521,12 @@ const afterSrc = await evaluate(
 facts.avatarAfter = afterSrc
 ok(!!afterSrc && afterSrc.indexOf('#crop=') >= 0 || afterSrc === expectUrl, '卡片头像立即换成裁剪后的 URL（无需刷新）', afterSrc)
 ok(afterSrc === expectUrl, '卡片头像 URL 与后端回包的 avatarUrl 一致', expectUrl)
+// 乐观 URL（点完立刻显示、等服务端回包）也不能带裁剪尾巴：Number("0#crop=…") = NaN 会拼出 0NaN
+const nanReqs = await evaluate(
+  '(function(){return performance.getEntriesByType("resource").map(function(e){return e.name}).filter(function(n){return n.indexOf("NaN")>=0})})()'
+)
+facts.nanRequests = nanReqs
+ok(!nanReqs || nanReqs.length === 0, '整个过程没有任何一条缩略图 URL 拼成 …NaN（乐观 URL 也切了裁剪尾巴）', JSON.stringify(nanReqs || []))
 await shot('p561-a4-card')
 // 这条 URL 真的能取到「裁过的图」吗（读接口是真后端）
 const imgOk = await evaluate(

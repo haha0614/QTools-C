@@ -10,12 +10,14 @@
  * 三份数据的拼装规则（谁优先、缺哪个降级到哪个、怎么排 chip、日期怎么格式化）集中在这里，
  * 页面只负责发请求与渲染，单测（personWall.test.mjs）覆盖所有降级分支。
  *
- * 头像来源（P5.45(a)，按可行性优先级）：
- *   0. 人物详情里的 avatarPath（显式头像，站端目前全为空，有就用）；
+ * 头像来源（P5.45(a) 起，P5.60 改第 2 档，按可行性优先级）：
+ *   0. 人物详情里的 avatarPath / avatarUrl（显式或手动指定，压过下面所有档）；
  *   1. 该人物名下**第一个相册**的封面 —— 索引 albums[].cover（形如 thumbs/p/a164/0000.jpg，由页面注入的
  *      thumbOf() 转成 /api/media/thumb/p/a164/0000，与相册卡封面同一个 URL 构造）；
- *   2. 名下没有相册但有视频 → 第一个视频的封面 /api/media/thumb/v/<videoId>（videoThumb() 注入）；
- *   3. 都没有 → 首字彩色圆底占位（initialOf）。
+ *   2. 名下没有相册但有视频 → 第一个视频的**内容帧** /api/media/frame/<videoId>?t=<时长×0.3 的整秒>
+ *      （frameOf() 注入；以前是预生成封面 /thumb/v/<videoId>，常是黑屏 / 片头，P5.60 换成内容帧。
+ *       取帧要真跑 ffmpeg，所以页面必须懒加载 —— 这里只给 URL，不发请求）；
+ *   3. 都没有（或取帧失败）→ 首字彩色圆底占位（initialOf）。
  * 命中率（真实数据 14 位人物）：1 档 10 位 + 2 档 4 位 = 14/14（P5.60 删掉测试空壳「E2E演员」后无人落回首字）。
  *
  * 非真人条目（P5.60）：media_person 里有两类「不是人」的行 ——「未归类」（相册归档容器）与
@@ -164,7 +166,7 @@ export function buildWallIndex(index) {
   const slot = (name) => {
     let s = byName.get(name)
     if (!s) {
-      s = { albums: 0, photos: 0, videos: 0, coverRel: '', posterId: '', mtime: 0 }
+      s = { albums: 0, photos: 0, videos: 0, coverRel: '', posterId: '', posterDur: 0, mtime: 0 }
       byName.set(name, s)
     }
     return s
@@ -194,7 +196,11 @@ export function buildWallIndex(index) {
       if (!name) continue
       const s = slot(name)
       s.videos += 1
-      if (!s.posterId && video.id != null && video.id !== '') s.posterId = String(video.id)
+      if (!s.posterId && video.id != null && video.id !== '') {
+        s.posterId = String(video.id)
+        // P5.60：头像 ③ 档要「视频内容帧」，落点 = 时长 × 0.3，所以这里连时长一起记
+        s.posterDur = num(video.dur)
+      }
       s.mtime = Math.max(s.mtime, toMs(video.mtime))
     }
   }
@@ -236,13 +242,35 @@ export function explicitAvatarUrl(detail) {
   return normalizeAvatarPath(detail && (detail.avatarPath || detail.avatar_path))
 }
 
+/** 头像 ③ 档的取帧落点：时长 × 0.3（避开片头黑屏 / 标题卡） */
+export const FRAME_AT_RATIO = 0.3
+
 /**
- * 卡片头像：0 显式（手动 avatarUrl / 历史 avatarPath，kind = 'profile'）→ 1 相册封面 → 2 视频封面 → 3 首字占位。
+ * 视频内容帧的取帧秒数（**整数秒**）：后端只有整秒那一支会落盘永久缓存（thumbs/frames/<hash>/<秒>.jpg），
+ * 带小数就走「精确取帧、no-store、每次真跑 ffmpeg」—— 卡片头像绝不能用那一支。
+ * dur 未知（0 / 非数）→ 0：退成片头帧，仍然是「视频里的画面」而不是通用封面。
+ */
+export function frameSecondOf(dur) {
+  const d = num(dur)
+  if (d <= 0) return 0
+  return Math.max(0, Math.floor(d * FRAME_AT_RATIO))
+}
+
+/**
+ * 卡片头像（四级回退）：0 显式（手动 avatarUrl / 历史 avatarPath，kind=profile）
+ *   → 1 该人物第一个相册的首图（kind=album）
+ *   → 2 该人物第一个视频的**内容帧**（kind=frame，t = 时长 × 0.3，见 frameSecondOf）
+ *   → 3 姓名首字彩底（kind=initial）。
+ *
+ * P5.60 追加：第 2 档以前用 /api/media/thumb/v/<id>（预生成封面，经常是黑屏 / 片头 / 与人物无关的画面），
+ * 现在改成精确取帧接口的内容帧。取帧要真跑 ffmpeg，所以**页面必须懒加载**（进入视口才挂 src）；
+ * 这里只给出 URL 与 kind，不发请求。取帧 404 / 超时由页面的 img onerror 退到首字（markAvatarFailed）。
+ *
  * @param {object} person   /persons 里的一条（id / name / alias）
  * @param {object} detail   /person/{id} 的响应（可空）
  * @param {object} stats    buildWallIndex() 里该人名的统计（可空）
- * @param {{thumbOf?:Function, videoThumb?:Function}} urls  URL 构造（页面注入 useMediaApi 的同名实现）
- * @returns {{url:string, kind:'profile'|'album'|'video'|'initial'}}
+ * @param {{thumbOf?:Function, frameOf?:Function}} urls  URL 构造（页面注入 useMediaApi 的同名实现）
+ * @returns {{url:string, kind:'profile'|'album'|'frame'|'initial'}}
  */
 export function avatarOf(person, detail, stats, urls) {
   const u = urls || {}
@@ -252,9 +280,9 @@ export function avatarOf(person, detail, stats, urls) {
     const url = u.thumbOf(stats.coverRel)
     if (url) return { url, kind: 'album' }
   }
-  if (stats && stats.posterId && typeof u.videoThumb === 'function') {
-    const url = u.videoThumb(stats.posterId)
-    if (url) return { url, kind: 'video' }
+  if (stats && stats.posterId && typeof u.frameOf === 'function') {
+    const url = u.frameOf(stats.posterId, frameSecondOf(stats.posterDur))
+    if (url) return { url, kind: 'frame' }
   }
   return { url: '', kind: 'initial' }
 }

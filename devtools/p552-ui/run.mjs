@@ -483,8 +483,13 @@ const cardGeo = await evaluate(
     'return {minH:Math.round(minH),rows:rows,wrapperOverflow:cs.overflow,wrap:cs.flexWrap};})()'
 )
 facts.cardGeo = cardGeo
-ok(cardGeo.minH >= 108, '卡片拉长（最小高度 ≥108px，旧值 84px）', 'minH=' + cardGeo.minH)
-ok(cardGeo.wrap === 'wrap' && cardGeo.wrapperOverflow === 'visible', 'chip 容器改成可换行且不裁切', cardGeo.wrap + '/' + cardGeo.wrapperOverflow)
+// P5.60 调整的旧断言：P5.55 把卡片拉到 ≥108px 来容纳「折两行的 chip」，
+// 用户口径是「加宽不是加高」，所以列宽改成 280 起、卡片回到紧凑（内容自然高 ≈100px）。
+// 断言改成「紧凑区间」而不是固定值：只要 84–110 之间且不塌就合格。
+ok(cardGeo.minH >= 84 && cardGeo.minH <= 110, '卡片高度紧凑（84px ≤ 最小高度 ≤ 110px，P5.60 由加高回到加宽）', 'minH=' + cardGeo.minH)
+// P5.60 调整的旧断言：chip 容器从 flex-wrap:wrap + overflow:visible 改成 nowrap + hidden
+// （单行 = 不撑高卡片；超长值已在 personWall.profileChips 截到 14 字，完整值看 title / 详情页）
+ok(cardGeo.wrap === 'nowrap' && cardGeo.wrapperOverflow === 'hidden', 'chip 容器单行不折行（nowrap + overflow:hidden）', cardGeo.wrap + '/' + cardGeo.wrapperOverflow)
 const clipped = []
 for (const row of cardGeo.rows) {
   for (const cr of row.chipRects) {

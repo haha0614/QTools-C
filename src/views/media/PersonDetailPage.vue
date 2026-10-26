@@ -14,8 +14,9 @@
   P5.48：头像支持手动指定。头像 hover 出现小「换」按钮 → 同一个 PersonAvatarDialog
          （与人物墙共用一套弹层）→ PUT /api/media/person/{id}/avatar，保存乐观更新、失败回滚。
          头像拼装复用人物墙的 personWall.avatarOf（手动 avatarUrl → 历史 avatarPath → 相册首图 →
-         视频封面 → 首字占位），所以两页的优先级永远一致：stats 用本页已加载的 albums[0].cover /
-         videos[0].id 现拼，不额外发请求。入口只在编辑策略 full 档渲染。
+         视频内容帧 → 首字占位），所以两页的优先级永远一致：stats 用本页已加载的 albums[0].cover /
+         videos[0].{id,dur} 现拼，不额外发请求（P5.60：视频档由「预生成封面」改成「内容帧」，
+         取帧落点 t = 时长 × 0.3 的整秒）。入口只在编辑策略 full 档渲染。
 -->
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
@@ -24,7 +25,7 @@ import { useMediaApi } from '@/composables/useMediaApi'
 import { useMediaTrack } from '@/composables/useMediaTrack'
 import VideoCard from './video/VideoCard.vue'
 import AlbumCard from './photos/AlbumCard.vue'
-// P5.48：头像优先级与人物墙**同一份实现**（手动 → 历史 avatarPath → 相册首图 → 视频封面 → 首字占位）
+// P5.48：头像优先级与人物墙**同一份实现**（手动 → 历史 avatarPath → 相册首图 → 视频内容帧 → 首字占位）
 import { avatarOf, profileFacts } from './personWall.js'
 import PersonAvatarDialog from './PersonAvatarDialog.vue'
 import PageToast from './PageToast.vue'
@@ -42,7 +43,8 @@ const router = useRouter()
 const policy = useMediaEditPolicy()
 const { toasts, push: showToast } = usePageToast()
 /** 头像 URL 构造沿用 useMediaApi 的同名实现（与人物墙、相册卡完全同一套规则） */
-const URLS = { thumbOf: api.thumbUrlFromRel, videoThumb: api.videoThumbUrl }
+// P5.60：与人物墙同一套 —— 视频档用内容帧（/api/media/frame/<id>?t=<时长×0.3 的整秒>&w=400）
+const URLS = { thumbOf: api.thumbUrlFromRel, frameOf: (id, sec) => api.frameUrl(id, sec, 400) }
 
 const PAGE_SIZE = 12
 const NOT_READY = '人物数据暂不可用：后端人物接口尚未就绪'
@@ -224,7 +226,7 @@ const avatarBroken = ref(false)
 
 /**
  * 头像 URL：与人物墙同一份 avatarOf。
- * stats 用本页**已经加载好的** albums[0].cover / videos[0].id 现拼（不额外发请求）；
+ * stats 用本页**已经加载好的** albums[0].cover / videos[0].{id,dur} 现拼（不额外发请求；dur 用于取帧落点）；
  * 相册或视频一页都没加载完时 stats 为空，自然落到首字占位。
  */
 const avatar = computed(() => {
@@ -234,7 +236,7 @@ const avatar = computed(() => {
   return avatarOf(
     { id: personId.value, name: p.name },
     p,
-    { coverRel: firstAlbum && firstAlbum.cover, posterId: firstVideo && firstVideo.id },
+    { coverRel: firstAlbum && firstAlbum.cover, posterId: firstVideo && firstVideo.id, posterDur: firstVideo && firstVideo.dur },
     URLS
   )
 })
@@ -253,10 +255,18 @@ const avatarCurrent = computed(() => {
 /** 乐观 URL：与后端 avatarUrlOf 同一规则（服务端回包会覆盖） */
 function optimisticAvatarUrl(payload) {
   if (payload.kind === 'url') return payload.ref
-  const ref = String(payload.ref)
-  const i = ref.indexOf(':')
+  // P5.61：ref 可能带 "#crop=x,y,w,h" 尾巴。主体段才是 <albumId>:<seq>，
+  // 尾巴要原样接到缩略图 URL 的 ?crop= 上（否则 Number("0#crop=…") = NaN，
+  // 乐观 URL 会拼成 /thumb/p/a164/0NaN，图片一闪一坏）。
+  const raw = String(payload.ref == null ? '' : payload.ref)
+  const hash = raw.indexOf('#')
+  const body = hash < 0 ? raw : raw.slice(0, hash)
+  const i = body.indexOf(':')
   if (i <= 0) return ''
-  return api.photoThumbUrl(ref.slice(0, i), Number(ref.slice(i + 1)))
+  const url = api.photoThumbUrl(body.slice(0, i), Number(body.slice(i + 1)))
+  const tail = hash < 0 ? '' : raw.slice(hash)
+  const crop = tail.startsWith('#crop=') ? tail.slice(6) : ''
+  return crop ? url + '?crop=' + crop : url
 }
 
 /** 写本地人物节点，返回回滚函数 */

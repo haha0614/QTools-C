@@ -27,6 +27,7 @@ import {
   countsText,
   explicitAvatarUrl,
   formatDay,
+  frameSecondOf,
   initialOf,
   isPlaceholderPerson,
   normalizeAvatarPath,
@@ -51,8 +52,9 @@ function eq(actual, expected, name) {
 }
 
 const thumbOf = (rel) => '/api/media/thumb/' + String(rel).replace(/^thumbs\//, '').replace(/\.jpg$/i, '')
-const videoThumb = (id) => '/api/media/thumb/v/' + encodeURIComponent(String(id))
-const urls = { thumbOf, videoThumb }
+// P5.60：头像 ③ 档改用精确取帧接口的内容帧（整秒 → 后端按秒落盘缓存）
+const frameOf = (id, sec) => '/api/media/frame/' + encodeURIComponent(String(id)) + '?t=' + sec + '&w=400'
+const urls = { thumbOf, frameOf }
 
 /* ---------------------------------- 1. buildWallIndex ---------------------------------- */
 
@@ -79,11 +81,11 @@ const INDEX = {
 }
 
 const MAP = buildWallIndex(INDEX)
-eq(MAP.get('唐翩翩'), { albums: 2, photos: 40, videos: 0, coverRel: 'thumbs/p/a004/0000.jpg', posterId: '', mtime: 0 }, '索引：albums[].persons + 老字段 person 都计入（相册 2 / 照片 40），封面只取第一个')
+eq(MAP.get('唐翩翩'), { albums: 2, photos: 40, videos: 0, coverRel: 'thumbs/p/a004/0000.jpg', posterId: '', posterDur: 0, mtime: 0 }, '索引：albums[].persons + 老字段 person 都计入（相册 2 / 照片 40），封面只取第一个')
 eq(MAP.get('喵小吉 Aeolian-2').albums, 1, '索引：单人单册 = 1 本相册')
-eq(MAP.get('素人'), { albums: 0, photos: 0, videos: 2, coverRel: '', posterId: 'v1', mtime: 0 }, '索引：视频数由 videos[].persons 现算；封面取第一个视频 id')
-eq(MAP.get('娜娜'), { albums: 0, photos: 0, videos: 2, coverRel: '', posterId: 'v2', mtime: 1759990000000 }, '索引：同一片多人各记一次；无相册时封面回落第一个含她的视频；mtime 透传')
-eq(MAP.get('念念'), { albums: 1, photos: 9017, videos: 0, coverRel: 'thumbs/p/a164/0000.jpg', posterId: '', mtime: 1760000000000 }, '索引：people[].count 是相册数（不是视频数），photos 与 mtime 来自 people[]')
+eq(MAP.get('素人'), { albums: 0, photos: 0, videos: 2, coverRel: '', posterId: 'v1', posterDur: 0, mtime: 0 }, '索引：视频数由 videos[].persons 现算；封面取第一个视频 id')
+eq(MAP.get('娜娜'), { albums: 0, photos: 0, videos: 2, coverRel: '', posterId: 'v2', posterDur: 0, mtime: 1759990000000 }, '索引：同一片多人各记一次；无相册时封面回落第一个含她的视频；mtime 透传')
+eq(MAP.get('念念'), { albums: 1, photos: 9017, videos: 0, coverRel: 'thumbs/p/a164/0000.jpg', posterId: '', posterDur: 0, mtime: 1760000000000 }, '索引：people[].count 是相册数（不是视频数），photos 与 mtime 来自 people[]')
 ok(!MAP.has('孤儿相册'), '索引：无人物绑定的相册不产生条目')
 eq(MAP.size, 5, '索引：条目数 = 出现过的不同人名数（唐翩翩 / 喵小吉 / 素人 / 娜娜 / 念念）')
 
@@ -112,9 +114,25 @@ const MT2 = buildWallIndex({
 eq(MT2.get('甲').mtime, 1760000000000, '时间：people[].mtime 与 albums[].mtime 一起取 max')
 eq(buildWallIndex({ albums: [{ id: 'a1', persons: ['甲'], count: 1, mtime: null }] }).get('甲').mtime, 0, '时间：mtime 为 null → 0（不渲染「最近」行）')
 
+// P5.60：头像取帧要「时长 × 0.3」，所以索引聚合必须把第一个视频的 dur 一起记下来
+const MD = buildWallIndex({
+  videos: [
+    { id: 'v1', dur: 600, persons: [{ id: 9, name: '甲' }] },
+    { id: 'v2', dur: 900, persons: [{ id: 9, name: '甲' }] }
+  ]
+})
+eq(MD.get('甲').posterId, 'v1', '取帧：只记第一个视频（与封面同一条口径）')
+eq(MD.get('甲').posterDur, 600, '取帧：记第一个视频的时长（不是后面那个）')
+eq(frameSecondOf(600), 180, '取帧秒数：600 秒 × 0.3 = 180')
+eq(frameSecondOf(13.7), 4, '取帧秒数：向下取整到整秒（13.7 × 0.3 = 4.11 → 4，整秒才命中后端磁盘缓存）')
+eq(frameSecondOf(1), 0, '取帧秒数：太短的片子 → 0')
+eq(frameSecondOf(0), 0, '取帧秒数：dur 未知 → 0（退片头帧）')
+eq(frameSecondOf(null), 0, '取帧秒数：null → 0，不抛错')
+eq(buildWallIndex({ videos: [{ id: 'v1', persons: ['甲'] }] }).get('甲').posterDur, 0, '取帧：索引没给 dur → 0')
+
 /* ---------------------------------- 2. avatarOf ---------------------------------- */
 
-const emptyStats = { albums: 0, photos: 0, videos: 0, coverRel: '', posterId: '', mtime: 0 }
+const emptyStats = { albums: 0, photos: 0, videos: 0, coverRel: '', posterId: '', posterDur: 0, mtime: 0 }
 eq(avatarOf({ id: 1, name: '甲' }, { avatarPath: '/uploads/a.png' }, emptyStats, urls), { url: '/uploads/a.png', kind: 'profile' }, '头像 0 档：详情里的 avatarPath 优先')
 eq(avatarOf({ id: 1, name: '甲' }, { avatarPath: 'https://cdn.example.com/a.png' }, emptyStats, urls), { url: 'https://cdn.example.com/a.png', kind: 'profile' }, '头像 0 档：http(s) 绝对地址原样用')
 eq(
@@ -122,10 +140,18 @@ eq(
   { url: '/api/media/thumb/p/a164/0000', kind: 'album' },
   '头像 1 档：相册封面 → /api/media/thumb/p/<albumId>/<pad4(seq)>'
 )
+// P5.60：② 档从「预生成封面 /thumb/v/<id>」改成「视频内容帧 /frame/<id>?t=dur×0.3」
 eq(
   avatarOf({ id: 122, name: '娜娜' }, null, MAP.get('娜娜'), urls),
-  { url: '/api/media/thumb/v/v2', kind: 'video' },
-  '头像 2 档：无相册有视频 → /api/media/thumb/v/<videoId>'
+  { url: '/api/media/frame/v2?t=' + frameSecondOf(MAP.get('娜娜').posterDur) + '&w=400', kind: 'frame' },
+  '头像 ② 档：无相册有视频 → 视频内容帧（t = 时长 × 0.3，整秒）'
+)
+eq(avatarOf({ id: 122, name: '娜娜' }, null, MAP.get('娜娜'), { thumbOf }), { url: '', kind: 'initial' }, '降级：注入里没有 frameOf → 不抛错，直接首字占位')
+// dur 未知（索引没给 dur）→ t=0，仍是「视频里的画面」，不是通用封面
+eq(
+  avatarOf({ id: 9, name: '甲' }, null, { albums: 0, photos: 0, videos: 1, coverRel: '', posterId: 'vz', posterDur: 0, mtime: 0 }, urls),
+  { url: '/api/media/frame/vz?t=0&w=400', kind: 'frame' },
+  '头像 ② 档：dur 未知 → t=0（片头帧），仍走取帧接口'
 )
 eq(avatarOf({ id: 999, name: '空壳人物' }, null, emptyStats, urls), { url: '', kind: 'initial' }, '头像 3 档：都没有 → 首字占位（url 为空串）')
 eq(avatarOf({ id: 1, name: '甲' }, null, MAP.get('念念'), { thumbOf: () => '' }), { url: '', kind: 'initial' }, '降级：thumbOf 返空串 → 继续往下一档，最终首字占位')

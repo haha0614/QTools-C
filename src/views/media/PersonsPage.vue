@@ -19,7 +19,9 @@
   拼装规则（谁优先 / 怎么降级 / chip 取哪 3 个 / 日期怎么格式化）唯一实现在 personWall.js，
   单测见 personWall.test.mjs —— 页面这里只发请求与渲染。
   头像四级优先：avatarPath → 名下第一个相册的封面（/api/media/thumb/p/<albumId>/0000）→
-                名下第一个视频的封面（/api/media/thumb/v/<videoId>）→ 首字彩色圆底占位（加载失败同样回落）。
+                名下第一个视频的**内容帧**（/api/media/frame/<videoId>?t=<时长×0.3 的整秒>&w=400）→
+                首字彩色圆底占位（加载失败同样回落）。P5.60：取帧这一档走 IntersectionObserver 懒加载，
+                屏外卡片一个 ffmpeg 请求都不发；img onerror 静默退回首字（见 observeFrameCards）。
   布局：网格 minmax(280px, 1fr) + grid-auto-rows: 1fr —— 整面墙等高；数量行单行不折，
         chip 区可换行不裁切；没有数量的卡片不渲染那一行（不留空洞）。
   埋点：沿用 useMediaTrack 的 pageView / dwell（与视频库、图片站同一套 page_view 口径）。
@@ -27,7 +29,7 @@
   P5.48：头像支持**手动指定**。卡片头像 hover 出现小「换」按钮 → PersonAvatarDialog 两 tab
          （从相册挑选 / 图片地址）→ PUT /api/media/person/{id}/avatar；「恢复自动头像」→ DELETE。
          保存走**乐观更新**：先改本地详情（卡片立刻变），失败用保存前的快照回滚并 toast。
-         头像优先级变成五级：手动 avatarUrl（后端解析）→ 历史 avatarPath → 相册首图 → 视频封面 → 首字占位，
+         头像优先级变成：手动 avatarUrl（后端解析）→ 历史 avatarPath → 相册首图 → 视频内容帧 → 首字占位，
          拼装规则仍然只在 personWall.js 一处。
          入口只在编辑策略 full 档渲染（off / local 档连「换」按钮都不出现）。
 
@@ -43,7 +45,7 @@
       备份见 QTools/doc/backup/media_person_before_p560_*.sql。
 -->
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMediaApi } from '@/composables/useMediaApi'
 import { useMediaTrack } from '@/composables/useMediaTrack'
@@ -76,8 +78,12 @@ const details = reactive({})
 /** 换头像弹层（整页只有一个实例；卡片 hover 的「换」按钮负责打开并指定人物） */
 const avatarDialog = reactive({ open: false, person: null, saving: false })
 
-/** URL 构造沿用 useMediaApi 的同名实现（与相册卡 / 视频卡封面完全同一套规则） */
-const URLS = { thumbOf: api.thumbUrlFromRel, videoThumb: api.videoThumbUrl }
+/**
+ * URL 构造沿用 useMediaApi 的同名实现（与相册卡 / 视频卡封面完全同一套规则）。
+ * P5.60：头像 ③ 档改成「视频内容帧」—— frameOf 给 /api/media/frame/{id}?t=<整秒>&w=400。
+ * 整秒是关键：后端只对整秒落盘缓存，带小数每次都要真跑 ffmpeg。
+ */
+const URLS = { thumbOf: api.thumbUrlFromRel, frameOf: (id, sec) => api.frameUrl(id, sec, 400) }
 
 /** 详情请求的并发上限：15 人也只开 6 条连接，避免和 1MB 索引抢带宽 */
 const DETAIL_CONCURRENCY = 6
@@ -146,6 +152,50 @@ const cards = computed(() => {
   })
 })
 
+/**
+ * 头像 ③ 档（视频取帧）**懒加载**的开关表（键 = 卡片 key）。
+ * 只有进入（或接近）视口的卡片才挂 src —— 取帧要真跑 ffmpeg，一屏几十张卡同时请求会把后端打满。
+ */
+const frameInView = reactive({})
+let wallRef = ref(null)
+let cardObserver = null
+
+/** 给还没观察过的「取帧」卡片挂上 IntersectionObserver（进入视口才置 frameInView[key]） */
+function observeFrameCards() {
+  if (typeof IntersectionObserver === 'undefined') return
+  if (!wallRef.value) return
+  if (!cardObserver) {
+    cardObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue
+          const key = entry.target.getAttribute('data-card-key') || ''
+          if (key) frameInView[key] = true
+          cardObserver.unobserve(entry.target)
+        }
+      },
+      // 提前 120px 开始取帧：滚到卡片时图已经在路上，但**屏外**的卡片一张都不请求
+      { rootMargin: '120px 0px' }
+    )
+  }
+  wallRef.value.querySelectorAll('.pw-card[data-avatar="frame"]').forEach((node) => {
+    cardObserver.observe(node)
+  })
+}
+
+/** 卡片头像该用的 src：取帧档在进入视口前返回空串（=> 先渲染首字占位，不占一张空白图） */
+function avatarSrcOf(card) {
+  if (!card || !card.avatar || !card.avatar.url) return ''
+  if (card.avatar.kind !== 'frame') return card.avatar.url
+  return frameInView[String(card.key)] ? card.avatar.url : ''
+}
+
+// 每次渲染后都重新挂观察（首屏 / 搜索 / 详情补齐 / 索引晚到都会重渲染）：
+// 只观察「取帧」档的卡片，其它档本来就直接出图；onUpdated 比 watch(cards) 更稳，
+// 不依赖「数据先到还是 DOM 先到」的时序。
+onUpdated(() => observeFrameCards())
+watch(cards, () => nextTick(observeFrameCards))
+
 function markAvatarFailed(card) {
   if (card && card.key) avatarFailed[String(card.key)] = true
 }
@@ -180,10 +230,18 @@ const avatarCurrent = computed(() => {
 /** 乐观 URL：与后端 avatarUrlOf 同一条规则，只为「点完立刻看到」；服务端回包会覆盖它 */
 function optimisticAvatarUrl(payload) {
   if (payload.kind === 'url') return payload.ref
-  const ref = String(payload.ref)
-  const i = ref.indexOf(':')
+  // P5.61：ref 可能带 "#crop=x,y,w,h" 尾巴。主体段才是 <albumId>:<seq>，
+  // 尾巴要原样接到缩略图 URL 的 ?crop= 上（否则 Number("0#crop=…") = NaN，
+  // 乐观 URL 会拼成 /thumb/p/a164/0NaN，图片一闪一坏）。
+  const raw = String(payload.ref == null ? '' : payload.ref)
+  const hash = raw.indexOf('#')
+  const body = hash < 0 ? raw : raw.slice(0, hash)
+  const i = body.indexOf(':')
   if (i <= 0) return ''
-  return api.photoThumbUrl(ref.slice(0, i), Number(ref.slice(i + 1)))
+  const url = api.photoThumbUrl(body.slice(0, i), Number(body.slice(i + 1)))
+  const tail = hash < 0 ? '' : raw.slice(hash)
+  const crop = tail.startsWith('#crop=') ? tail.slice(6) : ''
+  return crop ? url + '?crop=' + crop : url
 }
 
 /** 写本地详情，返回「回滚函数」（把这张卡恢复成保存前的样子，含头像加载失败标记） */
@@ -328,6 +386,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   tk.dwell()
+  if (cardObserver) cardObserver.disconnect()
+  cardObserver = null
 })
 </script>
 
@@ -356,7 +416,7 @@ onBeforeUnmount(() => {
       {{ persons.length ? '没有匹配的人物，换个关键词试试' : '还没有人物数据' }}
     </p>
 
-    <div v-else class="pp-wall">
+    <div v-else class="pp-wall" ref="wallRef">
       <!-- data-avatar = 头像来源（profile / album / video / initial），真浏览器实测据此断言命中率 -->
       <a
         v-for="c in cards"
@@ -365,13 +425,15 @@ onBeforeUnmount(() => {
         :href="'#/media/person/' + encodeURIComponent(c.id !== '' && c.id != null ? c.id : c.name)"
         :data-person-id="c.id"
         :data-avatar="c.avatar.kind"
+        :data-card-key="c.key"
+        :data-frame-inview="c.avatar.kind === 'frame' ? (frameInView[String(c.key)] ? '1' : '0') : ''"
         @click.prevent="openCard(c)"
       >
         <span class="pw-avatar-wrap">
           <span class="pw-avatar">
             <img
-              v-if="c.avatar.url && !avatarFailed[c.key]"
-              :src="c.avatar.url"
+              v-if="avatarSrcOf(c) && !avatarFailed[c.key]"
+              :src="avatarSrcOf(c)"
               alt=""
               loading="lazy"
               decoding="async"

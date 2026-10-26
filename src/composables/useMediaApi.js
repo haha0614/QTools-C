@@ -728,8 +728,13 @@ export function previewUrl(id) {
  * @param {string} id  视频 id
  * @param {number} sec 整秒（调用方用 framePicker.frameSecond 取整，跨同一秒复用同一张图）
  */
-export function frameUrl(id, sec) {
+export function frameUrl(id, sec, width) {
   const algo = 'f1'
+  // P5.60：width 可选 —— 人物卡头像要 400 宽的图（卡上 56px 圆，480 有点浪费）。
+  // 注意后端只在**精确取帧**（t 带小数）那一支用 w；整秒那一支按 <秒>.jpg 落盘缓存、忽略 w，
+  // 所以这里传 w 只是为未来的精确取帧留口子，不影响整秒口径的缓存行为。
+  const w = Number(width)
+  const wq = Number.isFinite(w) && w > 0 ? '&w=' + Math.round(w) : ''
   return (
     API_BASE +
     '/media/frame/' +
@@ -737,7 +742,8 @@ export function frameUrl(id, sec) {
     '?t=' +
     Math.max(0, Math.floor(Number(sec) || 0)) +
     '&algo=' +
-    algo
+    algo +
+    wq
   )
 }
 

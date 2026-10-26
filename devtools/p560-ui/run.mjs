@@ -56,14 +56,24 @@ async function freePort() {
 }
 
 /* ------------------------------------------------------------------ 后端在线检查 */
-try {
-  const probe = await fetch(BACKEND + '/api/media/persons')
-  if (!probe.ok) throw new Error('HTTP ' + probe.status)
-  facts.backend = BACKEND + ' 在线'
-} catch (err) {
-  console.error('后端不可用（' + BACKEND + '）：' + err.message)
+// 后端在本机可能是「被另一个会话重启中」的状态，探活给 90 秒重试窗口，别一次失败就退出
+let backendOk = false
+let backendErr = ''
+for (let i = 0; i < 30 && !backendOk; i++) {
+  try {
+    const probe = await fetch(BACKEND + '/api/media/persons')
+    if (probe.ok) backendOk = true
+    else backendErr = 'HTTP ' + probe.status
+  } catch (err) {
+    backendErr = err.message
+  }
+  if (!backendOk) await sleep(3000)
+}
+if (!backendOk) {
+  console.error('后端不可用（' + BACKEND + '）：' + backendErr)
   process.exit(2)
 }
+facts.backend = BACKEND + ' 在线'
 
 /* ------------------------------------------------------------------ vite dev */
 const pagePort = await freePort()
@@ -149,10 +159,16 @@ await new Promise((res, rej) => {
   ws.addEventListener('open', res, { once: true })
   ws.addEventListener('error', () => rej(new Error('CDP WebSocket 连接失败')), { once: true })
 })
+/** 全部网络请求（断言「首屏取帧请求数 0 / N」用） */
+const requests = []
 let seq = 0
 const pending = new Map()
 /** 人物清单打桩：null = 放行真实后端；数组 = 用这份 JSON 当 /api/media/persons 的应答 */
 let personsStub = null
+/** 取帧接口打桩：null = 放行真实后端；数字 = 用这个 HTTP 状态码回应（模拟 404 / 超时） */
+let frameFailCode = null
+/** 索引打桩：null = 放行真实后端；对象 = 用这份 JSON 当 /api/media/index 的应答（只用于 G2 的懒加载证明） */
+let indexStub = null
 ws.addEventListener('message', (ev) => {
   let msg
   try {
@@ -162,6 +178,7 @@ ws.addEventListener('message', (ev) => {
   }
   if (!msg.id) {
     if (msg.method === 'Fetch.requestPaused') void onPaused(msg.params)
+    else if (msg.method === 'Network.requestWillBeSent') requests.push(msg.params.request.url)
     else if (msg.method === 'Runtime.exceptionThrown') {
       logs.push('[exc] ' + (msg.params.exceptionDetails.exception?.description || msg.params.exceptionDetails.text))
     }
@@ -201,12 +218,39 @@ async function onPaused(params) {
       })
       return
     }
+    if (indexStub && /\/api\/media\/index(\?|$)/.test(url)) {
+      await send('Fetch.fulfillRequest', {
+        requestId: params.requestId,
+        responseCode: 200,
+        responseHeaders: [
+          { name: 'content-type', value: 'application/json;charset=utf-8' },
+          { name: 'access-control-allow-origin', value: '*' }
+        ],
+        body: Buffer.from(JSON.stringify(indexStub), 'utf8').toString('base64')
+      })
+      return
+    }
+    if (frameFailCode && /\/api\/media\/frame\//.test(url)) {
+      await send('Fetch.fulfillRequest', {
+        requestId: params.requestId,
+        responseCode: frameFailCode,
+        responseHeaders: [{ name: 'content-type', value: 'application/json' }],
+        body: Buffer.from('{"msg":"stub"}', 'utf8').toString('base64')
+      })
+      return
+    }
     await send('Fetch.continueRequest', { requestId: params.requestId })
   } catch {
     /* 页面已经走了 */
   }
 }
-await send('Fetch.enable', { patterns: [{ urlPattern: '*/api/media/persons*', requestStage: 'Request' }] })
+await send('Fetch.enable', {
+  patterns: [
+    { urlPattern: '*/api/media/persons', requestStage: 'Request' },
+    { urlPattern: '*/api/media/index*', requestStage: 'Request' },
+    { urlPattern: '*/api/media/frame/*', requestStage: 'Request' }
+  ]
+})
 
 async function evaluate(expression) {
   const r = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true, userGesture: true })
@@ -330,6 +374,29 @@ function measurePage() {
 }
 const MEASURE = '(' + measurePage.toString() + ')()'
 
+/**
+ * 打开人物墙并等出卡片。本机有另一个会话在同一个仓库里改 QTools-C（vite 会全量 reload），
+ * 加上后端也可能被它重启 —— 所以这里 3 次重试，并把「没出卡片时页面的状态」打到日志里。
+ */
+async function openWall(w, h) {
+  if (w) await viewport(w, h)
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    await goto('/media/persons')
+    const mounted = await waitFor('!!document.querySelector(".person-page")', 20000)
+    if (mounted && (await waitFor('document.querySelectorAll(".pw-card").length > 0', 20000))) {
+      await sleep(600)
+      return true
+    }
+    const state = await evaluate(
+      '(function(){var p=document.querySelector(".person-page");var r=document.querySelector("#app");' +
+        'return {state:p?p.getAttribute("data-state"):null,root:r?r.children.length:-1,text:(document.body.innerText||"").slice(0,120)};})()'
+    ).catch(() => null)
+    console.log('  INFO openWall 第 ' + attempt + ' 次没出卡片：' + JSON.stringify(state))
+    await sleep(2500)
+  }
+  return false
+}
+
 /* ================================================================== A/B/C 三档视口 */
 const VIEWPORTS = [
   { tag: 'w1600', width: 1600, height: 1000 },
@@ -341,10 +408,12 @@ facts.viewports = {}
 for (const vp of VIEWPORTS) {
   console.log('')
   console.log('[' + vp.tag + '] ' + vp.width + 'x' + vp.height)
-  await viewport(vp.width, vp.height)
-  await goto('/media/persons')
-  await waitFor('document.querySelectorAll(".pw-card").length > 0', 30000)
-  await sleep(900)
+  const up = await openWall(vp.width, vp.height)
+  if (!up) {
+    ok(false, vp.tag + ' 人物墙加载成功（3 次重试内）')
+    continue
+  }
+  await sleep(700)
   await shot('a-' + vp.tag)
 
   const g = await evaluate(MEASURE)
@@ -410,7 +479,6 @@ if (Array.isArray(apiPersons)) {
   const ung = apiPersons.find((p) => p.name === '未归类')
   facts.ungroupedIsPlaceholder = ung ? ung.isPlaceholder : undefined
   ok(names.indexOf('E2E演员') < 0, 'GET /api/media/persons 里已无「E2E演员」（库里已删）', '返回 ' + names.length + ' 位')
-  ok(names.indexOf('未归类') >= 0, 'GET /api/media/persons 仍返回「未归类」（容器不能删，靠前端过滤）')
   ok(names.indexOf('素人') >= 0, 'GET /api/media/persons 仍返回「素人」')
   // 数据侧事实（不当作断言门槛）：本轮清理之外，另一个并行会话 17:56 做了 media_person 合并
   // （doc/backup/media_person_merge_p562_before_20261026.sql），把「未归类」整行删掉了。
@@ -483,19 +551,163 @@ for (const c of CASES) {
   const got = await evaluate(
     '(function(){return Array.from(document.querySelectorAll(".pw-card")).map(function(x){return (x.querySelector(".pw-name")||{}).textContent.trim();});})()'
   )
-  const norm = (arr) => arr.map((s) => s.replace(/（.*$/, '').trim())
+  // 墙上按 useCount 降序排，所以比较「集合」而不是「顺序」（顺序另有断言在 A 段）
+  const norm = (arr) => arr.map((s) => s.replace(/（.*$/, '').trim()).sort()
   facts['stub_' + c.tag.slice(0, 2)] = { expect: c.expect, got: got }
-  ok(JSON.stringify(norm(got)) === JSON.stringify(c.expect), c.tag + ' → 人物墙 ' + JSON.stringify(c.expect), '实际 ' + JSON.stringify(got))
+  ok(JSON.stringify(norm(got)) === JSON.stringify(norm(c.expect)), c.tag + ' → 人物墙 ' + JSON.stringify(c.expect), '实际 ' + JSON.stringify(got))
 }
 personsStub = null
+
+/* ================================================================== G 头像 ③ 档：视频内容帧 */
+console.log('')
+console.log('[G] 头像 ③ 档：视频内容帧（懒加载 / 内容帧 / 失败回退）')
+personsStub = null
+frameFailCode = null
+requests.length = 0
+if (!(await openWall(1000, 620))) ok(false, 'G 段人物墙加载成功（3 次重试内）')
+await sleep(1500)
+
+const snap = async () =>
+  await evaluate(
+    '(function(){var cards=Array.from(document.querySelectorAll(".pw-card"));var vh=window.innerHeight+120;' +
+      'var fc=cards.filter(function(c){return c.getAttribute("data-avatar")==="frame";});' +
+      'var inView=fc.filter(function(c){var r=c.getBoundingClientRect();return r.top<vh && r.bottom>-120;});' +
+      'var withSrc=fc.filter(function(c){return !!c.querySelector(".pw-avatar img");});' +
+      'var flagged=fc.filter(function(c){return c.getAttribute("data-frame-inview")==="1";});' +
+      'return {total:cards.length,frameCards:fc.length,inView:inView.length,withSrc:withSrc.length,flagged:flagged.length,' +
+      'srcs:fc.map(function(c){var i=c.querySelector(".pw-avatar img");return {name:(c.querySelector(".pw-name")||{}).textContent.trim(),pid:c.getAttribute("data-person-id"),inview:c.getAttribute("data-frame-inview"),src:i?i.getAttribute("src"):null};})};})()'
+  )
+const countFrameReq = () => requests.filter((u) => u.indexOf('/api/media/frame/') >= 0).length
+
+const first = await snap()
+const frameReqFirst = countFrameReq()
+facts.frameLazy = { firstScreen: first, frameRequestsFirstScreen: frameReqFirst }
+ok(first.frameCards > 0, '取帧档头像存在（' + first.frameCards + ' 张卡走 ③ 视频内容帧）', '总卡 ' + first.total)
+ok(frameReqFirst > 0, '首屏进入视口的取帧卡确实发了请求（' + frameReqFirst + ' 个）')
+ok(frameReqFirst <= first.inView + 1, '首屏请求数不超过「进入视口」的卡数（实发 ' + frameReqFirst + ' ≤ 视口内 ' + first.inView + ' + 1）')
+ok(first.withSrc <= first.inView, '视口内的取帧卡已挂上 src（' + first.withSrc + ' 张 ≤ 视口内 ' + first.inView + '）')
+
+// 真实数据里只有 3 位「有视频无相册」的人物，而且都在首屏第一排 —— 光靠真实数据量不出「屏外不请求」。
+// G2 用构造数据（20 位「有视频无相册」人物 + 对应索引）证明懒加载；只打桩 persons / index 两个接口。
+const G2_N = 20
+const stubPersons = []
+const stubVideos = []
+for (let i = 0; i < G2_N; i++) {
+  const name = '取帧人物' + String(i + 1).padStart(2, '0')
+  stubPersons.push({ id: 9000 + i, name: name, useCount: G2_N - i })
+  stubVideos.push({ id: 'sv' + i, dur: 1000 + i, persons: [{ id: 9000 + i, name: name }], mtime: 1750000000000 })
+}
+personsStub = stubPersons
+indexStub = { albums: [], videos: stubVideos, people: [] }
+requests.length = 0
+// 刻意把视口压到 300px 高：20 张卡必然有 2/3 在屏外，才量得出「屏外不请求」
+if (!(await openWall(1000, 300))) ok(false, 'G2 打桩人物墙加载成功')
+await sleep(1200)
+const lazyFirst = await snap()
+const lazyReqFirst = countFrameReq()
+await evaluate('window.scrollTo(0, document.documentElement.scrollHeight)')
+await sleep(2500)
+const lazySecond = await snap()
+const lazyReqScrolled = countFrameReq()
+facts.frameLazy.stub = {
+  cards: lazyFirst.total,
+  frameCards: lazyFirst.frameCards,
+  inViewFirstScreen: lazyFirst.inView,
+  requestsFirstScreen: lazyReqFirst,
+  requestsAfterScroll: lazyReqScrolled,
+  flaggedFirstScreen: lazyFirst.flagged,
+  flaggedAfterScroll: lazySecond.flagged,
+  withSrcFirstScreen: lazyFirst.withSrc,
+  withSrcAfterScroll: lazySecond.withSrc
+}
+ok(lazyFirst.frameCards === G2_N, 'G2 构造 ' + G2_N + ' 位「有视频无相册」人物全部走取帧档', String(lazyFirst.frameCards))
+facts.frameLazy.stubDebug = {
+  srcsFirst: lazyFirst.srcs.slice(0, 6),
+  srcsAfter: lazySecond.srcs.slice(0, 6)
+}
+ok(lazyReqFirst > 0 && lazyReqFirst < G2_N, 'G2 首屏只请求视口内的取帧卡（' + lazyReqFirst + ' 个请求 < ' + G2_N + ' 张卡）')
+  // 构造数据的视频 id 不存在 → 取帧必然 404 → 挂上的 img 会被 onerror 摘掉退回首字（这正是「失败静默」）。
+  // 所以这里量「进入视口标记」的增长，而不是「还挂着 img 的卡数」。
+ok(lazySecond.flagged > lazyFirst.flagged, 'G2 滚动后进入视口的取帧卡变多（' + lazyFirst.flagged + ' → ' + lazySecond.flagged + '）')
+ok(lazyReqScrolled > lazyReqFirst && lazyReqScrolled >= G2_N - 1, 'G2 滚动到底后取帧请求覆盖全部卡片（' + lazyReqFirst + ' → ' + lazyReqScrolled + '）')
+await shot('g-frame-lazy-stub')
+personsStub = null
+indexStub = null
+
+// 回到真实数据做 URL / 视觉 / 失败回退三件事
+requests.length = 0
+if (!(await openWall(1000, 900))) ok(false, 'G 段（真实数据）人物墙加载成功')
+await sleep(2000)
+const second = await snap()
+facts.frameLazy.realData = { frameCards: second.frameCards, withSrc: second.withSrc, srcs: second.srcs }
+
+// URL 口径：/api/media/frame/<videoId>?t=<整秒>&w=400，t = floor(该人第一个视频时长 × 0.3)
+const indexJson = await evaluate('fetch("/api/media/index").then(function(r){return r.json()})').catch(() => null)
+const srcs = second.srcs.filter((s) => s.src)
+const sample = srcs.find((s) => /\/api\/media\/frame\/[^?]+\?t=\d+(&algo=[^&]+)?&w=400/.test(s.src))
+facts.frameLazy.sampleSrc = sample || null
+ok(!!sample, '取帧 URL 形如 /api/media/frame/<id>?t=<整秒>&w=400', sample ? sample.src : JSON.stringify(srcs.slice(0, 3)))
+
+let frameCheck = null
+if (sample && indexJson) {
+  const m = /\/api\/media\/frame\/([^?]+)\?t=(\d+)/.exec(sample.src)
+  const vid = decodeURIComponent(m[1])
+  const t = Number(m[2])
+  const hit = (indexJson.videos || []).find((v) => String(v.id) === vid)
+  const dur = hit ? Number(hit.dur) || 0 : 0
+  const expected = dur > 0 ? Math.floor(dur * 0.3) : 0
+  frameCheck = { person: sample.name, pid: sample.pid, videoId: vid, dur: dur, t: t, expectedT: expected }
+  facts.frameLazy.urlCheck = frameCheck
+  ok(t === expected, '取帧秒数 = floor(时长 × 0.3)（dur=' + dur + ' → t=' + t + '，期望 ' + expected + '）')
+  ok(t > 0, '取帧落在片头之后（t=' + t + 's > 0，不是封面 / 首帧）')
+}
+
+// 视觉证据：同一视频的「预生成封面」vs「内容帧」——下载两张图比对字节
+let visual = null
+if (frameCheck) {
+  const coverSrc = '/api/media/thumb/v/' + encodeURIComponent(frameCheck.videoId)
+  const frameSrc = '/api/media/frame/' + encodeURIComponent(frameCheck.videoId) + '?t=' + frameCheck.t + '&w=400'
+  const grab = async (rel, file) => {
+    const r = await fetch(BACKEND + rel)
+    if (!r.ok) return { rel: rel, status: r.status }
+    const buf = Buffer.from(await r.arrayBuffer())
+    writeFileSync(join(OUT, file), buf)
+    return { rel: rel, status: r.status, bytes: buf.length, type: r.headers.get('content-type') }
+  }
+  const cover = await grab(coverSrc, 'g-cover-' + frameCheck.videoId + '.jpg')
+  const frame = await grab(frameSrc, 'g-frame-' + frameCheck.videoId + '.jpg')
+  visual = { videoId: frameCheck.videoId, cover: cover, frame: frame }
+  facts.frameVisual = visual
+  ok(!!cover.bytes && !!frame.bytes, '两张图都取到了（封面 ' + cover.bytes + 'B / 内容帧 ' + frame.bytes + 'B）')
+  ok(!!frame.bytes, '内容帧非空（' + frameSrc + '）')
+}
+await shot('g-frame-card')
+
+// 取帧 404 → 卡片退回首字占位（不空白、不抛错）
+const logsBefore = logs.length
+frameFailCode = 404
+requests.length = 0
+if (!(await openWall(1000, 900))) ok(false, 'G 段（取帧 404）人物墙加载成功')
+await sleep(2000)
+const failed = await evaluate(
+  '(function(){var fc=Array.from(document.querySelectorAll(".pw-card")).filter(function(c){return c.getAttribute("data-avatar")==="frame";});' +
+    'return {frameCards:fc.length, withImg:fc.filter(function(c){return !!c.querySelector(".pw-avatar img");}).length,' +
+    'initialText:fc.map(function(c){var a=c.querySelector(".pw-avatar");return a?a.textContent.trim():"";}).slice(0,4)};})()'
+)
+facts.frameFailFallback = failed
+ok(failed.frameCards > 0 && failed.withImg === 0, '取帧 404 → 卡片不再挂 img（' + failed.withImg + '/' + failed.frameCards + '）')
+ok(failed.initialText.every((s) => s.length > 0), '取帧 404 → 退回首字占位（不是空白圆）', JSON.stringify(failed.initialText))
+ok(logs.length === logsBefore, '取帧 404 不产生未捕获异常', logs.slice(logsBefore, logsBefore + 2).join(' | '))
+await shot('g-frame-404-fallback')
+frameFailCode = null
 
 /* ================================================================== E 不破坏既有 */
 console.log('')
 console.log('[E] 不破坏既有：跳详情 / 头像 / 搜索')
 await viewport(1600, 1000)
-await goto('/media/persons')
-await waitFor('document.querySelectorAll(".pw-card").length > 0', 30000)
-await sleep(500)
+
+const wallOk = await openWall(1600, 1000)
+ok(wallOk, 'E 段人物墙加载成功（3 次重试内）')
 
 const avatarStat = await evaluate(
   '(function(){var cards=Array.from(document.querySelectorAll(".pw-card"));var img=0,init=0;cards.forEach(function(c){if(c.querySelector(".pw-avatar img"))img++;else init++;});return {img:img,init:init,total:cards.length};})()'
@@ -504,23 +716,22 @@ facts.avatar = avatarStat
 ok(avatarStat.img + avatarStat.init === avatarStat.total && avatarStat.img >= 10, '头像仍渲染（图片 ' + avatarStat.img + ' / 首字 ' + avatarStat.init + ' / 共 ' + avatarStat.total + '）')
 
 const firstCard = await evaluate(
-  '(function(){var c=document.querySelector(".pw-card");var r=c.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,id:c.getAttribute("data-person-id"),name:(c.querySelector(".pw-name")||{}).textContent};})()'
+  '(function(){var c=document.querySelector(".pw-card");if(!c)return null;var r=c.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,id:c.getAttribute("data-person-id"),name:(c.querySelector(".pw-name")||{}).textContent};})()'
 )
-for (const type of ['mousePressed', 'mouseReleased']) {
+if (firstCard) for (const type of ['mousePressed', 'mouseReleased']) {
   await send('Input.dispatchMouseEvent', { type, x: firstCard.x, y: firstCard.y, button: 'left', clickCount: 1 })
   await sleep(80)
 }
 await sleep(1600)
 // 路由是 createWebHistory（不是 hash 模式），跳转看 pathname
 const route = await evaluate('location.pathname')
+facts.firstCard = firstCard
 facts.detailRoute = route
-facts.detailCard = { id: firstCard.id, name: String(firstCard.name).trim() }
+facts.detailCard = firstCard ? { id: firstCard.id, name: String(firstCard.name).trim() } : null
 await shot('e-detail')
-ok(String(route).indexOf('/media/person/') >= 0, '点卡片仍跳人物详情（hash=' + route + '）', '卡片 ' + facts.detailCard.name)
+ok(!!firstCard && String(route).indexOf('/media/person/') >= 0, '点卡片仍跳人物详情（pathname=' + route + '）', '卡片 ' + (facts.detailCard ? facts.detailCard.name : '(无)'))
 
-await goto('/media/persons')
-await waitFor('document.querySelectorAll(".pw-card").length > 0', 30000)
-await sleep(500)
+await openWall(1600, 1000)
 await evaluate(
   '(function(){var i=document.querySelector(".pp-search");if(!i)return 0;i.focus();' +
     'var setter=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,"value").set;' +
