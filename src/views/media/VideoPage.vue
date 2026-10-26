@@ -131,7 +131,7 @@
         <RecentStrip
           v-if="recentItems.length && !recentClosed"
           :items="recentItems"
-          @open="openPlayer"
+          @open="openFromGrid"
           @close="closeRecent"
         />
 
@@ -152,7 +152,7 @@
             :studios="v.studios || []"
             :playlist-btn="true"
             :level="editLevel"
-            @open="openPlayer"
+            @open="openFromGrid"
             @person="openPerson"
             @toggle-fav="toggleFav"
             @select="onCardSelect"
@@ -237,14 +237,12 @@
       :open-seq="openSeq"
       :has-prev="navState.hasPrev"
       :has-next="navState.hasNext"
-      :fav="curFav"
       :quality="quality"
       :tracker="tracker"
       :markers="playerMarkers"
       @close="closePlayer"
       @prev="step(-1)"
       @next="step(1)"
-      @toggle-fav="toggleFav(curVideo)"
       @update:quality="onQualityChange"
       @save-pos="onSavePos"
       @clear-pos="onClearPos"
@@ -259,6 +257,8 @@
           :key="curVideo.id + '#' + openSeq"
           :video="curVideo"
           dock
+          :fav="curFav"
+          @toggle-fav="toggleFav(curVideo)"
           :all-tags="allTags"
           :tags-loading="tagsLoading"
           :level="editLevel"
@@ -329,12 +329,21 @@ import VideoMetaPanel from './video/VideoMetaPanel.vue'
 import PlaylistPicker from './video/PlaylistPicker.vue'
 import { normalizePlaylistDetail } from './video/playlistOrder'
 // P5.32：播放上下文（从哪个列表点进来就按那个顺序上/下一部 + 信息栏置顶分区）
+// P5.35：来源驱动 —— 多了 person / tag 两档来源，标题与顺序都由来源页给
 import {
+  CTX_BROWSE,
+  CTX_LIBRARY,
+  CTX_PERSON,
+  CTX_PLAYLIST,
+  CTX_RECENT,
+  CTX_TAG,
   contextLabel,
   contextRows,
+  filterSourceName,
   makePlaybackContext,
   navFromContext,
   pickPlaybackContext,
+  readContextSnapshot,
   stepContextId
 } from './video/playbackContext'
 
@@ -1154,6 +1163,44 @@ const recentItems = computed(() => {
    P5.32：播放上下文（信息栏置顶「播放列表」+ 上/下一部 + 快捷键 P/N）
    ========================================================================= */
 
+/**
+ * P5.35：**来源页**带来的上下文参数 —— ?from=person&pname=<人物名>（也认 from/src + sname）。
+ * 只有「来源类型 + 来源名」进 URL（可读、可刷新、可分享），有序 id 走 sessionStorage 快照
+ * （人物名下可能几十条，塞进 URL 会把深链撑成几千字符，还会被各种转发截断）。
+ */
+const routeSource = computed(() => {
+  const q = (route && route.query) || {}
+  const one = (k) => {
+    const v = q[k]
+    const s = Array.isArray(v) ? v[0] : v
+    return s == null ? '' : String(s)
+  }
+  const source = one('from') || one('src')
+  const name = one('sname') || one('pname')
+  return source ? { source, name } : null
+})
+
+/** sessionStorage 取用（隐私模式 / 非浏览器环境取不到 → null，按「没有快照」处理） */
+function contextStore() {
+  try {
+    return typeof window !== 'undefined' && window.sessionStorage ? window.sessionStorage : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 来源页留下的有序快照（P5.35）：对不上来源 / 来源名 / 有效期就返回 null。
+ * null 时**整档来源都不参与**，标题与顺序一起回落到下一档 ——
+ * 绝不出现「标题是人物名、顺序是全库」这种半吊子状态（刷新回退口径见 playbackContext 头部说明）。
+ */
+function sourceSnapshot() {
+  const s = routeSource.value
+  if (!s || s.source !== CTX_PERSON) return null
+  const store = contextStore()
+  return store ? readContextSnapshot(store, s.source, s.name) : null
+}
+
 /** 当前筛选 + 排序结果的完整有序 id（网格的完整顺序；visibleLimit 只是渲染分块，不影响顺序） */
 const viewIds = computed(() => view.value.map((v) => v.id))
 /** 全库索引序：深链进来、不在当前筛选里的片子仍能照旧上/下一部（既有行为，收成一档「其它」来源） */
@@ -1162,36 +1209,61 @@ const libraryIds = computed(() => videos.value.map((v) => v.id))
 const recentIds = computed(() => recentItems.value.map((r) => r.id))
 
 /**
- * 为某个 id 定上下文快照，来源优先级：playlist > browse > recent > library。
- * 每一档都必须「确实包含这部片」才算命中 —— 从播放列表点进来时永远先按该列表顺序走，
- * 没有播放列表时的默认口径就是 browse（= 播放前页面的视频排序）。
+ * 为某个 id 定上下文快照，来源优先级（P5.35：来源驱动，从哪里进来就按哪里的顺序与名字）：
+ *   playlist > person > tag > browse > recent > library。
+ * 每一档都必须「确实包含这部片」才算命中 —— 从播放列表点进来时永远先按该列表顺序走；
+ * 从人物页点进来时按人物页的展示顺序走；按标签筛过就按该筛选结果走；
+ * 都没有时的默认口径就是 browse（= 播放前页面的视频排序）。
+ * 顺序与标题同进同出：某一档没命中（例如人物快照不在了）就连标题一起退，不留混搭。
  */
-function contextFor(id) {
+function contextFor(id, ignoreSource) {
   const sources = []
   const pl = playlistCtx.value
   if (pl && Array.isArray(pl.ids) && pl.ids.length) {
-    sources.push({ source: 'playlist', ids: pl.ids, name: pl.name, playlistId: pl.id })
+    sources.push({ source: CTX_PLAYLIST, ids: pl.ids, name: pl.name, playlistId: pl.id })
   }
-  sources.push({ source: 'browse', ids: viewIds.value })
-  sources.push({ source: 'recent', ids: recentIds.value })
-  sources.push({ source: 'library', ids: libraryIds.value })
+  const snap = ignoreSource ? null : sourceSnapshot()
+  if (snap) sources.push({ source: CTX_PERSON, ids: snap.ids, name: snap.name })
+  // 标签档：只有「恰好一个筛选条件」才有名字可用（组合筛选 → 无名可用，回落到 browse）
+  const tagName = filterSourceName(state)
+  if (tagName) sources.push({ source: CTX_TAG, ids: viewIds.value, name: tagName })
+  sources.push({ source: CTX_BROWSE, ids: viewIds.value })
+  sources.push({ source: CTX_RECENT, ids: recentIds.value })
+  sources.push({ source: CTX_LIBRARY, ids: libraryIds.value })
   return pickPlaybackContext(sources, id)
 }
 
-/** 信息栏置顶分区的数据模型：一行来源文案 + 行（序号用上下文真实下标，当前项高亮） */
+/** 分区标题行的悬停说明：这个顺序是怎么来的（标题本身只写来源名，不重复类型） */
+function ctxSourceNote(source) {
+  if (source === CTX_PLAYLIST) return '来自播放列表：顺序 = 该列表的自定义顺序'
+  if (source === CTX_PERSON) return '来自人物页：顺序 = 该人物页展示的视频顺序'
+  if (source === CTX_TAG) return '来自标签筛选：顺序 = 该筛选结果的顺序'
+  if (source === CTX_RECENT) return '来自最近观看：顺序 = 最近观看顺序'
+  if (source === CTX_LIBRARY) return '来自全库索引：顺序 = 索引顺序'
+  return '顺序 = 播放前页面的视频排序'
+}
+
+/**
+ * 信息栏置顶分区的数据模型：一行来源文案 + 行（序号用上下文真实下标，当前项高亮）。
+ * P5.35：行里额外带时长（dur，索引里的原值）与缩略图 URL —— 缩略图复用 VideoCard 封面那一份
+ * 构造（api.videoThumbUrl = /media/thumb/v/<id>，内容寻址），面板只负责 <img :src>。
+ */
 const ctxView = computed(() => {
   const c = pbCtx.value
   if (!c || c.index < 0) return null
   const map = byId.value
+  const label = contextLabel(c)
   return {
-    label: contextLabel(c),
+    label: label,
+    title: label + ' · ' + ctxSourceNote(c.source),
     source: c.source,
     name: c.name,
     total: c.total,
     index: c.index,
     rows: contextRows(c, (id) => {
       const v = map.get(id)
-      return v ? v.title || '#' + id : ''
+      if (!v) return null
+      return { title: v.title || '#' + id, dur: v.dur, thumb: api.videoThumbUrl(id) }
     })
   }
 })
@@ -1306,16 +1378,23 @@ const videosFavId = (f) => (f && f.kind !== 'photo' ? f.id : null)
 /** 播放器收藏按钮态：随收藏列表与当前视频自动更新 */
 const curFav = computed(() => !!(curVideo.value && isFavVideo(curVideo.value.id)))
 
-/** 收藏：乐观更新（星星立即响应）+ 服务端单条形态 {fav:{…,add}}，与 profile.js 报文一致 */
+/**
+ * 收藏：乐观更新（星星立即响应）+ 服务端单条形态 {fav:{…,add}}，与 profile.js 报文一致。
+ * P5.34：入口从播放器头部搬进信息栏之后补上**失败回滚 + toast** ——
+ * 星星先亮后暗而没有任何提示，等于让用户以为收藏成功了（列表卡片的 ☆ 也吃这一条）。
+ */
 function toggleFav(v) {
   if (!v) return
   const entry = { kind: 'video', id: v.id, title: v.title, thumb: 'thumbs/v/' + v.id + '.jpg', t: Date.now() }
   const add = !isFavVideo(v.id)
-  const rest = (userState.favorites || []).filter((f) => videosFavId(f) !== v.id)
+  const before = userState.favorites || []
+  const rest = before.filter((f) => videosFavId(f) !== v.id)
   userState.favorites = add ? [entry].concat(rest).slice(0, 2000) : rest
   if (!userReady.value) loadUser()
   api.saveUser({ fav: Object.assign({}, entry, { add }) }, { silent: true }).catch(() => {
-    /* 服务端不可用时静默：与原页「未保存」提示等价但不弹全局提示 */
+    // 回滚到点击前的那一份（before 是不可变数组，直接赋回即可）
+    userState.favorites = before
+    showToast(add ? '收藏保存失败，已撤销' : '取消收藏失败，已撤销')
   })
 }
 
@@ -1792,8 +1871,9 @@ function openPerson(id) {
  * @param {string} id 目标视频 id
  * @param {object} [reuseCtx] 在**同一上下文内**换片时把上一份快照传回来（面板点击 / 上/下一部）；
  *   缺省按来源优先级重新定一份（网格卡片 / 最近观看 / 深链都走这条）
+ * @param {{ignoreSource?:boolean}} [opts] P5.35：忽略 URL 上的来源参数（网格卡片点开时用，见 openFromGrid）
  */
-function openPlayer(id, reuseCtx) {
+function openPlayer(id, reuseCtx, opts) {
   const v = byId.value.get(id)
   if (!v) return
   // P5.23：右栏常驻 → 打开播放器即预热信息栏所需的两份数据（标签库 / 人物库）
@@ -1815,9 +1895,27 @@ function openPlayer(id, reuseCtx) {
         name: base.name,
         playlistId: base.playlistId
       })
-    : contextFor(v.id)
+    : contextFor(v.id, !!(opts && opts.ignoreSource))
   state.play = v.id
   writeHash()
+}
+
+/**
+ * 网格 / 最近观看里点开一部片（P5.35）：用户此刻是从列表页选的片，
+ * 人物页带来的来源参数（?from=person&pname=…）就不再代表「这次是从哪里进来的」——
+ * 本次上下文忽略它，并把参数从地址栏去掉（刷新 / 后退都不会复活）。
+ * 深链开播（openFromHash）不走这里：那时 from 参数就是真实的来源。
+ */
+function openFromGrid(id) {
+  openPlayer(id, null, { ignoreSource: true })
+  if (routeSource.value) {
+    const q = Object.assign({}, route.query)
+    delete q.from
+    delete q.src
+    delete q.pname
+    delete q.sname
+    router.replace({ path: route.path, query: q, hash: window.location.hash || undefined }).catch(() => {})
+  }
 }
 
 function closePlayer() {

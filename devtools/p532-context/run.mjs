@@ -16,7 +16,7 @@
  *   d 从播放列表进入：分区标题显示播放列表名，顺序 = 该播放列表顺序
  *   e 上下文缺失：按钮禁用且不报错（整页 + 只挂播放器的 bare 证据台两层）
  *
- * 另附：置顶分区确实在信息栏最上方、与下方「我的播放列表」分区共存不混淆。
+ * 另附：置顶分区确实在信息栏最上方；P5.35 起下方「我的播放列表」分区已整块删除（这里改为断言它不在 DOM）。
  */
 import fs from 'node:fs'
 import net from 'node:net'
@@ -417,12 +417,31 @@ try {
     js(
       '(function(){var e=document.querySelector(".vp-sec-ctx .vp-ctx-row.on");if(!e)return null;return {title:e.querySelector(".vp-ctx-t").textContent.trim(),n:e.querySelector(".vp-ctx-n").textContent.trim(),aria:e.getAttribute("aria-current")};})()'
     )
+  /**
+   * 控制条 ⏮ / ⏭ 的状态与点击目标。
+   * 本节只关心 P5.32 的语义（越界禁用 + 边界文案），**不锁死按钮文案**：
+   * 并行分支（P5.34）把「上一部 / 下一部」改成了「上一条 / 下一条」，所以这里两种都认，
+   * 并把 title 里的方向词归一成「上一部 / 下一部」—— 下面的断言因此不用因为措辞改动而改。
+   */
+  const NAV_LABELS = { 上一部: ['上一条', '上一部'], 下一部: ['下一条', '下一部'] }
+  const navFind = (label) =>
+    '(function(){var want=' +
+    JSON.stringify(NAV_LABELS[label] || [label]) +
+    ';var all=Array.from(document.querySelectorAll(".p-ctrl .p-btn"));for(var i=0;i<all.length;i++){if(want.indexOf(all[i].getAttribute("aria-label"))>=0)return all[i];}return null;})()'
   const btnState = (label) =>
     js(
-      '(function(){var b=document.querySelector(' +
-        JSON.stringify('.p-ctrl .p-btn[aria-label="' + label + '"]') +
-        ');if(!b)return null;return {disabled:!!b.disabled,aria:b.getAttribute("aria-disabled"),title:b.getAttribute("title")};})()'
+      '(function(){var b=' +
+        navFind(label) +
+        ';if(!b)return null;var t=b.getAttribute("title")||"";return {disabled:!!b.disabled,aria:b.getAttribute("aria-disabled"),title:t.replace(/^(上一条|下一部|上一部|下一条)/, function(m){return m.replace("条","部")})};})()'
     )
+  const clickBtn = async (label) => {
+    const r = await js(
+      '(function(){var b=' + navFind(label) + ';if(!b)return null;var r=b.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};})()'
+    )
+    if (!r || r.w <= 1 || r.h <= 1) return false
+    await clickAt(r.x + r.w / 2, r.y + r.h / 2)
+    return true
+  }
 
   const VIEWPORT = () => cdp.send('Emulation.setDeviceMetricsOverride', { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false })
   await VIEWPORT()
@@ -458,9 +477,9 @@ try {
   eq(await ctxCurrent(), { title: 'Echo', n: '5', aria: 'true' }, 'a14) 高亮跟着移到第 5 项')
 
   console.log('\n[b] 控制条 ⏮⏭ 与快捷键 P/N：只走上下文顺序')
-  ok(await clickSel('.p-ctrl .p-btn[aria-label="上一部"]'), 'b1) 点控制条 ⏮')
+  ok(await clickBtn('上一部'), 'b1) 点控制条 ⏮')
   eq(await playId(), VID.Delta, 'b2) ⏮ → 上一条 Delta（不是索引序里的 Echo）')
-  ok(await clickSel('.p-ctrl .p-btn[aria-label="下一部"]'), 'b3) 点控制条 ⏭')
+  ok(await clickBtn('下一部'), 'b3) 点控制条 ⏭')
   eq(await playId(), VID.Echo, 'b4) ⏭ → 下一条 Echo（不是索引序里的 Charlie）')
   await key('p', 'KeyP', 80)
   eq(await playId(), VID.Delta, 'b5) 快捷键 P → 上一条 Delta')
@@ -472,7 +491,7 @@ try {
   eq(await ctxCurrent(), { title: 'Alpha', n: '1', aria: 'true' }, 'c1) 第 1 项高亮')
   eq(await btnState('上一部'), { disabled: true, aria: 'true', title: '已经是列表第一条' }, 'c2) 第一条：⏮ 禁用（常驻，不是消失）')
   eq(await btnState('下一部'), { disabled: false, aria: null, title: '下一部（快捷键 N）' }, 'c3) 第一条：⏭ 可用')
-  ok(await clickSel('.p-ctrl .p-btn[aria-label="上一部"]'), 'c4) 点一下禁用态的 ⏮')
+  ok(await clickBtn('上一部'), 'c4) 点一下禁用态的 ⏮')
   eq(await playId(), VID.Alpha, 'c5) 禁用态点了不动（不会跳到无关视频）')
 
   ok(await gotoPage('_s=3', 'sort=name&play=' + VID.Hotel, '.vp-sec-ctx .vp-ctx-row'), 'c6) 打开最后一条 Hotel')
@@ -486,19 +505,22 @@ try {
     await gotoPage('playlist=' + PLAYLIST.id + '&_s=4', 'sort=name&play=' + VID.Delta, '.vp-sec-ctx .vp-ctx-row'),
     'd0) 从 ?playlist=p1 深链打开 Delta'
   )
-  eq(await ctxLabel(), '来自播放列表：周末片单 · 共 3 条', 'd1) 分区标题行 = 来自播放列表：周末片单 · 共 3 条')
+  // P5.35：标题行统一成「<来源名> · 共 N 条」（去掉了「来自播放列表：」前缀，来源名就是标题）
+  eq(await ctxLabel(), '周末片单 · 共 3 条', 'd1) 分区标题行 = 来源名（播放列表名）· 共 3 条')
   eq(await ctxTitles(), ['Echo', 'Alpha', 'Delta'], 'd2) 上下文顺序 = 播放列表顺序（Echo / Alpha / Delta），不是浏览顺序')
   eq(await ctxCurrent(), { title: 'Delta', n: '3', aria: 'true' }, 'd3) 当前项是列表第 3 条')
   eq(await btnState('下一部'), { disabled: true, aria: 'true', title: '已经是列表最后一条' }, 'd4) 列表最后一条：⏭ 禁用')
-  ok(await clickSel('.p-ctrl .p-btn[aria-label="上一部"]'), 'd5) 点 ⏮')
+  ok(await clickBtn('上一部'), 'd5) 点 ⏮')
   eq(await playId(), VID.Alpha, 'd6) ⏮ → 列表里的上一条 Alpha（不是浏览序里的 Echo）')
   const twoHeads = await js(
-    '(function(){var a=document.querySelector(".vp-sec-ctx .vp-h3"),b=document.querySelector("[data-vp-sec=playlists] .vp-h3");return {ctx:a?a.textContent.trim():null,pl:b?b.textContent.trim():null,plRows:document.querySelectorAll("[data-vp-sec=playlists] .vp-pl-row").length};})()'
+    '(function(){var a=document.querySelector(".vp-sec-ctx .vp-h3"),b=document.querySelector("[data-vp-sec=playlists]");return {ctx:a?a.textContent.trim():null,pl:!!b,plRows:document.querySelectorAll("[data-vp-sec=playlists] .vp-pl-row").length,body:document.body.textContent.indexOf("我的播放列表")};})()'
   )
   ok(twoHeads.ctx && twoHeads.ctx.indexOf('播放列表') === 0, 'd7) 置顶分区标题 = 播放列表', twoHeads.ctx)
-  ok(twoHeads.pl && twoHeads.pl.indexOf('我的播放列表') === 0, 'd8) 下方独立分区 = 我的播放列表（两者不混淆）', twoHeads.pl)
-  ok(twoHeads.plRows >= 1, 'd9) 我的播放列表分区仍渲染服务端列表（可编辑分区没被顶部分区挤掉）', String(twoHeads.plRows) + ' 行')
-  eq(await ctxLabel(), '来自播放列表：周末片单 · 共 3 条', 'd10) 在上下文内换片后，来源与顺序都不变（快照语义）')
+  // P5.35（用户需求 6「信息栏里面我的播放列表去掉，没有意义」）：改断言为「它已不在 DOM」——
+  // 原 d8/d9 断言的那个分区连同它的状态 / 请求 / 样式一起删掉了，加入 / 移出仍在卡片菜单与工具栏弹层里。
+  ok(!twoHeads.pl, 'd8) P5.35：「我的播放列表」分区已从信息栏删除（[data-vp-sec=playlists] 不存在）')
+  ok(twoHeads.plRows === 0 && twoHeads.body < 0, 'd9) 分区行与「我的播放列表」文案都不在 DOM（不是隐藏，是删掉）', 'rows=' + twoHeads.plRows)
+  eq(await ctxLabel(), '周末片单 · 共 3 条', 'd10) 在上下文内换片后，来源与顺序都不变（快照语义）')
   await shot('playlist-context')
 
   // 退出播放列表模式 → 上下文回落到浏览顺序（不是继续按已退出的列表走）。
@@ -540,14 +562,14 @@ try {
   ok(bareReady, 'e3) bare 证据台就绪（同一份 MediaPlayer.vue，身份自检通过）', whoBare.tag + ' / ' + whoBare.title)
   eq(await btnState('上一部'), { disabled: true, aria: 'true', title: '已经是列表第一条' }, 'e4) hasPrev=false：⏮ 在 DOM 里且禁用')
   eq(await btnState('下一部'), { disabled: true, aria: 'true', title: '已经是列表最后一条' }, 'e5) hasNext=false：⏭ 在 DOM 里且禁用')
-  await clickSel('.p-ctrl .p-btn[aria-label="上一部"]')
-  await clickSel('.p-ctrl .p-btn[aria-label="下一部"]')
+  await clickBtn('上一部')
+  await clickBtn('下一部')
   eq(await js('window.__emits.slice()'), [], 'e6) 点禁用按钮不 emit prev/next（页面不会去乱找片）')
   await jsAwait('window.__setNav(true, true)')
   eq(await btnState('上一部'), { disabled: false, aria: null, title: '上一部（快捷键 P）' }, 'e7) 有上下文时 ⏮ 立即可用（禁用不是死状态）')
   eq(await btnState('下一部'), { disabled: false, aria: null, title: '下一部（快捷键 N）' }, 'e8) 有上下文时 ⏭ 立即可用')
-  await clickSel('.p-ctrl .p-btn[aria-label="上一部"]')
-  await clickSel('.p-ctrl .p-btn[aria-label="下一部"]')
+  await clickBtn('上一部')
+  await clickBtn('下一部')
   eq(await js('window.__emits.slice()'), ['prev', 'next'], 'e9) 可用时点击正常 emit（事件链没被禁用改造破坏）')
   eq(await js('(window.__errors||[]).slice()'), [], 'e10) bare 台无未捕获错误')
 

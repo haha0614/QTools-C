@@ -1,21 +1,25 @@
 <!--
   MediaPlayer.vue —— 播放层（app.js 播放器部分的等价实现）
   覆盖：进度记忆与续播、清晰度切换（原画直连 / 实时转码 + 内容偏移）、原画与转码统一的自绘控制条
-        （播放/暂停 · 进度 · 时间 · 音量 · 上下集 · 设置 · 全屏；画质切换在头部，两种模式同一套 UI，不再使用原生 controls）、
+        （上一条 · 播放/暂停 · 下一条 · 进度 · 时间 · 音量 · 逐帧 · 画质 · 设置 · 全屏；两种模式同一套 UI，不再使用原生 controls）、
         进度条悬停 / 拖动共用的预览浮层（pv2 片段，无则降级精灵图）、seek（转码重开流 + pendingSeek / 原画直写 currentTime）、
-        上一个 / 下一个、收藏、字幕轨注入、异常编码回退、播放器会话式 play 埋点与 play_end 结算。
+        上一条 / 下一条（播放上下文，越界禁用）、字幕轨注入与**字幕样式**（自绘层 + ::cue 兜底）、
+        异常编码回退、播放器会话式 play 埋点与 play_end 结算。
+   P5.34（用户纠正 2 / 3 / 4 / 5）：画质切换从头部搬进控制栏原来 ⏮⏭ 的位置；上一条 / 下一条
+        移到播放按钮两侧；头部右侧只剩「关闭 Esc」；收藏搬进信息栏（VideoMetaPanel）；
+        新增字幕样式（字号 / 颜色 / 背景不透明度 / 描边 / 位置 / 字重，存 localStorage['ms.substyle']）。
    P4.4：全屏下控制条 2.5s 无操作自动淡出（判定在 playerExtras.createCtrlAutoHide），
         进度条 / 标记轨 / 刻度层 / 浮层锚点统一按「轨道几何」（两端各半个 thumb）换算。
-  约定：面板状态（当前视频 / 上一部下一个可用性 / 收藏 / 清晰度）由 VideoPage 持有，本组件通过 props 接收、
-        emit 回传，不直接读写 localStorage 与服务端。
+  约定：面板状态（当前视频 / 上一条下一条可用性 / 清晰度）由 VideoPage 持有，本组件通过 props 接收、
+        emit 回传，不直接读写 localStorage 与服务端。（收藏 P5.34 起由 VideoMetaPanel 渲染、VideoPage 持有状态；
+        例外只有「播放偏好」这类站点级设置 —— 倍速 / 增益 / 字幕样式直接读写 localStorage，不经页面。）
   事件监听全部通过模板绑定，组件卸载时由 Vue 自动解绑，不会残留 <video> 监听（原页手动管理 el.video）。
 -->
 <template>
   <div class="player" role="dialog" aria-modal="true" aria-label="播放器">
-    <!-- P5.24-A 头部：标题（加粗、单行省略）+ 一行中点分隔的元信息 + 右侧三组控件。
-         分组由 .p-act-group 承担，组间 .p-act-sep 画 1px 竖线；按钮高度 / 圆角 / 内边距统一由
-         .p-actions .btn 定义，宽度不再随文案长短跳动。
-         P5.31 起三组是「收藏 | 画质切换 | 关闭 Esc」（画质下拉与 .btn 同高 30px，见 .p-qsel）。 -->
+    <!-- P5.24-A 头部：标题（加粗、单行省略）+ 一行中点分隔的元信息 + 右侧控件。
+         P5.34（用户纠正 2 / 4）：右侧只剩「关闭 Esc」一颗按钮 —— 收藏进了信息栏、画质进了控制栏，
+         所以这里既没有第二组也没有 .p-act-sep；按钮高度 / 圆角 / 内边距仍由 .p-actions .btn 统一定义。 -->
     <div class="p-head">
       <!-- P5.25（用户反馈 7）：头部左侧补站点标识，与布局左栏的 Logo 同一套语言。
            尺寸 20–22px、次级色、hover 提亮：它只负责「这是哪个站」，不与标题抢注意力。
@@ -42,48 +46,21 @@
           <span class="p-meta-i" title="是否带字幕">字幕 {{ video.sub ? '有' : '无' }}</span>
         </div>
       </div>
-      <div class="p-actions" role="group" aria-label="播放页操作">
-        <div class="p-act-group">
-          <button
-            class="btn p-fav"
-            :class="{ on: fav }"
-            type="button"
-            :aria-pressed="fav"
-            :aria-label="fav ? '取消收藏' : '收藏'"
-            title="收藏 / 取消收藏（快捷键 S）"
-            @click="emit('toggle-fav')"
-          >
-            {{ fav ? '★ 已收藏' : '☆ 收藏' }}
-          </button>
-        </div>
-        <span class="p-act-sep" aria-hidden="true"></span>
-        <!-- P5.31（用户反馈 4「把上一部 / 下一部换成画质切换」）：这一格原来是 ‹ 上一部 / 下一部 ›，
-             现在换成画质下拉 —— 与设置浮层里的画质**同源**：
-               选项都来自 qualityOptions（Q_VALUES → 文案 Q_LABELS），
-               切换都走 onQualityPick（先按旧档取绝对位置 → 换流 → 恢复播放状态），
-             所以头部与浮层永远是同一份档位表，不存在第二套画质逻辑。
-             上 / 下一集没有消失：控制条上的 ⏮ / ⏭ 与快捷键 P / N 一个都没动（那是播放列表上下文的操作），
-             头部只是不再重复放一份文案按钮。data-qt-quality 是证据脚本的锚点。 -->
-        <div class="p-act-group p-act-q">
-          <label class="p-act-lab" for="pHeadQ">画质</label>
-          <select
-            id="pHeadQ"
-            class="p-qsel"
-            data-qt-quality
-            :value="curQ"
-            aria-label="画质"
-            title="画质：原画直连，或实时转码到 720p / 480p / 360p"
-            @change="onQualityPick($event.target.value)"
-          >
-            <option v-for="o in qualityOptions" :key="'hq' + o.value" :value="o.value">{{ o.label }}</option>
-          </select>
-        </div>
-        <span class="p-act-sep" aria-hidden="true"></span>
-        <div class="p-act-group">
-          <button class="btn btn-primary p-close" type="button" title="关闭播放器（Esc）" @click="emit('close')">
-            关闭 <span class="p-kbd" aria-hidden="true">Esc</span>
-          </button>
-        </div>
+      <!-- P5.34（用户纠正 2 / 4「header 里面的收藏放到信息栏里面，去掉画质切换按钮只留关闭按钮」）：
+           头部右侧**只剩一个**「关闭 Esc」：画质切换按用户原话挪进**控制栏**（原来 ⏮ ⏭ 那一格），
+           收藏挪进信息栏顶部（VideoMetaPanel 的 .vp-body 第一行）。
+           于是这里只剩一颗按钮（连 .p-act-group 分组容器都不需要了）：没有第二组、没有 .p-act-sep，
+           role=group + aria-label 保留，读屏仍然知道「这是播放器操作区」。 -->
+      <div class="p-actions" role="group" aria-label="播放器操作">
+        <button
+          class="btn btn-primary p-close"
+          type="button"
+          title="关闭播放器（Esc）"
+          aria-label="关闭播放器"
+          @click="emit('close')"
+        >
+          关闭 <span class="p-kbd" aria-hidden="true">Esc</span>
+        </button>
       </div>
     </div>
 
@@ -97,6 +74,7 @@
           ref="fsEl"
           class="p-fs-wrap"
           :class="{ 'is-ctrl-hidden': ctrlHidden }"
+          :style="subStyleVarsNow"
           @mousemove="onUserActivity"
           @mousedown="onUserActivity"
           @touchstart.passive="onUserActivity"
@@ -164,6 +142,17 @@
                  绝对定位（不参与 .p-stage 的 flex 布局 → 舞台定高不变）、pointer-events:none（不挡点击暂停），
                  与进度条右侧同一条口径（frameTimecode，缺帧率时退化成 mm:ss）。 -->
             <span v-if="scrubOn" class="p-scrub-tc" :title="seekNowTitle">{{ frameTimecode(seekPos, frameFps) }}</span>
+            <!-- P5.34 字幕样式（用户需求 5「能不能对视频字幕的样式进行自定义」）：
+                 为什么是自绘层而不是只写 video::cue —— ::cue 能改字号 / 颜色 / 背景 / 阴影，
+                 但**不能改垂直位置**（定位只能靠 VTT 里逐条 cue 的 line 设置），
+                 Safari 对 ::cue 的支持也只有一小撮属性。所以主路径是自己画：
+                 读 textTracks[i].activeCues → 渲染到这一层（原生轨置 hidden，不会双绘）。
+                 代价见 .p-sub-layer 的样式注释与交付说明。变量全部来自 --p-sub-*（一处真值：
+                 subtitleStyle.js 的 subStyleVars）；v-html 的内容已由 cueTextToHtml 白名单清洗。
+                 pointer-events:none：字幕永远不挡「点画面暂停 / 点浮层」。 -->
+            <div v-if="subLayerOn" class="p-sub-layer" aria-hidden="true" data-qt-sublayer>
+              <p v-for="c in subCues" :key="c.key" class="p-sub-line" v-html="c.html"></p>
+            </div>
             <button v-if="tapVisible" class="p-tap" type="button" @click="onTapPlay">▶ 点击播放</button>
             <button v-if="restartVisible" class="p-restart" type="button" @click="onRestart">从头播放</button>
           </div>
@@ -182,6 +171,21 @@
                  倍速 / 增益 / 画质 / 字幕 / AB / 标记列表 / 快捷键说明。功能只换位置，一个都没删。 -->
             <div class="p-ctrlline">
               <div class="p-grp p-grp-left">
+                <!-- P5.34（用户纠正 3「视频控制栏里面的上下切换放到播放按钮左右吧」）：
+                     上一条 / 下一条从右侧功能组挪到**播放按钮两侧**：左 = ⏮ 上一条、右 = ⏭ 下一条。
+                     禁用态语义一字未改（P5.32）：越界仍然 disabled + aria-disabled（不消失、不换位置、
+                     Tab 顺序稳定），播放上下文缺失时两个都禁用。 -->
+                <button
+                  class="p-btn"
+                  type="button"
+                  aria-label="上一条"
+                  :aria-disabled="hasPrev ? null : 'true'"
+                  :disabled="!hasPrev"
+                  :title="hasPrev ? '上一条（快捷键 P）' : '已经是列表第一条'"
+                  @click="emit('prev')"
+                >
+                  ⏮
+                </button>
                 <button
                   class="p-btn p-btn-play"
                   type="button"
@@ -190,6 +194,17 @@
                   @click="togglePlay"
                 >
                   {{ isPlaying ? '⏸' : '▶' }}
+                </button>
+                <button
+                  class="p-btn"
+                  type="button"
+                  aria-label="下一条"
+                  :aria-disabled="hasNext ? null : 'true'"
+                  :disabled="!hasNext"
+                  :title="hasNext ? '下一条（快捷键 N）' : '已经是列表最后一条'"
+                  @click="emit('next')"
+                >
+                  ⏭
                 </button>
                 <!-- P5.26（用户反馈 1「增加音量调节时的百分比显示」）：百分比浮标签常驻 DOM，
                      0–100 整数，松手 700ms 后淡出（CSS opacity 过渡，不参与控制条布局）。
@@ -381,33 +396,25 @@
                   <button class="p-btn" type="button" aria-label="上一帧" title="上一帧（快捷键 , 或 Shift+←）" @click="stepFrame(-1)">⏴</button>
                   <button class="p-btn" type="button" aria-label="下一帧" title="下一帧（快捷键 . 或 Shift+→）" @click="stepFrame(1)">⏵</button>
                 </span>
-                <!-- P5.32：上/下一部按**播放上下文**（从哪个列表点进来就按那个顺序）走；越界时禁用而不是消失 ——
-                     按钮常驻，位置不跳、Tab 顺序稳定；上下文缺失时两个都禁用（hasPrev/hasNext 都是 false）。 -->
                 <span class="p-sep" aria-hidden="true"></span>
-                <button
-                  class="p-btn"
-                  type="button"
-                  aria-label="上一部"
-                  :aria-disabled="hasPrev ? null : 'true'"
-                  :disabled="!hasPrev"
-                  :title="hasPrev ? '上一部（快捷键 P）' : '已经是列表第一条'"
-                  @click="emit('prev')"
+                <!-- P5.34（用户纠正 2「我说的是视频控制栏里面的上下一部的位置换成画质切换」）：
+                     这一格原来就是 ⏮ ⏭ —— 现在换成**画质下拉**（上一条 / 下一条已移到播放按钮两侧）。
+                     与设置浮层里的画质**同源**：选项都来自 qualityOptions，切换都走 onQualityPick
+                     （先按旧档取绝对位置 → 换流 → 恢复播放状态），不存在第二套画质逻辑。
+                     原生 <select> 保留：它是键盘 / 触屏 / 读屏都能直接用的一级控件，
+                     自绘下拉会白丢一层系统级可达性。data-qt-quality 仍是证据脚本的锚点。 -->
+                <select
+                  class="p-qsel"
+                  data-qt-quality
+                  :value="curQ"
+                  aria-label="画质"
+                  title="画质：原画直连，或实时转码到 720p / 480p / 360p"
+                  @change="onQualityPick($event.target.value)"
                 >
-                  ⏮
-                </button>
-                <button
-                  class="p-btn"
-                  type="button"
-                  aria-label="下一部"
-                  :aria-disabled="hasNext ? null : 'true'"
-                  :disabled="!hasNext"
-                  :title="hasNext ? '下一部（快捷键 N）' : '已经是列表最后一条'"
-                  @click="emit('next')"
-                >
-                  ⏭
-                </button>
+                  <option v-for="o in qualityOptions" :key="'cq' + o.value" :value="o.value">{{ o.label }}</option>
+                </select>
                 <span class="p-sep" aria-hidden="true"></span>
-                <!-- 设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键说明都收在这个齿轮里。
+                <!-- 设置：倍速 / 增益 / 画质 / 字幕（含字幕样式）/ AB / 标记 / 快捷键说明都收在这个齿轮里。
                      data-qt-gear 是证据脚本的锚点（点它 = 走真实事件链打开面板）。 -->
                 <button
                   ref="gearEl"
@@ -417,7 +424,7 @@
                   type="button"
                   aria-label="播放设置"
                   :aria-expanded="settingsOpen"
-                  title="播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键"
+                  title="播放设置：倍速 / 增益 / 画质 / 字幕（含字幕样式）/ AB / 标记 / 快捷键"
                   @click="toggleSettings"
                 >
                   ⚙
@@ -452,6 +459,7 @@
               :quality-hint="qHintVisible"
               :sub-show="hasSub"
               :sub-visible="subVisible"
+              :sub-style="subStyle"
               :ab-a="abA"
               :ab-b="abB"
               :ab-text="abText"
@@ -463,6 +471,8 @@
               @gain="cycleGain"
               @update:quality="onQualityPick"
               @toggle-sub="toggleSubVisible"
+              @update:sub-style="patchSubStyle"
+              @reset-sub-style="resetSubStyle"
               @ab="setAbPoint"
               @clear-ab="clearAb"
               @pick-marker="onMarkPick"
@@ -613,6 +623,17 @@ import PreviewTimeBar from './PreviewTimeBar.vue'
 import { coverFrameWidth, coveredSwitch, freezeElementFrame } from './coverFreeze'
 // P5.24-A：「设置」浮层（倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键）拆成纯展示组件
 import PlayerSettings from './PlayerSettings.vue'
+// P5.34：字幕样式的纯逻辑（归一化 / CSS 变量 / cue 文本清洗），单测见 subtitleStyle.test.mjs
+import {
+  SUB_STYLE_DEFAULT,
+  cueTextToHtml,
+  patchSubStyle as patchSubStyleRaw,
+  readSubStyle,
+  subBackground,
+  subStyleVars,
+  subTextShadow,
+  writeSubStyle
+} from './subtitleStyle'
 // P5.33：品牌图形（Lucide rabbit）与字标文案来自同一份品牌模块；路径数据同时被
 // devtools/p533-brand/build.mjs 用来生成 src/assets/brand/final/*.svg
 import BrandMark from '@/components/BrandMark.vue'
@@ -649,7 +670,6 @@ const props = defineProps({
   openSeq: { type: Number, default: 0 },
   hasPrev: { type: Boolean, default: false },
   hasNext: { type: Boolean, default: false },
-  fav: { type: Boolean, default: false },
   /** 清晰度档位：orig | 720 | 480 | 360（页面持久化在 localStorage['ms.q']） */
   quality: { type: String, default: 'orig' },
   /**
@@ -666,7 +686,6 @@ const emit = defineEmits([
   'close',
   'prev',
   'next',
-  'toggle-fav',
   'update:quality',
   'save-pos',
   'clear-pos',
@@ -2142,21 +2161,155 @@ const hasSub = computed(() => !!subSrc.value)
 const subVisible = ref(true)
 
 /**
- * 把当前开关落到 <track> 上：mode = showing / hidden。
+ * 把当前开关落到 <track> 上。
  * 不动 <track> 的 src 与 default 属性 —— 所以「关掉再打开」不会重新下载字幕，
  * 与 P4-B 注入字幕轨的方式完全兼容（浏览器已加载过的那条轨直接复用）。
+ *
+ * P5.34：字幕改为**自绘**（见 .p-sub-layer），所以原生轨恒为 hidden ——
+ * hidden 的含义正是「加载并计算 activeCues，但不绘制」，于是我们既拿得到 cue，
+ * 又不会出现「原生一份 + 自绘一份」的重影。
+ * textTracks 拿不到时（跨域直连片源没暴露字幕轨道）退回原生：mode = showing / hidden，
+ * 那种情况下 video::cue 的变量规则就是兜底样式（只覆盖字号 / 颜色 / 背景 / 阴影，位置回到默认）。
  */
 function applySubMode() {
   const el = videoEl.value
-  if (!el || !el.textTracks) return
-  for (let i = 0; i < el.textTracks.length; i++) {
-    el.textTracks[i].mode = subVisible.value ? 'showing' : 'hidden'
+  if (!el || !el.textTracks) {
+    subCustom.value = false
+    subCues.value = []
+    return
   }
+  subCustom.value = true
+  for (let i = 0; i < el.textTracks.length; i++) {
+    el.textTracks[i].mode = subCustom.value ? 'hidden' : subVisible.value ? 'showing' : 'hidden'
+  }
+  bindSubTrack()
+  refreshSubCues()
 }
 
 function toggleSubVisible() {
   subVisible.value = !subVisible.value
   applySubMode()
+}
+
+/* ---------------------------------------------------------------- P5.34 字幕样式 */
+
+/**
+ * 字幕样式（站点维度，不按视频）：localStorage['ms.substyle']。
+ * 面板（PlayerSettings）只 emit 局部 patch，写回 / 归一化 / 下发 CSS 变量都在这一处，
+ * 于是「面板显示的值」与「屏幕上真正生效的值」永远同源（subtitleStyle.js）。
+ */
+const subStyle = ref(readSubStyle(safeStorage()))
+/** 自绘层是否可用（false = 退回原生渲染 + video::cue 变量兜底） */
+const subCustom = ref(true)
+/** 当前活动 cue（[{ key, html }]）；只在内容真的变了才写回，避免每次 timeupdate 都触发重渲染 */
+const subCues = ref([])
+/** 当前绑定的 TextTrack（cuechange 监听挂在它身上） */
+let subTrack = null
+
+const subStyleVarsNow = computed(() => subStyleVars(subStyle.value))
+const subLayerOn = computed(() => hasSub.value && subVisible.value && subCustom.value && subCues.value.length > 0)
+
+function patchSubStyle(patch) {
+  subStyle.value = writeSubStyle(safeStorage(), patchSubStyleRaw(subStyle.value, patch))
+  syncCueStyle()
+}
+
+// 首帧就同步一次（默认样式也要落到 ::cue 上），之后只在样式真的变了时重写
+watch(subStyle, syncCueStyle, { deep: true })
+onMounted(syncCueStyle)
+onBeforeUnmount(() => {
+  if (cueStyleEl && cueStyleEl.parentNode) cueStyleEl.parentNode.removeChild(cueStyleEl)
+  cueStyleEl = null
+  // 字幕轨的 cuechange 监听挂在 TextTrack 上（不随 <video> 卸载自动解绑），这里显式摘掉
+  if (subTrack && typeof subTrack.removeEventListener === 'function') {
+    subTrack.removeEventListener('cuechange', refreshSubCues)
+  }
+  subTrack = null
+})
+
+function resetSubStyle() {
+  patchSubStyle(SUB_STYLE_DEFAULT)
+}
+
+/** 取字幕轨：优先 subtitles / captions，其余（chapters / metadata）不用 */
+function subtitleTrack() {
+  const el = videoEl.value
+  if (!el || !el.textTracks) return null
+  const list = el.textTracks
+  for (let i = 0; i < list.length; i++) {
+    const t = list[i]
+    if (t && (t.kind === 'subtitles' || t.kind === 'captions')) return t
+  }
+  return list.length ? list[0] : null
+}
+
+/** cuechange 只在换轨时重新挂（同一 TextTrack 对象复用，不会叠加监听） */
+function bindSubTrack() {
+  const t = subtitleTrack()
+  if (t === subTrack) return
+  if (subTrack && typeof subTrack.removeEventListener === 'function') {
+    subTrack.removeEventListener('cuechange', refreshSubCues)
+  }
+  subTrack = t
+  if (subTrack && typeof subTrack.addEventListener === 'function') {
+    subTrack.addEventListener('cuechange', refreshSubCues)
+  }
+}
+
+/**
+ * 把 activeCues 同步到自绘层。cuechange 是主触发（时间到了 / seek 进出一段时浏览器派发）；
+ * timeupdate 里再调一次是兼容兜底 —— 部分浏览器对 hidden 轨的 cuechange 派发不及时。
+ */
+function refreshSubCues() {
+  if (!subTrack || !subVisible.value || !subCustom.value) {
+    if (subCues.value.length) subCues.value = []
+    return
+  }
+  const active = subTrack.activeCues ? Array.from(subTrack.activeCues) : []
+  const next = active.map((c, i) => ({
+    key: (c && c.id ? c.id : 'c') + '#' + i,
+    html: cueTextToHtml(c && c.text)
+  }))
+  if (next.map((x) => x.html).join('\u0001') === subCues.value.map((x) => x.html).join('\u0001')) return
+  subCues.value = next
+}
+
+/** 换片 / 换流：清掉上一份 cue，重挂轨道（真机上是 <video> 重载，textTracks 会换对象） */
+function resetSubTrack() {
+  subCues.value = []
+  subTrack = null
+  applySubMode()
+}
+
+/**
+ * video::cue 兜底样式（只在自绘层不可用时看得见）。
+ * 为什么不是写在 SFC 里的一层静态 CSS：
+ *   实测（Chrome 126 / devtools 记录）—— **自定义属性不会继承进 ::cue 伪元素树**，
+ *   `color: var(--p-sub-color)` 这类声明会被整条当作无效值丢弃（四条一起失效，全退回 UA 默认）。
+ *   所以这里把同一批值**直接写死**进一个动态 <style>：字号 / 字重 / 颜色 / 背景 / 阴影仍然跟着设置走。
+ *   仍然做不到的只有「垂直位置」—— ::cue 没有定位相关属性，那正是主路径要自绘的原因。
+ */
+let cueStyleEl = null
+function syncCueStyle() {
+  if (typeof document === 'undefined' || !document.head) return
+  if (!cueStyleEl) {
+    cueStyleEl = document.createElement('style')
+    cueStyleEl.id = 'qt-cue-style'
+    document.head.appendChild(cueStyleEl)
+  }
+  const s = subStyle.value
+  cueStyleEl.textContent =
+    '.p-stage video::cue{font-size:calc(' +
+    s.fontScale +
+    ' * clamp(14px, 2.6vmin, 30px));font-weight:' +
+    (s.bold ? 700 : 400) +
+    ';color:' +
+    s.color +
+    ';background-color:' +
+    subBackground(s.bgOpacity) +
+    ';text-shadow:' +
+    subTextShadow(s.outline) +
+    '}'
 }
 
 /** AB 点：绝对内容秒；null = 未设 */
@@ -2878,7 +3031,8 @@ function toggleMute() {
 function onLoadedMetadata() {
   updateSeekUi()
   // P5.24-A：字幕轨要等元数据到达才进 textTracks，开关状态在这里落一次（默认显示）
-  applySubMode()
+  // P5.34：换流 / 换片后 TextTrack 可能是新对象，这里重挂一次（cue 列表清空后由 cuechange 填回）
+  resetSubTrack()
   if (!pendingSeek) return
   const abs = pendingSeek
   pendingSeek = 0
@@ -2896,6 +3050,8 @@ function onLoadedMetadata() {
 
 function onTimeUpdate() {
   updateSeekUi()
+  // P5.34：自绘字幕层的兜底同步（内容没变时 refreshSubCues 直接返回，不产生重渲染）
+  refreshSubCues()
   // P4-B：到/过 B 立即回跳 A，这一帧不再走存盘（A 点前的位置不该被当成观看进度）
   if (abLoopJump()) return
   const now = Date.now()
@@ -3415,9 +3571,9 @@ defineExpose({
   opacity: 0.8;
 }
 
-/* P5.24-A：右侧按钮分三组，组间 1px 竖线、组内 6px —— 不再是一排等距的方块，层次一眼可读。
-   P5.31 起三组是「收藏 | 画质切换（.p-act-q，见下方 .p-qsel）| 关闭 Esc」：
-   原来的 ‹上一部 / 下一部› 让位给画质 —— 上下集仍在控制条 ⏮ / ⏭ 与快捷键 P / N 上。 */
+/* P5.24-A：右侧按钮区（.p-actions）。
+   P5.34：只剩「关闭 Esc」一颗 —— 收藏搬进信息栏、画质搬进控制栏，分组容器与竖线一起撤掉，
+   所以这里的 flex 布局虽然还叫 .p-actions，但不再需要组间距离；窄屏规则让它占满整行。 */
 .p-actions {
   flex: 0 0 auto;
   display: flex;
@@ -3473,12 +3629,6 @@ defineExpose({
   color: var(--accent);
 }
 
-.p-fav.on {
-  color: var(--warn);
-  border-color: var(--warn);
-  background: rgba(255, 201, 119, 0.14);
-}
-
 /* 关闭键内嵌的 Esc 提示：等宽小胶囊，明说「按 Esc 也一样」 */
 .p-kbd {
   padding: 1px 5px;
@@ -3491,44 +3641,87 @@ defineExpose({
   letter-spacing: 0.4px;
 }
 
-/* P5.31（用户反馈 4）：头部「画质切换」= 一个小标签 + 原生 <select>。
-   高度 30px / 圆角 8px / 12.5px 字号与 .btn 逐字对齐，于是「收藏 | 画质 | 关闭」三格一排齐平；
-   配色只读主题令牌（--bg-3 / --line / --fg / --accent），亮暗两套主题自动跟随，
-   不写任何一处硬编码颜色。原生下拉箭头保留：这是唯一「点开就能改片源」的控件，
-   自绘箭头会白丢一层系统级可达性（键盘 / 触屏 / 读屏都走原生）。 */
-.p-act-q {
-  gap: 8px;
-}
-
-.p-act-lab {
-  color: var(--fg-dim);
-  font-size: 12px;
-  line-height: 1;
-  white-space: nowrap;
-}
-
+/* P5.34：画质下拉从头部搬进**控制栏**（占原来 ⏮ ⏭ 那一格，见模板）。
+   配色跟着控制条走：深色 chip + 白字 + 白描边 —— 与 .p-btn 同一套令牌，
+   于是「⏴ ⏵ | 画质 | ⚙ ⛶」四件在一排里材质一致，不会有一格是浅色纸片。
+   原生 <select> 保留（键盘 / 触屏 / 读屏都能直接用；自绘下拉会白丢系统级可达性）。 */
 .p-qsel {
+  flex-shrink: 0;
+  max-width: 116px;
   height: 30px;
-  max-width: 132px;
   padding: 0 6px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--p-edge);
   border-radius: 8px;
-  background: var(--bg-3);
-  color: var(--fg);
+  background: var(--p-chip);
+  color: var(--p-ink);
   font: inherit;
   font-size: 12.5px;
   line-height: 1;
   cursor: pointer;
-  transition: border-color 0.12s, color 0.12s;
+  text-shadow: var(--p-shadow);
+  box-shadow: var(--p-shadow);
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
 
 .p-qsel:hover {
-  border-color: var(--line-2);
+  background: var(--p-chip-hover);
+  border-color: var(--p-edge-hover);
 }
 
 .p-qsel:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* select 收起时只有一段文案；原生下拉三角在深色底上仍是系统色，Chrome 下即可，
+   Firefox 用 color-scheme 让箭头跟着主题（不写它的话深色 chip 上的箭头几乎看不见） */
+.p-qsel option {
+  background: var(--bg-2);
+  color: var(--fg);
+}
+
+/* ============================ P5.34 自绘字幕层 ============================ */
+
+/* 为什么自己画：video::cue 改不了**垂直位置**（定位只认 VTT 里逐条 cue 的 line:），
+   Safari 对 ::cue 的可用属性也只有一小撮；而用户要的正是「字号 / 颜色 / 背景不透明度 /
+   描边 / 垂直位置 / 字重」六个旋钮一起调。所以原生轨置 hidden（仍计算 activeCues，
+   只是不绘制），文案改由这一层渲染 —— 六项全部可控，且亮暗主题、任意片源表现一致。
+   代价：① 失去 VTT 的内联 caption 样式（只白名单保留 b/i/u/br，见 cueTextToHtml）；
+        ② 需要自己跟 cue 生命周期（cuechange + timeupdate 兜底）；
+        ③ 逐条 cue 的 line/align 设置不再生效（位置由用户的「垂直位置」统一定）。
+   布局：absolute + pointer-events:none —— 不参与 .p-stage 的 flex 布局，舞台定高不变，
+        也不挡「点画面暂停 / 点转码跟随层」。z-index 4：压在画面与冻结层之上、控制条（5）之下。 */
+.p-sub-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--p-sub-bottom, 6%);
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6%;
+  pointer-events: none;
+  text-align: center;
+}
+
+.p-sub-line {
+  margin: 0;
+  padding: 1px 8px;
+  border-radius: 4px;
+  /* 基准字号随舞台缩放（vmin），再乘用户倍率 —— 1× 在 1080p 舞台上约 27px，
+     在 375 宽的手机上仍有 15px 左右，两端都不会糊成一条线。 */
+  font-size: calc(var(--p-sub-scale, 1) * clamp(14px, 2.6vmin, 30px));
+  font-weight: var(--p-sub-weight, 400);
+  line-height: 1.32;
+  color: var(--p-sub-color, #fff);
+  background: var(--p-sub-bg, rgba(0, 0, 0, 0.6));
+  text-shadow: var(--p-sub-shadow, 0 1px 2px rgba(0, 0, 0, 0.55));
+  white-space: pre-line;
+  /* 长句折行：不撑破舞台宽度（padding 6% 已经内缩，这里再兜一层） */
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .p-close {
@@ -4324,23 +4517,7 @@ defineExpose({
     font-size: 12px;
   }
 
-  /* P5.31：窄屏下画质下拉与按钮同权分摊宽度 —— 标签「画质」让位（下拉自己就带档位文案），
-     高度仍是 30px、无 max-width，于是 375px 上「收藏 | 画质 | 关闭」仍是一行且不横向溢出 */
-  .p-act-q {
-    gap: 6px;
-  }
-
-  .p-act-lab {
-    display: none;
-  }
-
-  .p-qsel {
-    flex: 1 1 auto;
-    min-width: 0;
-    max-width: none;
-    font-size: 12px;
-  }
-
+  /* P5.34：头部只剩「关闭」一个按钮，窄屏让它占满整行（拇指热点最大化，也不再有多余的空组） */
 
 
   .p-restart {
@@ -4400,7 +4577,13 @@ defineExpose({
     display: none;
   }
 
-  /* 画质行只留下拉，省出横向空间给按钮 */
+  /* P5.34：控制栏的画质下拉与其它按钮同高（38px），宽度收紧 —— 375px 上右组是
+     「⏴ ⏵ | 画质 | ⚙ ⛶」，不让它把左组的「⏮ ▶ ⏭ 🔊」挤到第三行 */
+  .p-qsel {
+    max-width: 112px;
+    height: 38px;
+    font-size: 12px;
+  }
 
 
 
@@ -4700,3 +4883,4 @@ html.dark .p-lane-mark:focus-visible {
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.85), 0 0 0 3px var(--accent-soft);
 }
 </style>
+

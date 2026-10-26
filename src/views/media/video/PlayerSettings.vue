@@ -63,7 +63,11 @@
       <span v-if="qualityHint" class="p-set-note p-set-note-accent">转码中…</span>
     </div>
 
-    <!-- 字幕：只有该片真的带字幕轨时才出现（没有字幕就不放一个永远点不动的开关） -->
+    <!-- 字幕：只有该片真的带字幕轨时才出现（没有字幕就不放一个永远点不动的开关）。
+         P5.34（用户需求「能不能对视频字幕的样式进行自定义，如果可以那么在字幕开关旁边加一个
+         字幕样式设置」）：开关右边多一个「样式」入口，展开下面的小面板。
+         字幕样式是**站点级偏好**（localStorage['ms.substyle']），换片不重置；
+         面板里自带实时预览 —— 改一个值预览立刻变，不必等字幕真的滚出来。 -->
     <div v-if="subShow" class="p-set-row">
       <span class="p-set-lab">字幕</span>
       <button
@@ -77,6 +81,128 @@
       >
         {{ subVisible ? '显示中' : '已隐藏' }}
       </button>
+      <button
+        class="p-set-btn p-substyle-btn"
+        data-qt-substyle
+        type="button"
+        :aria-expanded="subStyleOpen"
+        aria-controls="pSubStyle"
+        aria-label="字幕样式"
+        title="字幕样式：字号 / 颜色 / 背景 / 描边 / 位置 / 字重"
+        @click="subStyleOpen = !subStyleOpen"
+      >
+        样式
+      </button>
+    </div>
+
+    <div v-if="subShow && subStyleOpen" id="pSubStyle" class="p-substyle" data-qt-substyle-panel>
+      <p class="p-substyle-h">
+        字幕样式<span class="p-substyle-n">站点级 · 换片仍生效</span>
+      </p>
+      <!-- 实时预览：与屏幕字幕读的是**同一批** CSS 变量（--p-sub-*），所以这里看到的就是播放时的样子 -->
+      <div class="p-sub-prev" :style="previewVars" aria-hidden="true">
+        <span class="p-sub-prev-t">示例字幕 Sample</span>
+      </div>
+
+      <div class="p-set-row p-sub-row">
+        <label class="p-set-lab" for="msSubSize">字号</label>
+        <input
+          id="msSubSize"
+          class="p-sub-range"
+          data-qt-sub-size
+          type="range"
+          :min="FONT_MIN"
+          :max="FONT_MAX"
+          step="0.05"
+          :value="s.fontScale"
+          aria-label="字幕字号"
+          title="字幕字号（0.8×–1.6×，相对舞台字号）"
+          @input="patch({ fontScale: num($event) })"
+        />
+        <span class="p-sub-val">{{ fontLabel }}</span>
+      </div>
+
+      <div class="p-set-row p-sub-row">
+        <label class="p-set-lab" for="msSubColor">颜色</label>
+        <input
+          id="msSubColor"
+          class="p-sub-color"
+          data-qt-sub-color
+          type="color"
+          :value="s.color"
+          aria-label="字幕颜色"
+          title="字幕颜色"
+          @input="patch({ color: $event.target.value })"
+        />
+        <label class="p-set-lab p-set-lab-2" for="msSubBg">背景</label>
+        <input
+          id="msSubBg"
+          class="p-sub-range"
+          data-qt-sub-bg
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          :value="s.bgOpacity"
+          aria-label="字幕背景不透明度"
+          title="字幕背景不透明度（0–100%）"
+          @input="patch({ bgOpacity: num($event) })"
+        />
+        <span class="p-sub-val">{{ s.bgOpacity }}%</span>
+      </div>
+
+      <div class="p-set-row p-sub-row">
+        <span class="p-set-lab">描边</span>
+        <button
+          class="p-set-btn"
+          :class="{ on: s.outline }"
+          data-qt-sub-outline
+          type="button"
+          :aria-pressed="s.outline"
+          title="字幕描边（4 向 1px 阴影）：亮帧上也能读清"
+          @click="patch({ outline: !s.outline })"
+        >
+          {{ s.outline ? '开' : '关' }}
+        </button>
+        <span class="p-set-lab p-set-lab-2">字重</span>
+        <button
+          class="p-set-btn"
+          :class="{ on: s.bold }"
+          data-qt-sub-bold
+          type="button"
+          :aria-pressed="s.bold"
+          title="字幕加粗"
+          @click="patch({ bold: !s.bold })"
+        >
+          {{ s.bold ? '加粗' : '常规' }}
+        </button>
+      </div>
+
+      <div class="p-set-row p-sub-row">
+        <span class="p-set-lab">位置</span>
+        <button
+          v-for="p in POS"
+          :key="'sp' + p"
+          class="p-set-btn p-sub-pos"
+          :class="{ on: s.pos === p }"
+          type="button"
+          :aria-pressed="s.pos === p"
+          :data-qt-sub-pos="p"
+          :title="'字幕垂直位置：' + POS_LABEL[p] + '（::cue 做不到，由自绘层落位）'"
+          @click="patch({ pos: p })"
+        >
+          {{ POS_LABEL[p] }}
+        </button>
+        <button
+          class="p-set-btn p-sub-reset"
+          data-qt-sub-reset
+          type="button"
+          title="恢复默认字幕样式"
+          @click="emit('reset-sub-style')"
+        >
+          重置
+        </button>
+      </div>
     </div>
 
     <!-- AB 循环：一级控制条不再放 A / B（用户要求精简），全部收在这里；键盘 A / B 仍然直达 -->
@@ -152,6 +278,10 @@
 </template>
 
 <script setup>
+import { computed, ref } from 'vue'
+// P5.34：字幕样式的默认值 / 归一化 / CSS 变量 —— 与 MediaPlayer 共用一份真值
+import { SUB_STYLE_DEFAULT, SUB_POS, SUB_POS_LABEL, SUB_FONT_MIN, SUB_FONT_MAX, normalizeSubStyle, subStyleVars } from './subtitleStyle'
+
 /** 倍速 select 的值是字符串，父级的档位是数字 —— 只在这一层做一次转换 */
 const props = defineProps({
   speed: { type: Number, required: true },
@@ -170,6 +300,8 @@ const props = defineProps({
 
   subShow: { type: Boolean, default: false },
   subVisible: { type: Boolean, default: true },
+  /** P5.34：字幕样式（站点级偏好）。面板只读它 + emit 局部 patch，不自己存 */
+  subStyle: { type: Object, default: () => SUB_STYLE_DEFAULT },
 
   abA: { type: Number, default: null },
   abB: { type: Number, default: null },
@@ -181,7 +313,40 @@ const props = defineProps({
   helpOpen: { type: Boolean, default: false }
 })
 
-const emit = defineEmits(['update:speed', 'gain', 'update:quality', 'toggle-sub', 'ab', 'clear-ab', 'pick-marker', 'help'])
+const emit = defineEmits([
+  'update:speed',
+  'gain',
+  'update:quality',
+  'toggle-sub',
+  'update:sub-style',
+  'reset-sub-style',
+  'ab',
+  'clear-ab',
+  'pick-marker',
+  'help'
+])
+
+/* P5.34 字幕样式：面板自身的「展开 / 收起」是本视图状态（不进 props，也不落盘 —
+   用户没要求「记住我上次开着面板」，YAGNI）。样式值一律走 props.subStyle + emit patch。 */
+const subStyleOpen = ref(false)
+
+/** 归一化后的样式（脏 props 也不会把面板画成 NaN） */
+const s = computed(() => normalizeSubStyle(props.subStyle))
+/** 预览与屏幕字幕共用同一批变量 → 所见即所得 */
+const previewVars = computed(() => subStyleVars(s.value))
+const fontLabel = computed(() => Math.round(s.value.fontScale * 100) + '%')
+const POS = SUB_POS
+const POS_LABEL = SUB_POS_LABEL
+const FONT_MIN = SUB_FONT_MIN
+const FONT_MAX = SUB_FONT_MAX
+
+/** 滑块值 → 数字 patch（父级再做一次归一化 / 夹取） */
+function num(e) {
+  return Number(e && e.target ? e.target.value : NaN)
+}
+function patch(p) {
+  emit('update:sub-style', p)
+}
 
 /** select 的 value 恒为字符串，这里转回数字再 emit（父级的档位是 Number） */
 function numberValue(e) {
@@ -402,6 +567,121 @@ function numberValue(e) {
   color: var(--accent);
   border-color: var(--accent);
   background: var(--accent-soft);
+}
+
+/* ====================== P5.34 字幕样式面板 ====================== */
+
+/* 入口按钮：与「显示中 / 已隐藏」同款的次要按钮，但用强调色描边表明「这里能改样式」 */
+.p-substyle-btn {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+/* 面板本体：设置在设置浮层**内部**再嵌一层，所以不另开浮层（不开第二层 z-index / 不抢焦点），
+   只用自己的左边线 + 浅底表示从属关系；设置浮层自己滚动，这一块跟着滚。 */
+.p-substyle {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-left: 2px;
+  padding: 8px 9px 9px;
+  border-left: 2px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  background: color-mix(in srgb, var(--bg-3) 70%, transparent);
+}
+
+.p-substyle-h {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.p-substyle-n {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--fg-dim);
+}
+
+/* 实时预览：一半亮一半暗的假画面 —— 白字 / 描边 / 背景不透明度在两种背衬上都要看得清，
+   所以只给纯色底的预览框没有意义。样式值与屏幕字幕读同一批 var（--p-sub-*）。 */
+.p-sub-prev {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background-color: #2b3038;
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0 50%, rgba(0, 0, 0, 0.55) 50% 100%);
+  overflow: hidden;
+}
+
+.p-sub-prev-t {
+  padding: 1px 8px;
+  border-radius: 4px;
+  /* 预览框只有 320px 宽，所以基准字号固定 16px（真实字幕是 vmin 基准）——
+     用户调的是**倍率**，预览要看到的是「相对变化」，不是绝对像素。 */
+  font-size: calc(var(--p-sub-scale, 1) * 16px);
+  font-weight: var(--p-sub-weight, 400);
+  line-height: 1.3;
+  color: var(--p-sub-color, #fff);
+  background: var(--p-sub-bg, rgba(0, 0, 0, 0.6));
+  text-shadow: var(--p-sub-shadow, 0 1px 2px rgba(0, 0, 0, 0.55));
+  text-align: center;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* 面板里的行：标签列比主面板窄一档（面板只有 320px，两列标签要放得下） */
+.p-sub-row {
+  gap: 6px;
+}
+
+.p-set-lab-2 {
+  flex: 0 0 34px;
+}
+
+.p-sub-range {
+  /* 原生 range 有 ~129px 的内在宽度；不给 flex-basis + min-width:0 就会把「背景 10%」挤到下一行 */
+  flex: 1 1 48px;
+  min-width: 0;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.p-sub-color {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  cursor: pointer;
+}
+
+.p-sub-val {
+  flex: 0 0 34px;
+  text-align: right;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-dim);
+}
+
+.p-sub-pos {
+  min-width: 40px;
+}
+
+/* 重置靠右：与「位置」三个按钮分开，避免误点 */
+.p-sub-reset {
+  margin-left: auto;
+  color: var(--fg-dim);
 }
 
 /* 窄屏：面板改成「占满一行的底部抽屉」—— 320px 固定宽在 375 上会顶到视口外 */

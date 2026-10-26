@@ -1,0 +1,762 @@
+{
+  "page": "http://127.0.0.1:57982/evidence/playerHarness.html",
+  "ports": {
+    "vite": 57982,
+    "cdp": 57986
+  },
+  "chrome": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "runs": [
+    {
+      "viewport": {
+        "name": "wide-1600x1000",
+        "w": 1600,
+        "h": 1000
+      },
+      "head": {
+        "actionsRole": "group",
+        "actionsAria": "播放器操作",
+        "groups": 0,
+        "separators": 0,
+        "buttons": [
+          {
+            "text": "关闭 Esc",
+            "aria": "关闭播放器",
+            "title": "关闭播放器（Esc）",
+            "rect": {
+              "x": 1486.89,
+              "y": 16.66,
+              "w": 82.11,
+              "h": 30
+            }
+          }
+        ],
+        "qualityInHead": false,
+        "favInHead": false,
+        "headRect": {
+          "x": 0,
+          "y": 0,
+          "w": 1585,
+          "h": 64.33
+        }
+      },
+      "ctrl": {
+        "left": [
+          {
+            "tag": "button",
+            "aria": "上一条",
+            "text": "⏮",
+            "cls": "p-btn",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 14,
+            "y": 959.5,
+            "w": 30,
+            "h": 30
+          },
+          {
+            "tag": "button",
+            "aria": "播放",
+            "text": "▶",
+            "cls": "p-btn p-btn-play",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 50,
+            "y": 959.5,
+            "w": 40,
+            "h": 30
+          },
+          {
+            "tag": "button",
+            "aria": "下一条",
+            "text": "⏭",
+            "cls": "p-btn",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 96,
+            "y": 959.5,
+            "w": 30,
+            "h": 30
+          },
+          {
+            "tag": "button",
+            "aria": "静音",
+            "text": "🔊",
+            "cls": "p-btn",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 132,
+            "y": 959.5,
+            "w": 35.86,
+            "h": 30
+          },
+          {
+            "tag": "input",
+            "aria": "音量",
+            "text": "",
+            "cls": "p-vol",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 173.86,
+            "y": 964.5,
+            "w": 86,
+            "h": 20
+          },
+          {
+            "tag": "span",
+            "aria": "",
+            "text": "00:00:00",
+            "cls": "p-seek-now is-frame",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 265.86,
+            "y": 961.5,
+            "w": 130.16,
+            "h": 26
+          }
+        ],
+        "right": [
+          {
+            "tag": "button",
+            "aria": "上一帧",
+            "text": "⏴",
+            "cls": "p-btn",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 1304,
+            "y": 959.5,
+            "w": 31,
+            "h": 30
+          },
+          {
+            "tag": "button",
+            "aria": "下一帧",
+            "text": "⏵",
+            "cls": "p-btn",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 1339,
+            "y": 959.5,
+            "w": 31,
+            "h": 30
+          },
+          {
+            "tag": "select",
+            "aria": "画质",
+            "text": "原画（直连）72",
+            "cls": "p-qsel",
+            "quality": true,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 1383,
+            "y": 959.5,
+            "w": 109,
+            "h": 30
+          },
+          {
+            "tag": "button",
+            "aria": "播放设置",
+            "text": "⚙",
+            "cls": "p-btn p-gear",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 1505,
+            "y": 959.5,
+            "w": 30,
+            "h": 30
+          },
+          {
+            "tag": "button",
+            "aria": "全屏",
+            "text": "⛶",
+            "cls": "p-btn",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 1541,
+            "y": 959.5,
+            "w": 30,
+            "h": 30
+          }
+        ],
+        "buttonsTotal": 8,
+        "qualityInRight": true,
+        "qualityInHead": false,
+        "framePairInRight": true
+      },
+      "overflow": {
+        "docScrollW": 1585,
+        "docClientW": 1600,
+        "ctrlScrollW": 1585,
+        "ctrlClientW": 1585
+      }
+    },
+    {
+      "viewport": {
+        "name": "mid-1000x800",
+        "w": 1000,
+        "h": 800
+      },
+      "head": {
+        "actionsRole": "group",
+        "actionsAria": "播放器操作",
+        "groups": 0,
+        "separators": 0,
+        "buttons": [
+          {
+            "text": "关闭 Esc",
+            "aria": "关闭播放器",
+            "title": "关闭播放器（Esc）",
+            "rect": {
+              "x": 886.89,
+              "y": 16.66,
+              "w": 82.11,
+              "h": 30
+            }
+          }
+        ],
+        "qualityInHead": false,
+        "favInHead": false,
+        "headRect": {
+          "x": 0,
+          "y": 0,
+          "w": 985,
+          "h": 64.33
+        }
+      },
+      "ctrl": {
+        "left": [
+          {
+            "tag": "button",
+            "aria": "上一条",
+            "text": "⏮",
+            "cls": "p-btn",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 14,
+            "y": 759.5,
+            "w": 30,
+            "h": 30
+          },
+          {
+            "tag": "button",
+            "aria": "播放",
+            "text": "▶",
+            "cls": "p-btn p-btn-play",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 50,
+            "y": 759.5,
+            "w": 40,
+            "h": 30
+          },
+          {
+            "tag": "button",
+            "aria": "下一条",
+            "text": "⏭",
+            "cls": "p-btn",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 96,
+            "y": 759.5,
+            "w": 30,
+            "h": 30
+          },
+          {
+            "tag": "button",
+            "aria": "静音",
+            "text": "🔊",
+            "cls": "p-btn",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 132,
+            "y": 759.5,
+            "w": 35.86,
+            "h": 30
+          },
+          {
+            "tag": "input",
+            "aria": "音量",
+            "text": "",
+            "cls": "p-vol",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 173.86,
+            "y": 764.5,
+            "w": 86,
+            "h": 20
+          },
+          {
+            "tag": "span",
+            "aria": "",
+            "text": "00:00:00",
+            "cls": "p-seek-now is-frame",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 265.86,
+            "y": 761.5,
+            "w": 130.16,
+            "h": 26
+          }
+        ],
+        "right": [
+          {
+            "tag": "button",
+            "aria": "上一帧",
+            "text": "⏴",
+            "cls": "p-btn",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 704,
+            "y": 759.5,
+            "w": 31,
+            "h": 30
+          },
+          {
+            "tag": "button",
+            "aria": "下一帧",
+            "text": "⏵",
+            "cls": "p-btn",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 739,
+            "y": 759.5,
+            "w": 31,
+            "h": 30
+          },
+          {
+            "tag": "select",
+            "aria": "画质",
+            "text": "原画（直连）72",
+            "cls": "p-qsel",
+            "quality": true,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 783,
+            "y": 759.5,
+            "w": 109,
+            "h": 30
+          },
+          {
+            "tag": "button",
+            "aria": "播放设置",
+            "text": "⚙",
+            "cls": "p-btn p-gear",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 905,
+            "y": 759.5,
+            "w": 30,
+            "h": 30
+          },
+          {
+            "tag": "button",
+            "aria": "全屏",
+            "text": "⛶",
+            "cls": "p-btn",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 941,
+            "y": 759.5,
+            "w": 30,
+            "h": 30
+          }
+        ],
+        "buttonsTotal": 8,
+        "qualityInRight": true,
+        "qualityInHead": false,
+        "framePairInRight": true
+      },
+      "overflow": {
+        "docScrollW": 985,
+        "docClientW": 1000,
+        "ctrlScrollW": 985,
+        "ctrlClientW": 985
+      }
+    },
+    {
+      "viewport": {
+        "name": "phone-375x780",
+        "w": 375,
+        "h": 780
+      },
+      "head": {
+        "actionsRole": "group",
+        "actionsAria": "播放器操作",
+        "groups": 0,
+        "separators": 0,
+        "buttons": [
+          {
+            "text": "关闭 Esc",
+            "aria": "关闭播放器",
+            "title": "关闭播放器（Esc）",
+            "rect": {
+              "x": 10,
+              "y": 162.13,
+              "w": 340,
+              "h": 30
+            }
+          }
+        ],
+        "qualityInHead": false,
+        "favInHead": false,
+        "headRect": {
+          "x": 0,
+          "y": 0,
+          "w": 360,
+          "h": 201.13
+        }
+      },
+      "ctrl": {
+        "left": [
+          {
+            "tag": "button",
+            "aria": "上一条",
+            "text": "⏮",
+            "cls": "p-btn",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 10,
+            "y": 645,
+            "w": 38,
+            "h": 38
+          },
+          {
+            "tag": "button",
+            "aria": "播放",
+            "text": "▶",
+            "cls": "p-btn p-btn-play",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 54,
+            "y": 645,
+            "w": 52,
+            "h": 38
+          },
+          {
+            "tag": "button",
+            "aria": "下一条",
+            "text": "⏭",
+            "cls": "p-btn",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 112,
+            "y": 645,
+            "w": 38,
+            "h": 38
+          },
+          {
+            "tag": "button",
+            "aria": "静音",
+            "text": "🔊",
+            "cls": "p-btn",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 156,
+            "y": 645,
+            "w": 38.61,
+            "h": 38
+          },
+          {
+            "tag": "input",
+            "aria": "音量",
+            "text": "",
+            "cls": "p-vol",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "tag": "span",
+            "aria": "",
+            "text": "00:00:00",
+            "cls": "p-seek-now is-frame",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 206.61,
+            "y": 652.2,
+            "w": 116.94,
+            "h": 23.59
+          }
+        ],
+        "right": [
+          {
+            "tag": "button",
+            "aria": "上一帧",
+            "text": "⏴",
+            "cls": "p-btn",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 10,
+            "y": 689,
+            "w": 38,
+            "h": 38
+          },
+          {
+            "tag": "button",
+            "aria": "下一帧",
+            "text": "⏵",
+            "cls": "p-btn",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 52,
+            "y": 689,
+            "w": 38,
+            "h": 38
+          },
+          {
+            "tag": "select",
+            "aria": "画质",
+            "text": "原画（直连）72",
+            "cls": "p-qsel",
+            "quality": true,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 103,
+            "y": 689,
+            "w": 106,
+            "h": 38
+          },
+          {
+            "tag": "button",
+            "aria": "播放设置",
+            "text": "⚙",
+            "cls": "p-btn p-gear",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 222,
+            "y": 689,
+            "w": 38,
+            "h": 38
+          },
+          {
+            "tag": "button",
+            "aria": "全屏",
+            "text": "⛶",
+            "cls": "p-btn",
+            "quality": false,
+            "disabled": false,
+            "ariaDisabled": null,
+            "x": 266,
+            "y": 689,
+            "w": 38,
+            "h": 38
+          }
+        ],
+        "buttonsTotal": 8,
+        "qualityInRight": true,
+        "qualityInHead": false,
+        "framePairInRight": true
+      },
+      "overflow": {
+        "docScrollW": 360,
+        "docClientW": 375,
+        "ctrlScrollW": 360,
+        "ctrlClientW": 360
+      }
+    }
+  ],
+  "nav": {
+    "navOn": {
+      "prev": {
+        "disabled": false,
+        "ariaDisabled": null,
+        "rect": {
+          "x": 14,
+          "y": 959.5,
+          "w": 30,
+          "h": 30
+        }
+      },
+      "next": {
+        "disabled": false,
+        "ariaDisabled": null,
+        "rect": {
+          "x": 96,
+          "y": 959.5,
+          "w": 30,
+          "h": 30
+        }
+      },
+      "prevCalls": 0,
+      "nextCalls": 0
+    },
+    "navOff": {
+      "prev": {
+        "disabled": true,
+        "ariaDisabled": "true",
+        "rect": {
+          "x": 14,
+          "y": 959.5,
+          "w": 30,
+          "h": 30
+        }
+      },
+      "next": {
+        "disabled": true,
+        "ariaDisabled": "true",
+        "rect": {
+          "x": 96,
+          "y": 959.5,
+          "w": 30,
+          "h": 30
+        }
+      },
+      "prevCalls": 0,
+      "nextCalls": 0
+    },
+    "clickOff": {
+      "ok": true,
+      "prevCalls": 0,
+      "nextCalls": 0
+    }
+  },
+  "fav": {
+    "fav1": {
+      "exists": true,
+      "before": {
+        "fav": false,
+        "calls": 0
+      },
+      "calls": 1,
+      "fav": true,
+      "pressed": "true",
+      "on": true,
+      "label": "★已收藏",
+      "title": "取消收藏",
+      "rect": {
+        "x": 1182,
+        "y": 251.25,
+        "w": 65.7,
+        "h": 28
+      },
+      "rowIndex": 1,
+      "firstSectionIndex": 2,
+      "beforeAllSections": true,
+      "beforePlaylist": true
+    },
+    "fav2": {
+      "exists": true,
+      "before": {
+        "fav": true,
+        "calls": 1
+      },
+      "calls": 2,
+      "fav": false,
+      "pressed": "false",
+      "on": false,
+      "label": "☆收藏",
+      "title": "收藏（与列表卡片同一个收藏）",
+      "rect": {
+        "x": 1182,
+        "y": 251.25,
+        "w": 78.11,
+        "h": 28
+      },
+      "rowIndex": 1,
+      "firstSectionIndex": 2,
+      "beforeAllSections": true,
+      "beforePlaylist": true
+    }
+  },
+  "subStyle": {
+    "probeBefore": {
+      "layerOn": true,
+      "lineCount": 1,
+      "line": {
+        "fontSize": 26,
+        "color": "rgb(255, 255, 255)",
+        "bg": "rgba(0, 0, 0, 0.6)",
+        "weight": "400",
+        "shadow": "rgba(0, 0, 0, 0.9) -1px -1px 0px, rgba(0, 0, 0, 0.9) 1px -1px 0p"
+      },
+      "layerBottomPx": 53.75,
+      "layerRect": {
+        "x": 0,
+        "y": 909.94,
+        "w": 1169,
+        "h": 36.31
+      },
+      "preview": null,
+      "cueTag": ".p-stage video::cue{font-size:calc(1 * clamp(14px, 2.6vmin, 30px));font-weight:400;color:#ffffff;background-color:rgba(0, 0, 0, 0.6);text-shadow:-1px -1px 0 rgba(0, 0, 0, 0.9), 1px -1px 0 rgba(0, 0, 0, 0.9), -1px 1px 0 rgba(0, 0, 0, 0.9), 1px 1px 0 rgba(0, 0, 0, 0.9)}",
+      "stored": null
+    },
+    "panel": {
+      "ok": true,
+      "rows": 4,
+      "controls": 9,
+      "posButtons": [
+        "bottom",
+        "higher",
+        "center"
+      ],
+      "hasReset": true,
+      "inSettingsPanel": true,
+      "rightAfterSubSwitch": true
+    },
+    "probeAfter": {
+      "layerOn": true,
+      "lineCount": 1,
+      "line": {
+        "fontSize": 41.6,
+        "color": "rgb(0, 255, 0)",
+        "bg": "rgba(0, 0, 0, 0.1)",
+        "weight": "400",
+        "shadow": "rgba(0, 0, 0, 0.55) 0px 1px 2px"
+      },
+      "layerBottomPx": 161.25,
+      "layerRect": {
+        "x": 0,
+        "y": 781.86,
+        "w": 1169,
+        "h": 56.89
+      },
+      "preview": {
+        "fontSize": 25.6,
+        "color": "rgb(0, 255, 0)",
+        "bg": "rgba(0, 0, 0, 0.1)",
+        "weight": "400",
+        "shadow": "rgba(0, 0, 0, 0.55) 0px 1px 2px"
+      },
+      "cueTag": ".p-stage video::cue{font-size:calc(1.6 * clamp(14px, 2.6vmin, 30px));font-weight:400;color:#00ff00;background-color:rgba(0, 0, 0, 0.1);text-shadow:0 1px 2px rgba(0, 0, 0, 0.55)}",
+      "stored": "{\"fontScale\":1.6,\"color\":\"#00ff00\",\"bgOpacity\":10,\"outline\":false,\"pos\":\"higher\",\"bold\":false}"
+    }
+  },
+  "passed": 79,
+  "failures": [],
+  "shots": [
+    "p534-fav-info-panel.png",
+    "p534-substyle-panel-dark.png",
+    "p534-substyle-restored-dark.png"
+  ]
+}

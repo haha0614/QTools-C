@@ -208,13 +208,13 @@ const L = ['a', 'b', 'c', 'd', 'e']
   const info = {
     v1: { title: '第一条', dur: 201.4, thumb: '/api/media/thumb/v/v1' },
     v2: { title: '第二条', dur: 0, thumb: '/api/media/thumb/v/v2' },
-    v3: { title: '第三条', dur: 3725, thumb: '/api/media/thumb/v/v3' }
+    v3: { title: '第三条', dur: 3725.6, thumb: '/api/media/thumb/v/v3' }
   }
   const rows = contextRows(c, (id) => info[id])
   eq(rows.map((r) => [r.id, r.n, r.title, r.dur, r.durText, r.thumb, r.current]), [
     ['v1', 1, '第一条', 201.4, '03:21', '/api/media/thumb/v/v1', false],
     ['v2', 2, '第二条', 0, '--:--', '/api/media/thumb/v/v2', true],
-    ['v3', 3, '第三条', 3725, '62:06', '/api/media/thumb/v/v3', false]
+    ['v3', 3, '第三条', 3725.6, '62:06', '/api/media/thumb/v/v3', false]
   ], '6.1 每行带齐 id / 序号 / 标题 / 时长 / 时长文案 / 缩略图 URL / 当前项（201.4s → 03:21，与列表页同口径）')
   eq(rows[1].durText, '--:--', '6.2 dur 缺失（0）→ --:--（与 VideoCard 角标一致）')
   eq(rows[2].durText, '62:06', '6.3 超过 1 小时不折成小时（与列表页同一口径）')

@@ -15,6 +15,8 @@ import { useMediaApi } from '@/composables/useMediaApi'
 import { useMediaTrack } from '@/composables/useMediaTrack'
 import VideoCard from './video/VideoCard.vue'
 import AlbumCard from './photos/AlbumCard.vue'
+// P5.35：把「来源 = 本人物 + 本页展示顺序」交给播放页（顺序走 sessionStorage 快照，见 openVideo）
+import { CTX_PERSON, writeContextSnapshot } from './video/playbackContext'
 
 const api = useMediaApi()
 const tk = useMediaTrack()
@@ -144,9 +146,37 @@ function pageCount(total) {
   return Math.max(1, Math.ceil(toNum(total) / PAGE_SIZE))
 }
 
+/** sessionStorage 取用（隐私模式 / 非浏览器环境取不到 → null，快照写不进去就退化成「无来源」） */
+function contextStore() {
+  try {
+    return typeof window !== 'undefined' && window.sessionStorage ? window.sessionStorage : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 点卡片播放（P5.35 用户需求 7）：带上**来源** —— 标题 = 人物名，顺序 = 本页展示的视频顺序。
+ * 顺序不进 URL：人物名下可能几十条，塞进 query 会把深链撑成几千字符，转发一次就可能被截断；
+ * 于是「来源类型 + 来源名」走 query（from=person&pname=…，可读、可刷新、可分享），
+ * 有序 id 走 sessionStorage 快照（同一标签页刷新仍在，复制到新标签页就只剩 from/pname ——
+ * 播放页读不到快照时整档来源作废，标题与顺序一起回落到「按当前浏览顺序」，不留混搭）。
+ */
 function openVideo(id) {
   if (id == null) return
-  router.push('/media#play=' + encodeURIComponent(String(id)))
+  const store = contextStore()
+  if (store) {
+    writeContextSnapshot(store, {
+      source: CTX_PERSON,
+      name: personName(),
+      ids: videos.value.map((v) => String(v.id))
+    })
+  }
+  router.push({
+    path: '/media',
+    query: { from: CTX_PERSON, pname: personName() },
+    hash: '#play=' + encodeURIComponent(String(id))
+  })
 }
 
 /** P5.4：卡片上的人物 chip（含素人）点了 → 该人物详情页（点的就是本页人物时等价原地刷新） */

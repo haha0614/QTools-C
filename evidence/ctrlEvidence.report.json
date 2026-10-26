@@ -77,7 +77,7 @@
               "ratioOnChip": 5.32,
               "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
-              "borderColor": "rgba(255, 255, 255, 0.6)"
+              "borderColor": "rgba(255, 255, 255, 0.3)"
             },
             {
               "sel": ".p-seek-now",
@@ -108,14 +108,38 @@
           "total": 8,
           "list": [
             {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一条",
+              "title": "上一条（快捷键 P）",
+              "rect": {
+                "x": 14,
+                "y": 959.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
               "cls": "p-btn p-btn-play",
               "text": "▶",
               "aria": "播放",
               "title": "播放 / 暂停（空格）",
               "rect": {
-                "x": 14,
+                "x": 50,
                 "y": 959.5,
                 "w": 40,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一条",
+              "title": "下一条（快捷键 N）",
+              "rect": {
+                "x": 96,
+                "y": 959.5,
+                "w": 30,
                 "h": 30
               }
             },
@@ -125,7 +149,7 @@
               "aria": "静音",
               "title": "静音（M）",
               "rect": {
-                "x": 60,
+                "x": 132,
                 "y": 959.5,
                 "w": 35.86,
                 "h": 30
@@ -137,7 +161,7 @@
               "aria": "上一帧",
               "title": "上一帧（快捷键 , 或 Shift+←）",
               "rect": {
-                "x": 1347,
+                "x": 1304,
                 "y": 959.5,
                 "w": 31,
                 "h": 30
@@ -149,33 +173,9 @@
               "aria": "下一帧",
               "title": "下一帧（快捷键 . 或 Shift+→）",
               "rect": {
-                "x": 1382,
+                "x": 1339,
                 "y": 959.5,
                 "w": 31,
-                "h": 30
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏮",
-              "aria": "上一部",
-              "title": "上一部（快捷键 P）",
-              "rect": {
-                "x": 1426,
-                "y": 959.5,
-                "w": 30,
-                "h": 30
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏭",
-              "aria": "下一部",
-              "title": "下一部（快捷键 N）",
-              "rect": {
-                "x": 1462,
-                "y": 959.5,
-                "w": 30,
                 "h": 30
               }
             },
@@ -210,47 +210,26 @@
           "titleFontSize": "15.5px",
           "titleOverflow": "ellipsis",
           "titleRect": {
-            "x": 146.91,
+            "x": 117.5,
             "y": 10,
-            "w": 1077.52,
+            "w": 1355.39,
             "h": 20.14
           },
           "metaItems": 6,
           "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
           "metaSeparator": "\"·\"",
           "metaSeparatorMargin": "0px 7px",
-          "groups": 3,
+          "groups": 0,
           "buttons": [
             {
-              "text": "☆ 收藏",
-              "h": 30,
-              "radius": "8px",
-              "title": "收藏 / 取消收藏（快捷键 S）",
-              "aria": "收藏"
-            },
-            {
-              "text": "‹ 上一部",
-              "h": 30,
-              "radius": "8px",
-              "title": "上一部（快捷键 P）",
-              "aria": ""
-            },
-            {
-              "text": "下一部 ›",
-              "h": 30,
-              "radius": "8px",
-              "title": "下一部（快捷键 N）",
-              "aria": ""
-            },
-            {
-              "text": "关闭 E c",
+              "text": "关闭 Esc",
               "h": 30,
               "radius": "8px",
               "title": "关闭播放器（Esc）",
-              "aria": ""
+              "aria": "关闭播放器"
             }
           ],
-          "separators": 2,
+          "separators": 0,
           "headRect": {
             "x": 0,
             "y": 0,
@@ -376,7 +355,7 @@
               "ratioOnChip": 5.32,
               "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
-              "borderColor": "rgba(255, 255, 255, 0.6)"
+              "borderColor": "rgba(255, 255, 255, 0.3)"
             },
             {
               "sel": ".p-seek-now",
@@ -407,14 +386,38 @@
           "total": 8,
           "list": [
             {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一条",
+              "title": "上一条（快捷键 P）",
+              "rect": {
+                "x": 14,
+                "y": 959.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
               "cls": "p-btn p-btn-play",
               "text": "▶",
               "aria": "播放",
               "title": "播放 / 暂停（空格）",
               "rect": {
-                "x": 14,
+                "x": 50,
                 "y": 959.5,
                 "w": 40,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一条",
+              "title": "下一条（快捷键 N）",
+              "rect": {
+                "x": 96,
+                "y": 959.5,
+                "w": 30,
                 "h": 30
               }
             },
@@ -424,7 +427,7 @@
               "aria": "静音",
               "title": "静音（M）",
               "rect": {
-                "x": 60,
+                "x": 132,
                 "y": 959.5,
                 "w": 35.86,
                 "h": 30
@@ -436,7 +439,7 @@
               "aria": "上一帧",
               "title": "上一帧（快捷键 , 或 Shift+←）",
               "rect": {
-                "x": 1347,
+                "x": 1304,
                 "y": 959.5,
                 "w": 31,
                 "h": 30
@@ -448,33 +451,9 @@
               "aria": "下一帧",
               "title": "下一帧（快捷键 . 或 Shift+→）",
               "rect": {
-                "x": 1382,
+                "x": 1339,
                 "y": 959.5,
                 "w": 31,
-                "h": 30
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏮",
-              "aria": "上一部",
-              "title": "上一部（快捷键 P）",
-              "rect": {
-                "x": 1426,
-                "y": 959.5,
-                "w": 30,
-                "h": 30
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏭",
-              "aria": "下一部",
-              "title": "下一部（快捷键 N）",
-              "rect": {
-                "x": 1462,
-                "y": 959.5,
-                "w": 30,
                 "h": 30
               }
             },
@@ -509,47 +488,26 @@
           "titleFontSize": "15.5px",
           "titleOverflow": "ellipsis",
           "titleRect": {
-            "x": 146.91,
+            "x": 117.5,
             "y": 10,
-            "w": 1077.52,
+            "w": 1355.39,
             "h": 20.14
           },
           "metaItems": 6,
           "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
           "metaSeparator": "\"·\"",
           "metaSeparatorMargin": "0px 7px",
-          "groups": 3,
+          "groups": 0,
           "buttons": [
             {
-              "text": "☆ 收藏",
-              "h": 30,
-              "radius": "8px",
-              "title": "收藏 / 取消收藏（快捷键 S）",
-              "aria": "收藏"
-            },
-            {
-              "text": "‹ 上一部",
-              "h": 30,
-              "radius": "8px",
-              "title": "上一部（快捷键 P）",
-              "aria": ""
-            },
-            {
-              "text": "下一部 ›",
-              "h": 30,
-              "radius": "8px",
-              "title": "下一部（快捷键 N）",
-              "aria": ""
-            },
-            {
-              "text": "关闭 E c",
+              "text": "关闭 Esc",
               "h": 30,
               "radius": "8px",
               "title": "关闭播放器（Esc）",
-              "aria": ""
+              "aria": "关闭播放器"
             }
           ],
-          "separators": 2,
+          "separators": 0,
           "headRect": {
             "x": 0,
             "y": 0,
@@ -616,17 +574,17 @@
         },
         "stage": {
           "now": {
-            "headH": 83.52,
-            "mainH": 676.69,
-            "fsWrapH": 676.69,
-            "stageH": 676.69,
+            "headH": 64.33,
+            "mainH": 695.88,
+            "fsWrapH": 695.88,
+            "stageH": 695.88,
             "gapToViewportBottom": 0
           },
           "withOldTagsBar": {
-            "headH": 83.52,
-            "mainH": 676.69,
-            "fsWrapH": 632.5,
-            "stageH": 632.5,
+            "headH": 64.33,
+            "mainH": 695.88,
+            "fsWrapH": 651.69,
+            "stageH": 651.69,
             "gapToViewportBottom": 44.19
           },
           "oldTagsBarH": 44.19,
@@ -675,7 +633,7 @@
               "ratioOnChip": 5.32,
               "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
-              "borderColor": "rgba(255, 255, 255, 0.6)"
+              "borderColor": "rgba(255, 255, 255, 0.3)"
             },
             {
               "sel": ".p-seek-now",
@@ -706,14 +664,38 @@
           "total": 8,
           "list": [
             {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一条",
+              "title": "上一条（快捷键 P）",
+              "rect": {
+                "x": 14,
+                "y": 759.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
               "cls": "p-btn p-btn-play",
               "text": "▶",
               "aria": "播放",
               "title": "播放 / 暂停（空格）",
               "rect": {
-                "x": 14,
+                "x": 50,
                 "y": 759.5,
                 "w": 40,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一条",
+              "title": "下一条（快捷键 N）",
+              "rect": {
+                "x": 96,
+                "y": 759.5,
+                "w": 30,
                 "h": 30
               }
             },
@@ -723,7 +705,7 @@
               "aria": "静音",
               "title": "静音（M）",
               "rect": {
-                "x": 60,
+                "x": 132,
                 "y": 759.5,
                 "w": 35.86,
                 "h": 30
@@ -735,7 +717,7 @@
               "aria": "上一帧",
               "title": "上一帧（快捷键 , 或 Shift+←）",
               "rect": {
-                "x": 747,
+                "x": 704,
                 "y": 759.5,
                 "w": 31,
                 "h": 30
@@ -747,33 +729,9 @@
               "aria": "下一帧",
               "title": "下一帧（快捷键 . 或 Shift+→）",
               "rect": {
-                "x": 782,
+                "x": 739,
                 "y": 759.5,
                 "w": 31,
-                "h": 30
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏮",
-              "aria": "上一部",
-              "title": "上一部（快捷键 P）",
-              "rect": {
-                "x": 826,
-                "y": 759.5,
-                "w": 30,
-                "h": 30
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏭",
-              "aria": "下一部",
-              "title": "下一部（快捷键 N）",
-              "rect": {
-                "x": 862,
-                "y": 759.5,
-                "w": 30,
                 "h": 30
               }
             },
@@ -808,52 +766,31 @@
           "titleFontSize": "15.5px",
           "titleOverflow": "ellipsis",
           "titleRect": {
-            "x": 146.91,
+            "x": 117.5,
             "y": 10,
-            "w": 477.52,
+            "w": 755.39,
             "h": 20.14
           },
           "metaItems": 6,
           "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
           "metaSeparator": "\"·\"",
           "metaSeparatorMargin": "0px 7px",
-          "groups": 3,
+          "groups": 0,
           "buttons": [
             {
-              "text": "☆ 收藏",
-              "h": 30,
-              "radius": "8px",
-              "title": "收藏 / 取消收藏（快捷键 S）",
-              "aria": "收藏"
-            },
-            {
-              "text": "‹ 上一部",
-              "h": 30,
-              "radius": "8px",
-              "title": "上一部（快捷键 P）",
-              "aria": ""
-            },
-            {
-              "text": "下一部 ›",
-              "h": 30,
-              "radius": "8px",
-              "title": "下一部（快捷键 N）",
-              "aria": ""
-            },
-            {
-              "text": "关闭 E c",
+              "text": "关闭 Esc",
               "h": 30,
               "radius": "8px",
               "title": "关闭播放器（Esc）",
-              "aria": ""
+              "aria": "关闭播放器"
             }
           ],
-          "separators": 2,
+          "separators": 0,
           "headRect": {
             "x": 0,
             "y": 0,
             "w": 985,
-            "h": 83.52
+            "h": 64.33
           }
         },
         "settingsOpen": false,
@@ -873,7 +810,7 @@
           "sideOpen": false,
           "rect": {
             "x": 965,
-            "y": 429.66,
+            "y": 420.06,
             "right": 985,
             "w": 20,
             "h": 64
@@ -915,17 +852,17 @@
         },
         "stage": {
           "now": {
-            "headH": 83.52,
-            "mainH": 676.69,
-            "fsWrapH": 676.69,
-            "stageH": 676.69,
+            "headH": 64.33,
+            "mainH": 695.88,
+            "fsWrapH": 695.88,
+            "stageH": 695.88,
             "gapToViewportBottom": 0
           },
           "withOldTagsBar": {
-            "headH": 83.52,
-            "mainH": 676.69,
-            "fsWrapH": 632.5,
-            "stageH": 632.5,
+            "headH": 64.33,
+            "mainH": 695.88,
+            "fsWrapH": 651.69,
+            "stageH": 651.69,
             "gapToViewportBottom": 44.19
           },
           "oldTagsBarH": 44.19,
@@ -974,7 +911,7 @@
               "ratioOnChip": 5.32,
               "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
-              "borderColor": "rgba(255, 255, 255, 0.6)"
+              "borderColor": "rgba(255, 255, 255, 0.3)"
             },
             {
               "sel": ".p-seek-now",
@@ -1005,14 +942,38 @@
           "total": 8,
           "list": [
             {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一条",
+              "title": "上一条（快捷键 P）",
+              "rect": {
+                "x": 14,
+                "y": 759.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
               "cls": "p-btn p-btn-play",
               "text": "▶",
               "aria": "播放",
               "title": "播放 / 暂停（空格）",
               "rect": {
-                "x": 14,
+                "x": 50,
                 "y": 759.5,
                 "w": 40,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一条",
+              "title": "下一条（快捷键 N）",
+              "rect": {
+                "x": 96,
+                "y": 759.5,
+                "w": 30,
                 "h": 30
               }
             },
@@ -1022,7 +983,7 @@
               "aria": "静音",
               "title": "静音（M）",
               "rect": {
-                "x": 60,
+                "x": 132,
                 "y": 759.5,
                 "w": 35.86,
                 "h": 30
@@ -1034,7 +995,7 @@
               "aria": "上一帧",
               "title": "上一帧（快捷键 , 或 Shift+←）",
               "rect": {
-                "x": 747,
+                "x": 704,
                 "y": 759.5,
                 "w": 31,
                 "h": 30
@@ -1046,33 +1007,9 @@
               "aria": "下一帧",
               "title": "下一帧（快捷键 . 或 Shift+→）",
               "rect": {
-                "x": 782,
+                "x": 739,
                 "y": 759.5,
                 "w": 31,
-                "h": 30
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏮",
-              "aria": "上一部",
-              "title": "上一部（快捷键 P）",
-              "rect": {
-                "x": 826,
-                "y": 759.5,
-                "w": 30,
-                "h": 30
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏭",
-              "aria": "下一部",
-              "title": "下一部（快捷键 N）",
-              "rect": {
-                "x": 862,
-                "y": 759.5,
-                "w": 30,
                 "h": 30
               }
             },
@@ -1107,52 +1044,31 @@
           "titleFontSize": "15.5px",
           "titleOverflow": "ellipsis",
           "titleRect": {
-            "x": 146.91,
+            "x": 117.5,
             "y": 10,
-            "w": 477.52,
+            "w": 755.39,
             "h": 20.14
           },
           "metaItems": 6,
           "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
           "metaSeparator": "\"·\"",
           "metaSeparatorMargin": "0px 7px",
-          "groups": 3,
+          "groups": 0,
           "buttons": [
             {
-              "text": "☆ 收藏",
-              "h": 30,
-              "radius": "8px",
-              "title": "收藏 / 取消收藏（快捷键 S）",
-              "aria": "收藏"
-            },
-            {
-              "text": "‹ 上一部",
-              "h": 30,
-              "radius": "8px",
-              "title": "上一部（快捷键 P）",
-              "aria": ""
-            },
-            {
-              "text": "下一部 ›",
-              "h": 30,
-              "radius": "8px",
-              "title": "下一部（快捷键 N）",
-              "aria": ""
-            },
-            {
-              "text": "关闭 E c",
+              "text": "关闭 Esc",
               "h": 30,
               "radius": "8px",
               "title": "关闭播放器（Esc）",
-              "aria": ""
+              "aria": "关闭播放器"
             }
           ],
-          "separators": 2,
+          "separators": 0,
           "headRect": {
             "x": 0,
             "y": 0,
             "w": 985,
-            "h": 83.52
+            "h": 64.33
           }
         },
         "settingsOpen": false,
@@ -1172,7 +1088,7 @@
           "sideOpen": false,
           "rect": {
             "x": 965,
-            "y": 429.66,
+            "y": 420.06,
             "right": 985,
             "w": 20,
             "h": 64
@@ -1273,7 +1189,7 @@
               "ratioOnChip": 5.32,
               "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
-              "borderColor": "rgba(255, 255, 255, 0.6)"
+              "borderColor": "rgba(255, 255, 255, 0.3)"
             },
             {
               "sel": ".p-seek-now",
@@ -1304,14 +1220,38 @@
           "total": 8,
           "list": [
             {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一条",
+              "title": "上一条（快捷键 P）",
+              "rect": {
+                "x": 10,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
               "cls": "p-btn p-btn-play",
               "text": "▶",
               "aria": "播放",
               "title": "播放 / 暂停（空格）",
               "rect": {
-                "x": 10,
+                "x": 54,
                 "y": 809,
                 "w": 52,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一条",
+              "title": "下一条（快捷键 N）",
+              "rect": {
+                "x": 112,
+                "y": 809,
+                "w": 38,
                 "h": 38
               }
             },
@@ -1321,7 +1261,7 @@
               "aria": "静音",
               "title": "静音（M）",
               "rect": {
-                "x": 68,
+                "x": 156,
                 "y": 809,
                 "w": 38.61,
                 "h": 38
@@ -1333,7 +1273,7 @@
               "aria": "上一帧",
               "title": "上一帧（快捷键 , 或 Shift+←）",
               "rect": {
-                "x": 241.55,
+                "x": 329.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1345,31 +1285,7 @@
               "aria": "下一帧",
               "title": "下一帧（快捷键 . 或 Shift+→）",
               "rect": {
-                "x": 283.55,
-                "y": 809,
-                "w": 38,
-                "h": 38
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏮",
-              "aria": "上一部",
-              "title": "上一部（快捷键 P）",
-              "rect": {
-                "x": 334.55,
-                "y": 809,
-                "w": 38,
-                "h": 38
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏭",
-              "aria": "下一部",
-              "title": "下一部（快捷键 N）",
-              "rect": {
-                "x": 378.55,
+                "x": 371.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1381,7 +1297,7 @@
               "aria": "播放设置",
               "title": "播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键",
               "rect": {
-                "x": 429.55,
+                "x": 541.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1393,7 +1309,7 @@
               "aria": "全屏",
               "title": "全屏（F）",
               "rect": {
-                "x": 473.55,
+                "x": 585.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1415,38 +1331,17 @@
           "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
           "metaSeparator": "\"·\"",
           "metaSeparatorMargin": "0px 7px",
-          "groups": 3,
+          "groups": 0,
           "buttons": [
             {
-              "text": "☆ 收藏",
-              "h": 30,
-              "radius": "8px",
-              "title": "收藏 / 取消收藏（快捷键 S）",
-              "aria": "收藏"
-            },
-            {
-              "text": "‹ 上一部",
-              "h": 30,
-              "radius": "8px",
-              "title": "上一部（快捷键 P）",
-              "aria": ""
-            },
-            {
-              "text": "下一部 ›",
-              "h": 30,
-              "radius": "8px",
-              "title": "下一部（快捷键 N）",
-              "aria": ""
-            },
-            {
-              "text": "关闭 E c",
+              "text": "关闭 Esc",
               "h": 30,
               "radius": "8px",
               "title": "关闭播放器（Esc）",
-              "aria": ""
+              "aria": "关闭播放器"
             }
           ],
-          "separators": 2,
+          "separators": 0,
           "headRect": {
             "x": 0,
             "y": 0,
@@ -1572,7 +1467,7 @@
               "ratioOnChip": 5.32,
               "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
-              "borderColor": "rgba(255, 255, 255, 0.6)"
+              "borderColor": "rgba(255, 255, 255, 0.3)"
             },
             {
               "sel": ".p-seek-now",
@@ -1603,14 +1498,38 @@
           "total": 8,
           "list": [
             {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一条",
+              "title": "上一条（快捷键 P）",
+              "rect": {
+                "x": 10,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
               "cls": "p-btn p-btn-play",
               "text": "▶",
               "aria": "播放",
               "title": "播放 / 暂停（空格）",
               "rect": {
-                "x": 10,
+                "x": 54,
                 "y": 809,
                 "w": 52,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一条",
+              "title": "下一条（快捷键 N）",
+              "rect": {
+                "x": 112,
+                "y": 809,
+                "w": 38,
                 "h": 38
               }
             },
@@ -1620,7 +1539,7 @@
               "aria": "静音",
               "title": "静音（M）",
               "rect": {
-                "x": 68,
+                "x": 156,
                 "y": 809,
                 "w": 38.61,
                 "h": 38
@@ -1632,7 +1551,7 @@
               "aria": "上一帧",
               "title": "上一帧（快捷键 , 或 Shift+←）",
               "rect": {
-                "x": 241.55,
+                "x": 329.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1644,31 +1563,7 @@
               "aria": "下一帧",
               "title": "下一帧（快捷键 . 或 Shift+→）",
               "rect": {
-                "x": 283.55,
-                "y": 809,
-                "w": 38,
-                "h": 38
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏮",
-              "aria": "上一部",
-              "title": "上一部（快捷键 P）",
-              "rect": {
-                "x": 334.55,
-                "y": 809,
-                "w": 38,
-                "h": 38
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏭",
-              "aria": "下一部",
-              "title": "下一部（快捷键 N）",
-              "rect": {
-                "x": 378.55,
+                "x": 371.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1680,7 +1575,7 @@
               "aria": "播放设置",
               "title": "播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键",
               "rect": {
-                "x": 429.55,
+                "x": 541.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1692,7 +1587,7 @@
               "aria": "全屏",
               "title": "全屏（F）",
               "rect": {
-                "x": 473.55,
+                "x": 585.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -1714,38 +1609,17 @@
           "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
           "metaSeparator": "\"·\"",
           "metaSeparatorMargin": "0px 7px",
-          "groups": 3,
+          "groups": 0,
           "buttons": [
             {
-              "text": "☆ 收藏",
-              "h": 30,
-              "radius": "8px",
-              "title": "收藏 / 取消收藏（快捷键 S）",
-              "aria": "收藏"
-            },
-            {
-              "text": "‹ 上一部",
-              "h": 30,
-              "radius": "8px",
-              "title": "上一部（快捷键 P）",
-              "aria": ""
-            },
-            {
-              "text": "下一部 ›",
-              "h": 30,
-              "radius": "8px",
-              "title": "下一部（快捷键 N）",
-              "aria": ""
-            },
-            {
-              "text": "关闭 E c",
+              "text": "关闭 Esc",
               "h": 30,
               "radius": "8px",
               "title": "关闭播放器（Esc）",
-              "aria": ""
+              "aria": "关闭播放器"
             }
           ],
-          "separators": 2,
+          "separators": 0,
           "headRect": {
             "x": 0,
             "y": 0,
@@ -1871,7 +1745,7 @@
               "ratioOnChip": 5.32,
               "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
-              "borderColor": "rgba(255, 255, 255, 0.6)"
+              "borderColor": "rgba(255, 255, 255, 0.3)"
             },
             {
               "sel": ".p-seek-now",
@@ -1902,14 +1776,38 @@
           "total": 8,
           "list": [
             {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一条",
+              "title": "上一条（快捷键 P）",
+              "rect": {
+                "x": 10,
+                "y": 645,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
               "cls": "p-btn p-btn-play",
               "text": "▶",
               "aria": "播放",
               "title": "播放 / 暂停（空格）",
               "rect": {
-                "x": 10,
+                "x": 54,
                 "y": 645,
                 "w": 52,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一条",
+              "title": "下一条（快捷键 N）",
+              "rect": {
+                "x": 112,
+                "y": 645,
+                "w": 38,
                 "h": 38
               }
             },
@@ -1919,7 +1817,7 @@
               "aria": "静音",
               "title": "静音（M）",
               "rect": {
-                "x": 68,
+                "x": 156,
                 "y": 645,
                 "w": 38.61,
                 "h": 38
@@ -1950,36 +1848,12 @@
               }
             },
             {
-              "cls": "p-btn",
-              "text": "⏮",
-              "aria": "上一部",
-              "title": "上一部（快捷键 P）",
-              "rect": {
-                "x": 103,
-                "y": 689,
-                "w": 38,
-                "h": 38
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏭",
-              "aria": "下一部",
-              "title": "下一部（快捷键 N）",
-              "rect": {
-                "x": 147,
-                "y": 689,
-                "w": 38,
-                "h": 38
-              }
-            },
-            {
               "cls": "p-btn p-gear",
               "text": "⚙",
               "aria": "播放设置",
               "title": "播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键",
               "rect": {
-                "x": 198,
+                "x": 222,
                 "y": 689,
                 "w": 38,
                 "h": 38
@@ -1991,7 +1865,7 @@
               "aria": "全屏",
               "title": "全屏（F）",
               "rect": {
-                "x": 242,
+                "x": 266,
                 "y": 689,
                 "w": 38,
                 "h": 38
@@ -2013,38 +1887,17 @@
           "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
           "metaSeparator": "\"·\"",
           "metaSeparatorMargin": "0px 7px",
-          "groups": 3,
+          "groups": 0,
           "buttons": [
             {
-              "text": "☆ 收藏",
-              "h": 30,
-              "radius": "8px",
-              "title": "收藏 / 取消收藏（快捷键 S）",
-              "aria": "收藏"
-            },
-            {
-              "text": "‹ 上一部",
-              "h": 30,
-              "radius": "8px",
-              "title": "上一部（快捷键 P）",
-              "aria": ""
-            },
-            {
-              "text": "下一部 ›",
-              "h": 30,
-              "radius": "8px",
-              "title": "下一部（快捷键 N）",
-              "aria": ""
-            },
-            {
-              "text": "关闭 E c",
+              "text": "关闭 Esc",
               "h": 30,
               "radius": "8px",
               "title": "关闭播放器（Esc）",
-              "aria": ""
+              "aria": "关闭播放器"
             }
           ],
-          "separators": 2,
+          "separators": 0,
           "headRect": {
             "x": 0,
             "y": 0,
@@ -2170,7 +2023,7 @@
               "ratioOnChip": 5.32,
               "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
-              "borderColor": "rgba(255, 255, 255, 0.6)"
+              "borderColor": "rgba(255, 255, 255, 0.3)"
             },
             {
               "sel": ".p-seek-now",
@@ -2201,14 +2054,38 @@
           "total": 8,
           "list": [
             {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一条",
+              "title": "上一条（快捷键 P）",
+              "rect": {
+                "x": 10,
+                "y": 645,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
               "cls": "p-btn p-btn-play",
               "text": "▶",
               "aria": "播放",
               "title": "播放 / 暂停（空格）",
               "rect": {
-                "x": 10,
+                "x": 54,
                 "y": 645,
                 "w": 52,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一条",
+              "title": "下一条（快捷键 N）",
+              "rect": {
+                "x": 112,
+                "y": 645,
+                "w": 38,
                 "h": 38
               }
             },
@@ -2218,7 +2095,7 @@
               "aria": "静音",
               "title": "静音（M）",
               "rect": {
-                "x": 68,
+                "x": 156,
                 "y": 645,
                 "w": 38.61,
                 "h": 38
@@ -2249,36 +2126,12 @@
               }
             },
             {
-              "cls": "p-btn",
-              "text": "⏮",
-              "aria": "上一部",
-              "title": "上一部（快捷键 P）",
-              "rect": {
-                "x": 103,
-                "y": 689,
-                "w": 38,
-                "h": 38
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏭",
-              "aria": "下一部",
-              "title": "下一部（快捷键 N）",
-              "rect": {
-                "x": 147,
-                "y": 689,
-                "w": 38,
-                "h": 38
-              }
-            },
-            {
               "cls": "p-btn p-gear",
               "text": "⚙",
               "aria": "播放设置",
               "title": "播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键",
               "rect": {
-                "x": 198,
+                "x": 222,
                 "y": 689,
                 "w": 38,
                 "h": 38
@@ -2290,7 +2143,7 @@
               "aria": "全屏",
               "title": "全屏（F）",
               "rect": {
-                "x": 242,
+                "x": 266,
                 "y": 689,
                 "w": 38,
                 "h": 38
@@ -2312,38 +2165,17 @@
           "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
           "metaSeparator": "\"·\"",
           "metaSeparatorMargin": "0px 7px",
-          "groups": 3,
+          "groups": 0,
           "buttons": [
             {
-              "text": "☆ 收藏",
-              "h": 30,
-              "radius": "8px",
-              "title": "收藏 / 取消收藏（快捷键 S）",
-              "aria": "收藏"
-            },
-            {
-              "text": "‹ 上一部",
-              "h": 30,
-              "radius": "8px",
-              "title": "上一部（快捷键 P）",
-              "aria": ""
-            },
-            {
-              "text": "下一部 ›",
-              "h": 30,
-              "radius": "8px",
-              "title": "下一部（快捷键 N）",
-              "aria": ""
-            },
-            {
-              "text": "关闭 E c",
+              "text": "关闭 Esc",
               "h": 30,
               "radius": "8px",
               "title": "关闭播放器（Esc）",
-              "aria": ""
+              "aria": "关闭播放器"
             }
           ],
-          "separators": 2,
+          "separators": 0,
           "headRect": {
             "x": 0,
             "y": 0,
@@ -2470,7 +2302,7 @@
               "ratioOnChip": 5.32,
               "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
-              "borderColor": "rgba(255, 255, 255, 0.6)"
+              "borderColor": "rgba(255, 255, 255, 0.3)"
             },
             {
               "sel": ".p-seek-now",
@@ -2501,14 +2333,38 @@
           "total": 8,
           "list": [
             {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一条",
+              "title": "上一条（快捷键 P）",
+              "rect": {
+                "x": 14,
+                "y": 959.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
               "cls": "p-btn p-btn-play",
               "text": "▶",
               "aria": "播放",
               "title": "播放 / 暂停（空格）",
               "rect": {
-                "x": 14,
+                "x": 50,
                 "y": 959.5,
                 "w": 40,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一条",
+              "title": "下一条（快捷键 N）",
+              "rect": {
+                "x": 96,
+                "y": 959.5,
+                "w": 30,
                 "h": 30
               }
             },
@@ -2518,7 +2374,7 @@
               "aria": "静音",
               "title": "静音（M）",
               "rect": {
-                "x": 60,
+                "x": 132,
                 "y": 959.5,
                 "w": 35.86,
                 "h": 30
@@ -2530,7 +2386,7 @@
               "aria": "上一帧",
               "title": "上一帧（快捷键 , 或 Shift+←）",
               "rect": {
-                "x": 931,
+                "x": 888,
                 "y": 959.5,
                 "w": 31,
                 "h": 30
@@ -2542,33 +2398,9 @@
               "aria": "下一帧",
               "title": "下一帧（快捷键 . 或 Shift+→）",
               "rect": {
-                "x": 966,
+                "x": 923,
                 "y": 959.5,
                 "w": 31,
-                "h": 30
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏮",
-              "aria": "上一部",
-              "title": "上一部（快捷键 P）",
-              "rect": {
-                "x": 1010,
-                "y": 959.5,
-                "w": 30,
-                "h": 30
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏭",
-              "aria": "下一部",
-              "title": "下一部（快捷键 N）",
-              "rect": {
-                "x": 1046,
-                "y": 959.5,
-                "w": 30,
                 "h": 30
               }
             },
@@ -2603,47 +2435,26 @@
           "titleFontSize": "15.5px",
           "titleOverflow": "ellipsis",
           "titleRect": {
-            "x": 146.91,
+            "x": 117.5,
             "y": 10,
-            "w": 1077.52,
+            "w": 1355.39,
             "h": 20.14
           },
           "metaItems": 6,
           "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
           "metaSeparator": "\"·\"",
           "metaSeparatorMargin": "0px 7px",
-          "groups": 3,
+          "groups": 0,
           "buttons": [
             {
-              "text": "☆ 收藏",
-              "h": 30,
-              "radius": "8px",
-              "title": "收藏 / 取消收藏（快捷键 S）",
-              "aria": "收藏"
-            },
-            {
-              "text": "‹ 上一部",
-              "h": 30,
-              "radius": "8px",
-              "title": "上一部（快捷键 P）",
-              "aria": ""
-            },
-            {
-              "text": "下一部 ›",
-              "h": 30,
-              "radius": "8px",
-              "title": "下一部（快捷键 N）",
-              "aria": ""
-            },
-            {
-              "text": "关闭 E c",
+              "text": "关闭 Esc",
               "h": 30,
               "radius": "8px",
               "title": "关闭播放器（Esc）",
-              "aria": ""
+              "aria": "关闭播放器"
             }
           ],
-          "separators": 2,
+          "separators": 0,
           "headRect": {
             "x": 0,
             "y": 0,
@@ -2715,6 +2526,20 @@
                 "x": 912,
                 "y": 781.63,
                 "w": 56,
+                "h": 26
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "样式",
+              "title": "字幕样式：字号 / 颜色 / 背景 / 描边 / 位置 / 字重",
+              "aria": "字幕样式",
+              "rect": {
+                "x": 976,
+                "y": 781.63,
+                "w": 44,
                 "h": 26
               },
               "clickable": true
@@ -2868,17 +2693,17 @@
         },
         "stage": {
           "now": {
-            "headH": 83.52,
-            "mainH": 676.69,
-            "fsWrapH": 676.69,
-            "stageH": 676.69,
+            "headH": 64.33,
+            "mainH": 695.88,
+            "fsWrapH": 695.88,
+            "stageH": 695.88,
             "gapToViewportBottom": 0
           },
           "withOldTagsBar": {
-            "headH": 83.52,
-            "mainH": 676.69,
-            "fsWrapH": 632.5,
-            "stageH": 632.5,
+            "headH": 64.33,
+            "mainH": 695.88,
+            "fsWrapH": 651.69,
+            "stageH": 651.69,
             "gapToViewportBottom": 44.19
           },
           "oldTagsBarH": 44.19,
@@ -2927,7 +2752,7 @@
               "ratioOnChip": 5.32,
               "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
-              "borderColor": "rgba(255, 255, 255, 0.6)"
+              "borderColor": "rgba(255, 255, 255, 0.3)"
             },
             {
               "sel": ".p-seek-now",
@@ -2958,14 +2783,38 @@
           "total": 8,
           "list": [
             {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一条",
+              "title": "上一条（快捷键 P）",
+              "rect": {
+                "x": 14,
+                "y": 759.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
               "cls": "p-btn p-btn-play",
               "text": "▶",
               "aria": "播放",
               "title": "播放 / 暂停（空格）",
               "rect": {
-                "x": 14,
+                "x": 50,
                 "y": 759.5,
                 "w": 40,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一条",
+              "title": "下一条（快捷键 N）",
+              "rect": {
+                "x": 96,
+                "y": 759.5,
+                "w": 30,
                 "h": 30
               }
             },
@@ -2975,7 +2824,7 @@
               "aria": "静音",
               "title": "静音（M）",
               "rect": {
-                "x": 60,
+                "x": 132,
                 "y": 759.5,
                 "w": 35.86,
                 "h": 30
@@ -2987,7 +2836,7 @@
               "aria": "上一帧",
               "title": "上一帧（快捷键 , 或 Shift+←）",
               "rect": {
-                "x": 747,
+                "x": 704,
                 "y": 759.5,
                 "w": 31,
                 "h": 30
@@ -2999,33 +2848,9 @@
               "aria": "下一帧",
               "title": "下一帧（快捷键 . 或 Shift+→）",
               "rect": {
-                "x": 782,
+                "x": 739,
                 "y": 759.5,
                 "w": 31,
-                "h": 30
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏮",
-              "aria": "上一部",
-              "title": "上一部（快捷键 P）",
-              "rect": {
-                "x": 826,
-                "y": 759.5,
-                "w": 30,
-                "h": 30
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏭",
-              "aria": "下一部",
-              "title": "下一部（快捷键 N）",
-              "rect": {
-                "x": 862,
-                "y": 759.5,
-                "w": 30,
                 "h": 30
               }
             },
@@ -3060,52 +2885,31 @@
           "titleFontSize": "15.5px",
           "titleOverflow": "ellipsis",
           "titleRect": {
-            "x": 146.91,
+            "x": 117.5,
             "y": 10,
-            "w": 477.52,
+            "w": 755.39,
             "h": 20.14
           },
           "metaItems": 6,
           "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
           "metaSeparator": "\"·\"",
           "metaSeparatorMargin": "0px 7px",
-          "groups": 3,
+          "groups": 0,
           "buttons": [
             {
-              "text": "☆ 收藏",
-              "h": 30,
-              "radius": "8px",
-              "title": "收藏 / 取消收藏（快捷键 S）",
-              "aria": "收藏"
-            },
-            {
-              "text": "‹ 上一部",
-              "h": 30,
-              "radius": "8px",
-              "title": "上一部（快捷键 P）",
-              "aria": ""
-            },
-            {
-              "text": "下一部 ›",
-              "h": 30,
-              "radius": "8px",
-              "title": "下一部（快捷键 N）",
-              "aria": ""
-            },
-            {
-              "text": "关闭 E c",
+              "text": "关闭 Esc",
               "h": 30,
               "radius": "8px",
               "title": "关闭播放器（Esc）",
-              "aria": ""
+              "aria": "关闭播放器"
             }
           ],
-          "separators": 2,
+          "separators": 0,
           "headRect": {
             "x": 0,
             "y": 0,
             "w": 985,
-            "h": 83.52
+            "h": 64.33
           }
         },
         "settingsOpen": true,
@@ -3172,6 +2976,20 @@
                 "x": 728,
                 "y": 581.63,
                 "w": 56,
+                "h": 26
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "样式",
+              "title": "字幕样式：字号 / 颜色 / 背景 / 描边 / 位置 / 字重",
+              "aria": "字幕样式",
+              "rect": {
+                "x": 792,
+                "y": 581.63,
+                "w": 44,
                 "h": 26
               },
               "clickable": true
@@ -3278,7 +3096,7 @@
           "sideOpen": false,
           "rect": {
             "x": 965,
-            "y": 429.66,
+            "y": 420.06,
             "right": 985,
             "w": 20,
             "h": 64
@@ -3384,7 +3202,7 @@
               "ratioOnChip": 5.32,
               "chipRGB": "107,107,107",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
-              "borderColor": "rgba(255, 255, 255, 0.6)"
+              "borderColor": "rgba(255, 255, 255, 0.3)"
             },
             {
               "sel": ".p-seek-now",
@@ -3415,14 +3233,38 @@
           "total": 8,
           "list": [
             {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一条",
+              "title": "上一条（快捷键 P）",
+              "rect": {
+                "x": 10,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
               "cls": "p-btn p-btn-play",
               "text": "▶",
               "aria": "播放",
               "title": "播放 / 暂停（空格）",
               "rect": {
-                "x": 10,
+                "x": 54,
                 "y": 809,
                 "w": 52,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一条",
+              "title": "下一条（快捷键 N）",
+              "rect": {
+                "x": 112,
+                "y": 809,
+                "w": 38,
                 "h": 38
               }
             },
@@ -3432,7 +3274,7 @@
               "aria": "静音",
               "title": "静音（M）",
               "rect": {
-                "x": 68,
+                "x": 156,
                 "y": 809,
                 "w": 38.61,
                 "h": 38
@@ -3444,7 +3286,7 @@
               "aria": "上一帧",
               "title": "上一帧（快捷键 , 或 Shift+←）",
               "rect": {
-                "x": 241.55,
+                "x": 329.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -3456,31 +3298,7 @@
               "aria": "下一帧",
               "title": "下一帧（快捷键 . 或 Shift+→）",
               "rect": {
-                "x": 283.55,
-                "y": 809,
-                "w": 38,
-                "h": 38
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏮",
-              "aria": "上一部",
-              "title": "上一部（快捷键 P）",
-              "rect": {
-                "x": 334.55,
-                "y": 809,
-                "w": 38,
-                "h": 38
-              }
-            },
-            {
-              "cls": "p-btn",
-              "text": "⏭",
-              "aria": "下一部",
-              "title": "下一部（快捷键 N）",
-              "rect": {
-                "x": 378.55,
+                "x": 371.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -3492,7 +3310,7 @@
               "aria": "播放设置",
               "title": "播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键",
               "rect": {
-                "x": 429.55,
+                "x": 541.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -3504,7 +3322,7 @@
               "aria": "全屏",
               "title": "全屏（F）",
               "rect": {
-                "x": 473.55,
+                "x": 585.55,
                 "y": 809,
                 "w": 38,
                 "h": 38
@@ -3526,38 +3344,17 @@
           "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
           "metaSeparator": "\"·\"",
           "metaSeparatorMargin": "0px 7px",
-          "groups": 3,
+          "groups": 0,
           "buttons": [
             {
-              "text": "☆ 收藏",
-              "h": 30,
-              "radius": "8px",
-              "title": "收藏 / 取消收藏（快捷键 S）",
-              "aria": "收藏"
-            },
-            {
-              "text": "‹ 上一部",
-              "h": 30,
-              "radius": "8px",
-              "title": "上一部（快捷键 P）",
-              "aria": ""
-            },
-            {
-              "text": "下一部 ›",
-              "h": 30,
-              "radius": "8px",
-              "title": "下一部（快捷键 N）",
-              "aria": ""
-            },
-            {
-              "text": "关闭 E c",
+              "text": "关闭 Esc",
               "h": 30,
               "radius": "8px",
               "title": "关闭播放器（Esc）",
-              "aria": ""
+              "aria": "关闭播放器"
             }
           ],
-          "separators": 2,
+          "separators": 0,
           "headRect": {
             "x": 0,
             "y": 0,
@@ -3629,6 +3426,20 @@
                 "x": 71,
                 "y": 624.63,
                 "w": 59.5,
+                "h": 30
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "样式",
+              "title": "字幕样式：字号 / 颜色 / 背景 / 描边 / 位置 / 字重",
+              "aria": "字幕样式",
+              "rect": {
+                "x": 138.5,
+                "y": 624.63,
+                "w": 47,
                 "h": 30
               },
               "clickable": true
@@ -3896,7 +3707,7 @@
           "sideOpen": true,
           "rect": {
             "x": 545,
-            "y": 429.66,
+            "y": 420.06,
             "right": 565,
             "w": 20,
             "h": 64
@@ -3915,7 +3726,7 @@
           "sideOpen": false,
           "rect": {
             "x": 965,
-            "y": 429.66,
+            "y": 420.06,
             "right": 985,
             "w": 20,
             "h": 64
@@ -3934,7 +3745,7 @@
           "sideOpen": true,
           "rect": {
             "x": 545,
-            "y": 429.66,
+            "y": 420.06,
             "right": 565,
             "w": 20,
             "h": 64
@@ -3956,7 +3767,7 @@
           "sideOpen": true,
           "rect": {
             "x": 545,
-            "y": 429.66,
+            "y": 420.06,
             "right": 565,
             "w": 20,
             "h": 64
@@ -3975,7 +3786,7 @@
           "sideOpen": false,
           "rect": {
             "x": 965,
-            "y": 429.66,
+            "y": 420.06,
             "right": 985,
             "w": 20,
             "h": 64
@@ -3994,7 +3805,7 @@
           "sideOpen": true,
           "rect": {
             "x": 545,
-            "y": 429.66,
+            "y": 420.06,
             "right": 565,
             "w": 20,
             "h": 64

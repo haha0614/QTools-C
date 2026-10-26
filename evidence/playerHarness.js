@@ -11,10 +11,12 @@
  *
  * 对外只暴露 window.__qt（全部测量逻辑都在页面里，CDP 只负责调用与截图）。
  */
-import { createApp, h } from 'vue'
+import { createApp, h, reactive } from 'vue'
 import '@/styles/index.scss'
 import '@/views/media/mediaTheme.scss'
 import MediaPlayer from '@/views/media/video/MediaPlayer.vue'
+// P5.34：收藏搬进信息栏 → 夹具必须把 VideoMetaPanel 真的挂进 #side 插槽才量得到那颗按钮
+import VideoMetaPanel from '@/views/media/video/VideoMetaPanel.vue'
 
 /* ---------------------------------------------------------------- mock 数据 */
 
@@ -51,6 +53,22 @@ const markers = [
 
 /* ---------------------------------------------------------------- 挂载 */
 
+/**
+ * P5.34 的收藏「打桩」：夹具不挂 VideoPage（那需要路由 + 索引 + 后端），
+ * 所以把页面里的那两行 **绑定**（:fav="curFav" / @toggle-fav="toggleFav(curVideo)"）
+ * 在这里用一个 reactive 状态 + 计数桩复刻：
+ *   - fav 由状态下发 → 组件是纯展示（不会自己翻转，证明状态属于页面）；
+ *   - 点击只加计数，不直接改状态 —— 真正翻转由这个桩完成，和页面里的乐观更新一致。
+ * 断言的正是「组件只 emit 意图、状态由外层持有」这一层；接口调用本身在页面（源码级断言）。
+ */
+const favState = reactive({ fav: false, calls: 0, lastFail: '' })
+
+/**
+ * P5.34 的播放上下文「打桩」：hasPrev / hasNext 由状态下发，
+ * 用来验证 ⏮ / ⏭ 挪到播放按钮两侧之后**禁用态语义没变**（越界禁用、不消失、不挪位、点了不发事件）。
+ */
+const navState = reactive({ hasPrev: true, hasNext: true, prevCalls: 0, nextCalls: 0 })
+
 const app = createApp({
   render: () =>
     h(
@@ -59,15 +77,33 @@ const app = createApp({
         video,
         startPos: 0,
         openSeq: 1,
-        hasPrev: true,
-        hasNext: true,
-        fav: false,
+        hasPrev: navState.hasPrev,
+        hasNext: navState.hasNext,
         quality: 'orig',
         tracker,
-        markers
+        markers,
+        onPrev: () => {
+          navState.prevCalls++
+        },
+        onNext: () => {
+          navState.nextCalls++
+        }
       },
-      // 右栏 slot 留空：本轮验收只关心头部 / 控制栏 / 底部标签条，右栏由另一条改动负责
-      {}
+      {
+        // P5.34：信息栏（.vp-body 第一行是收藏）—— dock 态，与播放页右栏一致
+        side: () =>
+          h(VideoMetaPanel, {
+            key: video.id + '#1',
+            video,
+            dock: true,
+            level: 'full',
+            fav: favState.fav,
+            onToggleFav: () => {
+              favState.calls++
+              favState.fav = !favState.fav
+            }
+          })
+      }
     )
 })
 app.mount('#app')
@@ -348,7 +384,7 @@ function measureHead() {
     metaSeparatorMargin: sepStyle ? sepStyle.margin : null,
     groups: groups.length,
     buttons: btns.map((b) => ({
-      text: (b.textContent || '').replace(/s+/g, ' ').trim(),
+      text: (b.textContent || '').replace(/\s+/g, ' ').trim(),
       h: round2(b.getBoundingClientRect().height),
       radius: getComputedStyle(b).borderRadius,
       title: b.getAttribute('title') || '',
@@ -510,6 +546,281 @@ window.__qt = {
     item.click()
     return { clicked: true, text: item.textContent.trim() }
   },
+  /* ==================== P5.34：头部 / 控制栏 / 收藏 / 字幕样式 ==================== */
+
+  /** 头部结构（P5.34 用户纠正：右侧只留「关闭 Esc」一颗按钮） */
+  headP534() {
+    const head = $('.p-head')
+    if (!head) return null
+    const actions = head.querySelector('.p-actions')
+    const btns = actions ? Array.from(actions.querySelectorAll('button')) : []
+    return {
+      actionsRole: actions ? actions.getAttribute('role') : null,
+      actionsAria: actions ? actions.getAttribute('aria-label') : null,
+      groups: head.querySelectorAll('.p-act-group').length,
+      separators: head.querySelectorAll('.p-act-sep').length,
+      buttons: btns.map((b) => ({
+        text: (b.textContent || '').replace(/\s+/g, ' ').trim(),
+        aria: b.getAttribute('aria-label') || '',
+        title: b.getAttribute('title') || '',
+        rect: rect(b)
+      })),
+      qualityInHead: !!head.querySelector('[data-qt-quality]'),
+      favInHead: !!head.querySelector('[data-vp-fav]') || !!head.querySelector('.p-fav'),
+      headRect: rect(head)
+    }
+  },
+
+  /** 控制栏：左组（上一条 / 播放 / 下一条 / 音量 / 时间码）与右组（逐帧 / 画质 / 设置 / 全屏） */
+  ctrlP534() {
+    const line = $('.p-ctrlline')
+    if (!line) return null
+    const desc = (el) => {
+      const r = el.getBoundingClientRect()
+      return {
+        tag: el.tagName.toLowerCase(),
+        aria: el.getAttribute('aria-label') || '',
+        text: (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 8),
+        cls: String(el.className),
+        quality: el.hasAttribute('data-qt-quality'),
+        disabled: el.disabled === true,
+        ariaDisabled: el.getAttribute('aria-disabled'),
+        x: round2(r.x),
+        y: round2(r.y),
+        w: round2(r.width),
+        h: round2(r.height)
+      }
+    }
+    const left = $('.p-grp-left')
+    const right = $('.p-grp-right')
+    const pick = (grp, sel) => (grp ? Array.from(grp.querySelectorAll(sel)).map(desc) : [])
+    return {
+      left: pick(left, 'button, select, input[type=range], .p-seek-now'),
+      right: pick(right, 'button, select'),
+      buttonsTotal: Array.from(line.querySelectorAll('button')).filter(
+        (b) => !b.closest('[data-qt-set-panel]') && !b.classList.contains('p-lane-mark')
+      ).length,
+      qualityInRight: !!(right && right.querySelector('[data-qt-quality]')),
+      qualityInHead: !!document.querySelector('.p-head [data-qt-quality]'),
+      framePairInRight: !!(right && right.querySelectorAll('button[aria-label="上一帧"], button[aria-label="下一帧"]').length === 2)
+    }
+  },
+
+  /**
+   * 设播放上下文的可用性（stub）：hasPrev / hasNext 为 false 时，⏮ / ⏭ 必须**仍然在位**但 disabled。
+   * 返回两颗按钮的矩形 —— 禁用前后位置完全一致才能证明「只是禁用，不是消失 / 换位」。
+   */
+  async setNav(next) {
+    navState.hasPrev = !!next.hasPrev
+    navState.hasNext = !!next.hasNext
+    await nextFrame()
+    const pick = (aria) => {
+      const b = document.querySelector('.p-btn[aria-label="' + aria + '"]')
+      return b ? { disabled: b.disabled === true, ariaDisabled: b.getAttribute('aria-disabled'), rect: rect(b) } : null
+    }
+    return { prev: pick('上一条'), next: pick('下一条'), prevCalls: navState.prevCalls, nextCalls: navState.nextCalls }
+  },
+
+  /** 点一下 ⏮ / ⏭（禁用态下不应产生任何事件） */
+  async clickNav(which) {
+    const b = document.querySelector('.p-btn[aria-label="' + (which === 'prev' ? '上一条' : '下一条') + '"]')
+    if (!b) return { ok: false }
+    b.click()
+    await nextFrame()
+    return { ok: true, prevCalls: navState.prevCalls, nextCalls: navState.nextCalls }
+  },
+
+  /** 收藏（信息栏第一行）：只读状态 + 点击走桩（桩 = 页面绑定的复刻） */
+  async fav() {
+    const btn = $('[data-vp-fav]')
+    if (!btn) return { exists: false }
+    const body = $('.vp-body')
+    const ctx = body ? body.querySelector('[data-vp-sec="playlist-context"], .vp-sec-ctx') : null
+    const row = btn.parentElement
+    const kids = body ? Array.from(body.children) : []
+    const secs = body ? Array.from(body.querySelectorAll('.vp-sec')) : []
+    const before = { fav: favState.fav, calls: favState.calls }
+    const rectBtn = rect(btn)
+    btn.click()
+    await nextFrame()
+    const after = $('[data-vp-fav]')
+    return {
+      exists: true,
+      before,
+      calls: favState.calls,
+      fav: favState.fav,
+      pressed: after.getAttribute('aria-pressed'),
+      on: after.classList.contains('on'),
+      label: (after.textContent || '').replace(/\s+/g, ' ').trim(),
+      title: after.getAttribute('title') || '',
+      rect: rectBtn,
+      // 「提示语下方、播放列表分区之前」：
+      //   行位置 = .vp-body 的直接子节点序号，必须小于**第一个分区**的序号；
+      //   同时播放列表分区（第一个 .vp-sec）必须在它后面。
+      rowIndex: kids.indexOf(row),
+      firstSectionIndex: secs.length ? kids.indexOf(secs[0]) : -1,
+      beforeAllSections: secs.every((s) => !!(btn.compareDocumentPosition(s) & Node.DOCUMENT_POSITION_FOLLOWING)),
+      beforePlaylist: ctx ? !!(btn.compareDocumentPosition(ctx) & Node.DOCUMENT_POSITION_FOLLOWING) : null
+    }
+  },
+
+  /**
+   * 造一条真的字幕轨：<video> 先挂静音 WAV（blob）拿到真实时间轴，
+   * 再把既有 <track> 指向一段 blob VTT，最后补一次 loadedmetadata 让播放层重挂字幕轨。
+   * 不依赖后端字幕接口、不改 SFC —— 量到的就是真实渲染链路（activeCues → 自绘层）。
+   */
+  async loadSubCue(text) {
+    const v = $('.p-stage video')
+    if (!v) return { ok: false, reason: 'no video' }
+    const rate = 8000
+    const secs = 8
+    const n = rate * secs
+    const buf = new ArrayBuffer(44 + n)
+    const dv = new DataView(buf)
+    const put = (o, s) => {
+      for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i))
+    }
+    put(0, 'RIFF')
+    dv.setUint32(4, 36 + n, true)
+    put(8, 'WAVEfmt ')
+    dv.setUint32(16, 16, true)
+    dv.setUint16(20, 1, true)
+    dv.setUint16(22, 1, true)
+    dv.setUint32(24, rate, true)
+    dv.setUint32(28, rate, true)
+    dv.setUint16(32, 1, true)
+    dv.setUint16(34, 8, true)
+    put(36, 'data')
+    dv.setUint32(40, n, true)
+    for (let i = 0; i < n; i++) dv.setUint8(44 + i, 128)
+    v.src = URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }))
+    await new Promise((r) => {
+      v.addEventListener('loadedmetadata', r, { once: true })
+      setTimeout(r, 3000)
+    })
+    await v.play().catch(() => {})
+    const LF = String.fromCharCode(10)
+    const vtt = ['WEBVTT', '', '1', '00:00:00.000 --> 00:10:00.000', text || '自绘字幕 <b>粗体</b>', ''].join(LF)
+    const trackEl = v.querySelector('track')
+    if (!trackEl) return { ok: false, reason: 'no track element' }
+    trackEl.src = URL.createObjectURL(new Blob([vtt], { type: 'text/vtt' }))
+    await new Promise((r) => {
+      trackEl.addEventListener('load', r, { once: true })
+      setTimeout(r, 3000)
+    })
+    await sleep(140)
+    v.dispatchEvent(new Event('loadedmetadata'))
+    await nextFrame()
+    await sleep(180)
+    const layer = $('[data-qt-sublayer]')
+    return {
+      ok: !!layer,
+      activeCues: Array.from((v.textTracks[0] && v.textTracks[0].activeCues) || []).map((c) => c.text),
+      trackMode: v.textTracks[0] ? v.textTracks[0].mode : null,
+      text: layer ? (layer.textContent || '').replace(/\s+/g, ' ').trim() : '',
+      html: layer ? layer.innerHTML.trim().slice(0, 160) : ''
+    }
+  },
+
+  /** 读「设置里的值 → 屏幕上生效的样子」（自绘层 / 面板预览 / ::cue 兜底 <style>） */
+  subStyleProbe() {
+    const line = $('.p-sub-line')
+    const layer = $('[data-qt-sublayer]')
+    const prev = $('.p-sub-prev-t')
+    const cs = (el) => {
+      if (!el) return null
+      const s = getComputedStyle(el)
+      return {
+        fontSize: round2(parseFloat(s.fontSize)),
+        color: s.color,
+        bg: s.backgroundColor,
+        weight: s.fontWeight,
+        shadow: s.textShadow.slice(0, 64)
+      }
+    }
+    return {
+      layerOn: !!layer,
+      lineCount: document.querySelectorAll('.p-sub-line').length,
+      line: cs(line),
+      layerBottomPx: layer ? round2(parseFloat(getComputedStyle(layer).bottom)) : null,
+      layerRect: rect(layer),
+      preview: cs(prev),
+      cueTag: (document.getElementById('qt-cue-style') || {}).textContent || null,
+      stored: (() => {
+        try {
+          return window.localStorage.getItem('ms.substyle')
+        } catch {
+          return null
+        }
+      })()
+    }
+  },
+
+  /** 打开设置 → 展开「字幕样式」→ 按需改值（全部走真实事件链，不直接改内部状态） */
+  async subStyleSet(opts) {
+    const o = opts || {}
+    if (!$('[data-qt-set-panel]')) {
+      const gear = $('[data-qt-gear]')
+      if (gear) gear.click()
+      await nextFrame()
+    }
+    const entry = $('[data-qt-substyle]')
+    if (!entry) return { ok: false, reason: 'no entry' }
+    if (entry.getAttribute('aria-expanded') !== 'true') {
+      entry.click()
+      await nextFrame()
+    }
+    const panel = $('[data-qt-substyle-panel]')
+    if (!panel) return { ok: false, reason: 'panel closed' }
+    const setInput = async (sel, val) => {
+      const el = $(sel)
+      if (!el) return false
+      el.value = String(val)
+      el.dispatchEvent(new Event('input', { bubbles: true }))
+      await nextFrame()
+      return true
+    }
+    if (o.size != null) await setInput('[data-qt-sub-size]', o.size)
+    if (o.color != null) await setInput('[data-qt-sub-color]', o.color)
+    if (o.bg != null) await setInput('[data-qt-sub-bg]', o.bg)
+    if (o.pos) {
+      const b = document.querySelector('[data-qt-sub-pos="' + o.pos + '"]')
+      if (b) {
+        b.click()
+        await nextFrame()
+      }
+    }
+    for (const key of ['outline', 'bold']) {
+      if (o[key] == null) continue
+      const b = $('[data-qt-sub-' + key + ']')
+      if (!b) continue
+      if ((b.getAttribute('aria-pressed') === 'true') !== o[key]) {
+        b.click()
+        await nextFrame()
+      }
+    }
+    return {
+      ok: true,
+      rows: panel.querySelectorAll('.p-set-row').length,
+      controls: panel.querySelectorAll('input, button').length,
+      posButtons: Array.from(panel.querySelectorAll('[data-qt-sub-pos]')).map((b) => b.getAttribute('data-qt-sub-pos')),
+      hasReset: !!panel.querySelector('[data-qt-sub-reset]'),
+      inSettingsPanel: !!panel.closest('[data-qt-set-panel]'),
+      // 「字幕开关旁边」：样式入口紧跟在字幕开关按钮之后
+      rightAfterSubSwitch: !!(entry.previousElementSibling && entry.previousElementSibling.classList.contains('p-sub-btn'))
+    }
+  },
+
+  /** 收起设置浮层（截图 / 量控制栏前恢复干净态） */
+  async closeSettings() {
+    if (document.querySelector('[data-qt-set-panel]')) {
+      const gear = $('[data-qt-gear]')
+      if (gear) gear.click()
+      await nextFrame()
+    }
+    return !document.querySelector('[data-qt-set-panel]')
+  },
+
   /**
    * 全量证据：舞台高度（含「复刻旧标签条」前后差）、控制栏底色与对比度、
    * 按钮清单、头部结构、溢出检查。

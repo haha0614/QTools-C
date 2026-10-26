@@ -6,8 +6,11 @@
     off   —— 全部编辑控件禁用，只展示评分 / 标签 / 标记，并提示「仅私有部署可编辑…」；
     local —— 只读写 localStorage（ms.org.<ownerKey>.<videoId>），不发任何请求，标题旁显示「本地」；
     full  —— 走接口（PUT /api/media/video/{id}/meta）。
-  分区（自上而下）：播放列表（P5.32 置顶 = 本次播放的上/下文，只读导航）→ 人物 → 工作室 →
-         评分 → 标签 → 标记 → 我的播放列表（可加入 / 移出 / 新建）。
+  分区（自上而下）：**收藏**（P5.34 置顶一行，状态与 API 在 VideoPage）→
+         播放列表（P5.32 置顶 = 本次播放的上/下文，只读导航）→ 人物 → 工作室 → 评分 → 标签 → 标记。
+  P5.35：置顶分区每行带「缩略图 + 序号 + 标题 + 时长」；标题行与顺序都由**来源页**决定
+         （播放列表名 / 人物名 / 标签名 / 按当前浏览顺序）。原「我的播放列表」分区（P5.26）整块删除 ——
+         加入 / 移出 / 新建仍在卡片右下角菜单与工具栏 PlaylistPicker 里，信息栏不再重复一份。
   约定：不碰播放链路——所有请求 silent + try/catch，失败只 toast 提示，绝不阻塞播放；
         标记新增用「手填 mm:ss + 说明 + 颜色」的最小实现；P4.5 起打开抽屉就按当前内容时间
         自动回填起点（区间再加 1 秒；接近片尾则整段贴到片尾），规则集中在 markFill.js。
@@ -48,18 +51,43 @@
       <div v-if="loading" class="vp-hint">加载中…</div>
       <p v-if="readNote" class="vp-hint vp-note">{{ readNote }}</p>
 
+      <!-- P5.34（用户纠正 4「header 里面的收藏放到信息栏里面」）：
+           收藏从播放器头部搬到这里 —— 信息栏顶部**第一行**（提示语之后、播放列表分区之前）。
+           本组件只渲染态 + emit('toggle-fav')，收藏状态与 API 仍由页面持有（VideoPage.toggleFav：
+           乐观更新 + 失败回滚 + toast），所以和列表卡片上的 ☆ 是**同一个**数据源，两处不会不一致。
+           为什么不按编辑策略禁用：收藏写的是「用户偏好」（/api/media/user），不是媒体库元数据
+           （评分 / 标签 / 标记才是 level=off 要挡的东西），列表卡片上的收藏也从不因 off 变灰 ——
+           两处入口必须同权，否则同一件事在网格里能做、在播放页里做不了。 -->
+      <div class="vp-fav-row">
+        <button
+          class="vp-fav"
+          :class="{ on: fav }"
+          type="button"
+          data-vp-fav
+          :aria-pressed="fav"
+          :aria-label="fav ? '取消收藏' : '收藏'"
+          :title="fav ? '取消收藏' : '收藏（与列表卡片同一个收藏）'"
+          @click="emit('toggle-fav')"
+        >
+          <span class="vp-fav-i" aria-hidden="true">{{ fav ? '★' : '☆' }}</span>
+          <span class="vp-fav-t">{{ fav ? '已收藏' : '收藏' }}</span>
+        </button>
+      </div>
+
       <!-- P5.32（用户需求「信息栏播放列表置顶」）：置顶的「播放列表」= **本次播放的上/下文** ——
-           从哪个列表点进来就按那个顺序列出，当前项高亮 + 序号，点任一项直接切到该片。
-           来源优先级由页面（VideoPage）在 openPlayer 时定好：playlist > browse > recent > library；
-           没有播放列表时这里的默认口径就是「播放前的页面视频排序」（browse）。
-           与下方「我的播放列表」（可加入 / 移出 / 新建，写服务端）严格分层：这一块**只读导航**，
-           所以不渲染任何编辑控件、也不发任何请求。列表长时区间内部滚动（上限见 CONTEXT_MAX = 1000）。 -->
+           从哪个来源点进来就按那个顺序列出，当前项高亮 + 序号，点任一项直接切到该片。
+           P5.35（用户需求 1 / 7）：**来源驱动** —— 标题行与顺序都由来源页给（playlist → 列表名与列表序、
+           person → 人物名与人物页顺序、tag → 标签名与筛选结果序、browse → 按当前浏览顺序），
+           优先级与构造点唯一在 VideoPage.contextFor，这里只渲染页面算好的 { label, total, rows }。
+           每行：左侧缩略图（内容寻址 /media/thumb/v/<id>，懒加载 + 失败静默回占位）+ 序号 + 标题（省略号）
+           + 右侧时长（mm:ss，与列表页角标同一口径 durText）。
+           这一块**只读导航**：不渲染任何编辑控件、也不发任何请求。列表长时区间内部滚动（上限见 CONTEXT_MAX = 1000）。 -->
       <section class="vp-sec vp-sec-ctx" data-vp-sec="playlist-context">
         <h3 class="vp-h3">
           播放列表<span class="vp-h3n">{{ context ? context.total : 0 }}</span>
         </h3>
         <template v-if="context">
-          <p class="vp-ctx-src" :title="context.label">{{ context.label }}</p>
+          <p class="vp-ctx-src" :title="context.title || context.label">{{ context.label }}</p>
           <ul v-if="context.rows.length" ref="ctxListEl" class="vp-ctx">
             <li v-for="r in context.rows" :key="r.id">
               <button
@@ -67,11 +95,23 @@
                 :class="{ on: r.current }"
                 type="button"
                 :aria-current="r.current ? 'true' : null"
-                :title="r.title"
+                :title="r.title + (r.durText && r.durText !== '--:--' ? ' · ' + r.durText : '')"
                 @click="emit('pick', r.id)"
               >
+                <!-- 缩略图：占位底色在解码前/失败后都在，所以行高与对齐不会因为加载状态变化而抖 -->
+                <span class="vp-ctx-thumb">
+                  <img
+                    v-if="r.thumb && !thumbFailed[r.id]"
+                    :src="r.thumb"
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    @error="onThumbError(r.id)"
+                  />
+                </span>
                 <span class="vp-ctx-n">{{ r.n }}</span>
                 <span class="vp-ctx-t">{{ r.title }}</span>
+                <span class="vp-ctx-d">{{ r.durText }}</span>
               </button>
             </li>
           </ul>
@@ -348,82 +388,6 @@
         </div>
       </section>
 
-      <!-- P5.26（用户反馈 7「把播放列表加到信息栏」）：卡片式分组，与人物 / 评分 / 标签 / 标记同构。
-           数据与写入口复用 usePlaylistAdd（与卡片右下角入口、工具栏 PlaylistPicker 同一份实现），
-           这里额外提供「移出」（usePlaylistAdd.removeFrom，旧入口只有加入）。三条路径：
-             1) 查看本片所在列表 —— 清单自带 videoIds 时按内联 id 判定，本会话刚加入的另记内存标记；
-             2) 加入 / 移出 —— POST /playlist/{id}/videos 与 DELETE /playlist/{id}/videos/{videoId}；
-             3) 新建并加入 —— POST /playlists（videoIds 一并带上，省一次追加）。
-           三档策略与卡片入口逐条对齐：off 只提示不发请求；local 由 usePlaylistAdd 给统一闸门文案；
-           full 正常。接口未就绪（404/405/501/网络异常）时只显示一句提示，不抛异常、不影响播放。 -->
-      <section class="vp-sec vp-sec-pl" data-vp-sec="playlists">
-        <h3 class="vp-h3">
-          我的播放列表<span class="vp-h3n">{{ plJoinedCount }}</span>
-        </h3>
-        <p v-if="readOnly" class="vp-hint vp-policy">播放列表保存在服务端：当前为「仅查看」档，只能查看，不能加入或移出。</p>
-        <template v-else>
-          <p v-if="plBlocked" class="vp-hint">{{ plBlocked }}</p>
-          <template v-else>
-            <p v-if="plLoading" class="vp-hint">加载中…</p>
-            <p v-else-if="plUnavailable" class="vp-hint">{{ plUnavailable }}</p>
-            <ul v-if="plItems.length" class="vp-pl">
-              <li v-for="p in plItems" :key="p.id" class="vp-pl-row" :class="{ on: p.joined }">
-                <span class="vp-pl-n" :title="p.name">{{ p.name }}</span>
-                <span class="vp-pl-c">{{ p.count }} 个</span>
-                <button
-                  v-if="p.joined"
-                  class="vp-mini vp-mini-ok vp-pl-btn"
-                  type="button"
-                  :disabled="!!plBusy"
-                  :title="'把本片从「' + p.name + '」移出'"
-                  @click="plLeave(p)"
-                >
-                  移出
-                </button>
-                <button
-                  v-else
-                  class="vp-mini vp-pl-btn"
-                  type="button"
-                  :disabled="!!plBusy"
-                  :title="'把本片加入「' + p.name + '」'"
-                  @click="plJoin(p)"
-                >
-                  加入
-                </button>
-              </li>
-            </ul>
-            <!-- 接口未就绪时不叠「还没有播放列表」：那会把「读不到」说成「真的没有」 -->
-            <p v-else-if="!plLoading && !plUnavailable" class="vp-hint">还没有播放列表</p>
-            <div class="vp-pl-new">
-              <button
-                v-if="!plCreating"
-                class="vp-add"
-                type="button"
-                :disabled="!!plUnavailable || !!plBusy"
-                title="新建一个播放列表并把本片加进去"
-                @click="plOpenCreate"
-              >
-                ＋ 新建列表
-              </button>
-              <template v-else>
-                <input
-                  class="vp-pl-input"
-                  type="text"
-                  maxlength="60"
-                  :value="plNewName"
-                  placeholder="新列表名称"
-                  aria-label="新播放列表名称"
-                  @input="plNameInput"
-                  @keyup.enter="plCreate"
-                />
-                <button class="vp-mini vp-mini-ok" type="button" :disabled="!plCanCreate" @click="plCreate">创建并加入</button>
-              </template>
-            </div>
-            <p v-if="plBusy === '__new'" class="vp-hint">正在新建…</p>
-          </template>
-        </template>
-      </section>
-
       <div v-if="saving" class="vp-hint">保存中…</div>
     </div>
   </aside>
@@ -451,8 +415,6 @@ import {
 import { readLocalPersons, writeLocalPersons } from './personLocal'
 // P5.3-B：站端演员接口（PUT /video/{id}/persons、POST /persons）；未就绪只提示
 import { PERSON_NOT_READY, errorText, isNotReady, saveVideoPersons } from './personApi'
-// P5.26：播放列表分区 —— 数据源与写入口复用卡片 / 工具栏那一份（含本片已加入判定与三档闸门）
-import { addedMessage, createdMessage, usePlaylistAdd } from './usePlaylistAdd'
 // P5-C：标记预览帧（精灵图按时间取格，几何唯一实现在 spriteCell.js）
 import SpriteThumb from './SpriteThumb.vue'
 // P4-B：标记区间（pos–endPos）的归一化与展示文本，与播放器进度条刻度共用同一份逻辑
@@ -465,6 +427,11 @@ const props = defineProps({
   video: { type: Object, required: true },
   /** 标签库 */
   allTags: { type: Array, default: () => [] },
+  /**
+   * P5.34：当前视频是否已收藏（头部按钮搬进信息栏后由页面下发）。
+   * 与列表卡片读的是同一份 userState.favorites —— 这里只是显示态，写仍走页面。
+   */
+  fav: { type: Boolean, default: false },
   /** 标签库是否加载中 */
   tagsLoading: { type: Boolean, default: false },
   /** 编辑策略档位：off 只读 / local 只写本地 / full 走接口 */
@@ -501,7 +468,7 @@ const props = defineProps({
   context: { type: Object, default: null }
 })
 
-const emit = defineEmits(['close', 'updated', 'tag-created', 'person-created', 'notify', 'markers', 'pick'])
+const emit = defineEmits(['close', 'updated', 'tag-created', 'person-created', 'notify', 'markers', 'pick', 'toggle-fav'])
 
 const api = useMediaApi()
 
@@ -570,69 +537,6 @@ const markers = ref(seed && Array.isArray(seed.markers) ? seed.markers.filter((m
  *     只有 applyMeta（读接口成功 / 写接口回读成功）与 saveLocal 之后才置 true。
  */
 const markersTrusted = ref(isLocal.value)
-
-/* ---------------- P5.26（用户反馈 7）：信息栏播放列表分区 ---------------- */
-
-/**
- * 数据 / 写入口全部来自 usePlaylistAdd —— 与 VideoCard 的卡片菜单、PlaylistPicker 完全同一份：
- *   清单 GET /api/media/playlists（含内联 videoIds，零额外请求判定「本片已加入」）
- *   追加 POST /api/media/playlist/{id}/videos、移出 DELETE /api/media/playlist/{id}/videos/{videoId}
- *   新建 POST /api/media/playlists（videoIds 一并带上）
- * 三档：off → 本分区只渲染一句话、**不发请求**；local → 拉清单但不给写入口（统一闸门文案）；
- *       full → 全功能。接口未就绪时 items 为空 + unavailable 一句提示，不抛异常。
- */
-const {
-  items: plItems,
-  loading: plLoading,
-  unavailable: plUnavailable,
-  busyId: plBusy,
-  newName: plNewName,
-  creating: plCreating,
-  blocked: plBlocked,
-  canCreate: plCanCreate,
-  load: plLoad,
-  openCreate: plOpenCreate,
-  closeCreate: plCloseCreate,
-  addTo: plAddTo,
-  removeFrom: plRemoveFrom,
-  createAndAdd: plCreateAndAdd
-} = usePlaylistAdd({
-  level: () => props.level,
-  videoIds: () => [props.video && props.video.id].filter(Boolean),
-  notify: (msg) => emit('notify', msg)
-})
-
-/** 本片已加入的列表数量（标题右侧那个数字，与「人物 / 标记」同一视觉语言） */
-const plJoinedCount = computed(() => plItems.value.filter((p) => p.joined).length)
-
-/** local 档也拉一次清单：播放列表没有本地兜底，不读服务端就一条都显示不出来（只读，不写） */
-function loadPlaylists() {
-  if (readOnly.value) return
-  plLoad()
-}
-
-function plNameInput(e) {
-  plNewName.value = String((e && e.target && e.target.value) || '')
-}
-
-async function plJoin(p) {
-  const ok = await plAddTo(p)
-  if (!ok) return
-  emit('notify', addedMessage(p && p.name, 1))
-}
-
-async function plLeave(p) {
-  const ok = await plRemoveFrom(p)
-  if (!ok) return
-  emit('notify', '已从播放列表「' + ((p && p.name) || '') + '」移出本片')
-}
-
-async function plCreate() {
-  const made = await plCreateAndAdd()
-  if (!made) return
-  plCloseCreate()
-  emit('notify', createdMessage(made.name, 1))
-}
 
 /** 新增标记的最小表单：mm:ss + 说明 + 颜色 */
 const markAt = ref('')
@@ -1097,12 +1001,22 @@ function revealContextCurrent() {
   box.scrollTop = Math.max(0, top)
 }
 
+/**
+ * P5.35：行缩略图加载失败（产物缺失 / 服务端未就绪 / 离线）→ 只把这一行的 img 摘掉，
+ * 露出容器底色占位（与 VideoCard 的 .noimg 同义）。静默：不 toast、不抛错、不影响播放。
+ * 按 id 记而不是按行下标记：换片后行集合会变，下标会错位。
+ */
+const thumbFailed = ref({})
+
+function onThumbError(id) {
+  if (!id) return
+  thumbFailed.value = Object.assign({}, thumbFailed.value, { [id]: true })
+}
+
 onMounted(() => {
   // 元数据晚到：duration 打开抽屉时可能还是 0，挂载后按真实时长补/夹一次
   fillTimeline(false)
   revealContextCurrent()
-  // P5.26：播放列表分区（off 档直接返回，不发请求）
-  loadPlaylists()
   if (!isFull.value) {
     loading.value = false
     return
@@ -1291,6 +1205,52 @@ onMounted(() => {
   color: var(--fg-dim);
 }
 
+/* P5.34 收藏行：信息栏最上面的一行**紧凑**切换按钮（不是分区标题 + 一堆说明）。
+   视觉语言与其它分区一致（--line / --bg-3 / --accent），选中态用暖色（--warn）与列表卡片的
+   星星同色 —— 两处入口看到的是同一个状态，颜色也不该打架。 */
+.vp-fav-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vp-fav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-3);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.vp-fav:hover {
+  border-color: var(--line-2);
+}
+
+.vp-fav:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.vp-fav.on {
+  border-color: var(--warn);
+  background: rgba(255, 201, 119, 0.14);
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.vp-fav-i {
+  font-size: 13px;
+}
+
 .vp-err {
   padding: 7px 9px;
   border: 1px solid var(--warn);
@@ -1398,13 +1358,13 @@ onMounted(() => {
 }
 
 /* P5.32（用户需求「信息栏播放列表置顶」）：置顶的「播放列表」= 播放上下文（只读导航）。
-   与下方 .vp-pl（我的播放列表，可编辑）同一套变量，但样式刻意区分：
-     - 上下文行是一整行按钮（序号 + 标题），整行可点 → 明确「点了就换片」；
-     - 当前项用强调色描边 + 浅底 + 左侧强调条（一眼看出「我在这里」）；
+   P5.35：一行 = 缩略图 + 序号 + 标题 + 时长，行高随之从 28px 抬到 38px（缩略图 40×22 放得下）。
+     - 上下文行是一整行按钮，整行可点 → 明确「点了就换片」；
+     - 当前项用强调色描边 + 浅底 + 左侧强调条（一眼看出「我在这里」，行高不因高亮变化）；
      - 列表自身滚动（max-height 由 --ms-ctx-h 给），不把下面的人物 / 评分 / 标签挤走。 */
 .vp-sec-ctx {
-  /* 12 条左右可见，长列表区间内部滚动 */
-  --ms-ctx-h: 288px;
+  /* 38px 行 × 8 条左右可见，长列表区间内部滚动 */
+  --ms-ctx-h: 304px;
 }
 
 .vp-ctx-src {
@@ -1445,10 +1405,11 @@ onMounted(() => {
 .vp-ctx-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   width: 100%;
-  min-height: 28px;
-  padding: 2px 6px;
+  /* P5.35：缩略图 22px 高 + 上下 padding 8px → 38px 行高（原 28px 放不下缩略图） */
+  min-height: 38px;
+  padding: 4px 6px;
   border: 1px solid transparent;
   border-radius: 6px;
   background: transparent;
@@ -1477,9 +1438,28 @@ onMounted(() => {
   box-shadow: inset 2px 0 0 var(--accent);
 }
 
+/* 缩略图：内容寻址的 /media/thumb/v/<id>（与 VideoCard 封面同一个 URL 构造）。
+   容器自带底色 → 图片解码前、加载失败后都还是这个底色占位，行高与对齐不会抖，也不会留空洞。 */
+.vp-ctx-thumb {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 22px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--bg-2);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg) 8%, transparent);
+}
+
+.vp-ctx-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .vp-ctx-n {
   flex: 0 0 auto;
-  min-width: 24px;
+  min-width: 20px;
   color: var(--fg-dim);
   font-size: 11.5px;
   text-align: right;
@@ -1500,84 +1480,16 @@ onMounted(() => {
   text-overflow: ellipsis;
 }
 
-/* P5.26（用户反馈 7）：信息栏「播放列表」分区 —— 与人物 / 标签同一套卡片式分组的语言：
-   每行一个列表（名称 / 数量 / 加入或移出），已加入的行用强调色描边 + 浅底（不是另起一种色块）。
-   变量全部取 mediaTheme 的 --qt-* 映射（--bg / --bg-3 / --line / --fg / --fg-dim / --accent-soft），亮暗通用。 */
-.vp-pl {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.vp-pl-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  min-height: 32px;
-  padding: 2px 4px 2px 9px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--bg-3);
-}
-
-.vp-pl-row.on {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
-  background: var(--accent-soft);
-}
-
-/* 长列表名省略而不是把行撑宽：min-width:0 + ellipsis 是这一行唯一的伸缩项 */
-.vp-pl-n {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  color: var(--fg);
-  font-size: 12.5px;
-}
-
-.vp-pl-c {
+/* 右侧时长：与列表页封面角标同一口径（playerExtras.durText），等宽数字让整列对齐 */
+.vp-ctx-d {
   flex: 0 0 auto;
   color: var(--fg-dim);
-  font-size: 12px;
+  font-size: 11.5px;
   font-variant-numeric: tabular-nums;
 }
 
-/* 加入 / 移出按钮：与其它 vp-mini 同高 28px，窄一点（行内还有名称与数量） */
-.vp-pl-btn {
-  flex: 0 0 auto;
-  min-width: 48px;
-  padding: 0 8px;
-}
-
-.vp-pl-new {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.vp-pl-input {
-  flex: 1 1 120px;
-  min-width: 0;
-  height: 28px;
-  padding: 0 8px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--bg);
-  color: var(--fg);
-  font: inherit;
-  font-size: 12.5px;
-}
-
-.vp-pl-input:focus-visible {
-  outline: 1px solid var(--accent);
-  outline-offset: 1px;
+.vp-ctx-row.on .vp-ctx-d {
+  color: var(--accent);
 }
 
 .vp-tags {

@@ -11,6 +11,7 @@
  * 这两类值只有真浏览器给得出。Node 24 自带 WebSocket，所以不需要 puppeteer。
  */
 import { spawn } from 'node:child_process'
+import { createServer } from 'node:net'
 import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -20,12 +21,25 @@ const HERE = fileURLToPath(new URL('.', import.meta.url))
 const REPO = HERE + '../../../../'            // src/views/media/video → 仓库根
 const OUT = REPO + 'evidence/'
 const PAGE = 'http://127.0.0.1:5199/evidence/playerHarness.html'
-const PORT = 9333
+/** P5.34：CDP 端口向系统要空闲端口（P5.34 之前写死 9333 —— 撞上上一次没退干净的 Chrome 就整轮卡死） */
+const PORT = await freePort()
 const CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
 // 必须放在仓库外：Chrome 的用户数据目录会被 vite 的 watcher 扫到，Windows 下直接 EBUSY 杀掉 dev server
 const PROFILE = join(tmpdir(), 'qt-p524a-chrome-profile')
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+
+/** bind 0 → 读回实际端口 → 立刻释放：拿一个系统确认当时空闲的端口 */
+async function freePort() {
+  return await new Promise((resolve, reject) => {
+    const srv = createServer()
+    srv.once('error', reject)
+    srv.listen(0, '127.0.0.1', () => {
+      const port = srv.address().port
+      srv.close(() => resolve(port))
+    })
+  })
+}
 
 // 任何异常都必须把 Chrome 收掉，否则下一轮会撞上「调试端口已被占用」
 process.on('uncaughtException', (e) => {
@@ -209,6 +223,18 @@ if (!harnessReady) {
   process.exit(4)
 }
 
+/* 页面身份自检：连上的必须就是 harness 页面本身（端口 / 路径 / 版本锚点都对） */
+{
+  const ident = await evaluate('({ href: location.href, hasEvidence: typeof (window.__qt && window.__qt.evidence) === "function", player: !!document.querySelector(".player") })')
+  if (!String(ident.href).includes('playerHarness.html') || !ident.hasEvidence || !ident.player) {
+    console.error('页面身份不符：' + JSON.stringify(ident))
+    await cdp.send('Browser.close').catch(() => {})
+    chromeProc.kill()
+    process.exit(7)
+  }
+  console.log('身份自检通过：' + ident.href)
+}
+
 const report = { page: PAGE, chrome: CHROME, runs: [] }
 const VIEWPORTS = [
   { name: 'wide-1600x1000', w: 1600, h: 1000 },
@@ -255,7 +281,9 @@ for (const vp of VIEWPORTS) {
     // c) 一级按钮 ≤8
     ok(ev.buttonsPrimary.total <= 8, 'c1 一级可见按钮 ≤ 8', '共 ' + ev.buttonsPrimary.total + ' 个：' + ev.buttonsPrimary.list.map((b) => b.text || b.cls).join(' / '))
     // d) 头部结构
-    ok(ev.head.groups === 3, 'd1 头部右侧按钮分 3 组', 'groups=' + ev.head.groups + ' sep=' + ev.head.separators)
+    // P5.34（用户纠正 4）：头部右侧只剩「关闭 Esc」一颗按钮 —— 分组容器一起撤掉，
+    // 所以这里从 3 组改成 0 组（不是回归：3 组是「收藏 | 画质 | 关闭」时期的旧口径）
+    ok(ev.head.groups === 0, 'd1 头部不再有分组容器（只剩一颗关闭按钮）', 'groups=' + ev.head.groups + ' sep=' + ev.head.separators)
     ok(ev.head.metaItems === 6, 'd2 元信息 6 项', 'items=' + ev.head.metaItems)
     ok(/·/.test(String(ev.head.metaSeparator)), 'd3 元信息用中点分隔（::before content）', 'content=' + ev.head.metaSeparator)
     ok(Number(ev.head.titleFontWeight) >= 700, 'd4 标题加粗', 'font-weight=' + ev.head.titleFontWeight)
