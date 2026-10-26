@@ -139,6 +139,36 @@ export function usePlaylistAdd(options = {}) {
     }
   }
 
+  /**
+   * 从某个列表移出目标视频（P5.26：信息栏播放列表分区需要「移出」，两个旧入口只有「加入」）。
+   * 后端：DELETE /api/media/playlist/{id}/videos/{videoId}（逐条删；批量目标就逐条调用）。
+   * 成功：清掉本会话的已加入标记 + 把该条目 joined 置 false（数量同步 -1，不重拉清单）。
+   * 失败：只提示，不改任何状态（用户在界面上看到的仍是「已加入」，可以重试）。
+   */
+  async function removeFrom(p) {
+    if (!p || busyId.value || blocked.value) return false
+    const ids = targetIds()
+    if (!ids.length) return false
+    busyId.value = p.id
+    try {
+      for (const id of ids) {
+        await api.removePlaylistVideo(p.id, id, { silent: true })
+        sessionJoined.delete(joinKey(p.id, id))
+      }
+      const hit = items.value.find((x) => String(x.id) === String(p.id))
+      if (hit) {
+        hit.joined = false
+        if (typeof hit.count === 'number' && hit.count > 0) hit.count = hit.count - 1
+      }
+      return true
+    } catch {
+      notifyError('从播放列表移出失败：播放列表接口未就绪或网络异常')
+      return false
+    } finally {
+      busyId.value = ''
+    }
+  }
+
   /** 新建并加入；成功返回 { id, name }，失败返回 null */
   async function createAndAdd() {
     if (!canCreate.value) return null
@@ -185,6 +215,7 @@ export function usePlaylistAdd(options = {}) {
     openCreate,
     closeCreate,
     addTo,
+    removeFrom,
     createAndAdd,
     reset,
     joinedNow,

@@ -453,12 +453,16 @@ function mountDocked(opts) {
   eq(h.state.hidden, true, 'T14 再移出 → 立即隐藏')
 }
 
-// T15 三条闸门：暂停 / 拖进度条 / 浮层展开时，移出也不隐藏
+// T15 两条闸门：拖进度条 / 浮层展开时移出也不隐藏；暂停**不再**是闸门（P5.26）
 {
   const h = mountDocked()
+  // P5.26（用户反馈 3）：暂停态不再强制常驻 —— 与播放态同一条规则，移出视频区即收起。
+  // 旧断言「暂停中移出 → 不隐藏」正是用户抱怨的那个「暂停后控制条一直挂着」的行为。
   h.state.playing = false
   h.leave()
-  eq(h.state.hidden, false, 'T15 暂停中移出 → 不隐藏')
+  eq(h.state.hidden, true, 'T15 暂停中移出 → 隐藏（P5.26 删除「暂停」闸门）')
+  h.enter()
+  eq(h.state.hidden, false, 'T15 暂停中移入 → 立即显示')
   h.state.playing = true
   h.state.dragging = true
   h.leave()
@@ -501,7 +505,8 @@ function mountDocked(opts) {
   const base = { fullscreen: false, playing: true, hover: false, dragging: false, overlay: false, pointerIn: false }
   eq(ctrlCanHideDocked(base), true, 'T18 非全屏 + 播放 + 指针在视频外 → 可隐藏')
   eq(ctrlCanHideDocked({ ...base, pointerIn: true }), false, 'T18 指针在视频区内 → 不隐藏')
-  eq(ctrlCanHideDocked({ ...base, playing: false }), false, 'T18 暂停 → 不隐藏')
+  // P5.26（用户反馈 3）：playing 已从判据里删掉 —— 暂停与播放同一条规则（移出即收起）
+  eq(ctrlCanHideDocked({ ...base, playing: false }), true, 'T18 暂停也不再阻止隐藏（P5.26 新口径）')
   eq(ctrlCanHideDocked({ ...base, dragging: true }), false, 'T18 拖进度条 → 不隐藏')
   eq(ctrlCanHideDocked({ ...base, overlay: true }), false, 'T18 浮层展开 → 不隐藏')
   eq(ctrlCanHideDocked({ ...base, hover: true }), false, 'T18 悬停控制条 → 不隐藏')

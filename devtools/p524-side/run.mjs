@@ -301,9 +301,11 @@ try {
   console.log('\n[H] 信息栏内部：卡片式分组 / 统一标题 / 28px 按钮 / 评分对齐 / 6px 滚动条')
   const S = G2
   console.log('    sections: ' + S.sections.map((s) => s.title).join(' | '))
-  ok(S.sections.length === 5, 'd) 分区数 = 5（人物 / 工作室 / 评分 / 标签 / 标记）', String(S.sections.length))
+  // P5.26（用户反馈 7「把播放列表加到信息栏」）：分区由 5 个变 6 个，播放列表排在最后。
+  // 旧断言「= 5 / 顺序到『标记』为止」是本次需求变更前的口径，故同步更新。
+  ok(S.sections.length === 6, 'd) 分区数 = 6（人物 / 工作室 / 评分 / 标签 / 标记 / 播放列表）', String(S.sections.length))
   const titles = S.sections.map((s) => s.title)
-  ok(titles.join('|') === '人物|工作室|评分|标签|标记', 'd) 分区顺序与标题正确', titles.join('|'))
+  ok(titles.join('|') === '人物|工作室|评分|标签|标记|播放列表', 'd) 分区顺序与标题正确（P5.26 末位新增播放列表）', titles.join('|'))
   const sizes = [...new Set(S.sections.map((s) => s.fontSize))]
   const weights = [...new Set(S.sections.map((s) => s.fontWeight))]
   ok(sizes.length === 1 && sizes[0] === '12px', 'd) 分区标题字号统一（12px）', sizes.join(','))

@@ -430,12 +430,16 @@ try {
   ok(!!started, 'b5) 移入立即开始抬起（首帧就开始显示）', started ? started.t + 'ms:' + started.op : 'n/a')
   ok(!!shownAt && shownAt.t <= 300, 'b6) 移入后 ≤300ms 回到 opacity 1', shownAt ? shownAt.t + 'ms' : 'n/a')
 
-  console.log('\n[B2] 闸门仍在：暂停 / 设置浮层展开时不许隐藏')
+  console.log('\n[B2] 闸门仍在：设置浮层展开时不许隐藏（暂停已不再是闸门）')
+  // P5.26（用户反馈 3「视频暂停时，控制栏正常显示隐藏，不再常驻」）：
+  // 旧断言 b7「暂停态：移出也不隐藏」正是被用户投诉的行为，本次已删除「暂停」这条闸门
+  // （playerExtras.ctrlCanHideDocked 去掉 playing 判据）。新口径：暂停后移出视频区同样收起。
   await api('pause()')
   await sleep(300)
   await moveTo(outside.x, outside.y)
   const pausedOp = await js('Number(getComputedStyle(document.querySelector(".p-ctrl")).opacity)')
-  ok(pausedOp === 1, 'b7) 暂停态：移出也不隐藏（可读性优先）', String(pausedOp))
+  ok(pausedOp === 0, 'b7) 暂停态：移出即隐藏（P5.26 新口径，原「暂停常驻」作废）', String(pausedOp))
+  await moveTo(inside.x, inside.y)
   await api('play()')
   await sleep(200)
 
@@ -629,11 +633,14 @@ try {
   console.log('    暗: bg=' + F2.bg + ' veil=' + F2.veil + ' hair=' + F2.hair + ' blur=' + F2.blur + ' 底座合成=' + F2.baseRGB)
   F2.items.forEach((it, i) => console.log('      ' + it.sel + ' chip=' + it.bg + ' 采样=' + it.sampled.join(',') + ' 对比度=' + it.contrast + ':1（解析 ' + F2.analytic[i] + ':1）'))
 
-  ok(near(F1.bgAlpha, 0.11, 0.006), 'f1) 亮色底座 alpha = .11（原 .18）', String(F1.bgAlpha))
-  ok(near(F2.bgAlpha, 0.12, 0.006), 'f2) 暗色底座 alpha = .12（原 .20）', String(F2.bgAlpha))
-  ok(near(F1.veilAlpha, 0.04, 0.006), 'f3) 亮色白雾降到 4%（原 6%）', String(F1.veilAlpha))
-  ok(/12px/.test(String(F1.blur)) && /12px/.test(String(F2.blur)), 'f4) backdrop blur = 12px（原 9px）', F1.blur + ' / ' + F2.blur)
-  ok(/0\.06/.test(String(F1.hair)) && /0\.08/.test(String(F2.hair)), 'f5) 顶边发丝线 .06（亮）/ .08（暗）', F1.hair + ' / ' + F2.hair)
+  // P5.26（用户反馈 5「背景透明度还是不够，继续透明」）：又降了一档，旧口径（.11/.12、白雾 4%、
+  // blur 12px、发丝线 .06）随之更新为：底座 .06（亮）/ .07（暗）（验收区间 0.04–0.07）、白雾 2%、
+  // blur 14px、发丝线 .05（亮）。chip 同步加深到 .58 以守住白帧最坏背衬的 4.5:1（见 f6/f7）。
+  ok(near(F1.bgAlpha, 0.06, 0.006), 'f1) 亮色底座 alpha = .06（P5.26，原 .11）', String(F1.bgAlpha))
+  ok(near(F2.bgAlpha, 0.07, 0.006), 'f2) 暗色底座 alpha = .07（P5.26，原 .12）', String(F2.bgAlpha))
+  ok(near(F1.veilAlpha, 0.02, 0.006), 'f3) 亮色白雾降到 2%（P5.26，原 4%）', String(F1.veilAlpha))
+  ok(/14px/.test(String(F1.blur)) && /14px/.test(String(F2.blur)), 'f4) backdrop blur = 14px（P5.26，原 12px）', F1.blur + ' / ' + F2.blur)
+  ok(/\.05/.test(String(F1.hair)) && /0\.08/.test(String(F2.hair)), 'f5) 顶边发丝线 .05（亮，P5.26）/ .08（暗）', F1.hair + ' / ' + F2.hair)
   const worstLight = Math.min(...F1.items.map((i) => i.contrast))
   const worstDark = Math.min(...F2.items.map((i) => i.contrast))
   ok(worstLight >= 4.5, 'f6) 亮色：白帧背衬下最坏对比度 ≥4.5:1', worstLight + ':1（实测像素）')

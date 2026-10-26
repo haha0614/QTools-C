@@ -12,13 +12,18 @@
  *   5. durText 与旧 fmtDur(app.js:230-234) 逐例一致（0 / 未知 → --:--）。
  */
 import {
+  VOL_WHEEL_PX,
+  VOL_WHEEL_STEP,
   durText,
   frameTimecode,
   normFps,
   previewTimeLabel,
   seekTimecodeText,
   seekTimecodeTitle,
-  timecode
+  stepVolume,
+  timecode,
+  volumePercent,
+  wheelVolumeNotches
 } from './playerExtras.js'
 
 let passed = 0
@@ -146,6 +151,57 @@ eq(durText(3599), '59:59', 'durText(3599) = 59:59')
 eq(durText(3725.6), '62:06', 'durText 超过 1 小时不折成小时（与旧 fmtDur 一致）')
 eq(previewTimeLabel(0), '00:00', 'previewTimeLabel(0) 仍是 00:00（浮层口径没变）')
 eq(previewTimeLabel(3661.5), '1:01:02', 'previewTimeLabel 仍有 h:mm:ss 分支')
+
+/* ------------------- 6. P5.26 滚轮调音量：累计凑档 / ±5% / 0-100 边界 ------------------- */
+
+// 一档 = 100px（鼠标滚轮一格）。滚轮向上 = 音量增大（deltaY < 0 → notches > 0）
+{
+  let r = wheelVolumeNotches(0, -VOL_WHEEL_PX, VOL_WHEEL_PX)
+  eq(r.notches, 1, '滚轮向上 100px = +1 档')
+  eq(r.acc, 0, '整档走完余量为 0')
+  r = wheelVolumeNotches(0, VOL_WHEEL_PX, VOL_WHEEL_PX)
+  eq(r.notches, -1, '滚轮向下 100px = -1 档')
+  // 触控板：3px 一个事件，凑满 100 才走一档（不是每个事件一档）
+  let acc = 0
+  let notches = 0
+  for (let i = 0; i < 33; i++) {
+    const s = wheelVolumeNotches(acc, -3, VOL_WHEEL_PX)
+    acc = s.acc
+    notches += s.notches
+  }
+  eq(notches, 0, '触控板 33×3px = 99px 还不满一档')
+  eq(acc, -99, '余量 -99 留到下一次')
+  const last = wheelVolumeNotches(acc, -3, VOL_WHEEL_PX)
+  eq(last.notches, 1, '第 34 次（102px）走一档')
+  eq(last.acc, -2, '多出的 2px 仍记在同向余量里（-102 → 走一档后剩 -2）')
+  eq(wheelVolumeNotches(0, -300, VOL_WHEEL_PX).notches, 3, '一次 -300px = +3 档（大 delta 不吞不跳）')
+  eq(wheelVolumeNotches(0, null, VOL_WHEEL_PX).notches, 0, 'deltaY 缺失 → 0 档')
+  eq(wheelVolumeNotches(0, 0, VOL_WHEEL_PX).notches, 0, 'deltaY=0 → 0 档')
+}
+
+// 步长 5%：连续 5 次 = +25%；到 0 / 100 就停（clamp，不越界）
+{
+  eq(VOL_WHEEL_STEP, 0.05, '步长常量为 0.05')
+  let v = 0.4
+  for (let i = 0; i < 5; i++) v = stepVolume(v, 1)
+  eq(v, 0.65, '40% + 5×5% = 65%（验收口径「连续 5 次 = +25%」）')
+  eq(stepVolume(1, 1), 1, '已到 100% 再向上 → 仍是 1（停住）')
+  eq(stepVolume(0, -1), 0, '已到 0% 再向下 → 仍是 0（停住）')
+  eq(stepVolume(0.97, 1), 1, '0.97 + 5% 夹到 1（不越界）')
+  eq(stepVolume(0.02, -1), 0, '0.02 - 5% 夹到 0')
+  eq(stepVolume(0.5, 0), 0.5, '0 档不改值')
+  eq(stepVolume(null, 1), 0.05, '空值按 0 起算')
+}
+
+// 百分比口径：0–100 的整数，与浮标签同源
+{
+  eq(volumePercent(0.65), 65, '0.65 → 65%')
+  eq(volumePercent(1), 100, '1 → 100%')
+  eq(volumePercent(0), 0, '0 → 0%')
+  eq(volumePercent(0.654), 65, '0.654 → 65%（四舍五入到整数）')
+  eq(volumePercent(null), 0, 'null → 0%')
+  eq(volumePercent(1.4), 100, '越界值夹到 100%')
+}
 
 /* ---------------------------------- 汇总 ---------------------------------- */
 

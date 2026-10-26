@@ -207,7 +207,7 @@
 
         <!-- P5.25（用户反馈 5「标记区域布局应当优化」）：一行七件的横排拆成三行分组 ——
              1) 类型分段控件（单点 / 区间）+ 右侧「＋ 加标记」
-             2) 起点 [输入] + 「以当前位置为起点」；区间态再加 终点 [输入] + 「以当前位置为终点」
+             2) 起点 [输入] + 「取当前」；区间态再加 终点 [输入] + 「取当前」（P5.26 缩短文案，完整语义在 title）
              3) 颜色 + 标记说明（可空）
              每行 flex + gap 8，容器窄了就整行换行（不会横向溢出）；输入框统一 28px 高。
              行内静态小标题「起点 / 终点」解决「填完值之后两个框长得一样」的分组不清问题。 -->
@@ -252,14 +252,25 @@
               :aria-label="markMode === 'range' ? '标记起点 mm:ss' : '标记位置 mm:ss'"
               @input="atTouched = true"
             />
+            <!-- P5.26（用户反馈 4「可以直接写当前或者什么其他简短的词」）：
+                 文案缩到两个字的动词「取当前」（原来是 7–8 个字的「以当前位置为起点 / 取当前时间」），
+                 完整语义留在 title 里 —— 起点 / 终点各一个同名按钮，靠左侧的「起点 / 终点」小标题区分：
+                 按钮本身只是动作（取此刻），取到的值写进哪一行由它所在的输入框决定。
+                 aria-label 也写全语义，键盘 / 读屏用户不会因为文案短而失去上下文。 -->
             <button
-              class="vp-mini"
+              class="vp-mini vp-mark-now"
               type="button"
               :disabled="locked"
-              :title="'把起点设成此刻的播放位置（打开时 ' + atText + '）'"
+              :title="
+                (markMode === 'range' ? '把起点设成此刻的播放位置' : '把标记位置设成此刻的播放位置') +
+                '（打开时 ' +
+                atText +
+                '）'
+              "
+              :aria-label="markMode === 'range' ? '以当前播放位置为起点' : '取当前播放位置'"
               @click="fillStartCurrent"
             >
-              {{ markMode === 'range' ? '以当前位置为起点' : '取当前时间' }}
+              取当前
             </button>
             <template v-if="markMode === 'range'">
               <span class="vp-mark-io vp-mark-io-end">终点</span>
@@ -273,8 +284,16 @@
                 aria-label="标记区间终点 mm:ss"
                 @input="endTouched = true"
               />
-              <button class="vp-mini" type="button" :disabled="locked" title="把终点设成此刻的播放位置" @click="fillEndCurrent">
-                以当前位置为终点
+              <!-- P5.26：与起点同名的短文案「取当前」，完整语义在 title / aria-label 里 -->
+              <button
+                class="vp-mini vp-mark-now"
+                type="button"
+                :disabled="locked"
+                title="把终点设成此刻的播放位置"
+                aria-label="以当前播放位置为终点"
+                @click="fillEndCurrent"
+              >
+                取当前
               </button>
             </template>
           </div>
@@ -292,6 +311,82 @@
             />
           </div>
         </div>
+      </section>
+
+      <!-- P5.26（用户反馈 7「把播放列表加到信息栏」）：卡片式分组，与人物 / 评分 / 标签 / 标记同构。
+           数据与写入口复用 usePlaylistAdd（与卡片右下角入口、工具栏 PlaylistPicker 同一份实现），
+           这里额外提供「移出」（usePlaylistAdd.removeFrom，旧入口只有加入）。三条路径：
+             1) 查看本片所在列表 —— 清单自带 videoIds 时按内联 id 判定，本会话刚加入的另记内存标记；
+             2) 加入 / 移出 —— POST /playlist/{id}/videos 与 DELETE /playlist/{id}/videos/{videoId}；
+             3) 新建并加入 —— POST /playlists（videoIds 一并带上，省一次追加）。
+           三档策略与卡片入口逐条对齐：off 只提示不发请求；local 由 usePlaylistAdd 给统一闸门文案；
+           full 正常。接口未就绪（404/405/501/网络异常）时只显示一句提示，不抛异常、不影响播放。 -->
+      <section class="vp-sec vp-sec-pl" data-vp-sec="playlists">
+        <h3 class="vp-h3">
+          播放列表<span class="vp-h3n">{{ plJoinedCount }}</span>
+        </h3>
+        <p v-if="readOnly" class="vp-hint vp-policy">播放列表保存在服务端：当前为「仅查看」档，只能查看，不能加入或移出。</p>
+        <template v-else>
+          <p v-if="plBlocked" class="vp-hint">{{ plBlocked }}</p>
+          <template v-else>
+            <p v-if="plLoading" class="vp-hint">加载中…</p>
+            <p v-else-if="plUnavailable" class="vp-hint">{{ plUnavailable }}</p>
+            <ul v-if="plItems.length" class="vp-pl">
+              <li v-for="p in plItems" :key="p.id" class="vp-pl-row" :class="{ on: p.joined }">
+                <span class="vp-pl-n" :title="p.name">{{ p.name }}</span>
+                <span class="vp-pl-c">{{ p.count }} 个</span>
+                <button
+                  v-if="p.joined"
+                  class="vp-mini vp-mini-ok vp-pl-btn"
+                  type="button"
+                  :disabled="!!plBusy"
+                  :title="'把本片从「' + p.name + '」移出'"
+                  @click="plLeave(p)"
+                >
+                  移出
+                </button>
+                <button
+                  v-else
+                  class="vp-mini vp-pl-btn"
+                  type="button"
+                  :disabled="!!plBusy"
+                  :title="'把本片加入「' + p.name + '」'"
+                  @click="plJoin(p)"
+                >
+                  加入
+                </button>
+              </li>
+            </ul>
+            <!-- 接口未就绪时不叠「还没有播放列表」：那会把「读不到」说成「真的没有」 -->
+            <p v-else-if="!plLoading && !plUnavailable" class="vp-hint">还没有播放列表</p>
+            <div class="vp-pl-new">
+              <button
+                v-if="!plCreating"
+                class="vp-add"
+                type="button"
+                :disabled="!!plUnavailable || !!plBusy"
+                title="新建一个播放列表并把本片加进去"
+                @click="plOpenCreate"
+              >
+                ＋ 新建列表
+              </button>
+              <template v-else>
+                <input
+                  class="vp-pl-input"
+                  type="text"
+                  maxlength="60"
+                  :value="plNewName"
+                  placeholder="新列表名称"
+                  aria-label="新播放列表名称"
+                  @input="plNameInput"
+                  @keyup.enter="plCreate"
+                />
+                <button class="vp-mini vp-mini-ok" type="button" :disabled="!plCanCreate" @click="plCreate">创建并加入</button>
+              </template>
+            </div>
+            <p v-if="plBusy === '__new'" class="vp-hint">正在新建…</p>
+          </template>
+        </template>
       </section>
 
       <div v-if="saving" class="vp-hint">保存中…</div>
@@ -321,6 +416,8 @@ import {
 import { readLocalPersons, writeLocalPersons } from './personLocal'
 // P5.3-B：站端演员接口（PUT /video/{id}/persons、POST /persons）；未就绪只提示
 import { PERSON_NOT_READY, errorText, isNotReady, saveVideoPersons } from './personApi'
+// P5.26：播放列表分区 —— 数据源与写入口复用卡片 / 工具栏那一份（含本片已加入判定与三档闸门）
+import { addedMessage, createdMessage, usePlaylistAdd } from './usePlaylistAdd'
 // P5-C：标记预览帧（精灵图按时间取格，几何唯一实现在 spriteCell.js）
 import SpriteThumb from './SpriteThumb.vue'
 // P4-B：标记区间（pos–endPos）的归一化与展示文本，与播放器进度条刻度共用同一份逻辑
@@ -431,6 +528,69 @@ const markers = ref(seed && Array.isArray(seed.markers) ? seed.markers.filter((m
  *     只有 applyMeta（读接口成功 / 写接口回读成功）与 saveLocal 之后才置 true。
  */
 const markersTrusted = ref(isLocal.value)
+
+/* ---------------- P5.26（用户反馈 7）：信息栏播放列表分区 ---------------- */
+
+/**
+ * 数据 / 写入口全部来自 usePlaylistAdd —— 与 VideoCard 的卡片菜单、PlaylistPicker 完全同一份：
+ *   清单 GET /api/media/playlists（含内联 videoIds，零额外请求判定「本片已加入」）
+ *   追加 POST /api/media/playlist/{id}/videos、移出 DELETE /api/media/playlist/{id}/videos/{videoId}
+ *   新建 POST /api/media/playlists（videoIds 一并带上）
+ * 三档：off → 本分区只渲染一句话、**不发请求**；local → 拉清单但不给写入口（统一闸门文案）；
+ *       full → 全功能。接口未就绪时 items 为空 + unavailable 一句提示，不抛异常。
+ */
+const {
+  items: plItems,
+  loading: plLoading,
+  unavailable: plUnavailable,
+  busyId: plBusy,
+  newName: plNewName,
+  creating: plCreating,
+  blocked: plBlocked,
+  canCreate: plCanCreate,
+  load: plLoad,
+  openCreate: plOpenCreate,
+  closeCreate: plCloseCreate,
+  addTo: plAddTo,
+  removeFrom: plRemoveFrom,
+  createAndAdd: plCreateAndAdd
+} = usePlaylistAdd({
+  level: () => props.level,
+  videoIds: () => [props.video && props.video.id].filter(Boolean),
+  notify: (msg) => emit('notify', msg)
+})
+
+/** 本片已加入的列表数量（标题右侧那个数字，与「人物 / 标记」同一视觉语言） */
+const plJoinedCount = computed(() => plItems.value.filter((p) => p.joined).length)
+
+/** local 档也拉一次清单：播放列表没有本地兜底，不读服务端就一条都显示不出来（只读，不写） */
+function loadPlaylists() {
+  if (readOnly.value) return
+  plLoad()
+}
+
+function plNameInput(e) {
+  plNewName.value = String((e && e.target && e.target.value) || '')
+}
+
+async function plJoin(p) {
+  const ok = await plAddTo(p)
+  if (!ok) return
+  emit('notify', addedMessage(p && p.name, 1))
+}
+
+async function plLeave(p) {
+  const ok = await plRemoveFrom(p)
+  if (!ok) return
+  emit('notify', '已从播放列表「' + ((p && p.name) || '') + '」移出本片')
+}
+
+async function plCreate() {
+  const made = await plCreateAndAdd()
+  if (!made) return
+  plCloseCreate()
+  emit('notify', createdMessage(made.name, 1))
+}
 
 /** 新增标记的最小表单：mm:ss + 说明 + 颜色 */
 const markAt = ref('')
@@ -730,7 +890,7 @@ function addMarker() {
   if (markMode.value === 'range') {
     const end = parsePos(markEnd.value)
     if (end == null) {
-      emit('notify', '区间终点请填 mm:ss，或点「以当前位置为终点」')
+      emit('notify', '区间终点请填 mm:ss，或点终点行的「取当前」')
       return
     }
     if (markerSpan({ pos, endPos: end }).end == null) {
@@ -883,6 +1043,8 @@ fillTimeline(true)
 onMounted(() => {
   // 元数据晚到：duration 打开抽屉时可能还是 0，挂载后按真实时长补/夹一次
   fillTimeline(false)
+  // P5.26：播放列表分区（off 档直接返回，不发请求）
+  loadPlaylists()
   if (!isFull.value) {
     loading.value = false
     return
@@ -1175,6 +1337,86 @@ onMounted(() => {
 .vp-mini:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+/* P5.26（用户反馈 7）：信息栏「播放列表」分区 —— 与人物 / 标签同一套卡片式分组的语言：
+   每行一个列表（名称 / 数量 / 加入或移出），已加入的行用强调色描边 + 浅底（不是另起一种色块）。
+   变量全部取 mediaTheme 的 --qt-* 映射（--bg / --bg-3 / --line / --fg / --fg-dim / --accent-soft），亮暗通用。 */
+.vp-pl {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vp-pl-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 32px;
+  padding: 2px 4px 2px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-3);
+}
+
+.vp-pl-row.on {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: var(--accent-soft);
+}
+
+/* 长列表名省略而不是把行撑宽：min-width:0 + ellipsis 是这一行唯一的伸缩项 */
+.vp-pl-n {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--fg);
+  font-size: 12.5px;
+}
+
+.vp-pl-c {
+  flex: 0 0 auto;
+  color: var(--fg-dim);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 加入 / 移出按钮：与其它 vp-mini 同高 28px，窄一点（行内还有名称与数量） */
+.vp-pl-btn {
+  flex: 0 0 auto;
+  min-width: 48px;
+  padding: 0 8px;
+}
+
+.vp-pl-new {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.vp-pl-input {
+  flex: 1 1 120px;
+  min-width: 0;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12.5px;
+}
+
+.vp-pl-input:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .vp-tags {

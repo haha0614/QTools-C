@@ -83,6 +83,7 @@
           @touchstart.passive="onUserActivity"
           @mouseenter="onStageEnter"
           @mouseleave="onStageLeave"
+          @wheel="onStageWheel"
         >
           <div ref="stageEl" class="p-stage">
             <!-- 原画与转码都不再挂原生 controls：控制条统一用下方自绘 .p-ctrl -->
@@ -171,16 +172,26 @@
                 >
                   {{ isPlaying ? '⏸' : '▶' }}
                 </button>
-                <button
-                  class="p-btn"
-                  type="button"
-                  :aria-label="muted || volume === 0 ? '取消静音' : '静音'"
-                  :title="muted || volume === 0 ? '取消静音（M）' : '静音（M）'"
-                  @click="toggleMute"
-                >
-                  {{ muted || volume === 0 ? '🔇' : '🔊' }}
-                </button>
-                <!-- 音量滑块：窄屏让位给静音按钮（既有规则不变） -->
+                <!-- P5.26（用户反馈 1「增加音量调节时的百分比显示」）：
+                     百分比浮标签锚在**音量按钮**上方（不是滑块上方）—— 按钮在窄屏也不隐藏，
+                     而 .p-vol 在 ≤767px 是 display:none，锚滑块会让标签失去定位基准。
+                     标签绝对定位在控制条之上（bottom:100%+8px）+ pointer-events:none：
+                     既不占控制条布局，也不会遮住任何控件；0–100 整数，松手 700ms 后淡出。 -->
+                <span class="p-volb-wrap">
+                  <span class="p-vol-pct" :class="{ on: volPctShown }" aria-hidden="true">{{ volPct }}%</span>
+                  <button
+                    class="p-btn"
+                    type="button"
+                    :aria-label="muted || volume === 0 ? '取消静音' : '静音'"
+                    :title="muted || volume === 0 ? '取消静音（M）' : '静音（M）'"
+                    @click="toggleMute"
+                  >
+                    {{ muted || volume === 0 ? '🔇' : '🔊' }}
+                  </button>
+                </span>
+                <!-- 音量滑块：窄屏让位给静音按钮（既有规则不变）。
+                     P5.26：按住期间百分比常显（不排淡出计时），松手 / change / blur 才开始淡出；
+                     键盘 ↑/↓ 走的是 input 事件（没有 pointerdown），直接按「自动淡出」处理。 -->
                 <input
                   class="p-vol"
                   type="range"
@@ -189,8 +200,13 @@
                   step="0.05"
                   :value="muted ? 0 : volume"
                   aria-label="音量"
-                  title="音量（↑ / ↓）"
+                  title="音量（↑ / ↓，滚轮 ±5%）"
                   @input="onVolumeInput"
+                  @pointerdown="onVolPointerDown"
+                  @pointerup="onVolRelease"
+                  @pointercancel="onVolRelease"
+                  @change="onVolRelease"
+                  @blur="onVolRelease"
                 />
                 <!-- P5.19：时间码**一直**显示帧号（位置 hh:mm:ss:ff / 总时长），
                      文案由 playerExtras.seekTimecodeText 一处生成；缺帧率的片退化成 mm:ss。
@@ -426,7 +442,9 @@
              两态只差水平位置，y / 宽 / 高不变，靠 transition 平滑滑动而不是瞬移。
              不改原落点的话，收起后栏宽归零、视频变宽，按钮会浮在画面中间（实测距右边缘 412px）。
            P5.25（用户反馈 3）：默认**完全不可见**（opacity 0），指针移入信息栏或按钮本身才浮到 1，
-           移出即淡回 0（不动视频，拖动时不闪）；键盘 Tab 到它时 :focus-visible 同样浮到 1。 -->
+           移出即淡回 0（不动视频，拖动时不闪）；键盘 Tab 到它时 :focus-visible 同样浮到 1。
+           P5.26（用户反馈 6）：视觉仍是 20×64，命中 / hover 激活区由透明 ::before 向上向下各扩 66px
+           （合计 196px，见样式里的 .p-side-toggle::before）—— 沿信息栏左边缘上下移动即可触发。 -->
       <button
         class="p-side-toggle"
         :class="{ 'is-shown': sideHover, 'is-open': sideOpen }"
@@ -512,6 +530,11 @@ import {
   normalizeSpeed,
   pointerInCtrlZone,
   progressGate,
+  // P5.26：滚轮调音量（±5% / 累计像素凑档 / 百分比口径）—— 纯逻辑在 playerExtras
+  VOL_WHEEL_PX,
+  stepVolume,
+  volumePercent,
+  wheelVolumeNotches,
   readGainLevel,
   readSpeedLevel,
   seekPxToRatio,
@@ -1749,6 +1772,11 @@ onBeforeUnmount(() => {
   seekClock.stop()
   // P4.4：清掉自动隐藏计时器（否则卸载后仍会回调一次 onChange）
   ctrlAuto.dispose()
+  // P5.26：音量百分比的淡出计时器同理 —— 卸载后不该再写 volPctShown
+  if (volPctTimer) {
+    clearTimeout(volPctTimer)
+    volPctTimer = null
+  }
   endQHint()
   // P4-B：释放请求的帧回调与 WebAudio 图（不释放会一直占着 AudioContext，Chrome 上限 6 个）
   stopFrameSampling()
@@ -2665,6 +2693,85 @@ function onVolumeChange() {
   muted.value = !!el.muted
 }
 
+/* ---------------- P5.26 音量百分比浮标签 + 滚轮调音量（用户反馈 1 / 2） ---------------- */
+
+/** 松手 / 停止操作后百分比淡出的延时（ms）：够看清数字，又不赖在画面上 */
+const VOL_PCT_FADE_MS = 700
+/** 百分比浮标签是否可见（CSS 用 opacity 过渡淡出，元素常驻 DOM，不参与控制条布局） */
+const volPctShown = ref(false)
+/** 指针正按在音量滑块上：按住期间不排淡出计时，松手那一刻才开始计时 */
+let volHold = false
+let volPctTimer = null
+/** 浮标签文本：静音按 0 显示（与滑块 thumb 位置一致，不是「记忆音量」） */
+const volPct = computed(() => volumePercent(muted.value ? 0 : volume.value))
+
+/**
+ * 显示百分比。autoHide=true → delay 后淡出（滚轮 / 键盘 / 松手）；
+ * autoHide=false → 保持（按住滑块拖动期间，每一步 input 都刷新数字但不会半路消失）。
+ */
+function showVolPct(autoHide) {
+  volPctShown.value = true
+  if (volPctTimer) {
+    clearTimeout(volPctTimer)
+    volPctTimer = null
+  }
+  if (autoHide) {
+    volPctTimer = setTimeout(() => {
+      volPctTimer = null
+      volPctShown.value = false
+    }, VOL_PCT_FADE_MS)
+  }
+}
+
+function onVolPointerDown() {
+  volHold = true
+  showVolPct(false)
+}
+
+/** 松手 / change / pointercancel / blur 四路都会到：只有「确实按着」时才排淡出，避免重复计时 */
+function onVolRelease() {
+  if (!volHold) return
+  volHold = false
+  showVolPct(true)
+}
+
+/** 滚轮累计余量（px）：触控板一次手势几十个小 delta 靠它凑档，见 playerExtras.wheelVolumeNotches */
+let wheelAcc = 0
+
+/**
+ * 视频区滚轮调音量（用户反馈 2）：
+ *   - 只在 .p-fs-wrap 内（事件挂在该元素上）且**没有修饰键**时接管 —— Ctrl+滚轮是页面缩放、
+ *     Shift+滚轮是横向滚动、Alt/Meta 交系统，这些一律放行（不 preventDefault）；
+ *   - 目标落在「设置」浮层（[data-qt-set-panel]）里时完全不插手：面板内的列表自己要用滚轮，
+ *     否则滚一下就把音量改了；
+ *   - 其余情况 preventDefault 拦掉页面滚动 —— 视频区外没有任何监听器，页面照常滚（用户要求）；
+ *   - 每次 ±5%（VOL_WHEEL_STEP），到 0 / 100 就停；静音状态下滚轮向上会先解除静音；
+ *   - 全屏时 .p-fs-wrap 本身就是全屏元素，同一条监听器照常生效。
+ */
+function onStageWheel(e) {
+  if (!e || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return
+  const el = videoEl.value
+  if (!el) return
+  const t = e.target
+  if (t && typeof t.closest === 'function' && t.closest('[data-qt-set-panel]')) return
+  const r = wheelVolumeNotches(wheelAcc, e.deltaY, VOL_WHEEL_PX)
+  wheelAcc = r.acc
+  // 区内拦页面滚动（触控板的小 delta 也拦：否则滚一档音量顺带把页面滚走）
+  e.preventDefault()
+  if (!r.notches) return
+  const cur = el.muted ? 0 : el.volume
+  const next = stepVolume(cur, r.notches)
+  if (next === cur) {
+    // 已经顶到 0 / 100：只给一次数字反馈，不再写 el.volume（避免无意义的 volumechange）
+    showVolPct(true)
+    return
+  }
+  el.volume = next
+  el.muted = next <= 0
+  onVolumeChange()
+  showVolPct(true)
+}
+
 function onVolumeInput(e) {
   const el = videoEl.value
   if (!el) return
@@ -2672,6 +2779,8 @@ function onVolumeInput(e) {
   el.volume = v
   el.muted = v <= 0
   onVolumeChange()
+  // 按住拖动不排淡出；键盘 ↑/↓（没有 pointerdown）走自动淡出
+  showVolPct(!volHold)
 }
 
 function toggleMute() {
@@ -2680,6 +2789,7 @@ function toggleMute() {
   el.muted = !el.muted
   if (!el.muted && el.volume <= 0) el.volume = 0.5
   onVolumeChange()
+  showVolPct(true)
 }
 
 function onLoadedMetadata() {
@@ -2809,9 +2919,14 @@ function seekRel(delta) {
   seekPos.value = seekPosOf(target)
 }
 
+/** 键盘 ↑/↓ 调音量（P5.26：同样给百分比反馈 —— 同一块浮标签，自动淡出） */
 function adjustVolume(delta) {
   const el = videoEl.value
-  if (el) el.volume = Math.max(0, Math.min(1, el.volume + delta))
+  if (!el) return
+  el.volume = Math.max(0, Math.min(1, el.volume + delta))
+  el.muted = el.volume <= 0
+  onVolumeChange()
+  showVolPct(true)
 }
 
 /**
@@ -3006,6 +3121,23 @@ defineExpose({
    窄屏浮层（≤1199 与 ≤767）也走同一条规则：展开贴浮层左边缘、收起贴右边缘。 */
 .p-side-toggle:not(.is-open) {
   right: 0;
+}
+
+/* P5.26（用户反馈 6「信息栏展开按钮的显示激活区域拉高」）：
+   视觉仍是 20×64 的竖条，但**命中区 = hover 激活区**向上 / 向下各扩 66px（合计 196px，≥120px）。
+   用透明伪元素扩展而不是加 padding：padding 会把视觉盒（border + background）一起撑大，
+   而 ::before 参与命中测试（elementFromPoint 返回按钮本身、:hover 同样成立）却不参与布局，
+   20×64 的视觉尺寸一字不变。纵向扩展正好对应用户描述的动作 ——
+   「鼠标沿信息栏左边缘上下移动」时不用再精确对准中间那 64px。横向不扩（left/right: 0），
+   避免把信息栏左边缘的可点内容也吞进按钮的命中区。 */
+.p-side-toggle::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -66px;
+  bottom: -66px;
+  background: transparent;
 }
 
 .p-side-toggle.is-shown,
@@ -3298,16 +3430,27 @@ defineExpose({
      P5.25（用户反馈 6「控制条不够透明」）：底座 .18 → .11、白雾 6% → 4%、发丝线 .08 → .06，
      blur 9px → 12px。底座越淡，「白帧背衬下的白字」就越依赖控件自己的深色 chip，
      所以 chip 同步从 .46 提到 .50（亮）/ .50（暗）—— 把可读性留在 chip 上，而不是回退底座。
-     实测（白帧最坏背衬 → 底座 → 白雾 → chip → 白字）：亮 4.81:1 / 暗 4.94:1，均 ≥4.5:1。 */
-  --p-scrim: rgba(0, 0, 0, 0.11);
-  --p-veil: rgba(255, 255, 255, 0.04);
-  --p-hair: rgba(0, 0, 0, 0.06);
+     实测（白帧最坏背衬 → 底座 → 白雾 → chip → 白字）：亮 4.81:1 / 暗 4.94:1，均 ≥4.5:1。
+
+     P5.26（用户反馈 5「背景透明度还是不够，继续透明」）：再降一档到验收区间 0.04–0.07 的中值 ——
+     底座 .11 → .06、白雾 4% → 2%、发丝线 .06 → .05、blur 12px → 14px（更模糊 = 更像玻璃）。
+     底座降到 .06 之后，白帧最坏背衬只剩 240（.11 时是 228），**chip 必须加深**才守得住 4.5:1：
+     chip .50 → .58（亮 / 暗同值）、hover .60 → .68。
+     算账（sRGB 白 255 → 底座 .06 → 白雾 .02 → chip .58 → 白字 #fff）：
+       白帧 255 → 底座后 239.7 → 白雾后 240.0 → chip 后 100.8 → 相对亮度 0.1281 → 对比度 5.90:1。
+     结论：底座更透（0.06 落在用户要求区间），可读性由 chip 变深来兜，没有回退底座。 */
+  --p-scrim: rgba(0, 0, 0, 0.06);
+  --p-veil: rgba(255, 255, 255, 0.02);
+  --p-hair: rgba(0, 0, 0, 0.05);
   --p-ink: #fff;
-  --p-chip: rgba(0, 0, 0, 0.5);
-  --p-chip-hover: rgba(0, 0, 0, 0.6);
+  --p-chip: rgba(0, 0, 0, 0.58);
+  --p-chip-hover: rgba(0, 0, 0, 0.68);
   --p-edge: rgba(255, 255, 255, 0.3);
   --p-edge-hover: rgba(255, 255, 255, 0.6);
   --p-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  /* P5.26：音量百分比浮标签自己的 chip —— 它浮在控制条**之上**（压着画面），
+     没有底座可借，所以单独给一档更深的底（白字 → 10:1 量级）。 */
+  --p-pct-bg: rgba(0, 0, 0, 0.78);
   position: absolute;
   left: 0;
   right: 0;
@@ -3319,8 +3462,8 @@ defineExpose({
   padding: 8px 14px;
   background-color: var(--p-scrim);
   background-image: linear-gradient(var(--p-veil), var(--p-veil));
-  backdrop-filter: blur(12px) saturate(1.05);
-  -webkit-backdrop-filter: blur(12px) saturate(1.05);
+  backdrop-filter: blur(14px) saturate(1.08);
+  -webkit-backdrop-filter: blur(14px) saturate(1.08);
   border-top: 1px solid var(--p-hair);
   min-width: 0;
   overflow: visible;
@@ -3426,6 +3569,45 @@ defineExpose({
    改法：appearance:none + 显式 4px 轨道 + 12px thumb + padding 归零 ——
    Blink / Gecko 都把 thumb 完整含在轨道内（thumb 中心行程 = [r, W-r]），
    于是 value=0 时 thumb 左缘贴 0%、value=1 时 thumb 右缘贴 100%（实测 ±1px，见 devtools/p525-player）。 */
+/* P5.26（用户反馈 1 / 2）：音量百分比的锚与浮标签。
+   锚点包住**静音按钮**（不是滑块）—— .p-vol 在 ≤767px 是 display:none，锚滑块会让标签失去基准。
+   浮标签在控制条之上（bottom:100%+8px）绝对定位 + pointer-events:none：不占布局、不挡任何控件。 */
+.p-volb-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.p-vol-pct {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  z-index: 6;
+  min-width: 40px;
+  padding: 2px 6px;
+  border: 1px solid var(--p-edge);
+  border-radius: 6px;
+  background: var(--p-pct-bg);
+  color: var(--p-ink);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0;
+  text-align: center;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  box-shadow: var(--p-shadow);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.p-vol-pct.on {
+  opacity: 1;
+}
+
 .p-vol {
   flex-shrink: 0;
   width: 86px;
@@ -4353,11 +4535,12 @@ defineExpose({
 }
 
 /* ==================== P5.24-A 暗色主题：控制条令牌覆盖 ====================
-   亮色是 .p-ctrl 上的默认值。暗色下底座稍微加深一档（.20，仍远低于 .30 的验收上限）、
+   亮色是 .p-ctrl 上的默认值。暗色下底座与亮色同一档（都在验收区间 0.04–0.07 内）、
    去掉那层白色薄雾（暗色不需要「压成浅雾」），发丝线换成亮色。 */
 html.dark .p-ctrl {
-  /* P5.25：暗色底座 .20 → .12（与亮色同一档，仍远低于 .30 的验收上限），白雾仍不要 */
-  --p-scrim: rgba(0, 0, 0, 0.12);
+  /* P5.25：暗色底座 .20 → .12；P5.26：再降到 .07（仍落在区间上限内，白雾保持 transparent）。
+     暗色没有白色薄雾，白帧背衬合成后是 237 —— 比亮色略深，chip .58 的对比度反而更高。 */
+  --p-scrim: rgba(0, 0, 0, 0.07);
   --p-veil: transparent;
   --p-hair: rgba(255, 255, 255, 0.08);
 }

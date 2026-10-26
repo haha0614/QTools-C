@@ -450,6 +450,63 @@ export function seekRatioCss(ratio) {
   )
 }
 
+/* ==================================== P5.26 滚轮调音量（纯计算） ==================================== */
+
+/** 滚轮每档的音量步长：±5%（用户验收口径「连续 5 次 = +25%」） */
+export const VOL_WHEEL_STEP = 0.05
+/** 多少像素的 deltaY 算「一档」：鼠标滚轮一格 = 100（Chrome），触控板远小于此，靠累计凑够一档 */
+export const VOL_WHEEL_PX = 100
+
+/**
+ * 滚轮 → 音量档数（纯函数，单测见 playerExtras.test.mjs）。
+ *
+ * 为什么要累计而不是「一个 wheel 事件 = 5%」：
+ *   鼠标滚轮一格（Chrome deltaY=100）正好一档，但触控板 / 精密滚轮一次手势会连发几十个
+ *   deltaY≈3 的小事件 —— 直接按事件计数会把音量瞬间拉到 0 或 100。这里按像素累计，
+ *   凑满 VOL_WHEEL_PX 才走一档，余量留到下一次（不会丢，也不会因为一次大 delta 而跳档：
+ *   一次 deltaY=300 就是三档）。
+ *
+ * 方向：滚轮向上（deltaY < 0）= 音量 +1 档（与系统 / 网页滚动方向一致：上 = 增）。
+ * 返回 { acc, notches }：acc 是留到下次的余量，notches 是本次要走的档数（可能为 0）。
+ */
+export function wheelVolumeNotches(acc, deltaY, stepPx) {
+  const th = num(stepPx) != null && num(stepPx) > 0 ? num(stepPx) : VOL_WHEEL_PX
+  const d = num(deltaY)
+  let a = num(acc) || 0
+  if (d == null || d === 0) return { acc: a, notches: 0 }
+  a += d
+  let notches = 0
+  // 循环而不是 Math.floor：正负混滚时余量要保持「离下一档还有多少」的语义
+  while (a <= -th) {
+    a += th
+    notches += 1
+  }
+  while (a >= th) {
+    a -= th
+    notches -= 1
+  }
+  return { acc: a, notches }
+}
+
+/**
+ * 音量值归一化到 0–1 并吸到 VOL_WHEEL_STEP 栅格（滚轮 / 键盘每次走固定档，避免 0.734 这类脏值）。
+ * 到 0 / 1 就停（clamp），不会越界。
+ */
+export function stepVolume(current, notches, step) {
+  const st = num(step) != null && num(step) > 0 ? num(step) : VOL_WHEEL_STEP
+  const base = num(current) == null ? 0 : num(current)
+  const n = num(notches) || 0
+  const next = base + st * n
+  return round(clamp(next, 0, 1), 4)
+}
+
+/** 音量百分比（0–100 整数）：浮标签与 aria-valuetext 共用同一口径 */
+export function volumePercent(v) {
+  const n = num(v)
+  if (n == null) return 0
+  return Math.round(clamp(n, 0, 1) * 100)
+}
+
 /* ================================ P4.4 全屏控制条自动隐藏（纯状态机，定时器可注入） ================================ */
 
 /** 全屏下无操作多久后隐藏控制条（ms） */
@@ -474,12 +531,17 @@ export function ctrlCanHide(state) {
 /**
  * P5.23「控制条常驻叠加在视频上」的隐藏条件：非全屏也允许收起，判据从「全屏 + 2.5s 空闲」
  * 换成「指针离开视频区」（pointerIn === false）。
- * 三条闸门（暂停 / 拖动进度条 / 浮层展开）与 ctrlCanHide 完全一致 —— 只换掉全屏那一条，
- * 因为新布局里控制条任何时候都盖在画面上，不再有「占一行」的流内位置可留。
+ *
+ * P5.26（用户反馈 3「视频暂停时，视频控制栏正常显示隐藏，不再常驻」）：删掉「暂停」这条闸门。
+ *   改动前：暂停 → playing=false → 永不满足 → 控制条常驻，指针移出也不收（用户看到的就是「暂停后
+ *   控制条一直挂在画面上」）。改动后暂停与播放同一条规则：指针离开视频区即收起、移入即显示；
+ *   只剩两条真闸门 —— 拖动进度条（拖到一半收走会丢失拖动上下文）与浮层展开（设置面板 / hover 预览
+ *   收了会留下一张没有底座的浮卡片）。暂停态需要操作时指针移回视频区即可唤出，成本一次 mousemove。
+ *   全屏的 ctrlCanHide 保持原样（那里没有「移出」这回事，2.5s 空闲淡出更合适，用户未提出改动）。
  */
 export function ctrlCanHideDocked(state) {
   const s = state || {}
-  return !!(s.pointerIn === false && s.playing && !s.hover && !s.dragging && !s.overlay)
+  return !!(s.pointerIn === false && !s.hover && !s.dragging && !s.overlay)
 }
 
 /**

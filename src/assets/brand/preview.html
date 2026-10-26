@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1400">
+<title>青兔工具箱 · logo 资产预览（P5.27 方向 A）</title>
+<style>
+  :root {
+    --accent: #4C8DFF;        /* 站内 app.css:9 --accent 真值 */
+    --accent-soft: rgba(76,141,255,.16);
+    --ink: #0A1613;           /* 近黑墨绿：描边 / 亮底字标 */
+    --orange: #FF8A5B;        /* 内耳暖橙点缀 */
+    --fg: #E6E8EE;            /* 站内 --fg */
+    --fg-dim: #9AA3B2;        /* 站内 --fg-dim */
+    --bg: #111318;            /* 站内 --bg */
+    --line: #2A2F3A;          /* 站内 --line */
+    --font: "PingFang SC","Microsoft YaHei","Hiragino Sans GB","Noto Sans CJK SC",system-ui,"Segoe UI",sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #F4F6FA; color: var(--ink); font-family: var(--font); }
+  .wrap { width: 1360px; margin: 0 auto; padding: 26px 0 56px; }
+  h1 { font-size: 24px; margin: 0 0 6px; letter-spacing: .5px; }
+  h2 { font-size: 15px; margin: 0 0 14px; letter-spacing: .6px; }
+  h3 { font-size: 12px; margin: 0 0 10px; letter-spacing: .8px; font-weight: 600; opacity: .72; }
+  .lede { font-size: 13px; line-height: 1.7; color: #4A5468; margin: 0 0 14px; }
+  .swatches { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 22px; }
+  .sw { display: flex; align-items: center; gap: 8px; font-size: 11.5px; background: #fff; border: 1px solid #E3E8F1; border-radius: 999px; padding: 5px 12px 5px 6px; }
+  .sw i { width: 18px; height: 18px; border-radius: 6px; display: inline-block; border: 1px solid rgba(10,22,19,.12); }
+  .sw code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 11px; opacity: .8; }
+  .panel { border-radius: 18px; padding: 20px 22px 24px; margin: 0 0 20px; }
+  .panel.light { background: #FFFFFF; border: 1px solid #E3E8F1; }
+  .panel.dark { background: var(--bg); color: var(--fg); border: 1px solid var(--line); }
+  .panel.dark h3 { opacity: .8; }
+  .ladder { display: flex; align-items: flex-end; gap: 38px; padding: 4px 0 18px; }
+  .ladder figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .ladder figcaption { font-size: 11px; font-family: ui-monospace, Consolas, monospace; opacity: .62; }
+  .sizes { display: flex; align-items: flex-end; gap: 20px; }
+  .rule { height: 1px; background: #E3E8F1; margin: 6px 0 20px; }
+  .panel.dark .rule { background: var(--line); }
+  .px { display: flex; gap: 22px; flex-wrap: wrap; padding: 0 0 18px; }
+  .px figure { margin: 0; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+  .px canvas { display: block; border-radius: 4px; }
+  .px figcaption { font-size: 10.5px; font-family: ui-monospace, Consolas, monospace; opacity: .62; }
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .card { border: 1px solid #E3E8F1; border-radius: 12px; padding: 12px 12px 10px; background: #FCFDFF; }
+  .panel.dark .card { border-color: var(--line); background: #16191F; }
+  .card .box { height: 104px; display: flex; align-items: center; justify-content: center; gap: 14px; }
+  .card .box img { display: block; }
+  .card b { display: block; font-size: 11.5px; font-family: ui-monospace, Consolas, monospace; font-weight: 600; margin: 0 0 4px; }
+  .card p { margin: 0; font-size: 11px; line-height: 1.55; opacity: .72; }
+  .card span { display: block; font-size: 10px; opacity: .5; margin-top: 5px; font-family: ui-monospace, Consolas, monospace; }
+  .note { font-size: 12px; line-height: 1.8; color: #4A5468; }
+  .note code { font-family: ui-monospace, Consolas, monospace; font-size: 11px; background: #EEF2F8; padding: 1px 5px; border-radius: 4px; }
+  .panel.dark .note { color: #C6CEDA; }
+  .panel.dark .note code { background: #232830; }
+  .mono-demo { width: 64px; height: 64px; filter: invert(1); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>青兔工具箱 · logo 资产预览（P5.27 / 方向 A：兔耳 + 工具箱盒身 + 播放三角负空间）</h1>
+  <p class="lede">
+    本页直接以 &lt;img&gt; 引入同目录的 7 个 SVG 文件（不是内联复刻），所以这里看到的就是资产文件本身的渲染结果。
+    下方「真实像素放大」用 canvas 先把图标栅格化到它真实的 CSS 像素尺寸，再最近邻放大，用于判断 16px 下的辨识度。
+  </p>
+  <div class="swatches">
+    <div class="sw"><i style="background:#4C8DFF"></i>--accent <code>#4C8DFF</code>（public/media/app.css:9）</div>
+    <div class="sw"><i style="background:#0A1613"></i>墨绿 <code>#0A1613</code>（描边 / 字标）</div>
+    <div class="sw"><i style="background:#FF8A5B"></i>暖橙 <code>#FF8A5B</code>（内耳点缀）</div>
+    <div class="sw"><i style="background:#111318"></i>--bg <code>#111318</code>（暗底）</div>
+    <div class="sw"><i style="background:#E6E8EE"></i>--fg <code>#E6E8EE</code>（暗底字标）</div>
+  </div>
+
+  <section class="panel light">
+    <h2>亮色底 · 尺寸阶梯</h2>
+    <div class="ladder">
+      <figure><img src="logo-mark.svg" width="16" height="16" alt="logo-mark 16"><figcaption>16</figcaption></figure>
+      <figure><img src="logo-mark.svg" width="22" height="22" alt="logo-mark 22"><figcaption>22</figcaption></figure>
+      <figure><img src="logo-mark.svg" width="32" height="32" alt="logo-mark 32"><figcaption>32</figcaption></figure>
+      <figure><img src="logo-mark.svg" width="64" height="64" alt="logo-mark 64"><figcaption>64</figcaption></figure>
+      <figure><img src="logo-mark.svg" width="180" height="180" alt="logo-mark 180"><figcaption>180</figcaption></figure>
+    </div>
+    <div class="rule"></div>
+    <h3>真实像素放大 · canvas 最近邻（左：16px 原尺寸栅格化；右：22 / 32px）</h3>
+    <div class="px">
+      <figure><canvas data-src="logo-mark.svg" data-natural="16" data-scale="8" data-bg="#FFFFFF" width="128" height="128"></canvas><figcaption>logo-mark @16 ×8</figcaption></figure>
+      <figure><canvas data-src="favicon-16.svg" data-natural="16" data-scale="8" data-bg="#FFFFFF" width="128" height="128"></canvas><figcaption>favicon-16 @16 ×8</figcaption></figure>
+      <figure><canvas data-src="logo-mark.svg" data-natural="22" data-scale="6" data-bg="#FFFFFF" width="132" height="132"></canvas><figcaption>logo-mark @22 ×6</figcaption></figure>
+      <figure><canvas data-src="logo-mark.svg" data-natural="32" data-scale="4" data-bg="#FFFFFF" width="128" height="128"></canvas><figcaption>logo-mark @32 ×4</figcaption></figure>
+      <figure><canvas data-src="favicon-32.svg" data-natural="32" data-scale="4" data-bg="#FFFFFF" width="128" height="128"></canvas><figcaption>favicon-32 @32 ×4</figcaption></figure>
+    </div>
+    <div class="rule"></div>
+    <h3>资产清单</h3>
+    <div class="cards">
+      <div class="card"><div class="box"><img src="logo-mark.svg" width="72" height="72" alt="logo-mark"></div>
+        <b>logo-mark.svg</b><p>主图标。站点标识、播放器 .p-brand、关于页、社交头图</p><span>64×64 · viewBox 0 0 64 64</span></div>
+      <div class="card"><div class="box"><img src="logo-mark-mono.svg" width="72" height="72" alt="logo-mark mono"><span class="mono-demo-wrap"></span></div>
+        <b>logo-mark-mono.svg</b><p>单色版（currentColor）。单色印刷、水印、favicon 兜底、压在任意底色的场景</p><span>64×64 · 无底色、无暖橙</span></div>
+      <div class="card"><div class="box"><img src="favicon-16.svg" width="16" height="16" alt="favicon16"><img src="favicon-16.svg" width="32" height="32" alt="favicon16 big"></div>
+        <b>favicon-16.svg</b><p>16px 极简版：只留兔耳 + 播放三角，去掉盒身与四格槽</p><span>16×16 · 浏览器标签页</span></div>
+      <div class="card"><div class="box"><img src="favicon-32.svg" width="32" height="32" alt="favicon32"><img src="favicon-32.svg" width="64" height="64" alt="favicon32 big"></div>
+        <b>favicon-32.svg</b><p>32px 极简版。高 DPI 标签页、PWA icon 的 32 档</p><span>32×32 · 同几何 ×2</span></div>
+      <div class="card"><div class="box"><img src="logo-lockup.svg" width="220" height="64" alt="lockup"></div>
+        <b>logo-lockup.svg</b><p>横向组合：图标 + 字标「青兔工具箱」。站点顶栏、登录页、分享卡片</p><span>220×64 · &lt;text&gt; + 字体回退栈</span></div>
+      <div class="card"><div class="box"><img src="logo-light.svg" width="220" height="64" alt="light"></div>
+        <b>logo-light.svg</b><p>亮底版 lockup：字标用墨绿 #0A1613</p><span>220×64 · 白 / 浅灰底</span></div>
+      <div class="card"><div class="box"><span style="display:inline-flex;background:#111318;border-radius:12px;padding:9px"><img src="logo-mark-mono.svg" width="72" height="72" alt="mono invert" style="filter:invert(1)"></span></div>
+        <b>logo-mark-mono.svg（暗底）</b><p>currentColor 默认为黑；暗底内联时继承父级 color，此处用 invert(1) 演示反白</p><span>64×64 · 见下方 dark 面板</span></div>
+      <div class="card"><div class="box"><img src="logo-mark.svg" width="48" height="48" alt="m"><img src="logo-mark.svg" width="24" height="24" alt="m2"></div>
+        <b>嵌套缩放检查</b><p>同一文件在 48 / 24 下保持几何一致，无描边变粗/糊边</p><span>矢量，任意尺寸</span></div>
+    </div>
+  </section>
+
+  <section class="panel dark">
+    <h2>暗色底（站内 --bg #111318）· 同一批资产</h2>
+    <div class="ladder">
+      <figure><img src="logo-mark.svg" width="16" height="16" alt="d16"><figcaption>16</figcaption></figure>
+      <figure><img src="logo-mark.svg" width="22" height="22" alt="d22"><figcaption>22</figcaption></figure>
+      <figure><img src="logo-mark.svg" width="32" height="32" alt="d32"><figcaption>32</figcaption></figure>
+      <figure><img src="logo-mark.svg" width="64" height="64" alt="d64"><figcaption>64</figcaption></figure>
+      <figure><img src="logo-mark.svg" width="180" height="180" alt="d180"><figcaption>180</figcaption></figure>
+    </div>
+    <div class="rule"></div>
+    <h3>真实像素放大 · 暗底（canvas 先铺 #111318）</h3>
+    <div class="px">
+      <figure><canvas data-src="logo-mark.svg" data-natural="16" data-scale="8" data-bg="#111318" width="128" height="128"></canvas><figcaption>logo-mark @16 ×8</figcaption></figure>
+      <figure><canvas data-src="favicon-16.svg" data-natural="16" data-scale="8" data-bg="#111318" width="128" height="128"></canvas><figcaption>favicon-16 @16 ×8</figcaption></figure>
+      <figure><canvas data-src="logo-mark.svg" data-natural="22" data-scale="6" data-bg="#111318" width="132" height="132"></canvas><figcaption>logo-mark @22 ×6</figcaption></figure>
+      <figure><canvas data-src="logo-mark.svg" data-natural="32" data-scale="4" data-bg="#111318" width="128" height="128"></canvas><figcaption>logo-mark @32 ×4</figcaption></figure>
+      <figure><canvas data-src="favicon-32.svg" data-natural="32" data-scale="4" data-bg="#111318" width="128" height="128"></canvas><figcaption>favicon-32 @32 ×4</figcaption></figure>
+    </div>
+    <div class="rule"></div>
+    <div class="cards">
+      <div class="card"><div class="box"><img src="logo-mark.svg" width="72" height="72" alt="dm"></div>
+        <b>logo-mark.svg</b><p>暗底上靠 #4C8DFF 底块自身发光，无需描边</p><span>对比度见下方备注</span></div>
+      <div class="card"><div class="box"><img src="logo-mark-mono.svg" width="72" height="72" alt="dmono" style="filter:invert(1)"></div>
+        <b>logo-mark-mono.svg</b><p>currentColor：内联到组件时继承父级 color，暗底自动反白</p><span>单色可辨识</span></div>
+      <div class="card"><div class="box"><img src="favicon-32.svg" width="32" height="32" alt="df32"><img src="favicon-32.svg" width="96" height="96" alt="df32 big"></div>
+        <b>favicon-32.svg</b><p>暗底标签页：蓝底块 + 墨绿剪影，边缘清晰</p><span>32×32</span></div>
+      <div class="card"><div class="box"><img src="logo-dark.svg" width="220" height="64" alt="dark"></div>
+        <b>logo-dark.svg</b><p>暗底 lockup：字标 --fg #E6E8EE，与播放页头部同色</p><span>220×64</span></div>
+    </div>
+    <div class="rule"></div>
+    <p class="note">
+      暗底可辨性依据：底块 <code>#4C8DFF</code> 相对 <code>#111318</code> 的对比度约 6.4:1；墨绿剪影 <code>#0A1613</code> 相对底块约 5.9:1 —— 两层都过 3:1 的图形对比度底线。
+    </p>
+  </section>
+
+  <section class="panel light">
+    <h2>替换 / 集成速查（本轮不落地，只给方案）</h2>
+    <p class="note">
+      1. 播放页头部「青」字徽标：<code>src/views/media/video/MediaPlayer.vue</code> 里 <code>.p-brand-badge</code>（{{ brandInitial }}）换成
+      <code>&lt;img src="@/assets/brand/logo-mark.svg" width="22" height="22" alt=""&gt;</code>，容器 <code>.p-brand</code> 已是 inline-flex + 22px 高，无需改布局。<br>
+      2. favicon：把 <code>favicon-32.svg</code>（或再放一份 16 版）复制到 <code>public/</code>，在 <code>index.html</code> 里把
+      <code>&lt;link rel="icon" href="data:,"&gt;</code> 换成
+      <code>&lt;link rel="icon" type="image/svg+xml" href="/favicon.svg"&gt;</code> + <code>&lt;link rel="apple-touch-icon" href="/logo-mark.svg"&gt;</code>。<br>
+      3. 已知限制：<code>logo-lockup/light/dark</code> 的字标是 <code>&lt;text&gt;</code>，依赖本机中文字体；字体缺失时按回退栈替换，字形宽度仍在 22px 量级，viewBox 已留 40px 余量不会溢出。
+    </p>
+  </section>
+</div>
+<script>
+(function () {
+  async function paint(c) {
+    var img = new Image();
+    img.src = c.getAttribute('data-src');
+    try { await img.decode(); } catch (e) { return; }
+    var n = Number(c.getAttribute('data-natural'));
+    var s = Number(c.getAttribute('data-scale'));
+    var off = document.createElement('canvas');
+    off.width = n; off.height = n;
+    var octx = off.getContext('2d');
+    octx.imageSmoothingEnabled = true;
+    octx.drawImage(img, 0, 0, n, n);
+    c.width = n * s; c.height = n * s;
+    var ctx = c.getContext('2d');
+    ctx.fillStyle = c.getAttribute('data-bg') || '#FFFFFF';
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(off, 0, 0, n, n, 0, 0, n * s, n * s);
+  }
+  window.__paintAll = function () {
+    return Promise.all([].map.call(document.querySelectorAll('canvas[data-src]'), paint));
+  };
+  window.__paintAll();
+})();
+</script>
+</body>
+</html>
