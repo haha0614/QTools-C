@@ -141,7 +141,7 @@ const tabStrip = (dark) => {
         'div',
         { class: 'tab' },
         img(v.src, 16, 16),
-        el('span', {}, i === 0 ? '青兔在线工具箱' : v.label)
+        el('span', {}, i === 0 ? '青兔工具箱' : v.label)
       )
     )
   })

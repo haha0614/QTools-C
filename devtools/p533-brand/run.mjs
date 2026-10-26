@@ -334,6 +334,50 @@ try {
   ok(shell.railText && shell.railText.length > 0, 'c4) 左栏站点名保留（仍取 APP_INFO.name）', JSON.stringify(shell.railText))
   ok(shell.topbarMark && shell.topbarText && shell.topbarText.length > 0, 'c5) 顶栏品牌位也换成了同一枚图标 + 站点名', JSON.stringify(shell.topbarText))
   ok(shell.dark === false, 'c6) 浅色主题下截图（html.dark 未挂）', String(shell.dark))
+
+  /* ================= D · P5.36 站点名统一为「青兔工具箱」（与 logo 字标逐字一致） */
+  console.log('\n== D · P5.36 站点名统一（APP_INFO.name / <title> / 首页 h1 / 字标同字）')
+  const jsA = (expr) => cdp.evaluate(expr, true)
+  const staticTitle = await jsA(
+    'fetch("/",{cache:"no-store"}).then(function(r){return r.text()}).then(function(t){var m=t.match(/<title>([^<]*)<\\/title>/);return m?m[1].trim():""})'
+  )
+  const appName = await jsA('import("/src/utils/constants.js").then(function(m){return m.APP_INFO.name})')
+  const appIntro = await jsA('import("/src/utils/constants.js").then(function(m){return m.APP_INTRO})')
+  const brandName = await jsA('import("/src/utils/brandMark.js").then(function(m){return m.BRAND.name})')
+  const ariaOf = (p) =>
+    jsA(
+      'fetch(' + JSON.stringify(p) + ',{cache:"no-store"}).then(function(r){return r.text()}).then(function(t){var m=t.match(/aria-label="([^"]*)"/);return m?m[1]:""})'
+    )
+  const lockupAria = await ariaOf('/src/assets/brand/final/logo-lockup.svg')
+  const faviconAria = await ariaOf('/favicon.svg')
+  const nameProbe = JSON.parse(
+    await js(
+      'JSON.stringify((function(){var h=document.querySelector(".hero__title");return{docTitle:document.title,hero:h?(h.textContent||"").trim():null,rail:((document.querySelector(".qt-rail__logo-text")||{}).textContent||"").trim(),top:((document.querySelector(".qt-topbar__brand-text")||{}).textContent||"").trim()}})())'
+    )
+  )
+  console.log('    ' + JSON.stringify({ staticTitle, appName, brandName, lockupAria, faviconAria, nameProbe }))
+  ok(appName === '青兔工具箱', 'd1) APP_INFO.name = 青兔工具箱（全站唯一来源）', JSON.stringify(appName))
+  ok(staticTitle === '青兔工具箱', 'd2) index.html 静态 <title> = 青兔工具箱（首屏兜底同字）', JSON.stringify(staticTitle))
+  ok(nameProbe.docTitle === '青兔工具箱', 'd3) 浏览器标签页标题 = 青兔工具箱', JSON.stringify(nameProbe.docTitle))
+  ok(nameProbe.hero === '青兔工具箱', 'd4) 首页 hero h1 = 青兔工具箱', JSON.stringify(nameProbe.hero))
+  ok(
+    nameProbe.rail === '青兔工具箱' && nameProbe.top === '青兔工具箱',
+    'd5) 左栏 / 顶栏站点名 = 青兔工具箱',
+    JSON.stringify([nameProbe.rail, nameProbe.top])
+  )
+  ok(
+    appName === brandName && brandName === lockupAria && brandName === faviconAria,
+    'd6) 站点名与 logo 字标逐字一致（APP_INFO.name = BRAND.name = logo-lockup.svg / favicon.svg 的 aria-label）',
+    [appName, brandName, lockupAria, faviconAria].join(' / ')
+  )
+  ok(!appName.includes('在线'), 'd7) 站点名里已无「在线」二字', JSON.stringify(appName))
+  ok(
+    appIntro.startsWith('青兔工具箱') && appIntro.includes('在线工具集合'),
+    'd8) 关于弹窗简介随之更新，且「在线工具集合」这类正常语义里的「在线」保留',
+    JSON.stringify(appIntro)
+  )
+  // 首屏：左栏标识 + 首页 hero h1 同框，肉眼可直接对照两处是否同一串字
+  await shot('19-p536-home-hero-1x', { x: 0, y: 0, w: 1280, h: 560 }, 1)
   const railRect = await docRect('document.querySelector(".qt-rail__logo")')
   await shot('13-shell-rail-logo-light-3x', { x: railRect.x, y: railRect.y, w: railRect.w, h: railRect.h }, 3)
   await shot('14-shell-topleft-light-1x', { x: 0, y: 0, w: 460, h: 320 }, 1)

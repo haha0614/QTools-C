@@ -1,0 +1,151 @@
+
+舞台 {"x":0,"y":64.328125,"w":1169,"h":935.671875,"right":1169,"bottom":1000}  内点 {"x":585,"y":134}  外点 {"x":585,"y":44}
+
+[A] 音量滑块：value=0 / 1 时 thumb 与轨道两端对齐
+    input={"x":173.859375,"y":967,"w":86,"h":20,"right":259.859375,"bottom":987}  value=1  thumb bbox={"left":248,"right":260,"top":971,"bottom":983}
+  ✓ a0) 探针色 thumb 在像素里找得到（自绘 thumb 真的渲染了） — {"left":248,"right":260,"top":971,"bottom":983}
+  ✓ a1) value=1：thumb 右缘贴 chip / 轨道右端（±1px） — 260 vs 259.86 Δ=0.14
+  ✓ a2) thumb 直径 = 12px — 12
+  ✓ a3) thumb 垂直居中于 chip（±1px） — 977 vs 977
+  ✓ a4) 滑块盒宽仍是 86px（padding 归零不减宽） — 86
+  ✓ a5) 拖到最右 = 音量 100%（<video>.volume == 1） — 1
+    value=0  thumb 左缘=174  input.left=173.86
+  ✓ a6) value=0：thumb 左缘贴 chip / 轨道左端（±1px） — 174 vs 173.86 Δ=0.14
+  ✓ a7) 拖到最左 = 音量 0% — 0
+    [shot] devtools\p525-player\out\01-vol-slider-max.png
+
+[B] 移出视频区 → 控制条 ≤300ms 消失；移入 → 立即显示
+  ✓ b1) 前置：播放中 + 指针在视频区 → 控制条 opacity 1 — {"op":1,"cls":"p-fs-wrap"}
+    移出后采样: 0ms:1 10ms:1 26ms:1 46ms:1 60ms:0.929 76ms:0.779 93ms:0.591 111ms:0.424 → 归零 226ms
+  ✓ b2) 指针移出视频区后控制条 opacity 归 0（不再恒真卡住） — 226ms
+  ✓ b3) 归零耗时 ≤300ms — 226ms（含 0.2s 过渡）
+  ✓ b4) 同时挂上 .is-ctrl-hidden（pointer-events:none + 下沉） — p-fs-wrap is-ctrl-hidden
+    [shot] devtools\p525-player\out\02-ctrl-hidden-after-leave.png
+    移入后采样: 16ms:0 33ms:0 51ms:0 66ms:0.071 84ms:0.221 100ms:0.409 → 到 1 用时 232ms
+  ✓ b5) 移入立即开始抬起（首帧就开始显示） — 84ms:0.221
+  ✓ b6) 移入后 ≤300ms 回到 opacity 1 — 232ms
+
+[B2] 闸门仍在：设置浮层展开时不许隐藏（暂停已不再是闸门）
+  ✓ b7) 暂停态：移出即隐藏（P5.26 新口径，原「暂停常驻」作废） — 0
+  ✓ b8) 设置浮层打开（真实点击齿轮） — {"x":839,"y":768,"w":320,"h":188,"right":1159,"bottom":956}
+  ✓ b9) 设置浮层展开：指针在浮层上不隐藏（面板不跟着消失） — 1
+  ✓ b10) 设置浮层展开：指针离开视频区仍不隐藏（overlay 闸门） — 1
+    [shot] devtools\p525-player\out\03-set-panel-open-no-hide.png
+
+[C] 信息栏开关：默认 opacity 0 → hover 信息栏/按钮 1 → 移出 0
+  ✓ c1) 默认 opacity = 0（不再半透明可见） — 0
+  ✓ c2) 隐藏态仍保留 pointer-events（可点 / 可聚焦） — auto
+  ✓ c3) 没有用 visibility:hidden / display:none（过渡与可访问性都不被破坏） — visible/flex
+  ✓ c4) opacity 参与 0.18s 过渡 — right, opacity, background, border-color, color / 0.18s, 0.18s, 0.18s, 0.18s, 0.18s
+  ✓ c5) 指针移入信息栏 → opacity 1 — 1
+  ✓ c6) 指针移出 → 回到 0 — 0
+  ✓ c7) 指针移到按钮本身 → opacity 1（隐藏态也能被 hover 找到） — 1
+    [shot] devtools\p525-player\out\04-side-toggle-hover.png
+
+[D] 单点 / 区间分段控件：选中态四边框都在
+    [单点] on=false border=1px/1px/1px/1px left=rgb(223, 229, 238) rect={"x":1194,"y":765.984375,"w":46,"h":28,"right":1240,"bottom":793.984375}
+    [区间] on=true border=1px/1px/1px/1px left=rgb(69, 160, 254) rect={"x":1239,"y":765.984375,"w":46,"h":28,"right":1285,"bottom":793.984375}
+  ✓ d1) 分段控件仍是两段（单点 / 区间） — 2
+  ✓ d2) 两段四个方向的边框宽度都是 1px（不再 border-left:none） — 单点:1px/1px/1px/1px | 区间:1px/1px/1px/1px
+  ✓ d3) 区间已选中（.on） — 区间
+  ✓ d4) 选中态四条边同色（强调色），左右不再错位 — rgb(69, 160, 254) / rgb(69, 160, 254) / rgb(69, 160, 254) / rgb(69, 160, 254)
+  ✓ d5) 选中态额外盖一层 inset 描边环（边框不会被兄弟按钮遮住） — rgb(64, 158, 255) 0px 0px 0px 1px inset
+    四边中点像素: left=64,158,255(d5) right=79,165,254(d11) top=64,158,255(d5) bottom=64,158,255(d5)
+  ✓ d6) 选中态四条边（含左 / 右）像素都是强调色 — leftd5 rightd11 topd5 bottomd5
+    [shot] devtools\p525-player\out\05-segmented-range-on.png
+
+[E] 标记新增：三行结构 / 控件高 28 / 无横向溢出
+    [range 1600] rows=3 mmss=2 addScroll=367/367 sideScroll=415/415
+      row1 h=28 nodes=vp-mark-mode:单点  区间 | vp-mini vp-mini-ok vp-mark-addbtn:＋ 加标记
+      row2 h=28 nodes=vp-mark-io:起点 | vp-mark-mmss: | vp-mini vp-mark-now:取当前 | vp-mark-io vp-mark-io-end:终点 | vp-mark-mmss: | vp-mini vp-mark-now:取当前
+      row3 h=28 nodes=vp-mark-color: | vp-mark-label:
+      BUTTON h=28 w=46 vp-mini 单点
+      BUTTON h=28 w=46 vp-mini on 区间
+      BUTTON h=28 w=73.3 vp-mini vp-mini-ok vp-mark-addbtn ＋ 加标记
+      INPUT h=28 w=68 vp-mark-mmss 标记起点 mm:ss
+      BUTTON h=28 w=58 vp-mini vp-mark-now 以当前播放位置为起点
+      INPUT h=28 w=68 vp-mark-mmss 标记区间终点 mm:ss
+      BUTTON h=28 w=58 vp-mini vp-mark-now 以当前播放位置为终点
+      INPUT h=28 w=28 vp-mark-color 标记颜色
+      INPUT h=28 w=331 vp-mark-label 标记说明
+  ✓ e1) 标记表单 = 3 行 — 3
+  ✓ e2) 第一行 = 分段控件 + 「＋ 加标记」 — vp-mark-mode:单点  区间 | vp-mini vp-mini-ok vp-mark-addbtn:＋ 加标记
+  ✓ e3) 「＋ 加标记」贴行右缘（换行后仍靠右） — 1561 vs 1561
+  ✓ e4) 区间态：起点 + 终点两个 mm:ss 输入框 — 2
+  ✓ e5) 第二行 = 起点 / 终点 两组（含两个「以当前位置…」按钮） — vp-mark-io:起点 | vp-mark-mmss: | vp-mini vp-mark-now:取当前 | vp-mark-io vp-mark-io-end:终点 | vp-mark-mmss: | vp-mini vp-mark-now:取当前
+  ✓ e6) 第三行 = 颜色 + 标记说明 — vp-mark-color: | vp-mark-label:
+  ✓ e7) 行内所有输入框 / 按钮统一 28px 高 — 28,28,28,28,28,28,28,28,28
+  ✓ e8) 表单无横向溢出 — 367/367
+  ✓ e9) 每一行都不横向溢出 — 367/367 367/367 367/367
+  ✓ e10) 信息栏本身无横向溢出 — 415/415
+    [point 1600] rows=3 mmss=1 addScroll=367/367 sideScroll=415/415
+      row1 h=28 nodes=vp-mark-mode:单点  区间 | vp-mini vp-mini-ok vp-mark-addbtn:＋ 加标记
+      row2 h=28 nodes=vp-mark-io:起点 | vp-mark-mmss: | vp-mini vp-mark-now:取当前
+      row3 h=28 nodes=vp-mark-color: | vp-mark-label:
+      BUTTON h=28 w=46 vp-mini on 单点
+      BUTTON h=28 w=46 vp-mini 区间
+      BUTTON h=28 w=73.3 vp-mini vp-mini-ok vp-mark-addbtn ＋ 加标记
+      INPUT h=28 w=68 vp-mark-mmss 标记位置 mm:ss
+      BUTTON h=28 w=58 vp-mini vp-mark-now 取当前播放位置
+      INPUT h=28 w=28 vp-mark-color 标记颜色
+      INPUT h=28 w=331 vp-mark-label 标记说明
+  ✓ e11) 单点态：终点输入框整块隐藏（只剩 1 个 mm:ss） — 1
+  ✓ e12) 单点态第二行只剩「起点 + 取当前时间」 — vp-mark-io:起点 | vp-mark-mmss: | vp-mini vp-mark-now:取当前
+    [shot] devtools\p525-player\out\06-mark-form-point.png
+    [range 1000 浮层] rows=3 mmss=2 addScroll=371/371 sideScroll=419/419
+      row1 h=28 nodes=vp-mark-mode:单点  区间 | vp-mini vp-mini-ok vp-mark-addbtn:＋ 加标记
+      row2 h=28 nodes=vp-mark-io:起点 | vp-mark-mmss: | vp-mini vp-mark-now:取当前 | vp-mark-io vp-mark-io-end:终点 | vp-mark-mmss: | vp-mini vp-mark-now:取当前
+      row3 h=28 nodes=vp-mark-color: | vp-mark-label:
+      BUTTON h=28 w=46 vp-mini 单点
+      BUTTON h=28 w=46 vp-mini on 区间
+      BUTTON h=28 w=73.3 vp-mini vp-mini-ok vp-mark-addbtn ＋ 加标记
+      INPUT h=28 w=68 vp-mark-mmss 标记起点 mm:ss
+      BUTTON h=28 w=58 vp-mini vp-mark-now 以当前播放位置为起点
+      INPUT h=28 w=68 vp-mark-mmss 标记区间终点 mm:ss
+      BUTTON h=28 w=58 vp-mini vp-mark-now 以当前播放位置为终点
+      INPUT h=28 w=28 vp-mark-color 标记颜色
+      INPUT h=28 w=335 vp-mark-label 标记说明
+  ✓ e13) 1000 宽（420 浮层）仍无横向溢出 — 371/371 371/371 371/371
+  ✓ e14) 1000 宽文档无横向滚动 — 985/1000
+    [shot] devtools\p525-player\out\07-mark-form-range-1000.png
+
+[F] 控制条透明度与「白帧最坏背衬」对比度
+    亮: bg=rgba(0, 0, 0, 0) veil=0, 0, 0, 0.55 hair=rgb(48, 49, 51) blur=none 底座合成=255
+      .p-btn-play chip=rgba(0, 0, 0, 0.58) 采样=54,54,54 对比度=12.08:1（解析 5.32:1）
+      .p-btn chip=rgba(0, 0, 0, 0.58) 采样=54,54,54 对比度=12.08:1（解析 5.32:1）
+      .p-seek-now chip=rgba(0, 0, 0, 0.58) 采样=54,54,54 对比度=12.08:1（解析 5.32:1）
+      .p-ab-text chip=rgba(0, 0, 0, 0.58) 采样=55,55,55 对比度=11.9:1（解析 5.32:1）
+    暗: bg=rgba(0, 0, 0, 0) veil=0, 0, 0, 0.55 hair=rgb(229, 234, 243) blur=none 底座合成=255
+      .p-btn-play chip=rgba(0, 0, 0, 0.58) 采样=54,54,54 对比度=12.08:1（解析 5.32:1）
+      .p-btn chip=rgba(0, 0, 0, 0.58) 采样=54,54,54 对比度=12.08:1（解析 5.32:1）
+      .p-seek-now chip=rgba(0, 0, 0, 0.58) 采样=54,54,54 对比度=12.08:1（解析 5.32:1）
+      .p-ab-text chip=rgba(0, 0, 0, 0.58) 采样=55,55,55 对比度=11.9:1（解析 5.32:1）
+  ✓ f1) 亮 / 暗底色都完全透明（alpha = 0，原 .06 / .07） — rgba(0, 0, 0, 0) / rgba(0, 0, 0, 0)
+  ✓ f2) 渐变最上端 alpha = 0（亮 / 暗） — 0 / 0
+  ✓ f3) 渐变最下端 alpha ≈ .55（底部一小段有底色） — 0.55 / 0.55
+  ✓ f4) 竖向渐变方案不再挂 backdrop-filter（原 14px 色带模糊） — none / none
+  ✓ f5) 顶边发丝线已撤（border-top-width = 0，原 1px） — 0px / 0px
+  ✓ f6) 亮色：白帧背衬下最坏对比度 ≥4.5:1 — 11.9:1（实测像素）
+  ✓ f7) 暗色：白帧背衬下最坏对比度 ≥4.5:1 — 11.9:1（实测像素）
+  ✓ f8) 控制条上的文字统一 --p-ink = #fff（可读性由 chip 承担） — rgb(255, 255, 255) | rgb(255, 255, 255) | rgb(255, 255, 255) | rgb(255, 255, 255)
+    [shot] devtools\p525-player\out\08-ctrl-contrast-white-frame.png
+
+[G] 头部站点标识（复用 APP_INFO / 与左栏 Logo 同一套语言）
+    brand={"x":16,"y":20.65625,"w":87.5,"h":22,"right":103.5} text="青兔工具箱" mark=svg 18px color=oklab(0.724885 -0.0004628 -0.0106128) font=12.5px weight=600
+  ✓ g1) 头部出现品牌锁定名《青兔工具箱》（与字标资产一致） — "青兔工具箱"
+  ✓ g2) 首字徽标 → 18px Lucide rabbit 图标（与左栏 Logo 同源） — svg/5 paths/18px
+  ✓ g3) 标识高 22px（20–22 区间） — 22
+  ✓ g4) 字号小于标题（不与标题抢注意力） — 12.5px vs 标题 15.5px
+  ✓ g5) 字重也比标题轻（次级信息） — 600 vs 700
+  ✓ g6) 标识在标题之前、不侵占标题区 — 103.5 <= 117.5
+  ✓ g7) 1600 宽：头部与文档都不溢出 — 1585/1600 doc=1585
+    [shot] devtools\p525-player\out\09-header-brand-1600.png
+    375: mark=svg 18px textDisplay=none brand={"x":10,"y":8,"w":180,"h":22,"right":190} head={"x":0,"y":0,"w":360,"right":360}
+  ✓ g8) 375 宽：只留图标（图标本身就是完整标识） — svg 18px
+  ✓ g9) 375 宽：站点名隐藏（把宽度让给标题与按钮） — none
+  ✓ g10) 375 宽：头部不溢出、无横向滚动 — 360/375 doc=360
+    [shot] devtools\p525-player\out\10-header-brand-375.png
+    [shot] devtools\p525-player\out\11-final-1600.png
+
+========================================
+通过 63 项，失败 0 项
