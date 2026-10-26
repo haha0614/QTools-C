@@ -16,6 +16,13 @@
          分组由 .p-act-group 承担，组间 .p-act-sep 画 1px 竖线；按钮高度 / 圆角 / 内边距统一由
          .p-actions .btn 定义，宽度不再随文案长短跳动。 -->
     <div class="p-head">
+      <!-- P5.25（用户反馈 7）：头部左侧补站点标识，与布局左栏的 Logo 同一套语言（首字徽标 + 站点名）。
+           名称只从 APP_INFO.name 取（src/utils/constants.js 是全站唯一来源），这里不再硬编码第二份品牌名。
+           尺寸 20–22px、次级色、hover 提亮：它只负责「这是哪个站」，不与标题抢注意力。 -->
+      <span class="p-brand" :title="brandName">
+        <span class="p-brand-badge" aria-hidden="true">{{ brandInitial }}</span>
+        <span class="p-brand-text">{{ brandName }}</span>
+      </span>
       <div class="p-info">
         <h2 class="p-title" :title="video.title">{{ video.title }}</h2>
         <div class="p-meta">
@@ -418,7 +425,8 @@
              展开态 right: var(--p-side-w)（贴栏左边缘），收起态 right: 0（贴视频右边缘）；
              两态只差水平位置，y / 宽 / 高不变，靠 transition 平滑滑动而不是瞬移。
              不改原落点的话，收起后栏宽归零、视频变宽，按钮会浮在画面中间（实测距右边缘 412px）。
-           默认半透明，指针移入信息栏或按钮本身才浮到不透明，移出即淡回（不动视频，拖动时不闪）。 -->
+           P5.25（用户反馈 3）：默认**完全不可见**（opacity 0），指针移入信息栏或按钮本身才浮到 1，
+           移出即淡回 0（不动视频，拖动时不闪）；键盘 Tab 到它时 :focus-visible 同样浮到 1。 -->
       <button
         class="p-side-toggle"
         :class="{ 'is-shown': sideHover, 'is-open': sideOpen }"
@@ -526,6 +534,12 @@ import PreviewTimeBar from './PreviewTimeBar.vue'
 import { coverFrameWidth, coveredSwitch, freezeElementFrame } from './coverFreeze'
 // P5.24-A：「设置」浮层（倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键）拆成纯展示组件
 import PlayerSettings from './PlayerSettings.vue'
+// P5.25：站点标识（名称 + 首字徽标）与全站共用一份常量，不在播放页另存一份品牌名
+import { APP_INFO } from '@/utils/constants'
+
+/** P5.25（用户反馈 7）：头部站点标识的文案来源 —— 与 AppShell 左栏 Logo 同源 */
+const brandName = APP_INFO.name
+const brandInitial = APP_INFO.name.charAt(0)
 
 const props = defineProps({
   /** 当前播放的视频对象 */
@@ -2272,8 +2286,18 @@ function pointerOverSettings() {
   return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom
 }
 
-/** 指针是否在控制条区域（= 控制条 ∪ 设置浮层）：自动隐藏的唯一几何判据 */
+/**
+ * 指针是否在控制条区域（= 控制条 ∪ 设置浮层）：自动隐藏的唯一几何判据。
+ *
+ * P5.25 修复（用户反馈 2「控制条不会自动隐藏」）：几何判定必须**先看指针在不在视频区**。
+ * 旧实现只拿 lastPointer（最后一次 mousemove 的坐标）判矩形并集 —— 指针快速移出视频区时
+ * 浏览器不会补发最后一段 mousemove，lastPointer 仍停在控制条矩形内 → pointerOverCtrl() 恒为真
+ * → syncCtrlState 里 hover 恒真 → ctrlCanHideDocked 的 !hover 永不成立 → 状态机永远走
+ * 「setHidden(false)」且不再排计时器：控制条就此常驻（用户看到的「不会自动隐藏」）。
+ * 离开视频区后指针不可能还压在控制条上，所以这里直接短路 false。
+ */
 function pointerOverCtrl() {
+  if (!stagePointerIn) return false
   return pointerInCtrlZone(ctrlEl.value, fsEl.value, lastPointer) || pointerOverSettings()
 }
 
@@ -2322,9 +2346,14 @@ function onStageEnter(e) {
   onUserActivity(e)
 }
 
-/** 指针离开视频区：收起控制条（暂停 / 拖动 / 浮层展开时由状态机自己拦下，不会误收） */
+/**
+ * 指针离开视频区：收起控制条（暂停 / 拖动 / 浮层展开时由状态机自己拦下，不会误收）。
+ * P5.25：同一次「离开」里把 ctrlHover 一并清掉 —— .p-ctrl 在指针离开的路径上时它的 mouseleave
+ * 未必补发（隐藏态 / 快速移出），悬停态卡在 true 同样会让 ctrlCanHideDocked 永不成立。
+ */
 function onStageLeave() {
   stagePointerIn = false
+  ctrlHover = false
   syncCtrlState()
 }
 
@@ -2945,9 +2974,11 @@ defineExpose({
    收起时栏宽归零、视频整宽铺满，若仍留在原落点，按钮会浮在画面中间（实测距右边缘 412px），
    用户原话「肯定要移动的呀，不然飘在视频上面干嘛」。
    right 参与过渡（与 opacity 同节奏 0.18s）→ 两态之间是平滑滑动，不是瞬移。
-   默认半透明（--tog-op 0.34），指针移入信息栏或按钮本身时 .is-shown → 1。 */
+   默认 --tog-op: 0（完全不可见，P5.25 用户反馈 3），指针移入信息栏或按钮本身时 .is-shown → 1。 */
 .p-side-toggle {
-  --tog-op: 0.34;
+  /* P5.25（用户反馈 3）：默认**完全不可见**（0），指针移入信息栏或按钮本身才浮到 1，移出淡回 0。
+     不改 visibility / display：隐藏态仍需可聚焦（:focus-visible → 1）且需要 0.18s 过渡。 */
+  --tog-op: 0;
   position: absolute;
   right: var(--p-side-w);
   top: 50%;
@@ -3071,6 +3102,49 @@ defineExpose({
   padding: 10px 16px;
   background: var(--bg-2);
   border-bottom: 1px solid var(--line);
+}
+
+/* P5.25（用户反馈 7）：头部左侧站点标识 —— 与左栏 Logo 同一套语言（首字徽标 + 站点名），
+   尺寸压到 22px、次级色、常规字重：它只回答「这是哪个站」，不与 15.5px/700 的标题抢注意力。 */
+.p-brand {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  max-width: 180px;
+  color: var(--fg-dim);
+  transition: color 0.15s ease;
+}
+
+.p-brand:hover {
+  color: var(--fg);
+}
+
+.p-brand-badge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* 站点名：单行省略（长名字不撑破头部，窄屏整段隐藏只留徽标） */
+.p-brand-text {
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .p-info {
@@ -3220,13 +3294,17 @@ defineExpose({
        （.20 的底座叠在纯白帧上仍是 204,204,204，白字只有 1.6:1）。所以每个控件自带深色 chip
        （--p-chip = rgba(0,0,0,.46)）+ 白色描边 + 投影：最坏背衬下白字 5.09:1（暗）/ 4.78:1（亮）。 */
 .p-ctrl {
-  /* 控制条专属令牌：亮色是默认，暗色在文件末尾的 html.dark 块里覆盖 */
-  --p-scrim: rgba(0, 0, 0, 0.18);
-  --p-veil: rgba(255, 255, 255, 0.06);
-  --p-hair: rgba(0, 0, 0, 0.08);
+  /* 控制条专属令牌：亮色是默认，暗色在文件末尾的 html.dark 块里覆盖。
+     P5.25（用户反馈 6「控制条不够透明」）：底座 .18 → .11、白雾 6% → 4%、发丝线 .08 → .06，
+     blur 9px → 12px。底座越淡，「白帧背衬下的白字」就越依赖控件自己的深色 chip，
+     所以 chip 同步从 .46 提到 .50（亮）/ .50（暗）—— 把可读性留在 chip 上，而不是回退底座。
+     实测（白帧最坏背衬 → 底座 → 白雾 → chip → 白字）：亮 4.81:1 / 暗 4.94:1，均 ≥4.5:1。 */
+  --p-scrim: rgba(0, 0, 0, 0.11);
+  --p-veil: rgba(255, 255, 255, 0.04);
+  --p-hair: rgba(0, 0, 0, 0.06);
   --p-ink: #fff;
-  --p-chip: rgba(0, 0, 0, 0.46);
-  --p-chip-hover: rgba(0, 0, 0, 0.58);
+  --p-chip: rgba(0, 0, 0, 0.5);
+  --p-chip-hover: rgba(0, 0, 0, 0.6);
   --p-edge: rgba(255, 255, 255, 0.3);
   --p-edge-hover: rgba(255, 255, 255, 0.6);
   --p-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
@@ -3241,8 +3319,8 @@ defineExpose({
   padding: 8px 14px;
   background-color: var(--p-scrim);
   background-image: linear-gradient(var(--p-veil), var(--p-veil));
-  backdrop-filter: blur(9px) saturate(1.05);
-  -webkit-backdrop-filter: blur(9px) saturate(1.05);
+  backdrop-filter: blur(12px) saturate(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(1.05);
   border-top: 1px solid var(--p-hair);
   min-width: 0;
   overflow: visible;
@@ -3341,18 +3419,75 @@ defineExpose({
   font-size: 14px;
 }
 
-/* 音量滑块：轨道是原生的（accent-color 跟随主题），外面套一层 chip 保证「轨道本身」在
-   亮帧 / 暗帧上都看得见（暗色主题下原生轨道是深灰，直接压在黑画面里会看不见） */
+/* 音量滑块：chip 底（亮帧 / 暗帧上都看得见轨道）+ **自绘轨道与自绘 thumb**。
+   P5.25 修复（用户反馈 1「音量条拉不到头」）：旧实现用原生外观 + `padding: 0 6px` ——
+   轨道被内边距挤在 chip 里，可视轨道比 chip 窄 12px，且 Blink 原生 thumb 直径 16px（设计值 12px），
+   于是「拖到最右」时 thumb 停在离 chip 右缘 6px 处，看起来不到 100%。
+   改法：appearance:none + 显式 4px 轨道 + 12px thumb + padding 归零 ——
+   Blink / Gecko 都把 thumb 完整含在轨道内（thumb 中心行程 = [r, W-r]），
+   于是 value=0 时 thumb 左缘贴 0%、value=1 时 thumb 右缘贴 100%（实测 ±1px，见 devtools/p525-player）。 */
 .p-vol {
   flex-shrink: 0;
   width: 86px;
   height: 20px;
-  padding: 0 6px;
+  margin: 0;
+  padding: 0;
   border-radius: 999px;
-  background: var(--p-chip);
+  /* 底座 chip + 4px 轨道画成「垂直居中的背景线」：轨道由背景承担，滑块盒始终 86×20 */
+  background-color: var(--p-chip);
+  background-image: linear-gradient(var(--p-vol-rail), var(--p-vol-rail));
+  background-size: 100% 4px;
+  background-position: center;
+  background-repeat: no-repeat;
   box-shadow: var(--p-shadow);
-  accent-color: var(--accent);
+  /* thumb 与进度条同一个强调色；--p-vol-thumb 只作证据脚本取像素用，不改几何 */
+  --p-vol-thumb: var(--accent);
+  --p-vol-rail: color-mix(in srgb, var(--p-ink) 34%, transparent);
+  -webkit-appearance: none;
+  appearance: none;
   cursor: pointer;
+}
+
+/* 轨道盒 = thumb 直径（12px），由浏览器自己居中到 20px 的 chip 里（实测偏差 0px）。
+   P5.25 实测口径（devtools/p525-player/_cal 一次量 7 种写法，Chrome 155）：
+     - 不写轨道 + 不写 margin → thumb 偏差 0px；
+     - 4px 轨道 + margin-top 8 → 偏差 +8px（thumb 顶对齐到轨道盒）；
+     - 4px 轨道 + margin-top 8 + thumb margin -4 → 偏差 +4px（thumb 的 margin 只部分生效）；
+     - 12px 轨道 + margin-top 4 → 偏差 +2px；
+     - **12px 轨道 + 无 margin → 偏差 0px** ← 采用这一条。
+   结论：轨道盒与 thumb 同高、且不加任何 margin，thumb 才稳定落在 chip 中线上；
+   4px 的可视轨道由 chip 自己的背景线承担（background-size: 100% 4px），不参与布局。 */
+.p-vol::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 12px;
+  background: transparent;
+}
+
+/* thumb 直径 12px：与轨道盒同高 → 上下都居中；横向行程仍是 [r, W-r]，两端贴齐 */
+.p-vol::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--p-vol-thumb);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28);
+}
+
+/* Gecko：轨道盒同一尺寸（Gecko 会在轨道盒里居中 thumb，轨道本身透明、由背景线承担） */
+.p-vol::-moz-range-track {
+  width: 100%;
+  height: 12px;
+  background: transparent;
+}
+
+.p-vol::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--p-vol-thumb);
 }
 
 .p-vol:focus-visible {
@@ -3832,7 +3967,10 @@ defineExpose({
     padding: 8px 10px;
   }
 
-
+  /* P5.25：窄屏只留首字徽标（站点名让位给标题与三组按钮），徽标本身就是完整标识 */
+  .p-brand-text {
+    display: none;
+  }
 
   .p-title {
     font-size: 14px;
@@ -4218,9 +4356,10 @@ defineExpose({
    亮色是 .p-ctrl 上的默认值。暗色下底座稍微加深一档（.20，仍远低于 .30 的验收上限）、
    去掉那层白色薄雾（暗色不需要「压成浅雾」），发丝线换成亮色。 */
 html.dark .p-ctrl {
-  --p-scrim: rgba(0, 0, 0, 0.2);
+  /* P5.25：暗色底座 .20 → .12（与亮色同一档，仍远低于 .30 的验收上限），白雾仍不要 */
+  --p-scrim: rgba(0, 0, 0, 0.12);
   --p-veil: transparent;
-  --p-hair: rgba(255, 255, 255, 0.1);
+  --p-hair: rgba(255, 255, 255, 0.08);
 }
 
 /* 暗色主题：标记在深底上靠一圈 1px 深色描边勾出边界（亮色下是同位置的浅描边） */

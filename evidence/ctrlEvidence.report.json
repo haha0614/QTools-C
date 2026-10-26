@@ -37,14 +37,14 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.2)",
-          "backgroundAlpha": 0.2,
+          "backgroundColor": "rgba(0, 0, 0, 0.12)",
+          "backgroundAlpha": 0.12,
           "backgroundImage": "linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))",
           "veilAlpha": 0,
-          "backdropFilter": "blur(9px) saturate(1.05)",
-          "borderTop": "1px solid rgba(255, 255, 255, 0.1)",
+          "backdropFilter": "blur(12px) saturate(1.05)",
+          "borderTop": "1px solid rgba(255, 255, 255, 0.08)",
           "padding": "8px 14px",
-          "composedRGB": "204,204,204",
+          "composedRGB": "224,224,224",
           "rect": {
             "x": 0,
             "y": 948,
@@ -55,44 +55,44 @@
             {
               "sel": ".p-btn-play",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
             {
               "sel": ".p-btn",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
             {
               "sel": ".p-seek-now",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             },
             {
               "sel": ".p-ab-text",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             }
@@ -205,9 +205,9 @@
           "titleFontSize": "15.5px",
           "titleOverflow": "ellipsis",
           "titleRect": {
-            "x": 16,
+            "x": 146.91,
             "y": 10,
-            "w": 1208.42,
+            "w": 1077.52,
             "h": 20.14
           },
           "metaItems": 6,
@@ -331,14 +331,14 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.18)",
-          "backgroundAlpha": 0.18,
-          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06))",
-          "veilAlpha": 0.06,
-          "backdropFilter": "blur(9px) saturate(1.05)",
-          "borderTop": "1px solid rgba(0, 0, 0, 0.08)",
+          "backgroundColor": "rgba(0, 0, 0, 0.11)",
+          "backgroundAlpha": 0.11,
+          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.04))",
+          "veilAlpha": 0.04,
+          "backdropFilter": "blur(12px) saturate(1.05)",
+          "borderTop": "1px solid rgba(0, 0, 0, 0.06)",
           "padding": "8px 14px",
-          "composedRGB": "212,212,212",
+          "composedRGB": "228,228,228",
           "rect": {
             "x": 0,
             "y": 948,
@@ -349,10 +349,10 @@
             {
               "sel": ".p-btn-play",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
@@ -360,10 +360,10 @@
             {
               "sel": ".p-btn",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
@@ -371,10 +371,10 @@
             {
               "sel": ".p-seek-now",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
@@ -382,10 +382,10 @@
             {
               "sel": ".p-ab-text",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
@@ -499,9 +499,9 @@
           "titleFontSize": "15.5px",
           "titleOverflow": "ellipsis",
           "titleRect": {
-            "x": 16,
+            "x": 146.91,
             "y": 10,
-            "w": 1208.42,
+            "w": 1077.52,
             "h": 20.14
           },
           "metaItems": 6,
@@ -606,17 +606,17 @@
         },
         "stage": {
           "now": {
-            "headH": 64.33,
-            "mainH": 695.88,
-            "fsWrapH": 695.88,
-            "stageH": 695.88,
+            "headH": 83.52,
+            "mainH": 676.69,
+            "fsWrapH": 676.69,
+            "stageH": 676.69,
             "gapToViewportBottom": 0
           },
           "withOldTagsBar": {
-            "headH": 64.33,
-            "mainH": 695.88,
-            "fsWrapH": 651.69,
-            "stageH": 651.69,
+            "headH": 83.52,
+            "mainH": 676.69,
+            "fsWrapH": 632.5,
+            "stageH": 632.5,
             "gapToViewportBottom": 44.19
           },
           "oldTagsBarH": 44.19,
@@ -625,14 +625,14 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.2)",
-          "backgroundAlpha": 0.2,
+          "backgroundColor": "rgba(0, 0, 0, 0.12)",
+          "backgroundAlpha": 0.12,
           "backgroundImage": "linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))",
           "veilAlpha": 0,
-          "backdropFilter": "blur(9px) saturate(1.05)",
-          "borderTop": "1px solid rgba(255, 255, 255, 0.1)",
+          "backdropFilter": "blur(12px) saturate(1.05)",
+          "borderTop": "1px solid rgba(255, 255, 255, 0.08)",
           "padding": "8px 14px",
-          "composedRGB": "204,204,204",
+          "composedRGB": "224,224,224",
           "rect": {
             "x": 0,
             "y": 748,
@@ -643,44 +643,44 @@
             {
               "sel": ".p-btn-play",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
             {
               "sel": ".p-btn",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
             {
               "sel": ".p-seek-now",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             },
             {
               "sel": ".p-ab-text",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             }
@@ -793,9 +793,9 @@
           "titleFontSize": "15.5px",
           "titleOverflow": "ellipsis",
           "titleRect": {
-            "x": 16,
+            "x": 146.91,
             "y": 10,
-            "w": 608.42,
+            "w": 477.52,
             "h": 20.14
           },
           "metaItems": 6,
@@ -838,7 +838,7 @@
             "x": 0,
             "y": 0,
             "w": 985,
-            "h": 64.33
+            "h": 83.52
           }
         },
         "settingsOpen": false,
@@ -858,7 +858,7 @@
           "sideOpen": false,
           "rect": {
             "x": 965,
-            "y": 420.06,
+            "y": 429.66,
             "right": 985,
             "w": 20,
             "h": 64
@@ -900,17 +900,17 @@
         },
         "stage": {
           "now": {
-            "headH": 64.33,
-            "mainH": 695.88,
-            "fsWrapH": 695.88,
-            "stageH": 695.88,
+            "headH": 83.52,
+            "mainH": 676.69,
+            "fsWrapH": 676.69,
+            "stageH": 676.69,
             "gapToViewportBottom": 0
           },
           "withOldTagsBar": {
-            "headH": 64.33,
-            "mainH": 695.88,
-            "fsWrapH": 651.69,
-            "stageH": 651.69,
+            "headH": 83.52,
+            "mainH": 676.69,
+            "fsWrapH": 632.5,
+            "stageH": 632.5,
             "gapToViewportBottom": 44.19
           },
           "oldTagsBarH": 44.19,
@@ -919,14 +919,14 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.18)",
-          "backgroundAlpha": 0.18,
-          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06))",
-          "veilAlpha": 0.06,
-          "backdropFilter": "blur(9px) saturate(1.05)",
-          "borderTop": "1px solid rgba(0, 0, 0, 0.08)",
+          "backgroundColor": "rgba(0, 0, 0, 0.11)",
+          "backgroundAlpha": 0.11,
+          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.04))",
+          "veilAlpha": 0.04,
+          "backdropFilter": "blur(12px) saturate(1.05)",
+          "borderTop": "1px solid rgba(0, 0, 0, 0.06)",
           "padding": "8px 14px",
-          "composedRGB": "212,212,212",
+          "composedRGB": "228,228,228",
           "rect": {
             "x": 0,
             "y": 748,
@@ -937,10 +937,10 @@
             {
               "sel": ".p-btn-play",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
@@ -948,10 +948,10 @@
             {
               "sel": ".p-btn",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
@@ -959,10 +959,10 @@
             {
               "sel": ".p-seek-now",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
@@ -970,10 +970,10 @@
             {
               "sel": ".p-ab-text",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
@@ -1087,9 +1087,9 @@
           "titleFontSize": "15.5px",
           "titleOverflow": "ellipsis",
           "titleRect": {
-            "x": 16,
+            "x": 146.91,
             "y": 10,
-            "w": 608.42,
+            "w": 477.52,
             "h": 20.14
           },
           "metaItems": 6,
@@ -1132,7 +1132,7 @@
             "x": 0,
             "y": 0,
             "w": 985,
-            "h": 64.33
+            "h": 83.52
           }
         },
         "settingsOpen": false,
@@ -1152,7 +1152,7 @@
           "sideOpen": false,
           "rect": {
             "x": 965,
-            "y": 420.06,
+            "y": 429.66,
             "right": 985,
             "w": 20,
             "h": 64
@@ -1194,17 +1194,17 @@
         },
         "stage": {
           "now": {
-            "headH": 96.38,
-            "mainH": 763.83,
-            "fsWrapH": 763.83,
-            "stageH": 763.83,
+            "headH": 126.38,
+            "mainH": 733.83,
+            "fsWrapH": 733.83,
+            "stageH": 733.83,
             "gapToViewportBottom": 0
           },
           "withOldTagsBar": {
-            "headH": 96.38,
-            "mainH": 763.83,
-            "fsWrapH": 719.64,
-            "stageH": 719.64,
+            "headH": 126.38,
+            "mainH": 733.83,
+            "fsWrapH": 689.64,
+            "stageH": 689.64,
             "gapToViewportBottom": 44.19
           },
           "oldTagsBarH": 44.19,
@@ -1213,14 +1213,14 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.2)",
-          "backgroundAlpha": 0.2,
+          "backgroundColor": "rgba(0, 0, 0, 0.12)",
+          "backgroundAlpha": 0.12,
           "backgroundImage": "linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))",
           "veilAlpha": 0,
-          "backdropFilter": "blur(9px) saturate(1.05)",
-          "borderTop": "1px solid rgba(255, 255, 255, 0.1)",
+          "backdropFilter": "blur(12px) saturate(1.05)",
+          "borderTop": "1px solid rgba(255, 255, 255, 0.08)",
           "padding": "6px 10px 10px",
-          "composedRGB": "204,204,204",
+          "composedRGB": "224,224,224",
           "rect": {
             "x": 0,
             "y": 802,
@@ -1231,44 +1231,44 @@
             {
               "sel": ".p-btn-play",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
             {
               "sel": ".p-btn",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
             {
               "sel": ".p-seek-now",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             },
             {
               "sel": ".p-ab-text",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             }
@@ -1382,7 +1382,7 @@
           "titleOverflow": "ellipsis",
           "titleRect": {
             "x": 10,
-            "y": 8,
+            "y": 38,
             "w": 725,
             "h": 18.19
           },
@@ -1426,7 +1426,7 @@
             "x": 0,
             "y": 0,
             "w": 745,
-            "h": 96.38
+            "h": 126.38
           }
         },
         "settingsOpen": false,
@@ -1446,7 +1446,7 @@
           "sideOpen": false,
           "rect": {
             "x": 725,
-            "y": 486.08,
+            "y": 501.08,
             "right": 745,
             "w": 20,
             "h": 64
@@ -1488,17 +1488,17 @@
         },
         "stage": {
           "now": {
-            "headH": 96.38,
-            "mainH": 763.83,
-            "fsWrapH": 763.83,
-            "stageH": 763.83,
+            "headH": 126.38,
+            "mainH": 733.83,
+            "fsWrapH": 733.83,
+            "stageH": 733.83,
             "gapToViewportBottom": 0
           },
           "withOldTagsBar": {
-            "headH": 96.38,
-            "mainH": 763.83,
-            "fsWrapH": 719.64,
-            "stageH": 719.64,
+            "headH": 126.38,
+            "mainH": 733.83,
+            "fsWrapH": 689.64,
+            "stageH": 689.64,
             "gapToViewportBottom": 44.19
           },
           "oldTagsBarH": 44.19,
@@ -1507,14 +1507,14 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.18)",
-          "backgroundAlpha": 0.18,
-          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06))",
-          "veilAlpha": 0.06,
-          "backdropFilter": "blur(9px) saturate(1.05)",
-          "borderTop": "1px solid rgba(0, 0, 0, 0.08)",
+          "backgroundColor": "rgba(0, 0, 0, 0.11)",
+          "backgroundAlpha": 0.11,
+          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.04))",
+          "veilAlpha": 0.04,
+          "backdropFilter": "blur(12px) saturate(1.05)",
+          "borderTop": "1px solid rgba(0, 0, 0, 0.06)",
           "padding": "6px 10px 10px",
-          "composedRGB": "212,212,212",
+          "composedRGB": "228,228,228",
           "rect": {
             "x": 0,
             "y": 802,
@@ -1525,10 +1525,10 @@
             {
               "sel": ".p-btn-play",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
@@ -1536,10 +1536,10 @@
             {
               "sel": ".p-btn",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
@@ -1547,10 +1547,10 @@
             {
               "sel": ".p-seek-now",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
@@ -1558,10 +1558,10 @@
             {
               "sel": ".p-ab-text",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
@@ -1676,7 +1676,7 @@
           "titleOverflow": "ellipsis",
           "titleRect": {
             "x": 10,
-            "y": 8,
+            "y": 38,
             "w": 725,
             "h": 18.19
           },
@@ -1720,7 +1720,7 @@
             "x": 0,
             "y": 0,
             "w": 745,
-            "h": 96.38
+            "h": 126.38
           }
         },
         "settingsOpen": false,
@@ -1740,7 +1740,7 @@
           "sideOpen": false,
           "rect": {
             "x": 725,
-            "y": 486.08,
+            "y": 501.08,
             "right": 745,
             "w": 20,
             "h": 64
@@ -1782,17 +1782,17 @@
         },
         "stage": {
           "now": {
-            "headH": 171.13,
-            "mainH": 569.08,
-            "fsWrapH": 569.08,
-            "stageH": 569.08,
+            "headH": 201.13,
+            "mainH": 539.08,
+            "fsWrapH": 539.08,
+            "stageH": 539.08,
             "gapToViewportBottom": 0
           },
           "withOldTagsBar": {
-            "headH": 171.13,
-            "mainH": 569.08,
-            "fsWrapH": 524.89,
-            "stageH": 524.89,
+            "headH": 201.13,
+            "mainH": 539.08,
+            "fsWrapH": 494.89,
+            "stageH": 494.89,
             "gapToViewportBottom": 44.19
           },
           "oldTagsBarH": 44.19,
@@ -1801,14 +1801,14 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.2)",
-          "backgroundAlpha": 0.2,
+          "backgroundColor": "rgba(0, 0, 0, 0.12)",
+          "backgroundAlpha": 0.12,
           "backgroundImage": "linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))",
           "veilAlpha": 0,
-          "backdropFilter": "blur(9px) saturate(1.05)",
-          "borderTop": "1px solid rgba(255, 255, 255, 0.1)",
+          "backdropFilter": "blur(12px) saturate(1.05)",
+          "borderTop": "1px solid rgba(255, 255, 255, 0.08)",
           "padding": "6px 10px 10px",
-          "composedRGB": "204,204,204",
+          "composedRGB": "224,224,224",
           "rect": {
             "x": 0,
             "y": 638,
@@ -1819,44 +1819,44 @@
             {
               "sel": ".p-btn-play",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
             {
               "sel": ".p-btn",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
             {
               "sel": ".p-seek-now",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             },
             {
               "sel": ".p-ab-text",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             }
@@ -1970,7 +1970,7 @@
           "titleOverflow": "ellipsis",
           "titleRect": {
             "x": 10,
-            "y": 8,
+            "y": 38,
             "w": 340,
             "h": 54.56
           },
@@ -2014,7 +2014,7 @@
             "x": 0,
             "y": 0,
             "w": 360,
-            "h": 171.13
+            "h": 201.13
           }
         },
         "settingsOpen": false,
@@ -2034,7 +2034,7 @@
           "sideOpen": false,
           "rect": {
             "x": 340,
-            "y": 463.45,
+            "y": 478.45,
             "right": 360,
             "w": 20,
             "h": 64
@@ -2076,17 +2076,17 @@
         },
         "stage": {
           "now": {
-            "headH": 171.13,
-            "mainH": 569.08,
-            "fsWrapH": 569.08,
-            "stageH": 569.08,
+            "headH": 201.13,
+            "mainH": 539.08,
+            "fsWrapH": 539.08,
+            "stageH": 539.08,
             "gapToViewportBottom": 0
           },
           "withOldTagsBar": {
-            "headH": 171.13,
-            "mainH": 569.08,
-            "fsWrapH": 524.89,
-            "stageH": 524.89,
+            "headH": 201.13,
+            "mainH": 539.08,
+            "fsWrapH": 494.89,
+            "stageH": 494.89,
             "gapToViewportBottom": 44.19
           },
           "oldTagsBarH": 44.19,
@@ -2095,14 +2095,14 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.18)",
-          "backgroundAlpha": 0.18,
-          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06))",
-          "veilAlpha": 0.06,
-          "backdropFilter": "blur(9px) saturate(1.05)",
-          "borderTop": "1px solid rgba(0, 0, 0, 0.08)",
+          "backgroundColor": "rgba(0, 0, 0, 0.11)",
+          "backgroundAlpha": 0.11,
+          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.04))",
+          "veilAlpha": 0.04,
+          "backdropFilter": "blur(12px) saturate(1.05)",
+          "borderTop": "1px solid rgba(0, 0, 0, 0.06)",
           "padding": "6px 10px 10px",
-          "composedRGB": "212,212,212",
+          "composedRGB": "228,228,228",
           "rect": {
             "x": 0,
             "y": 638,
@@ -2113,10 +2113,10 @@
             {
               "sel": ".p-btn-play",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
@@ -2124,10 +2124,10 @@
             {
               "sel": ".p-btn",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
@@ -2135,10 +2135,10 @@
             {
               "sel": ".p-seek-now",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
@@ -2146,10 +2146,10 @@
             {
               "sel": ".p-ab-text",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
@@ -2264,7 +2264,7 @@
           "titleOverflow": "ellipsis",
           "titleRect": {
             "x": 10,
-            "y": 8,
+            "y": 38,
             "w": 340,
             "h": 54.56
           },
@@ -2308,7 +2308,7 @@
             "x": 0,
             "y": 0,
             "w": 360,
-            "h": 171.13
+            "h": 201.13
           }
         },
         "settingsOpen": false,
@@ -2328,7 +2328,7 @@
           "sideOpen": false,
           "rect": {
             "x": 340,
-            "y": 463.45,
+            "y": 478.45,
             "right": 360,
             "w": 20,
             "h": 64
@@ -2390,14 +2390,14 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.2)",
-          "backgroundAlpha": 0.2,
+          "backgroundColor": "rgba(0, 0, 0, 0.12)",
+          "backgroundAlpha": 0.12,
           "backgroundImage": "linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))",
           "veilAlpha": 0,
-          "backdropFilter": "blur(9px) saturate(1.05)",
-          "borderTop": "1px solid rgba(255, 255, 255, 0.1)",
+          "backdropFilter": "blur(12px) saturate(1.05)",
+          "borderTop": "1px solid rgba(255, 255, 255, 0.08)",
           "padding": "8px 14px",
-          "composedRGB": "204,204,204",
+          "composedRGB": "224,224,224",
           "rect": {
             "x": 0,
             "y": 948,
@@ -2408,44 +2408,44 @@
             {
               "sel": ".p-btn-play",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
             {
               "sel": ".p-btn",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
             {
               "sel": ".p-seek-now",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             },
             {
               "sel": ".p-ab-text",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             }
@@ -2558,9 +2558,9 @@
           "titleFontSize": "15.5px",
           "titleOverflow": "ellipsis",
           "titleRect": {
-            "x": 16,
+            "x": 146.91,
             "y": 10,
-            "w": 1208.42,
+            "w": 1077.52,
             "h": 20.14
           },
           "metaItems": 6,
@@ -2823,17 +2823,17 @@
         },
         "stage": {
           "now": {
-            "headH": 64.33,
-            "mainH": 695.88,
-            "fsWrapH": 695.88,
-            "stageH": 695.88,
+            "headH": 83.52,
+            "mainH": 676.69,
+            "fsWrapH": 676.69,
+            "stageH": 676.69,
             "gapToViewportBottom": 0
           },
           "withOldTagsBar": {
-            "headH": 64.33,
-            "mainH": 695.88,
-            "fsWrapH": 651.69,
-            "stageH": 651.69,
+            "headH": 83.52,
+            "mainH": 676.69,
+            "fsWrapH": 632.5,
+            "stageH": 632.5,
             "gapToViewportBottom": 44.19
           },
           "oldTagsBarH": 44.19,
@@ -2842,14 +2842,14 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.18)",
-          "backgroundAlpha": 0.18,
-          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06))",
-          "veilAlpha": 0.06,
-          "backdropFilter": "blur(9px) saturate(1.05)",
-          "borderTop": "1px solid rgba(0, 0, 0, 0.08)",
+          "backgroundColor": "rgba(0, 0, 0, 0.11)",
+          "backgroundAlpha": 0.11,
+          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.04))",
+          "veilAlpha": 0.04,
+          "backdropFilter": "blur(12px) saturate(1.05)",
+          "borderTop": "1px solid rgba(0, 0, 0, 0.06)",
           "padding": "8px 14px",
-          "composedRGB": "212,212,212",
+          "composedRGB": "228,228,228",
           "rect": {
             "x": 0,
             "y": 748,
@@ -2860,10 +2860,10 @@
             {
               "sel": ".p-btn-play",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
@@ -2871,10 +2871,10 @@
             {
               "sel": ".p-btn",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
@@ -2882,10 +2882,10 @@
             {
               "sel": ".p-seek-now",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
@@ -2893,10 +2893,10 @@
             {
               "sel": ".p-ab-text",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.48,
-              "ratioOnChip": 4.78,
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.27,
+              "ratioOnChip": 4.81,
               "chipRGB": "114,114,114",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
@@ -3010,9 +3010,9 @@
           "titleFontSize": "15.5px",
           "titleOverflow": "ellipsis",
           "titleRect": {
-            "x": 16,
+            "x": 146.91,
             "y": 10,
-            "w": 608.42,
+            "w": 477.52,
             "h": 20.14
           },
           "metaItems": 6,
@@ -3055,7 +3055,7 @@
             "x": 0,
             "y": 0,
             "w": 985,
-            "h": 64.33
+            "h": 83.52
           }
         },
         "settingsOpen": true,
@@ -3228,7 +3228,7 @@
           "sideOpen": false,
           "rect": {
             "x": 965,
-            "y": 420.06,
+            "y": 429.66,
             "right": 985,
             "w": 20,
             "h": 64
@@ -3275,17 +3275,17 @@
         },
         "stage": {
           "now": {
-            "headH": 96.38,
-            "mainH": 763.83,
-            "fsWrapH": 763.83,
-            "stageH": 763.83,
+            "headH": 126.38,
+            "mainH": 733.83,
+            "fsWrapH": 733.83,
+            "stageH": 733.83,
             "gapToViewportBottom": 0
           },
           "withOldTagsBar": {
-            "headH": 96.38,
-            "mainH": 763.83,
-            "fsWrapH": 719.64,
-            "stageH": 719.64,
+            "headH": 126.38,
+            "mainH": 733.83,
+            "fsWrapH": 689.64,
+            "stageH": 689.64,
             "gapToViewportBottom": 44.19
           },
           "oldTagsBarH": 44.19,
@@ -3294,14 +3294,14 @@
           "stableAfterRemoval": true
         },
         "bar": {
-          "backgroundColor": "rgba(0, 0, 0, 0.2)",
-          "backgroundAlpha": 0.2,
+          "backgroundColor": "rgba(0, 0, 0, 0.12)",
+          "backgroundAlpha": 0.12,
           "backgroundImage": "linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))",
           "veilAlpha": 0,
-          "backdropFilter": "blur(9px) saturate(1.05)",
-          "borderTop": "1px solid rgba(255, 255, 255, 0.1)",
+          "backdropFilter": "blur(12px) saturate(1.05)",
+          "borderTop": "1px solid rgba(255, 255, 255, 0.08)",
           "padding": "6px 10px 10px",
-          "composedRGB": "204,204,204",
+          "composedRGB": "224,224,224",
           "rect": {
             "x": 0,
             "y": 802,
@@ -3312,44 +3312,44 @@
             {
               "sel": ".p-btn-play",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
             {
               "sel": ".p-btn",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgba(255, 255, 255, 0.6)"
             },
             {
               "sel": ".p-seek-now",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             },
             {
               "sel": ".p-ab-text",
               "color": "rgb(255, 255, 255)",
-              "chipColor": "rgba(0, 0, 0, 0.46)",
-              "chipAlpha": 0.46,
-              "ratioOnBar": 1.61,
-              "ratioOnChip": 5.09,
-              "chipRGB": "110,110,110",
+              "chipColor": "rgba(0, 0, 0, 0.5)",
+              "chipAlpha": 0.5,
+              "ratioOnBar": 1.32,
+              "ratioOnChip": 4.94,
+              "chipRGB": "112,112,112",
               "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
               "borderColor": "rgb(255, 255, 255)"
             }
@@ -3463,7 +3463,7 @@
           "titleOverflow": "ellipsis",
           "titleRect": {
             "x": 10,
-            "y": 8,
+            "y": 38,
             "w": 725,
             "h": 18.19
           },
@@ -3507,7 +3507,7 @@
             "x": 0,
             "y": 0,
             "w": 745,
-            "h": 96.38
+            "h": 126.38
           }
         },
         "settingsOpen": true,
@@ -3680,7 +3680,7 @@
           "sideOpen": false,
           "rect": {
             "x": 725,
-            "y": 486.08,
+            "y": 501.08,
             "right": 745,
             "w": 20,
             "h": 64
@@ -3841,7 +3841,7 @@
           "sideOpen": true,
           "rect": {
             "x": 545,
-            "y": 420.06,
+            "y": 429.66,
             "right": 565,
             "w": 20,
             "h": 64
@@ -3860,7 +3860,7 @@
           "sideOpen": false,
           "rect": {
             "x": 965,
-            "y": 420.06,
+            "y": 429.66,
             "right": 985,
             "w": 20,
             "h": 64
@@ -3879,7 +3879,7 @@
           "sideOpen": true,
           "rect": {
             "x": 545,
-            "y": 420.06,
+            "y": 429.66,
             "right": 565,
             "w": 20,
             "h": 64
@@ -3901,7 +3901,7 @@
           "sideOpen": true,
           "rect": {
             "x": 545,
-            "y": 420.06,
+            "y": 429.66,
             "right": 565,
             "w": 20,
             "h": 64
@@ -3920,7 +3920,7 @@
           "sideOpen": false,
           "rect": {
             "x": 965,
-            "y": 420.06,
+            "y": 429.66,
             "right": 985,
             "w": 20,
             "h": 64
@@ -3939,7 +3939,7 @@
           "sideOpen": true,
           "rect": {
             "x": 545,
-            "y": 420.06,
+            "y": 429.66,
             "right": 565,
             "w": 20,
             "h": 64
@@ -3961,7 +3961,7 @@
           "sideOpen": true,
           "rect": {
             "x": 725,
-            "y": 486.08,
+            "y": 501.08,
             "right": 745,
             "w": 20,
             "h": 64
@@ -3980,7 +3980,7 @@
           "sideOpen": false,
           "rect": {
             "x": 725,
-            "y": 486.08,
+            "y": 501.08,
             "right": 745,
             "w": 20,
             "h": 64
@@ -3999,7 +3999,7 @@
           "sideOpen": true,
           "rect": {
             "x": 725,
-            "y": 486.08,
+            "y": 501.08,
             "right": 745,
             "w": 20,
             "h": 64
@@ -4021,7 +4021,7 @@
           "sideOpen": true,
           "rect": {
             "x": 725,
-            "y": 486.08,
+            "y": 501.08,
             "right": 745,
             "w": 20,
             "h": 64
@@ -4040,7 +4040,7 @@
           "sideOpen": false,
           "rect": {
             "x": 725,
-            "y": 486.08,
+            "y": 501.08,
             "right": 745,
             "w": 20,
             "h": 64
@@ -4059,7 +4059,7 @@
           "sideOpen": true,
           "rect": {
             "x": 725,
-            "y": 486.08,
+            "y": 501.08,
             "right": 745,
             "w": 20,
             "h": 64
@@ -4081,7 +4081,7 @@
           "sideOpen": true,
           "rect": {
             "x": 340,
-            "y": 463.45,
+            "y": 478.45,
             "right": 360,
             "w": 20,
             "h": 64
@@ -4100,7 +4100,7 @@
           "sideOpen": false,
           "rect": {
             "x": 340,
-            "y": 463.45,
+            "y": 478.45,
             "right": 360,
             "w": 20,
             "h": 64
@@ -4119,7 +4119,7 @@
           "sideOpen": true,
           "rect": {
             "x": 340,
-            "y": 463.45,
+            "y": 478.45,
             "right": 360,
             "w": 20,
             "h": 64
@@ -4141,7 +4141,7 @@
           "sideOpen": true,
           "rect": {
             "x": 340,
-            "y": 463.45,
+            "y": 478.45,
             "right": 360,
             "w": 20,
             "h": 64
@@ -4160,7 +4160,7 @@
           "sideOpen": false,
           "rect": {
             "x": 340,
-            "y": 463.45,
+            "y": 478.45,
             "right": 360,
             "w": 20,
             "h": 64
@@ -4179,7 +4179,7 @@
           "sideOpen": true,
           "rect": {
             "x": 340,
-            "y": 463.45,
+            "y": 478.45,
             "right": 360,
             "w": 20,
             "h": 64

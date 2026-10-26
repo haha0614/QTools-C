@@ -205,72 +205,92 @@
         </ul>
         <div v-else class="vp-hint">暂无标记</div>
 
+        <!-- P5.25（用户反馈 5「标记区域布局应当优化」）：一行七件的横排拆成三行分组 ——
+             1) 类型分段控件（单点 / 区间）+ 右侧「＋ 加标记」
+             2) 起点 [输入] + 「以当前位置为起点」；区间态再加 终点 [输入] + 「以当前位置为终点」
+             3) 颜色 + 标记说明（可空）
+             每行 flex + gap 8，容器窄了就整行换行（不会横向溢出）；输入框统一 28px 高。
+             行内静态小标题「起点 / 终点」解决「填完值之后两个框长得一样」的分组不清问题。 -->
         <div v-if="!readOnly" class="vp-mark-add">
-          <!-- P4-B：单点 / 区间二选一；区间模式的终点可以手填，也可以点按钮取「此刻」的播放位置 -->
-          <span class="vp-mark-mode" role="group" aria-label="标记类型">
-            <button
-              class="vp-mini"
-              type="button"
-              :class="{ on: markMode === 'point' }"
-              :disabled="locked"
-              @click="markMode = 'point'"
-            >
-              单点
+          <div class="vp-mark-row vp-mark-row-top">
+            <!-- P4-B：单点 / 区间二选一 -->
+            <span class="vp-mark-mode" role="group" aria-label="标记类型">
+              <button
+                class="vp-mini"
+                type="button"
+                :class="{ on: markMode === 'point' }"
+                :disabled="locked"
+                @click="markMode = 'point'"
+              >
+                单点
+              </button>
+              <button
+                class="vp-mini"
+                type="button"
+                :class="{ on: markMode === 'range' }"
+                :disabled="locked"
+                title="设一段区间：起点 + 终点（都按 mm:ss）"
+                @click="markMode = 'range'"
+              >
+                区间
+              </button>
+            </span>
+            <button class="vp-mini vp-mini-ok vp-mark-addbtn" type="button" :disabled="locked" @click="addMarker">
+              ＋ 加标记
             </button>
-            <button
-              class="vp-mini"
-              type="button"
-              :class="{ on: markMode === 'range' }"
-              :disabled="locked"
-              title="设一段区间：起点 + 终点（都按 mm:ss）"
-              @click="markMode = 'range'"
-            >
-              区间
-            </button>
-          </span>
-          <button class="vp-mini" type="button" :disabled="locked" :title="'用打开抽屉时的播放位置 ' + atText" @click="fillCurrentTime">
-            {{ markMode === 'range' ? '起点' : '当前时间' }} {{ atText }}
-          </button>
-          <input
-            v-model="markAt"
-            class="vp-mark-mmss"
-            type="text"
-            inputmode="numeric"
-            placeholder="mm:ss"
-            :disabled="locked"
-            aria-label="标记位置 mm:ss"
-            @input="atTouched = true"
-          />
-          <input
-            v-model="markLabel"
-            class="vp-mark-label"
-            type="text"
-            placeholder="标记说明（可空）"
-            maxlength="32"
-            :disabled="locked"
-            aria-label="标记说明"
-          />
-          <input v-model="markColor" class="vp-mark-color" type="color" :disabled="locked" aria-label="标记颜色" />
-          <template v-if="markMode === 'range'">
-            <span class="vp-mark-dash">–</span>
+          </div>
+
+          <div class="vp-mark-row">
+            <span class="vp-mark-io">起点</span>
             <input
-              v-model="markEnd"
+              v-model="markAt"
               class="vp-mark-mmss"
               type="text"
               inputmode="numeric"
-              placeholder="终点 mm:ss"
+              :placeholder="markMode === 'range' ? '起点 mm:ss' : '当前位置 mm:ss'"
               :disabled="locked"
-              aria-label="标记区间终点 mm:ss"
-              @input="endTouched = true"
+              :aria-label="markMode === 'range' ? '标记起点 mm:ss' : '标记位置 mm:ss'"
+              @input="atTouched = true"
             />
-            <button class="vp-mini" type="button" :disabled="locked" title="把终点设成此刻的播放位置" @click="fillEndCurrent">
-              以当前位置为终点
+            <button
+              class="vp-mini"
+              type="button"
+              :disabled="locked"
+              :title="'把起点设成此刻的播放位置（打开时 ' + atText + '）'"
+              @click="fillStartCurrent"
+            >
+              {{ markMode === 'range' ? '以当前位置为起点' : '取当前时间' }}
             </button>
-            <button class="vp-mini" type="button" :disabled="locked" title="把起点设成此刻的播放位置" @click="fillStartCurrent">
-              以当前位置为起点
-            </button>
-          </template>
-          <button class="vp-mini vp-mini-ok" type="button" :disabled="locked" @click="addMarker">＋ 加标记</button>
+            <template v-if="markMode === 'range'">
+              <span class="vp-mark-io vp-mark-io-end">终点</span>
+              <input
+                v-model="markEnd"
+                class="vp-mark-mmss"
+                type="text"
+                inputmode="numeric"
+                placeholder="终点 mm:ss"
+                :disabled="locked"
+                aria-label="标记区间终点 mm:ss"
+                @input="endTouched = true"
+              />
+              <button class="vp-mini" type="button" :disabled="locked" title="把终点设成此刻的播放位置" @click="fillEndCurrent">
+                以当前位置为终点
+              </button>
+            </template>
+          </div>
+
+          <div class="vp-mark-row">
+            <input v-model="markColor" class="vp-mark-color" type="color" :disabled="locked" aria-label="标记颜色" />
+            <input
+              v-model="markLabel"
+              class="vp-mark-label"
+              type="text"
+              placeholder="标记说明（可空）"
+              maxlength="32"
+              :disabled="locked"
+              aria-label="标记说明"
+            />
+          </div>
         </div>
       </section>
 
@@ -635,12 +655,6 @@ function serverMarkers(list) {
     if (span.end != null) out.endPos = span.end
     return out
   })
-}
-
-/** 用此刻的播放位置填起点（P4.5：保留 2 位小数） */
-function fillCurrentTime() {
-  markAt.value = fmtInput(currentSec())
-  atTouched.value = true
 }
 
 /** 此刻的播放位置：优先用页面给的实时取值（播放器还在播），拿不到就回落到打开抽屉时的位置 */
@@ -1347,13 +1361,43 @@ onMounted(() => {
   color: var(--warn);
 }
 
-/* 新增标记：mm:ss + 说明 + 颜色 + 提交，一行放不下就换行 */
+/* 新增标记（P5.25 用户反馈 5）：三行分组 —— 类型+加标记 / 起终点 / 颜色+说明。
+   每一行自己 flex-wrap：容器窄了整行换行，横向永不溢出（抽屉 420px 与窄屏浮层都成立）。 */
 .vp-mark-add {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.vp-mark-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  padding-top: 4px;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* 第一行：分段控件在左、「＋ 加标记」靠右（margin-left:auto 在换行后仍然贴右） */
+.vp-mark-row-top {
+  justify-content: flex-start;
+}
+
+.vp-mark-addbtn {
+  margin-left: auto;
+}
+
+/* 行内静态小标题（起点 / 终点）：填完值之后两个输入框长得一样，靠它分组 */
+.vp-mark-io {
+  flex: 0 0 auto;
+  color: var(--fg-dim);
+  font-size: 11.5px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.vp-mark-io-end {
+  margin-left: 2px;
 }
 
 /* 新增标记的输入框与按钮同一 28px 控件高（一行里不再有 24/26/28 三种高度） */
@@ -1480,27 +1524,63 @@ onMounted(() => {
   color: var(--accent);
 }
 
-/* ============================ P4-B 标记区间（单点 / 区间切换） ============================ */
+/* ============================ P4-B 标记区间（单点 / 区间切换） ============================
+   P5.25 修复（用户反馈 4「选中区间时按钮左边框消失」）：
+   旧实现用 `border-left: none` 去重相邻描边 —— 那条边是**删掉**的，第二个按钮一旦选中就不再有左边框，
+   同时它的 border-color 变强调色、与第一个按钮的右描边错位，看起来就是「边框塌陷」。
+   改法：两条边都保留，第二个按钮 `margin-left: -1px` 与第一个的右描边重叠（去重靠重叠，不靠删边），
+   选中态再盖一层 inset 环形描边 + z-index: 1 —— 四个边（含左右两条）在任何状态下都完整可见。 */
 .vp-mark-mode {
   display: inline-flex;
+  flex: 0 0 auto;
   gap: 0;
 }
 
-/* 两个紧邻按钮拼成一组：左圆右角，中间不重复描边 */
+/* 两个紧邻按钮拼成一组：左圆右角，中间描边重叠 1px */
 .vp-mark-mode .vp-mini:first-child {
   border-radius: 999px 0 0 999px;
 }
 
 .vp-mark-mode .vp-mini:last-child {
+  margin-left: -1px;
   border-radius: 0 999px 999px 0;
-  border-left: none;
 }
 
+/* 选中态：颜色 + inset 环 + 抬到兄弟之上（边框不会被相邻按钮的描边遮住） */
 .vp-mark-mode .vp-mini.on {
+  position: relative;
+  z-index: 1;
   background: var(--accent-soft);
   border-color: var(--accent);
   color: var(--accent);
   font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+/* 三态之二：未选中 hover（.vp-mini:hover 的全局规则会铺满底色，这里只提亮描边与文字） */
+.vp-mark-mode .vp-mini:hover:not(:disabled):not(.on) {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--line));
+  color: var(--accent);
+}
+
+/* 三态之三：禁用（.vp-mini:disabled 已给 opacity，这里补上「不变的描边」以免看起来还是可点的强调色） */
+.vp-mark-mode .vp-mini:disabled {
+  border-color: var(--line);
+  color: var(--fg-dim);
+}
+
+.vp-mark-mode .vp-mini:focus-visible {
+  position: relative;
+  z-index: 2;
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* P5.25：区间输入框左侧加一档内缩，与「终点」小标题同一行的呼吸感 */
+.vp-mark-row .vp-mark-mmss,
+.vp-mark-row .vp-mark-label {
+  min-width: 0;
 }
 
 /* 区间标记的位置文案比单点宽（01:20–02:10），用等宽数字撑住对齐 */
@@ -1509,7 +1589,4 @@ onMounted(() => {
   font-variant-numeric: tabular-nums;
 }
 
-.vp-mark-dash {
-  color: var(--fg-dim);
-}
 </style>

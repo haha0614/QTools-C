@@ -202,7 +202,9 @@ try {
   ok(near(A.rects.toggle.right, A.rects.side.x, 0.6), 'b) 按钮右边缘 = 信息栏左边缘（贴在栏左侧）', A.rects.toggle.right + ' vs ' + A.rects.side.x)
   ok(near(A.rects.toggle.y + A.rects.toggle.h / 2, A.rects.side.y + A.rects.side.h / 2, 1), 'b) 垂直居中（栏的中线）', JSON.stringify([A.rects.toggle.y, A.rects.side.y, A.rects.side.h]))
   ok(A.toggle.radius[0] !== '0px' && A.toggle.radius[1] === '0px' && A.toggle.radius[2] === '0px' && A.toggle.radius[3] !== '0px', 'b) 圆角只在左侧', JSON.stringify(A.toggle.radius))
-  ok(parseFloat(A.toggle.opacity) < 0.5 && parseFloat(A.toggle.opacity) > 0, 'c) 默认半透明（未 hover）', A.toggle.opacity)
+  // P5.25（用户反馈 3）：默认改成**完全不可见**（0）。旧口径「半透明但看得见（>0 且 <0.5）」作废 ——
+  // 0.34 的竖条压在画面上像渲染残影，用户认不出那是按钮。新口径：未 hover 时 opacity 必须正好 0。
+  ok(parseFloat(A.toggle.opacity) === 0, 'c) 默认完全不可见（未 hover，opacity = 0；P5.25 新口径）', A.toggle.opacity)
   ok(A.otherEntries.headButtons.length === 4 && A.otherEntries.headButtons.every((t) => !/信息/.test(t)), '不破坏：头部剩下 4 个按钮且已无「信息」', A.otherEntries.headButtons.join('|'))
   ok(A.styles.bodyDisplay === 'flex' && A.styles.bodyDirection === 'row', '不破坏：.p-body 仍是 flex 行容器', A.styles.bodyDisplay + '/' + A.styles.bodyDirection)
   ok(A.styles.sidePosition === 'static' && A.styles.sideOverflowY === 'auto', '不破坏：桌面右栏仍是静态列 + 自己纵向滚动', A.styles.sidePosition + '/' + A.styles.sideOverflowY)
@@ -219,7 +221,11 @@ try {
 
   await moveTo(4, 4)
   const C = await step('settleOnly')
-  ok(near(parseFloat(C.toggle.opacity), parseFloat(A.toggle.opacity), 0.02), 'c) 指针移出 → opacity 回到半透明', C.toggle.opacity + ' vs ' + A.toggle.opacity)
+  ok(
+    near(parseFloat(C.toggle.opacity), parseFloat(A.toggle.opacity), 0.02) && parseFloat(C.toggle.opacity) === 0,
+    'c) 指针移出 → opacity 回到 0（P5.25 新口径）',
+    C.toggle.opacity + ' vs ' + A.toggle.opacity
+  )
 
   console.log('\n[D] hover 按钮本身 → 同样浮起，且位置不动')
   const tg = A.rects.toggle

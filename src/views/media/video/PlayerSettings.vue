@@ -192,7 +192,9 @@ function numberValue(e) {
 
 <style lang="scss" scoped>
 /* 浮层贴控制条上沿向上展开：父级 .p-ctrl 是绝对定位（= 包含块），这里只负责自身的定位与外观。
-   底色不透明（--bg-2）+ 1px 描边 + 投影：面板里的文字与原生 select 永远可读，与底座的「近乎透明」互不影响。 */
+   底色仍以 --bg-2 为准（面板里的文字与原生 select 永远可读，与底座的「近乎透明」互不影响）；
+   P5.25：底座透明度下调到 .11/.12、blur 提到 12px 之后，把面板也改成同一套语言 ——
+   --bg-2 94% + 同一档 12px blur：透出一点背景（不再像一块硬纸板），文字仍压在自己的底色上。 */
 .p-set {
   position: absolute;
   right: 10px;
@@ -208,7 +210,9 @@ function numberValue(e) {
   padding: 10px 12px;
   border: 1px solid var(--line-2);
   border-radius: 10px;
-  background: var(--bg-2);
+  background: color-mix(in srgb, var(--bg-2) 94%, transparent);
+  backdrop-filter: blur(12px) saturate(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(1.05);
   color: var(--fg);
   font-size: 12.5px;
   box-shadow: 0 16px 38px rgba(0, 0, 0, 0.45);
