@@ -453,7 +453,9 @@ import {
   clipSeekStep,
   createCtrlAutoHide,
   createGainGraph,
+  createProgressClock,
   createRafSeek,
+  createSeekTextThrottle,
   createThrottle,
   durText,
   fineDelta,
@@ -475,6 +477,7 @@ import {
   normalizeGain,
   normalizeSpeed,
   pointerInCtrlZone,
+  progressGate,
   readGainLevel,
   readSpeedLevel,
   seekPxToRatio,
@@ -665,10 +668,11 @@ const seekVars = computed(() => ({
  *   有 fps → 「位置 hh:mm:ss:ff / 总时长 hh:mm:ss:ff」，静止 / 暂停 / 播放 / 拖动完全同一条；
  *   无 fps → 「位置 mm:ss / mm:ss」（不知道帧率就不编假帧号，见 playerExtras.frameTimecode）。
  * 文案只有一个来源（playerExtras.seekTimecodeText），单测直接覆盖这条字符串。
- * 刷新频率：不新增任何逐帧渲染 —— seekPos 仍由 onTimeUpdate（浏览器 timeupdate，约 4–5 次/秒）
- * 与拖动时的 input / 逐帧步进写入，帧号变化肉眼可见，渲染次数与 P5.18 完全一致。
+ * 刷新频率（P5.22）：文案读的是 **seekTextPos**，不是 seekPos —— 滑块位置每帧都变（见 P5.22
+ * 逐帧进度），**文本**则按 25Hz 节流（playerExtras.createSeekTextThrottle）：帧号 25 次/秒已看不出
+ * 跳变，文本重排却少一半以上；拖动 / 暂停 / 松手落点一律 flush，立即精确。
  */
-const seekNowText = computed(() => seekTimecodeText(seekPos.value, seekDur.value, frameFps.value))
+const seekNowText = computed(() => seekTimecodeText(seekTextPos.value, seekDur.value, frameFps.value))
 
 /** 时间码的 title：有帧率写清四位含义，缺帧率如实说明「该片缺帧率数据」 */
 const seekNowTitle = computed(() => seekTimecodeTitle(frameFps.value))
@@ -681,10 +685,12 @@ const seekTitle = computed(() =>
 /** 无障碍文本：知道帧率时补上时间码与帧号（读屏用户也能听到落在哪一帧），两侧都带帧号 */
 const seekAriaText = computed(() => {
   const fps = frameFps.value
-  if (!fps) return durText(seekPos.value) + ' / ' + durText(seekDur.value)
-  const n = frameOf(seekPos.value, fps)
+  // P5.22：跟文本节流（25Hz）走 —— 读屏软件不可能念 60 次/秒，每帧重建这段字符串纯属白花时间；
+  // 与滑块真实位置的差最多 40ms，远小于一次朗读。
+  if (!fps) return durText(seekTextPos.value) + ' / ' + durText(seekDur.value)
+  const n = frameOf(seekTextPos.value, fps)
   return (
-    timecode(seekPos.value, fps) +
+    timecode(seekTextPos.value, fps) +
     '（第 ' + (n == null ? 0 : n) + ' 帧） / ' +
     timecode(seekDur.value || 0, fps)
   )
@@ -697,6 +703,105 @@ const seekFillStyle = computed(() => {
   const pct = dur > 0 ? Math.min(100, Math.max(0, (pos / dur) * 100)) : 0
   return { '--p': pct.toFixed(3) + '%' }
 })
+
+/* ----------------------------- P5.22 播放中逐帧进度（rAF） ----------------------------- */
+
+/**
+ * 为什么需要这块：seekPos 原来只由 onTimeUpdate 写（浏览器 timeupdate ≈4–5 次/秒），
+ * 60fps 的片一次就跳 12–15 帧、30fps 跳 6–7 帧 —— 用户看到的就是「十帧到十五帧跳一下」。
+ * 现在播放中由 requestAnimationFrame 逐帧读 <video>.currentTime 写 seekPos，落点仍走 seekPosOf
+ * （= 帧栅格），于是滑块**一帧一动**：60fps 片 60 次/秒、30fps 片 30 次/秒，与画面帧率严格对齐
+ * （比「补间到 60Hz」更正确：滑块永远停在正显示的那一帧上，不会领先/落后画面）。
+ *
+ * 三条铁律：
+ *   1. 只有 playing 才跑：暂停 / 结束 / 拖动中 / 页面隐藏由 progressGate 全挡掉，一帧都不空转；
+ *   2. 位置每帧写，**时间码文本 25Hz** 写（seekTextPos + createSeekTextThrottle），
+ *      拖动 / 暂停 / 松手落点一律 flush 立即精确；
+ *   3. 闸门读的是 video 元素与普通变量，**不是**响应式状态 —— 每帧只写 seekPos 与（节流后的）
+ *      seekTextPos 两个 ref，不会因为「读状态」把整棵组件多订阅一遍。
+ */
+const seekTextPos = ref(0)
+const seekTextClock = createSeekTextThrottle()
+
+/** 统一时钟：rAF 的 ts 与 performance.now() 同源（毫秒，自 time origin），节流窗口两边都用它 */
+function perfNow() {
+  return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()
+}
+
+/** 闸门输入（每次现算）：直接问 <video>，与 isPlaying 镜像可能滞后半拍无关 */
+function progressState() {
+  const el = videoEl.value
+  if (!el) return { paused: true }
+  return {
+    paused: !!el.paused,
+    ended: !!el.ended,
+    hidden: typeof document !== 'undefined' && !!document.hidden,
+    dragging: qSeekDragging
+  }
+}
+
+const seekClock = createProgressClock({
+  gate: () => progressGate(progressState()),
+  onTick: onProgressTick
+})
+
+/** 一帧一次：读 currentTime → 写滑块（值没变就不写，暂停贴边 / 静止的帧不会白触发渲染） */
+function onProgressTick() {
+  const el = videoEl.value
+  // 播放中仍可能读到 ended / 被拖动打断：就地停掉，不留下一帧空转
+  if (!el || el.paused || el.ended || qSeekDragging) {
+    seekClock.stop()
+    return
+  }
+  const pos = seekPosOf(absPos())
+  if (isFinite(pos) && pos >= 0 && pos !== seekPos.value) seekPos.value = pos
+}
+
+/** 文本对齐到「此刻」的精确位置（暂停 / 结束 / 松手 / 切回前台用） */
+function syncSeekText() {
+  seekTextClock.flush(seekPos.value, perfNow())
+  seekTextPos.value = seekPos.value
+}
+
+/**
+ * 时间码文本的唯一读出口：滑块每帧都在变，文本只按 25Hz 落地。
+ * 拖动中 / 时钟没在跑（暂停、逐帧步进、键盘跳转）→ 无条件 flush（必须立即精确）。
+ */
+watch(seekPos, (v) => {
+  if (qSeekDragging || !seekClock.isRunning()) {
+    seekTextClock.flush(v, perfNow())
+    seekTextPos.value = v
+    return
+  }
+  if (seekTextClock.push(v, perfNow())) seekTextPos.value = v
+})
+
+/** 播种：暂停态起播前先让文本有个准确起点（openVideo / 换片后 seekPos 会被写几次） */
+syncSeekText()
+
+/** 位置与文本都对齐到 <video> 的真实 currentTime（暂停 / 结束的那一刻必须精确到帧） */
+function settleProgressExact() {
+  updateSeekUi()
+  syncSeekText()
+}
+
+/** 松手落地后：文本立刻精确；还在播就把逐帧进度接回去（暂停态保持停着，不空转） */
+function resumeProgressAfterCommit() {
+  syncSeekText()
+  const el = videoEl.value
+  if (el && !el.paused && !el.ended && !qSeekDragging) seekClock.start()
+}
+
+/** 页面隐藏 / 回到前台：隐藏时停（rAF 本来也会被挂起，显式停掉更稳），回来先重新对齐再续跑 */
+function onDocVisibilityChange() {
+  if (typeof document === 'undefined') return
+  if (document.hidden) {
+    seekClock.stop()
+    return
+  }
+  settleProgressExact()
+  seekClock.start()
+}
 
 /** 浮层水平位置：跟进度条比例走（与滑块中心同源，见 seekRatioCss），两侧留半宽避免出界（卡片宽 160，半宽 80） */
 function floatStyle(ratio) {
@@ -1494,6 +1599,8 @@ onMounted(() => {
   document.addEventListener('pointerdown', onDocPointerDown, true)
   // P4.4：页面级快捷键也算「有操作」，全屏下控制条据此重新计时
   document.addEventListener('keydown', onDocKeydown)
+  // P5.22：页面隐藏时停 rAF、回前台重新对齐（见 onDocVisibilityChange）
+  document.addEventListener('visibilitychange', onDocVisibilityChange)
   openVideo(props.video, props.startPos)
 })
 
@@ -1505,6 +1612,9 @@ onBeforeUnmount(() => {
   document.removeEventListener('webkitfullscreenchange', onFsChange)
   document.removeEventListener('pointerdown', onDocPointerDown, true)
   document.removeEventListener('keydown', onDocKeydown)
+  document.removeEventListener('visibilitychange', onDocVisibilityChange)
+  // P5.22：卸载必须撤掉 rAF，否则回调会写到已销毁组件的 ref 上
+  seekClock.stop()
   // P4.4：清掉自动隐藏计时器（否则卸载后仍会回调一次 onChange）
   ctrlAuto.dispose()
   endQHint()
@@ -1580,6 +1690,8 @@ function onSeekInput(e) {
   if (fineDrag.active) return
   qSeekDragging = true
   syncCtrlState()
+  // P5.22：拖动一开始就停 rAF —— 位置从此归本函数写，逐帧进度别跟着抢（松手后 resumeProgressAfterCommit 接回）
+  seekClock.stop()
   // P5.16 帧级：value 是连续值（step = 1/fps），这里再吸一次帧栅格，
   // 保证 currentTime 恰好 = round(t*fps)/fps（浏览器对 step 的取整有浮点误差）。
   const target = snapToFrame(Number(e.target.value) || 0, frameFps.value)
@@ -1630,6 +1742,8 @@ function commitSeekTo(target) {
     if (!justWrote) seekOrigTo(target)
     updateSeekUi()
     if (resume) tryPlay()
+    // P5.22：松手 = 位置已是精确值 → 文本立即对齐；还在播就把逐帧进度接回去
+    resumeProgressAfterCommit()
     return
   }
   // P5.17 转码：**必须**用同一个精确秒既当流起点又当内容位置。
@@ -1641,6 +1755,9 @@ function commitSeekTo(target) {
   applySource(props.video, target, 0)
   clearScrub() // 跟随帧的任务结束：像素已经拷进 .p-stream-cover
   tryPlay()
+  // P5.22：转码档此刻还是暂停的（dragAutoPaused），start() 会被闸门挡住；
+  // 真正续跑由随后的 play / playing 事件负责（同一处口径，不额外猜状态）
+  resumeProgressAfterCommit()
 }
 
 /* ------------------------------------------------- P5.16 Shift 精细拖动 */
@@ -1683,6 +1800,8 @@ function onSeekPointerDown(e) {
   fineDragging.value = true
   qSeekDragging = true
   syncCtrlState()
+  // P5.22：Shift 精细拖动同样停 rAF（与 onSeekInput 同一条口径）
+  seekClock.stop()
   hoverPreview.cancel()
   hidePreview()
   window.addEventListener('pointermove', onFineDragMove)
@@ -2270,12 +2389,16 @@ function closeHelp() {
 function onPlay() {
   isPlaying.value = true
   props.tracker.trackPlayStart(props.video.id)
+  // P5.22：起播即接上逐帧进度（幂等：闸门关着就不起，不会排出第二个循环）
+  seekClock.start()
 }
 
 function onPlaying() {
   isPlaying.value = true
   tapVisible.value = false
   endQHint()
+  // P5.22：缓冲结束真正开始推进（seek 之后只有 playing 事件，play 不一定再来）
+  seekClock.start()
 }
 
 /** 点画面切换播放/暂停：移除原生 controls 后补回等价能力 */
@@ -2348,6 +2471,9 @@ function onTimeUpdate() {
 
 function onPause() {
   isPlaying.value = false
+  // P5.22：暂停先停 rAF（绝不空转），再把位置与文本对齐到暂停那一帧的准确值
+  seekClock.stop()
+  settleProgressExact()
   savePosFor(props.video)
   pushRecentServer()
   settlePlay()
@@ -2355,6 +2481,9 @@ function onPause() {
 
 function onEnded() {
   isPlaying.value = false
+  // P5.22：播完同样停表并对齐（末帧位置要精确，不能停在 40ms 之前）
+  seekClock.stop()
+  settleProgressExact()
   const v = props.video
   if (!v) return
   emit('clear-pos', v.id)

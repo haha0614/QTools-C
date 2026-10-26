@@ -1073,3 +1073,173 @@ export function createRafSeek(options) {
   }
 }
 
+
+/* ================================ P5.22 播放中逐帧进度（rAF） ================================ */
+
+/**
+ * 时间码文本的刷新上限：25Hz（40ms）。
+ * 滑块位置每帧都要变（视觉连续），但**数字**没必要跟着 60fps 跑 —— 25 次/秒已经看不出跳变，
+ * 而文本节点重排的代价是滑块的上千倍，所以文本单独走这条节流。
+ */
+export const SEEK_TEXT_HZ = 25
+export const SEEK_TEXT_INTERVAL_MS = 1000 / SEEK_TEXT_HZ
+
+/**
+ * 逐帧进度的闸门（纯函数）：四条同时成立才该跑 rAF。
+ *
+ * - paused  暂停 / 未起播：位置不会变，跑 rAF 就是纯空转（用户明确要求不许空转）
+ * - ended   播完：同上（ended 时 paused 也常为 true，这里显式挡一道，不依赖浏览器口径）
+ * - hidden  标签页切到后台：rAF 本来就会被挂起，显式停一次更稳（回前台再重新对齐）
+ * - dragging 用户正在拖进度条 / 正在 Shift 精细拖动：位置归拖动路径写，rAF 别跟着抢
+ */
+export function progressGate(state) {
+  const s = state || {}
+  if (s.hidden) return false
+  if (s.dragging) return false
+  if (s.ended) return false
+  if (s.paused) return false
+  return true
+}
+
+/**
+ * 逐帧进度时钟：start() 起一个 requestAnimationFrame 循环，每帧回调一次 onTick(ts)。
+ *
+ * 为什么不是 setInterval：rAF 与显示刷新对齐（60Hz / 120Hz 屏都一样），
+ * 标签页不可见时浏览器自己就停，不会像 setInterval 那样在后台狂跑。
+ * 每帧进入回调前先问一次 gate()：暂停 / 拖动 / 切后台当帧即自停（stats.gateClosed +1），
+ * 不会出现「已经不该跑了还在空转」的一帧。
+ * 定时器可注入 → 完全可脱离浏览器单测（组件传 window.requestAnimationFrame）。
+ */
+export function createProgressClock(options) {
+  const opt = options || {}
+  const onTick = typeof opt.onTick === 'function' ? opt.onTick : () => {}
+  const gate = typeof opt.gate === 'function' ? opt.gate : () => true
+  const requestFrame = typeof opt.requestFrame === 'function'
+    ? opt.requestFrame
+    : (fn) => (typeof requestAnimationFrame === 'function' ? requestAnimationFrame(fn) : setTimeout(fn, SEEK_FRAME_MS))
+  const cancelFrame = typeof opt.cancelFrame === 'function'
+    ? opt.cancelFrame
+    : (id) => {
+        if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(id)
+        else clearTimeout(id)
+      }
+  const nowMs = typeof opt.now === 'function'
+    ? opt.now
+    : () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now())
+
+  let running = false
+  let handle = null
+  const stats = { ticks: 0, starts: 0, stops: 0, gateClosed: 0 }
+
+  function loop(ts) {
+    handle = null
+    if (!running) return
+    if (!gate()) {
+      running = false
+      stats.gateClosed += 1
+      return
+    }
+    stats.ticks += 1
+    const t = num(ts) != null ? ts : nowMs()
+    onTick(t)
+    // onTick 里可能自己 stop()（例如读到 ended）—— running 已假就不再排下一帧
+    if (running && handle == null) handle = requestFrame(loop)
+  }
+
+  /** 起循环；已在跑 / 闸门关着都返回 false（幂等，重复调用不会排出第二个循环） */
+  function start() {
+    if (running) return false
+    if (!gate()) return false
+    running = true
+    stats.starts += 1
+    handle = requestFrame(loop)
+    return true
+  }
+
+  function stop() {
+    running = false
+    if (handle != null) {
+      cancelFrame(handle)
+      handle = null
+      stats.stops += 1
+    }
+    return running
+  }
+
+  return {
+    start,
+    stop,
+    isRunning: () => running,
+    stats: () => Object.assign({}, stats)
+  }
+}
+
+/**
+ * 时间码节流器（纯逻辑，时钟由调用方按帧喂进来 → 可脱离浏览器单测）。
+ *
+ * push(sec, nowMs)：距上次写入 ≥ intervalMs 就返回 true（调用方据此写文本 ref），否则返回 false
+ * （这次的值只记成 pending，不写 DOM —— 文本抖动就压在这里）。
+ * flush(sec, nowMs)：拖动 / 暂停 / 松手落点必须立即精确，无视窗口直接放行，并重置窗口。
+ * 与 createThrottle 的区别：那个用 setTimeout 补发最后一帧；这里由 rAF 循环自己持续喂，
+ * 所以不需要补发 —— 下一帧（16ms 后）自然会带新值过来。
+ */
+export function createSeekTextThrottle(options) {
+  const opt = options || {}
+  const rawInterval = num(opt.intervalMs)
+  const interval = rawInterval != null && rawInterval > 0 ? rawInterval : SEEK_TEXT_INTERVAL_MS
+
+  let last = -Infinity
+  let latest = null
+  let shown = null
+  const stats = { pushes: 0, skipped: 0, written: 0, flushes: 0 }
+
+  function stamp(nowMs) {
+    const t = num(nowMs)
+    return t != null ? t : 0
+  }
+
+  function push(sec, nowMs) {
+    const v = num(sec)
+    if (v == null) return false
+    stats.pushes += 1
+    latest = v
+    const t = stamp(nowMs)
+    // last = **下一次允许写的时间点**（不是上次写入的时刻）。这样节流点不会随
+    // 帧间隔抖动一路往后拖：60Hz 帧下写入落在 40ms 窗口的边界附近，长期均值 = 25Hz，
+    // 而不是「每 3 帧一次」的 20Hz（后者偏慢、且掉一帧就会掉到 20 以下）。
+    if (t < last) {
+      stats.skipped += 1
+      return false
+    }
+    last += interval
+    // 一步跟不上就别把「欠下的」节流点攒起来（长时间挂起后回到前台会连写好几帧）：
+    // 落后于当下就把下一个节流点推到 t + interval。
+    if (last <= t) last = t + interval
+    shown = v
+    stats.written += 1
+    return true
+  }
+
+  function flush(sec, nowMs) {
+    const raw = num(sec)
+    const v = raw != null ? raw : latest
+    if (v == null) return false
+    latest = v
+    shown = v
+    last = stamp(nowMs) + interval
+    stats.flushes += 1
+    return true
+  }
+
+  return {
+    push,
+    flush,
+    /** 最近一次**真的写出去**的位置（调用方写进文本 ref 的那个值） */
+    value: () => shown,
+    /** 最近一次接到的位置（可能还没写出去） */
+    pending: () => latest,
+    intervalMs: interval,
+    stats: () => Object.assign({}, stats)
+  }
+}
+

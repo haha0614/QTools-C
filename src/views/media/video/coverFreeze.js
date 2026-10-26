@@ -74,20 +74,28 @@ export function coverFrameWidth(cssWidth) {
 }
 
 /**
- * canvas 是否「整块都是黑的」（= 没有可画的画面）
+ * 画面区域是否「整块都是黑的」（= 没有可画的画面）
  *
  * <p>为什么需要它：{@code drawImage} 一个还没解出帧的 {@code <video>}（readyState=0）不报错，
- * 只是什么都不画 —— 交出来的就是一张全黑图。把它当成功盖上，等于换了一种黑屏。
- * 采样 3×3 个小方块，全部接近黑就判为空白。</p>
+ * 只是什么都不画 —— 交出来的就是一张全黑图。把它当成功盖上，等于换了一种黑屏。</p>
+ *
+ * <p><b>只在 contain 的画面矩形里采样</b>（不是整块 canvas）：竖屏片源摆在横向舞台上时，
+ * 左右黑边占了大半面积，按整块 canvas 采样会把 6/9 的采样点打进黑边里 —— 实测（p520 探针）
+ * 一个正常的 384×640 画面就是这样被判成「全黑」而白白退回取帧兜底的。</p>
+ *
+ * @param box {@link containRect} 的结果（画面在 canvas 里的矩形）
  */
-function isBlankCanvas(ctx, w, h, limit) {
+function isBlankPicture(ctx, box, limit) {
+  const w = box.w
+  const h = box.h
+  if (!(w > 0) || !(h > 0)) return true
   const patch = Math.max(2, Math.min(8, Math.floor(Math.min(w, h) / 4) || 2))
   const limitValue = limit == null ? BLANK_MAX_CHANNEL : limit
   try {
     for (let i = 0; i < 3; i += 1) {
       for (let j = 0; j < 3; j += 1) {
-        const x = Math.min(Math.max(0, Math.round(((i + 0.5) * w) / 3 - patch / 2)), Math.max(0, w - patch))
-        const y = Math.min(Math.max(0, Math.round(((j + 0.5) * h) / 3 - patch / 2)), Math.max(0, h - patch))
+        const x = Math.min(Math.max(0, Math.round(box.x + ((i + 0.5) * w) / 3 - patch / 2)), Math.round(box.x + w - patch))
+        const y = Math.min(Math.max(0, Math.round(box.y + ((j + 0.5) * h) / 3 - patch / 2)), Math.round(box.y + h - patch))
         const data = ctx.getImageData(x, y, patch, patch).data
         for (let k = 0; k < data.length; k += 4) {
           if (data[k] > limitValue || data[k + 1] > limitValue || data[k + 2] > limitValue) return false
@@ -112,6 +120,8 @@ function isBlankCanvas(ctx, w, h, limit) {
  * @param {*} el      画面来源：{@code <video>}（读 videoWidth/Height）或 {@code <img>}（读 naturalWidth/Height）
  * @param {{width?:number,height?:number,quality?:number,document?:Document,createCanvas?:Function,
  *          isBlank?:Function,blankLimit?:number}} [options]
+ *        {@code isBlank(ctx, box, limit)} 注入的是「画面区域是否空白」的判定（默认只在 contain 的
+ *        画面矩形里采样 3×3 个小方块）
  *        全部可注入，供单测脱离浏览器；{@code width/height} 缺省取元素的 clientWidth/Height
  * @returns {string} {@code data:image/jpeg;base64,...}；任一环节失败一律空串（调用方退 B 兜底）
  */
@@ -156,8 +166,8 @@ export function freezeElementFrame(el, options) {
   } catch (e) {
     return ''
   }
-  const blank = opt.isBlank || isBlankCanvas
-  if (blank(ctx, w, h, opt.blankLimit)) return ''
+  const blank = opt.isBlank || isBlankPicture
+  if (blank(ctx, box, opt.blankLimit)) return ''
   try {
     const url = canvas.toDataURL('image/jpeg', opt.quality == null ? FREEZE_QUALITY : opt.quality)
     return typeof url === 'string' && url.indexOf('data:image/') === 0 ? url : ''

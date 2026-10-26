@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>P5.22 逐帧进度实测台</title>
+<style>
+  body { font: 14px/1.5 system-ui, sans-serif; margin: 24px; }
+  .p-seek { width: 640px; }
+  .marks span { display: inline-block; width: 4px; height: 8px; background: #888; margin-right: 40px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+import { createApp, computed, onBeforeUpdate, onUpdated, ref, watch } from '/node_modules/vue/dist/vue.esm-browser.prod.js'
+import {
+  createProgressClock,
+  createSeekTextThrottle,
+  progressGate,
+  snapToFrame,
+  seekTimecodeText
+} from '/src/views/media/video/playerExtras.js'
+
+/* 这是 MediaPlayer.vue 里 P5.22 那段接线的**同构复刻**（真 Vue 3 + 真 rAF + 真 Vue 调度器），
+   区别只有两处，都是为了能脱离后端跑：
+     - <video> 换成一个按 performance.now() 匀速推进的假对象（无媒体解码）；
+     - pause / play 事件由测试脚本手动触发（真实现里是 <video> 的 play / pause 事件）。
+   被测对象因此是「接线方式 + Vue 渲染开销」，不是视频解码本身。 */
+
+const FPS = 60
+const DUR = 7532.4
+const video = { paused: true, ended: false, duration: DUR, currentTime: 0 }
+let playT0 = 0
+let playBase = 0
+
+function nowPos() {
+  if (video.paused || video.ended) return video.currentTime
+  return playBase + (performance.now() - playT0) / 1000
+}
+
+/* 数组/计数器都挂到 window，测试脚本不必穿过 Vue 组件实例 */
+const M = {
+  ticks: 0,
+  posWrites: 0,
+  textWrites: 0,
+  vueUpdates: 0,
+  flushTotalMs: 0,
+  flushMaxMs: 0,
+  tickTotalMs: 0,
+  tickMaxMs: 0,
+  rafRate: 0
+}
+const FLAGS = { dragging: false }
+
+// 模板规模可调（?rows=400 用于「比真实 MediaPlayer 还重」的上界测量）
+const ROWS = Number(new URLSearchParams(location.search).get('rows') || 60)
+const marks = Array.from({ length: ROWS }, (_, i) => 'm' + i)
+
+const Comp = {
+  setup() {
+    const seekPos = ref(0)
+    const seekTextPos = ref(0)
+    const seekMax = ref(DUR)
+    const seekDur = ref(DUR)
+    const seekNowText = computed(() => seekTimecodeText(seekTextPos.value, seekDur.value, FPS))
+
+    const textClock = createSeekTextThrottle()
+    const clock = createProgressClock({
+      gate: () =>
+        progressGate({
+          paused: video.paused,
+          ended: video.ended,
+          hidden: document.hidden,
+          dragging: FLAGS.dragging
+        }),
+      onTick: (ts) => {
+        const t0 = performance.now()
+        M.ticks++
+        const pos = snapToFrame(nowPos(), FPS) // = seekPosOf：帧栅格落点
+        if (pos !== seekPos.value) {
+          seekPos.value = pos // ← 每帧一次（这也是「一次组件 re-render」的来源）
+          M.posWrites++
+        }
+        const d = performance.now() - t0
+        M.tickTotalMs += d
+        if (d > M.tickMaxMs) M.tickMaxMs = d
+      }
+    })
+
+    watch(seekPos, (v) => {
+      if (FLAGS.dragging || !clock.isRunning()) {
+        textClock.flush(v, performance.now())
+        seekTextPos.value = v
+        M.textWrites++
+        return
+      }
+      if (textClock.push(v, performance.now())) {
+        seekTextPos.value = v
+        M.textWrites++
+      }
+    })
+
+    let updT0 = 0
+    onBeforeUpdate(() => {
+      updT0 = performance.now()
+    })
+    onUpdated(() => {
+      const d = performance.now() - updT0
+      M.vueUpdates++
+      M.flushTotalMs += d
+      if (d > M.flushMaxMs) M.flushMaxMs = d
+    })
+
+    window.__clock = clock
+    window.__textClock = textClock
+    window.__refs = { seekPos, seekTextPos }
+
+    return { seekPos, seekTextPos, seekMax, seekDur, seekNowText, marks }
+  },
+  template: `
+    <div class="player">
+      <div class="stage"><div class="fake-video">假 <video>（无解码）</div></div>
+      <div class="ctrl">
+        <div class="seekbar">
+          <input class="p-seek" type="range" min="0" :max="seekMax" :value="seekPos" aria-label="播放位置" />
+          <span class="p-seek-now">{{ seekNowText }}</span>
+        </div>
+        <div class="marks">
+          <span v-for="m in marks" :key="m" class="mark"></span>
+        </div>
+        <div class="btnrow">
+          <button type="button">播放</button><button type="button">全屏</button>
+          <button type="button">帮助</button><button type="button">标记</button>
+        </div>
+      </div>
+    </div>`
+}
+
+createApp(Comp).mount('#app')
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+
+function snapshot() {
+  return {
+    ticks: M.ticks,
+    posWrites: M.posWrites,
+    textWrites: M.textWrites,
+    vueUpdates: M.vueUpdates,
+    flushTotalMs: M.flushTotalMs,
+    flushMaxMs: M.flushMaxMs,
+    tickTotalMs: M.tickTotalMs,
+    tickMaxMs: M.tickMaxMs
+  }
+}
+
+function delta(a, b) {
+  const out = {}
+  for (const k of Object.keys(a)) out[k] = Math.round((b[k] - a[k]) * 1000) / 1000
+  return out
+}
+
+async function measure(ms) {
+  const a = snapshot()
+  await sleep(ms)
+  const b = snapshot()
+  return delta(a, b)
+}
+
+/** 环境本身的 rAF 频率（headless 下也要报出来，否则「60 次/秒」没有参照） */
+async function measureRafHz(ms) {
+  let n = 0
+  let stop = false
+  const tick = () => {
+    if (stop) return
+    n++
+    requestAnimationFrame(tick)
+  }
+  requestAnimationFrame(tick)
+  await sleep(ms)
+  stop = true
+  M.rafRate = n
+  return Math.round((n / (ms / 1000)) * 100) / 100
+}
+
+window.__P522 = {
+  async run() {
+    const result = { rafHz: await measureRafHz(1000) }
+
+    /* 1. 播放 1 秒 */
+    video.paused = false
+    video.ended = false
+    playBase = 0
+    playT0 = performance.now()
+    window.__clock.start()
+    result.playing = await measure(1000)
+
+    /* 2. 暂停（等价 onPause：停表 + 文本 flush 对齐） */
+    video.currentTime = nowPos()
+    video.paused = true
+    window.__clock.stop()
+    window.__refs.seekPos.value = snapToFrame(video.currentTime, FPS)
+    const before2 = snapshot()
+    await sleep(500)
+    result.paused = delta(before2, snapshot())
+
+    /* 3. 拖动中（视频仍在“播”，但闸门被 dragging 关掉；同时模拟 pointermove 连续写位置） */
+    video.paused = false
+    playT0 = performance.now()
+    playBase = video.currentTime
+    FLAGS.dragging = true
+    window.__clock.start() // 闸门关着 → 应当不启动
+    const before3 = snapshot()
+    let dragWrites = 0
+    const dragStart = performance.now()
+    while (performance.now() - dragStart < 500) {
+      window.__refs.seekPos.value = snapToFrame(video.currentTime + 5 + dragWrites * 0.37, FPS)
+      dragWrites++
+      await sleep(8) // ≈120Hz 的 pointermove
+    }
+    const after3 = delta(before3, snapshot())
+    result.dragging = Object.assign({ dragWrites }, after3)
+
+    /* 4. 页面隐藏（document.hidden 打桩：headless 下没法真的切后台） */
+    FLAGS.dragging = false
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true })
+    window.__clock.stop()
+    const startHidden = window.__clock.start() // 应当返回 false
+    const before4 = snapshot()
+    await sleep(500)
+    result.hidden = Object.assign({ startReturned: startHidden }, delta(before4, snapshot()))
+    delete document.hidden
+
+    /* 5. 回前台：重新 start（真实现里还会先 settleProgressExact 对齐） */
+    playT0 = performance.now()
+    playBase = window.__refs.seekPos.value
+    const started = window.__clock.start()
+    result.resumed = Object.assign({ startReturned: started }, await measure(500))
+
+    window.__clock.stop()
+    return result
+  }
+}
+window.__READY = true
+</script>
+</body>
+</html>
