@@ -250,31 +250,36 @@
       @clear-pos="onClearPos"
       @push-recent="onPushRecent"
       @open-meta="openMeta"
-    />
-
-    <!-- 单条组织信息（评分 / 标签 / 标记）：独立于播放层，接口失败只提示不阻塞播放 -->
-    <VideoMetaPanel
-      v-if="metaOpen && curVideo"
-      :video="curVideo"
-      :all-tags="allTags"
-      :tags-loading="tagsLoading"
-      :level="editLevel"
-      :at-sec="metaAtSec"
-      :get-current-sec="currentPlaySec"
-      :get-dur-sec="currentPlayDur"
-      :persons="(curVideo && cardPersons(curVideo)) || EMPTY_LIST"
-      :actors="(curVideo && curVideo.actors) || EMPTY_LIST"
-      :studios="(curVideo && curVideo.studios) || []"
-      :all-persons="personList || EMPTY_LIST"
-      :persons-loading="personsLoading"
-      :persons-unavailable="personsUnavailable"
-      @close="closeMeta"
-      @updated="onMetaUpdated"
-      @markers="onMetaMarkers"
-      @tag-created="onTagCreated"
-      @person-created="onPersonCreated"
-      @notify="showToast"
-    />
+    >
+      <!-- P5.23：信息抽屉改为播放页右侧**常驻**列（原抽屉内容与事件一字不动，只换容器）。
+           桌面与视频同一行 flex（不覆盖视频）；<1200px 由播放器切成浮层。
+           展开 / 折叠由播放器持有（含 localStorage），这里只在「展开」时预热标签 / 人物库。 -->
+      <template #side>
+        <VideoMetaPanel
+          :key="curVideo.id + '#' + openSeq"
+          :video="curVideo"
+          dock
+          :all-tags="allTags"
+          :tags-loading="tagsLoading"
+          :level="editLevel"
+          :at-sec="metaAtSec"
+          :get-current-sec="currentPlaySec"
+          :get-dur-sec="currentPlayDur"
+          :persons="(curVideo && cardPersons(curVideo)) || EMPTY_LIST"
+          :actors="(curVideo && curVideo.actors) || EMPTY_LIST"
+          :studios="(curVideo && curVideo.studios) || []"
+          :all-persons="personList || EMPTY_LIST"
+          :persons-loading="personsLoading"
+          :persons-unavailable="personsUnavailable"
+          @close="closeMeta"
+          @updated="onMetaUpdated"
+          @markers="onMetaMarkers"
+          @tag-created="onTagCreated"
+          @person-created="onPersonCreated"
+          @notify="showToast"
+        />
+      </template>
+    </MediaPlayer>
 
     <!-- 加入播放列表（P5-B）：选择已有列表或新建，写入失败只提示，不影响库与播放 -->
     <PlaylistPicker
@@ -977,7 +982,6 @@ const selectAnchor = ref(-1)
 const allTags = ref([])
 const tagsLoading = ref(false)
 const batchBusy = ref(false)
-const metaOpen = ref(false)
 /** 本地覆盖层：id → { rating, tags }，批量/单条写入后立即反映到卡片，无需重拉整份索引 */
 const metaOverrides = reactive({})
 
@@ -1747,7 +1751,12 @@ function openPerson(id) {
 function openPlayer(id) {
   const v = byId.value.get(id)
   if (!v) return
+  // P5.23：右栏常驻 → 打开播放器即预热信息栏所需的两份数据（标签库 / 人物库）
+  ensureMetaData()
   startPos.value = readPos(v.id)
+  // P5.23：信息栏常驻 → 抽屉在播放器打开时就挂载（:key 换片重建），
+  // 「在当前时间加标记」的起手位置因此取这一部的起始位置，而不是等用户点「信息」。
+  metaAtSec.value = startPos.value || 0
   // P4.3：换片先取该 videoId 的标记缓存（抽屉曾经读到过的标记），有缓存就能立刻画刻度；
   // 没缓存就是空数组（不画刻度），等抽屉读到后再回填 —— 绝不显示上一部片的刻度。
   playerMarkers.value = readMarkerCache(markerStorage(), v.id)
@@ -1758,7 +1767,6 @@ function openPlayer(id) {
 }
 
 function closePlayer() {
-  metaOpen.value = false
   curVideo.value = null
   if (state.play) {
     state.play = ''
@@ -2158,18 +2166,29 @@ async function applyBatchMeta(patch, okText) {
   }
 }
 
+/**
+ * P5.23：信息栏常驻右侧 —— 标签库 / 人物库在「播放器打开」时就预热，
+ * 面板内容始终挂载，展开只是把右栏宽度从 0 拉回来（状态在 MediaPlayer 里）。
+ * 标签库 / 人物库都是按需拉一次（已有缓存 / 加载中不重复拉）。
+ */
+function ensureMetaData() {
+  if (!allTags.value.length) loadTags(false)
+  if (!personList.value && !personsLoading.value) loadPersonsFacet()
+}
+
+/** 播放器头部「信息」按钮 → 展开右栏（并刷新「在当前时间加标记」的起手位置） */
 function openMeta() {
   // 「在当前时间加标记」的起手位置：播放器暴露 getCurrentTime（见 MediaPlayer defineExpose）
   const pl = playerRef.value
   metaAtSec.value = pl && typeof pl.getCurrentTime === 'function' ? pl.getCurrentTime() : 0
-  metaOpen.value = true
-  if (!allTags.value.length) loadTags(false)
-  // 演员编辑的候选库：与标签库同一策略，打开抽屉时按需拉一次（已有缓存 / 加载中不重复拉）
-  if (!personList.value && !personsLoading.value) loadPersonsFacet()
+  ensureMetaData()
+  if (pl && typeof pl.openSide === 'function') pl.openSide()
 }
 
+/** 面板头部按钮（停靠态显示为「› 收起」）→ 折叠右栏，视频随即整宽 */
 function closeMeta() {
-  metaOpen.value = false
+  const pl = playerRef.value
+  if (pl && typeof pl.closeSide === 'function') pl.closeSide()
 }
 
 /**

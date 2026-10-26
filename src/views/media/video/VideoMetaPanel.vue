@@ -11,12 +11,29 @@
         自动回填起点（区间再加 1 秒；接近片尾则整段贴到片尾），规则集中在 markFill.js。
 -->
 <template>
-  <div class="vp-back" @click="emit('close')"></div>
-  <aside class="vp" role="dialog" aria-modal="true" aria-label="视频信息" @keydown.esc.stop="emit('close')">
+  <!-- 浮层态才有遮罩；停靠态（P5.23 右侧常驻列）由播放器自己管宽度与折叠 -->
+  <div v-if="!dock" class="vp-back" @click="emit('close')"></div>
+  <aside
+    class="vp"
+    :class="{ 'is-dock': dock }"
+    :role="dock ? 'region' : 'dialog'"
+    :aria-modal="dock ? null : 'true'"
+    aria-label="视频信息"
+    @keydown.esc.stop="emit('close')"
+  >
     <header class="vp-head">
       <h2 class="vp-title" :title="video.title">{{ video.title }}</h2>
       <span v-if="isLocal" class="vp-local" title="本地编辑：仅保存在本浏览器，清除缓存即消失">本地</span>
-      <button class="vp-x" type="button" aria-label="关闭信息" @click="emit('close')">×</button>
+      <!-- 停靠态的同一个按钮 = 折叠信息栏（折叠后由播放器给回唤出把手） -->
+      <button
+        class="vp-x"
+        type="button"
+        :aria-label="dock ? '收起信息栏' : '关闭信息'"
+        :title="dock ? '收起信息栏' : '关闭信息'"
+        @click="emit('close')"
+      >
+        {{ dock ? '›' : '×' }}
+      </button>
     </header>
 
     <div class="vp-body">
@@ -315,7 +332,12 @@ const props = defineProps({
   /** P4-B：取「此刻」的播放位置（页面传 playerRef.getCurrentTime）；缺省回落到 atSec */
   getCurrentSec: { type: Function, default: null },
   /** P4.5：取内容总时长（页面传 playerRef.getDuration）；缺省回落到索引里的 video.dur，都没有即 0 = 未知 */
-  getDurSec: { type: Function, default: null }
+  getDurSec: { type: Function, default: null },
+  /**
+   * P5.23：停靠态 —— 内容作为播放页右侧常驻列的内嵌块（不再是 fixed 浮层抽屉）。
+   * 只换容器定位与滚动归属，抽屉内部结构（标题 / 元信息 / 评分 / 标签 / 人物 / 工作室 / 标记 / 播放列表）一字不动。
+   */
+  dock: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['close', 'updated', 'tag-created', 'person-created', 'notify', 'markers'])
@@ -876,6 +898,34 @@ onMounted(() => {
   border-left: 1px solid var(--line);
   color: var(--fg);
   font-size: 13px;
+}
+
+/* P5.23 停靠态：容器交给播放页右栏（.p-side 负责宽度、边框与纵向滚动），
+   这里只把自己从 fixed 浮层降级成普通文档块 —— 内部结构一个字节都不改：
+   - position:static → 跟着右栏一起滚，不再自己吸在视口右侧；
+   - height:auto + min-height:100% → 内容不足一屏也铺满右栏；
+   - 滚动交给右栏（.p-side overflow-y:auto），自身不再造第二个滚动条；
+   - 头部 sticky 吸顶：滚到中间时标题与「收起」按钮仍在。 */
+.vp.is-dock {
+  position: static;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  min-height: 100%;
+  border-left: 0;
+  background: transparent;
+  z-index: auto;
+}
+
+.vp.is-dock .vp-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-2);
+}
+
+.vp.is-dock .vp-body {
+  overflow: visible;
 }
 
 .vp-head {

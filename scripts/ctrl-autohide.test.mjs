@@ -15,6 +15,7 @@ import {
   blurActiveInCtrl,
   createCtrlAutoHide,
   ctrlCanHide,
+  ctrlCanHideDocked,
   pointerInCtrlZone
 } from '../src/views/media/video/playerExtras.js'
 
@@ -367,6 +368,144 @@ function mount(opts) {
   eq(pointerInCtrlZone(clockFree, wrap, { x: 800, y: 100 }, doc), false, 'T12 画面区 → 不命中')
   eq(pointerInCtrlZone(clockFree, wrap, { x: -1, y: -1 }, doc), false, 'T12 未知指针位置 → 不命中')
   eq(pointerInCtrlZone(null, wrap, { x: 800, y: 860 }, doc), false, 'T12 控制条未挂载 → 不命中')
+}
+
+/* ================== P5.23 叠加在视频上的控制条：指针移出即隐藏 ==================
+ * 复刻 MediaPlayer.vue 的接线：.p-fs-wrap 的 mouseenter/mouseleave → activity() / update({pointerIn:false})，
+ * 其余状态（playing / dragging / overlay / fullscreen）照旧同步。判据是 playerExtras.ctrlCanHideDocked。
+ */
+function mountDocked(opts) {
+  const o = opts || {}
+  const clock = makeClock()
+  const log = []
+  const state = {
+    fullscreen: !!o.fullscreen,
+    playing: o.playing !== false,
+    hover: false,
+    dragging: false,
+    overlay: false,
+    pointerIn: true,
+    hidden: false
+  }
+  const auto = createCtrlAutoHide({
+    hideOnLeave: true,
+    setTimeout: clock.setTimeout,
+    clearTimeout: clock.clearTimeout,
+    onChange: (hidden) => {
+      state.hidden = hidden
+      log.push(hidden ? 'hidden' : 'shown')
+    }
+  })
+  const sync = (patch) => {
+    auto.update({
+      fullscreen: state.fullscreen,
+      playing: state.playing,
+      hover: state.hover,
+      dragging: state.dragging,
+      overlay: state.overlay,
+      pointerIn: state.pointerIn,
+      ...(patch || {})
+    })
+  }
+  sync()
+  return {
+    clock,
+    log,
+    state,
+    sync,
+    /** 组件 onStageEnter */
+    enter() {
+      state.pointerIn = true
+      auto.activity()
+      sync()
+    },
+    /** 组件 onStageLeave */
+    leave() {
+      state.pointerIn = false
+      sync()
+    },
+    /** 组件 onUserActivity / onDocKeydown */
+    activity() {
+      auto.activity()
+    }
+  }
+}
+
+// T13 非全屏、播放中：指针离开视频区 → 立即收起（不等 2.5s）
+{
+  const h = mountDocked()
+  eq(h.state.hidden, false, 'T13 前置：首帧可见（pointerIn 默认 true）')
+  h.leave()
+  eq(h.state.hidden, true, 'T13 移出视频区立即隐藏（不推进时钟）')
+  eq(h.log.join(','), 'hidden', 'T13 只回调一次隐藏（首帧本就可见，不重复通知）')
+}
+
+// T14 指针在视频区内一直可见（移入显示 = 已显示；10s 不隐藏），移出再收起
+{
+  const h = mountDocked()
+  h.leave()
+  eq(h.state.hidden, true, 'T14 前置：已隐藏')
+  h.enter()
+  eq(h.state.hidden, false, 'T14 移入视频区 → 立即显示')
+  h.clock.advance(10000)
+  eq(h.state.hidden, false, 'T14 指针在视频区内 10s 仍不隐藏')
+  h.leave()
+  eq(h.state.hidden, true, 'T14 再移出 → 立即隐藏')
+}
+
+// T15 三条闸门：暂停 / 拖进度条 / 浮层展开时，移出也不隐藏
+{
+  const h = mountDocked()
+  h.state.playing = false
+  h.leave()
+  eq(h.state.hidden, false, 'T15 暂停中移出 → 不隐藏')
+  h.state.playing = true
+  h.state.dragging = true
+  h.leave()
+  eq(h.state.hidden, false, 'T15 拖进度条时移出 → 不隐藏')
+  h.state.dragging = false
+  h.state.overlay = true
+  h.leave()
+  eq(h.state.hidden, false, 'T15 浮层展开时移出 → 不隐藏')
+  h.state.overlay = false
+  h.state.pointerIn = true
+  h.sync()
+  h.leave()
+  eq(h.state.hidden, true, 'T15 闸门全部放开后移出 → 隐藏')
+}
+
+// T16 指针在视频外时按键盘快捷键：先显示，按 2.5s 计时收（不是立刻收回去）
+{
+  const h = mountDocked()
+  h.leave()
+  eq(h.state.hidden, true, 'T16 前置：已隐藏')
+  h.activity()
+  eq(h.state.hidden, false, 'T16 键盘操作 → 立即显示（pointerIn 仍是 false）')
+  h.clock.advance(CTRL_HIDE_DELAY_MS - 1)
+  eq(h.state.hidden, false, 'T16 2499ms 仍可见')
+  h.clock.advance(1)
+  eq(h.state.hidden, true, 'T16 静置 2500ms 后再收（键盘路径走计时，不被 pointerIn 立即收掉）')
+}
+
+// T17 全屏仍走既有的 2.5s 空闲淡出：移出全屏区域不立即收
+{
+  const h = mountDocked({ fullscreen: true })
+  h.leave()
+  eq(h.state.hidden, false, 'T17 全屏移出不立即隐藏（沿用 ctrlCanHide 的空闲计时）')
+  h.clock.advance(CTRL_HIDE_DELAY_MS)
+  eq(h.state.hidden, true, 'T17 全屏静置 2500ms 后隐藏')
+}
+
+// T18 ctrlCanHideDocked 条件表
+{
+  const base = { fullscreen: false, playing: true, hover: false, dragging: false, overlay: false, pointerIn: false }
+  eq(ctrlCanHideDocked(base), true, 'T18 非全屏 + 播放 + 指针在视频外 → 可隐藏')
+  eq(ctrlCanHideDocked({ ...base, pointerIn: true }), false, 'T18 指针在视频区内 → 不隐藏')
+  eq(ctrlCanHideDocked({ ...base, playing: false }), false, 'T18 暂停 → 不隐藏')
+  eq(ctrlCanHideDocked({ ...base, dragging: true }), false, 'T18 拖进度条 → 不隐藏')
+  eq(ctrlCanHideDocked({ ...base, overlay: true }), false, 'T18 浮层展开 → 不隐藏')
+  eq(ctrlCanHideDocked({ ...base, hover: true }), false, 'T18 悬停控制条 → 不隐藏')
+  eq(ctrlCanHide({ ...base, pointerIn: false }), false, 'T18 既有 ctrlCanHide 语义不变（非全屏仍不可隐藏）')
 }
 
 /* --------------------------------- 汇总 --------------------------------- */

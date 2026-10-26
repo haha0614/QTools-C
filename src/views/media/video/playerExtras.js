@@ -472,6 +472,17 @@ export function ctrlCanHide(state) {
 }
 
 /**
+ * P5.23「控制条常驻叠加在视频上」的隐藏条件：非全屏也允许收起，判据从「全屏 + 2.5s 空闲」
+ * 换成「指针离开视频区」（pointerIn === false）。
+ * 三条闸门（暂停 / 拖动进度条 / 浮层展开）与 ctrlCanHide 完全一致 —— 只换掉全屏那一条，
+ * 因为新布局里控制条任何时候都盖在画面上，不再有「占一行」的流内位置可留。
+ */
+export function ctrlCanHideDocked(state) {
+  const s = state || {}
+  return !!(s.pointerIn === false && s.playing && !s.hover && !s.dragging && !s.overlay)
+}
+
+/**
  * 焦点是否落在某个容器内（doc 可注入，便于脱离浏览器单测）。
  * body / documentElement 视为「没有焦点」，避免把页面本身当成控制条焦点。
  */
@@ -546,6 +557,13 @@ export function pointerInCtrlZone(ctrlEl, wrapEl, point, doc) {
  *     但会按 retry 间隔继续复查（不会就此停摆）；
  *   - willHide()：真正隐藏前的副作用（P4.7 用它把焦点 blur 出控制条），不参与判定。
  * setTimeout / clearTimeout / onChange / guard / willHide / retry 全部可注入，因此能脱离浏览器单测。
+ *
+ * P5.23：新增 hideOnLeave 选项 + state.pointerIn（指针是否在视频区内，默认 true = 可见）。
+ *   hideOnLeave=false（默认，既有行为）：仍用 ctrlCanHide，只允许全屏空闲淡出；
+ *   hideOnLeave=true（新布局）：非全屏改用 ctrlCanHideDocked —— 指针离开视频区**立即**收起，
+ *     全屏仍走 ctrlCanHide 的 2.5s 空闲计时（全屏没有「移出」这回事）。
+ *   立即收只发生在 update({pointerIn:false})（真正的离开事件）那一次；activity()（按键 / 键盘快捷键）
+ *   照旧排 2.5s 计时 —— 否则键盘用户一按空格，控制条刚显示就被自己的 pointerIn=false 立刻收掉。
  */
 export function createCtrlAutoHide(options) {
   const opt = options || {}
@@ -558,9 +576,19 @@ export function createCtrlAutoHide(options) {
   const willHide = typeof opt.willHide === 'function' ? opt.willHide : () => {}
   /** guard 不通过后的复查间隔（ms）：短周期复查，而不是就此停摆 */
   const retry = num(opt.retry) != null && num(opt.retry) >= 0 ? num(opt.retry) : CTRL_GUARD_RETRY_MS
+  /** P5.23：控制条叠加在视频上时为 true —— 非全屏也允许「移出即隐藏」（见 ctrlCanHideDocked） */
+  const hideOnLeave = !!opt.hideOnLeave
 
   // P4.7：state 里不再有 focus —— 焦点不参与「能不能隐藏」，只由 willHide 在隐藏前 blur
-  const state = { fullscreen: false, playing: false, hover: false, dragging: false, overlay: false }
+  // P5.23：pointerIn = 指针是否落在视频区（.p-fs-wrap）内；默认 true = 首帧可见
+  const state = {
+    fullscreen: false,
+    playing: false,
+    hover: false,
+    dragging: false,
+    overlay: false,
+    pointerIn: true
+  }
   let hidden = false
   let timer = null
   let disposed = false
@@ -584,10 +612,17 @@ export function createCtrlAutoHide(options) {
    * guard 不通过（指针其实还停在控制条上）时必须**重新排一次复查**：旧实现直接 return，
    * 计时器已置空、状态仍是可见，状态机就此永久停摆 —— 那正是「控制条再也不隐藏」的另一种死法。
    */
+  /** 当前状态允许隐藏吗：hideOnLeave 下非全屏走「指针离开视频区」，其余沿用 ctrlCanHide */
+  function canHideNow() {
+    if (!hideOnLeave) return ctrlCanHide(state)
+    if (state.fullscreen) return ctrlCanHide(state)
+    return ctrlCanHideDocked(state)
+  }
+
   function fire() {
     timer = null
     if (disposed) return
-    if (!ctrlCanHide(state)) {
+    if (!canHideNow()) {
       setHidden(false)
       return
     }
@@ -600,15 +635,23 @@ export function createCtrlAutoHide(options) {
     setHidden(true)
   }
 
-  /** 条件成立就起计时（已经隐藏的不重起），不成立就立刻显示 */
-  function apply() {
+  /**
+   * 条件成立就起计时（已经隐藏的不重起），不成立就立刻显示。
+   * leaved=true 表示这次调用来自「指针离开视频区」：hideOnLeave 下直接收起，不排计时。
+   */
+  function apply(leaved) {
     cancel()
     if (disposed) return
-    if (!ctrlCanHide(state)) {
+    if (!canHideNow()) {
       setHidden(false)
       return
     }
     if (hidden) return
+    if (leaved && hideOnLeave && !state.fullscreen) {
+      willHide()
+      setHidden(true)
+      return
+    }
     timer = setTimer(fire, delay)
   }
 
@@ -627,7 +670,7 @@ export function createCtrlAutoHide(options) {
         if (k in patch) state[k] = !!patch[k]
       }
     }
-    apply()
+    apply(!!(patch && patch.pointerIn === false))
   }
 
   function dispose() {

@@ -28,7 +28,17 @@
         <button class="btn p-fav" :class="{ on: fav }" type="button" :aria-pressed="fav" @click="emit('toggle-fav')">
           {{ fav ? '★ 已收藏' : '☆ 收藏' }}
         </button>
-        <button class="btn btn-meta" type="button" title="评分 / 标签 / 标记" @click="emit('open-meta')">信息</button>
+        <!-- P5.23 信息栏常驻右侧：按钮不再「打开浮层」，而是展开 / 折叠这一列（展开时通知页面预热数据） -->
+        <button
+          class="btn btn-meta"
+          :class="{ on: sideOpen }"
+          type="button"
+          :aria-pressed="sideOpen"
+          title="信息栏（评分 / 标签 / 标记）"
+          @click="onInfoBtn"
+        >
+          信息
+        </button>
         <button class="btn" type="button" :disabled="!hasPrev" @click="emit('prev')">上一部</button>
         <button class="btn" type="button" :disabled="!hasNext" @click="emit('next')">下一部</button>
         <button class="btn btn-primary" type="button" @click="emit('close')">关闭 (Esc)</button>
@@ -37,376 +47,407 @@
 
     <div v-if="warnVisible" class="p-warn">该片为 HEVC/异常编码，浏览器可能无法播放</div>
 
-    <!-- P4.3 全屏容器：把 <video>（.p-stage）与自绘控制栏（.p-ctrl）包在一起，
-         全屏请求发到这一层 —— 只对 .p-stage 全屏时控制栏是兄弟节点，会被挡在屏幕外。 -->
-    <div
-      ref="fsEl"
-      class="p-fs-wrap"
-      :class="{ 'is-ctrl-hidden': ctrlHidden }"
-      @mousemove="onUserActivity"
-      @mousedown="onUserActivity"
-      @touchstart.passive="onUserActivity"
-    >
-      <div ref="stageEl" class="p-stage">
-        <!-- 原画与转码都不再挂原生 controls：控制条统一用下方自绘 .p-ctrl -->
-        <video
-          ref="videoEl"
-          autoplay
-          playsinline
-          preload="metadata"
-          @click="onVideoClick"
-          @play="onPlay"
-          @playing="onPlaying"
-          @loadeddata="onLoadedData"
-          @loadedmetadata="onLoadedMetadata"
-          @durationchange="onDurationChange"
-          @volumechange="onVolumeChange"
-          @timeupdate="onTimeUpdate"
-          @webkitbeginfullscreen="onIosFsIn"
-          @webkitendfullscreen="onIosFsOut"
-          @pause="onPause"
-          @ended="onEnded"
-          @seeking="onSeeking"
-          @canplay="onCanPlay"
-          @error="onError"
+    <div class="p-body">
+      <div class="p-main">
+        <!-- P4.3 全屏容器：把 <video>（.p-stage）与自绘控制栏（.p-ctrl）包在一起，
+             全屏请求发到这一层 —— 只对 .p-stage 全屏时控制栏是兄弟节点，会被挡在屏幕外。 -->
+        <div
+          ref="fsEl"
+          class="p-fs-wrap"
+          :class="{ 'is-ctrl-hidden': ctrlHidden }"
+          @mousemove="onUserActivity"
+          @mousedown="onUserActivity"
+          @touchstart.passive="onUserActivity"
+          @mouseenter="onStageEnter"
+          @mouseleave="onStageLeave"
         >
-          <track v-if="subSrc" :key="subSrc" kind="subtitles" label="字幕" srclang="zh" default :src="subSrc" />
-        </video>
-        <!-- P5.17 转码档防黑屏覆盖层 / P5.20 内容换成「canvas 冻结当前画面」
-             转码流是服务端边转边推的分片 MP4（seekable=[0,0]），重挂流到首帧之间是空 buffer。
-             P5.20 起这层不再等取帧接口（那是 100-400ms 的空窗 + 一张 480 宽的放大图），
-             而是换流前用 canvas 把**当前显示的像素**画下来：0 请求、尺寸=舞台显示尺寸、0 放大。
-             新流 canplay 后淡出移除；取帧失败静默退回冻结图（@error），不弹任何错。
-             data-cover-origin 供证据脚本断言「这一帧是冻结图（freeze）还是取帧图（frame）」。 -->
-        <img
-          v-if="coverOn"
-          ref="coverEl"
-          class="p-stream-cover"
-          :class="{ 'p-cover-out': coverFading }"
-          :data-cover-origin="coverOrigin"
-          :data-cover-w="coverFrameW"
-          :src="coverSrc"
-          alt=""
-          aria-hidden="true"
-          @error="onCoverError"
-        />
-        <!-- P5.18 转码档拖动「画面跟随」层：转码流在浏览器里不可 seek（seekable=[0,0]），
-             拖动时改写 currentTime 是无效的，所以把**目标位置的帧**铺满整个舞台（不是只在小浮层里）。
-             与 .p-stream-cover 同一套定位（绝对铺满 + object-fit:contain + 黑底），
-             父级尺寸不再依赖 video 的临时 videoWidth/videoHeight（见 .p-stage video / .p-fs-wrap 的 P5.18 注释）。 -->
-        <img
-          v-if="scrubOn"
-          ref="scrubCoverEl"
-          class="p-scrub-cover"
-          :src="scrubSrc"
-          alt=""
-          aria-hidden="true"
-          @error="scrubOn = false"
-        />
-        <!-- P5.19 拖动跟随层的帧号：跟随帧是一张静止图，没有时间码就不知道拖到了哪一帧。
-             绝对定位（不参与 .p-stage 的 flex 布局 → 舞台定高不变）、pointer-events:none（不挡点击暂停），
-             与进度条右侧同一条口径（frameTimecode，缺帧率时退化成 mm:ss）。 -->
-        <span v-if="scrubOn" class="p-scrub-tc" :title="seekNowTitle">{{ frameTimecode(seekPos, frameFps) }}</span>
-        <button v-if="tapVisible" class="p-tap" type="button" @click="onTapPlay">▶ 点击播放</button>
-        <button v-if="restartVisible" class="p-restart" type="button" @click="onRestart">从头播放</button>
-      </div>
-
-      <!-- 自绘控制条：原画（直连）与转码共用一套 UI，原画模式不再使用浏览器原生 controls -->
-      <div
-        ref="ctrlEl"
-        class="p-ctrl"
-        @mouseenter="onCtrlPointerEnter"
-        @mouseleave="onCtrlPointerLeave"
-        @focusin="onCtrlFocusIn"
-      >
-        <div class="p-seekbar">
-          <!-- P4.1：进度条 + 标记轨竖排成一列（.p-seekbar 仍是行布局，时间码在右侧）。
-                P4.4：两者都按半个 thumb 左右内缩（--thumb-r），所以「同宽」是逐像素意义上的同宽 -->
-          <div class="p-seek-col" :style="seekVars">
-            <!-- mousemove 挂在 20px 高的容器上，命中带比 4px 轨道宽，指针略偏也能触发。
-                 P5.2 修复：这里必须是「逗号表达式」而不是 [a, b] —— 数组字面量会被编译成
-                 ($event) => [onSeekHover, onMarkerHover]，即「一个返回数组的函数」，Vue 只调用它一次
-                 并丢弃返回值，两个处理器都不会执行（P4-B 起 hover 预览从未触发的真正原因）。 -->
-            <div
-              class="p-seekwrap"
-              @mousemove="onSeekHover($event), onMarkerHover($event)"
-              @mouseleave="onSeekLeave($event), onMarkerLeave($event)"
+          <div ref="stageEl" class="p-stage">
+            <!-- 原画与转码都不再挂原生 controls：控制条统一用下方自绘 .p-ctrl -->
+            <video
+              ref="videoEl"
+              autoplay
+              playsinline
+              preload="metadata"
+              @click="onVideoClick"
+              @play="onPlay"
+              @playing="onPlaying"
+              @loadeddata="onLoadedData"
+              @loadedmetadata="onLoadedMetadata"
+              @durationchange="onDurationChange"
+              @volumechange="onVolumeChange"
+              @timeupdate="onTimeUpdate"
+              @webkitbeginfullscreen="onIosFsIn"
+              @webkitendfullscreen="onIosFsOut"
+              @pause="onPause"
+              @ended="onEnded"
+              @seeking="onSeeking"
+              @canplay="onCanPlay"
+              @error="onError"
             >
-              <!-- P4-B 标记刻度：单点是 2px 竖线，区间是一段浅色带；hover 出 'mm:ss–mm:ss · 说明' 原生提示。
-                   pointer-events:none 让鼠标照常落到下面的 range 上（既不挡 hover 预览，也不挡拖动） -->
-              <div v-if="markerTickList.length" class="p-marks" aria-hidden="true">
-                <span
+              <track v-if="subSrc" :key="subSrc" kind="subtitles" label="字幕" srclang="zh" default :src="subSrc" />
+            </video>
+            <!-- P5.17 转码档防黑屏覆盖层 / P5.20 内容换成「canvas 冻结当前画面」
+                 转码流是服务端边转边推的分片 MP4（seekable=[0,0]），重挂流到首帧之间是空 buffer。
+                 P5.20 起这层不再等取帧接口（那是 100-400ms 的空窗 + 一张 480 宽的放大图），
+                 而是换流前用 canvas 把**当前显示的像素**画下来：0 请求、尺寸=舞台显示尺寸、0 放大。
+                 新流 canplay 后淡出移除；取帧失败静默退回冻结图（@error），不弹任何错。
+                 data-cover-origin 供证据脚本断言「这一帧是冻结图（freeze）还是取帧图（frame）」。 -->
+            <img
+              v-if="coverOn"
+              ref="coverEl"
+              class="p-stream-cover"
+              :class="{ 'p-cover-out': coverFading }"
+              :data-cover-origin="coverOrigin"
+              :data-cover-w="coverFrameW"
+              :src="coverSrc"
+              alt=""
+              aria-hidden="true"
+              @error="onCoverError"
+            />
+            <!-- P5.18 转码档拖动「画面跟随」层：转码流在浏览器里不可 seek（seekable=[0,0]），
+                 拖动时改写 currentTime 是无效的，所以把**目标位置的帧**铺满整个舞台（不是只在小浮层里）。
+                 与 .p-stream-cover 同一套定位（绝对铺满 + object-fit:contain + 黑底），
+                 父级尺寸不再依赖 video 的临时 videoWidth/videoHeight（见 .p-stage video / .p-fs-wrap 的 P5.18 注释）。 -->
+            <img
+              v-if="scrubOn"
+              ref="scrubCoverEl"
+              class="p-scrub-cover"
+              :src="scrubSrc"
+              alt=""
+              aria-hidden="true"
+              @error="scrubOn = false"
+            />
+            <!-- P5.19 拖动跟随层的帧号：跟随帧是一张静止图，没有时间码就不知道拖到了哪一帧。
+                 绝对定位（不参与 .p-stage 的 flex 布局 → 舞台定高不变）、pointer-events:none（不挡点击暂停），
+                 与进度条右侧同一条口径（frameTimecode，缺帧率时退化成 mm:ss）。 -->
+            <span v-if="scrubOn" class="p-scrub-tc" :title="seekNowTitle">{{ frameTimecode(seekPos, frameFps) }}</span>
+            <button v-if="tapVisible" class="p-tap" type="button" @click="onTapPlay">▶ 点击播放</button>
+            <button v-if="restartVisible" class="p-restart" type="button" @click="onRestart">从头播放</button>
+          </div>
+
+          <!-- 自绘控制条：原画（直连）与转码共用一套 UI，原画模式不再使用浏览器原生 controls -->
+          <div
+            ref="ctrlEl"
+            class="p-ctrl"
+            @mouseenter="onCtrlPointerEnter"
+            @mouseleave="onCtrlPointerLeave"
+            @focusin="onCtrlFocusIn"
+          >
+            <div class="p-seekbar">
+              <!-- P4.1：进度条 + 标记轨竖排成一列（.p-seekbar 仍是行布局，时间码在右侧）。
+                    P4.4：两者都按半个 thumb 左右内缩（--thumb-r），所以「同宽」是逐像素意义上的同宽 -->
+              <div class="p-seek-col" :style="seekVars">
+                <!-- mousemove 挂在 20px 高的容器上，命中带比 4px 轨道宽，指针略偏也能触发。
+                     P5.2 修复：这里必须是「逗号表达式」而不是 [a, b] —— 数组字面量会被编译成
+                     ($event) => [onSeekHover, onMarkerHover]，即「一个返回数组的函数」，Vue 只调用它一次
+                     并丢弃返回值，两个处理器都不会执行（P4-B 起 hover 预览从未触发的真正原因）。 -->
+                <div
+                  class="p-seekwrap"
+                  @mousemove="onSeekHover($event), onMarkerHover($event)"
+                  @mouseleave="onSeekLeave($event), onMarkerLeave($event)"
+                >
+                  <!-- P4-B 标记刻度：单点是 2px 竖线，区间是一段浅色带；hover 出 'mm:ss–mm:ss · 说明' 原生提示。
+                       pointer-events:none 让鼠标照常落到下面的 range 上（既不挡 hover 预览，也不挡拖动） -->
+                  <div v-if="markerTickList.length" class="p-marks" aria-hidden="true">
+                    <span
+                      v-for="t in markerTickList"
+                      :key="t.key"
+                      class="p-mark"
+                      :class="{ 'is-range': t.width > 0 }"
+                      :style="markerTickStyle(t)"
+                      :title="t.title"
+                    ></span>
+                  </div>
+                  <input
+                    ref="seekEl"
+                    class="p-seek"
+                    :class="{ 'is-frame': hasFps }"
+                    type="range"
+                    min="0"
+                    :max="seekMax"
+                    :step="seekStep"
+                    :value="seekPos"
+                    :style="seekFillStyle"
+                    :title="seekTipText || seekTitle"
+                    aria-label="播放位置"
+                    :aria-valuetext="seekAriaText"
+                    @pointerdown="onSeekPointerDown"
+                    @input="onSeekInput"
+                    @change="onSeekCommit"
+                    @keydown="onSeekKey"
+                  />
+                  <!-- P5.16 精细拖动提示：pointer-events:none 不挡拖动 / hover 浮层；移动端无 Shift，整块不渲染 -->
+                  <div v-if="seekTipText" class="p-fine-tip" :class="{ on: fineDragging }">{{ seekTipText }}</div>
+                  <!-- P4-B 标记刻度提示：hover 到刻度附近（单点 ±1.2%、区间整段）时在刻度上方显示 'mm:ss–mm:ss · 说明'。
+                       刻度本身 pointer-events:none，所以不会挡 range 的 hover 预览与拖动 -->
+                  <div v-if="markerHover" class="p-marker-tip" :style="floatStyle(markerHover.left / 100)">
+                    {{ markerHover.title }}
+                  </div>
+                  <!-- 1px 指示线：与浮层同源比例，告诉用户这里能 hover；无预览资源时不渲染 -->
+                  <div v-if="hoverLineVisible" class="p-hover-line" :style="hoverLineStyle"></div>
+                  <!-- P5.2 悬停 / 拖动共用的**同一个**浮层（不会出现两个浮层叠加）：
+                       有 pv2 → 预览片段视频；无 pv2 但有精灵图 → 精灵图切片（降级）；两者都无 → 整块不渲染。
+                       v-if 绑 previewMode：没资源时不进 DOM；v-show 绑预览开关：同一部片只创建一次 <video>，
+                       离开进度条只是隐藏，回到条上不会重新 load（preload="none"，第一次需要时才 load）。 -->
+                  <div
+                    v-if="previewMode"
+                    v-show="previewShown"
+                    class="p-preview"
+                    :class="[previewClass, { 'is-frame-ready': clipFrameReady }]"
+                    :style="floatStyle(previewRatio)"
+                  >
+                    <video
+                      v-if="previewMode === 'clip'"
+                      ref="clipEl"
+                      class="p-preview-v"
+                      muted
+                      playsinline
+                      preload="none"
+                      :src="previewSrc"
+                      @loadedmetadata="onClipMetadata"
+                      @loadeddata="onClipFrameReady"
+                      @seeked="onClipFrameReady"
+                    ></video>
+                    <div v-else class="p-hover-img" :style="spriteStyle"></div>
+                    <!-- P5.15 精确帧：盖在上面的精灵图切片 / 预览片段之上。
+                         精灵图一格铺 400 格，2 小时片一格 ≈18 秒，只能当零延迟兜底；
+                         debounce 250ms 后向 /media/frame 取真帧，到了就盖上这里（右上角一个指示点，P5.21）。
+                         失败（400/404/503）时这一层不渲染 → 用户看到的还是精灵图切片，不弹任何错。 -->
+                    <div v-if="frameExact" class="p-hover-exact" :style="frameImgStyle"></div>
+                    <!-- P5.21：真帧指示从文字徽标改成一个小圆点 —— 视觉上不占字面，语义留在 aria-label/title 上 -->
+                    <span
+                      v-if="frameExact"
+                      class="p-preview-exact"
+                      role="img"
+                      aria-label="精确帧"
+                      title="精确帧"
+                    ></span>
+                    <!-- 底部时间条（P5.19）：大字是**带帧号的影片内容时间**（00:03:21:08），小字才是片段内部时间
+                         （片段 0:07 / 0:08），见 PreviewTimeBar.vue。z-index 3 → 压在 .p-hover-exact 精确帧之上，
+                         所以「精确帧浮层」看到的时间码同样是带帧号的那一条。 -->
+                    <PreviewTimeBar :sec="previewInfo.labelSec" :fps="frameFps" :caption="previewCaptionText" />
+                  </div>
+                </div>
+              <!-- P4.1 标记轨（marker lane）：进度条下方独立一条，间距 var(--lane-gap)=3px（P4.3 起的值）。
+                    P4.4：左右内缩半个 thumb 后与进度条的可视轨道同宽，标记 left% 与滑块中心同源。
+                   单点 = 3px 通高竖条；区间 = 半透明色带 + 左右各 2px 实心边。
+                   轨道本身 pointer-events:none（不挡拖动与 hover 预览），只有标记可点：
+                   点一下跳到 pos，区间再点一下跳到 endPos；hover/focus 复用 .p-marker-tip 提示。
+                   无标记时整条不渲染（v-if），不留空白。 -->
+              <div
+                v-if="markerTickList.length"
+                class="p-marklane"
+                role="group"
+                aria-label="进度标记"
+                :style="laneVars"
+              >
+                <button
                   v-for="t in markerTickList"
-                  :key="t.key"
-                  class="p-mark"
-                  :class="{ 'is-range': t.width > 0 }"
-                  :style="markerTickStyle(t)"
+                  :key="'ln' + t.key"
+                  class="p-lane-mark"
+                  :class="{ 'is-range': t.isRange }"
+                  type="button"
+                  :style="laneMarkStyle(t)"
                   :title="t.title"
-                ></span>
+                  :aria-label="'跳到 ' + t.title"
+                  @mouseenter="onLaneHover(t)"
+                  @mouseleave="onLaneLeave"
+                  @focus="onLaneHover(t)"
+                  @blur="onLaneLeave"
+                  @click.stop="onLaneClick(t)"
+                ></button>
               </div>
+              </div>
+              <!-- P4.3 标记数量徽标：刻度太细看不见时的根本解法 —— 数字一目了然，点开就是可跳转的列表。
+                   位置在进度条右端、时间码左侧；无标记时整块不渲染（与标记轨同一条件）。 -->
+              <span v-if="markerTickList.length" ref="mkBadgeEl" class="p-mk-badge-wrap">
+                <button
+                  class="p-mk-badge"
+                  type="button"
+                  :aria-expanded="markerListOpen"
+                  :title="markerBadgeTitle"
+                  :aria-label="markerBadgeTitle"
+                  @click.stop="toggleMarkerList"
+                >
+                  🚩 {{ markerTickList.length }}
+                </button>
+                <div v-if="markerListOpen" class="p-mk-list" role="menu" aria-label="标记列表">
+                  <button
+                    v-for="t in markerTickList"
+                    :key="'ml' + t.key"
+                    class="p-mk-item"
+                    type="button"
+                    role="menuitem"
+                    :title="'跳到 ' + t.title"
+                    @click.stop="onMarkPick(t)"
+                  >
+                    <span class="p-mk-dot" :style="{ background: t.color || 'var(--accent)' }"></span>
+                    <span class="p-mk-item-t">{{ t.title }}</span>
+                  </button>
+                </div>
+              </span>
+              <!-- P5.19：时间码**一直**显示帧号（静止 / 暂停 / 播放 / 拖动同一条「位置 hh:mm:ss:ff / 总时长」，
+                   文案由 playerExtras.seekTimecodeText 一处生成）。缺帧率的片退化成 mm:ss，
+                   title 里如实说明「该片缺帧率数据」（seekNowTitle），不编假帧号。 -->
+              <span class="p-seek-now" :class="{ 'is-frame': hasFps }" :title="seekNowTitle">{{ seekNowText }}</span>
+            </div>
+
+            <div class="p-ctrlline">
+              <button
+                class="p-btn p-btn-play"
+                type="button"
+                :aria-label="isPlaying ? '暂停' : '播放'"
+                @click="togglePlay"
+              >
+                {{ isPlaying ? '⏸' : '▶' }}
+              </button>
+              <button
+                class="p-btn"
+                type="button"
+                :aria-label="muted || volume === 0 ? '取消静音' : '静音'"
+                @click="toggleMute"
+              >
+                {{ muted || volume === 0 ? '🔇' : '🔊' }}
+              </button>
               <input
-                ref="seekEl"
-                class="p-seek"
-                :class="{ 'is-frame': hasFps }"
+                class="p-vol"
                 type="range"
                 min="0"
-                :max="seekMax"
-                :step="seekStep"
-                :value="seekPos"
-                :style="seekFillStyle"
-                :title="seekTipText || seekTitle"
-                aria-label="播放位置"
-                :aria-valuetext="seekAriaText"
-                @pointerdown="onSeekPointerDown"
-                @input="onSeekInput"
-                @change="onSeekCommit"
-                @keydown="onSeekKey"
+                max="1"
+                step="0.05"
+                :value="muted ? 0 : volume"
+                aria-label="音量"
+                @input="onVolumeInput"
               />
-              <!-- P5.16 精细拖动提示：pointer-events:none 不挡拖动 / hover 浮层；移动端无 Shift，整块不渲染 -->
-              <div v-if="seekTipText" class="p-fine-tip" :class="{ on: fineDragging }">{{ seekTipText }}</div>
-              <!-- P4-B 标记刻度提示：hover 到刻度附近（单点 ±1.2%、区间整段）时在刻度上方显示 'mm:ss–mm:ss · 说明'。
-                   刻度本身 pointer-events:none，所以不会挡 range 的 hover 预览与拖动 -->
-              <div v-if="markerHover" class="p-marker-tip" :style="floatStyle(markerHover.left / 100)">
-                {{ markerHover.title }}
-              </div>
-              <!-- 1px 指示线：与浮层同源比例，告诉用户这里能 hover；无预览资源时不渲染 -->
-              <div v-if="hoverLineVisible" class="p-hover-line" :style="hoverLineStyle"></div>
-              <!-- P5.2 悬停 / 拖动共用的**同一个**浮层（不会出现两个浮层叠加）：
-                   有 pv2 → 预览片段视频；无 pv2 但有精灵图 → 精灵图切片（降级）；两者都无 → 整块不渲染。
-                   v-if 绑 previewMode：没资源时不进 DOM；v-show 绑预览开关：同一部片只创建一次 <video>，
-                   离开进度条只是隐藏，回到条上不会重新 load（preload="none"，第一次需要时才 load）。 -->
-              <div
-                v-if="previewMode"
-                v-show="previewShown"
-                class="p-preview"
-                :class="[previewClass, { 'is-frame-ready': clipFrameReady }]"
-                :style="floatStyle(previewRatio)"
-              >
-                <video
-                  v-if="previewMode === 'clip'"
-                  ref="clipEl"
-                  class="p-preview-v"
-                  muted
-                  playsinline
-                  preload="none"
-                  :src="previewSrc"
-                  @loadedmetadata="onClipMetadata"
-                  @loadeddata="onClipFrameReady"
-                  @seeked="onClipFrameReady"
-                ></video>
-                <div v-else class="p-hover-img" :style="spriteStyle"></div>
-                <!-- P5.15 精确帧：盖在上面的精灵图切片 / 预览片段之上。
-                     精灵图一格铺 400 格，2 小时片一格 ≈18 秒，只能当零延迟兜底；
-                     debounce 250ms 后向 /media/frame 取真帧，到了就盖上这里（右上角一个指示点，P5.21）。
-                     失败（400/404/503）时这一层不渲染 → 用户看到的还是精灵图切片，不弹任何错。 -->
-                <div v-if="frameExact" class="p-hover-exact" :style="frameImgStyle"></div>
-                <!-- P5.21：真帧指示从文字徽标改成一个小圆点 —— 视觉上不占字面，语义留在 aria-label/title 上 -->
-                <span
-                  v-if="frameExact"
-                  class="p-preview-exact"
-                  role="img"
-                  aria-label="精确帧"
-                  title="精确帧"
-                ></span>
-                <!-- 底部时间条（P5.19）：大字是**带帧号的影片内容时间**（00:03:21:08），小字才是片段内部时间
-                     （片段 0:07 / 0:08），见 PreviewTimeBar.vue。z-index 3 → 压在 .p-hover-exact 精确帧之上，
-                     所以「精确帧浮层」看到的时间码同样是带帧号的那一条。 -->
-                <PreviewTimeBar :sec="previewInfo.labelSec" :fps="frameFps" :caption="previewCaptionText" />
-              </div>
-            </div>
-          <!-- P4.1 标记轨（marker lane）：进度条下方独立一条，间距 var(--lane-gap)=3px（P4.3 起的值）。
-                P4.4：左右内缩半个 thumb 后与进度条的可视轨道同宽，标记 left% 与滑块中心同源。
-               单点 = 3px 通高竖条；区间 = 半透明色带 + 左右各 2px 实心边。
-               轨道本身 pointer-events:none（不挡拖动与 hover 预览），只有标记可点：
-               点一下跳到 pos，区间再点一下跳到 endPos；hover/focus 复用 .p-marker-tip 提示。
-               无标记时整条不渲染（v-if），不留空白。 -->
-          <div
-            v-if="markerTickList.length"
-            class="p-marklane"
-            role="group"
-            aria-label="进度标记"
-            :style="laneVars"
-          >
-            <button
-              v-for="t in markerTickList"
-              :key="'ln' + t.key"
-              class="p-lane-mark"
-              :class="{ 'is-range': t.isRange }"
-              type="button"
-              :style="laneMarkStyle(t)"
-              :title="t.title"
-              :aria-label="'跳到 ' + t.title"
-              @mouseenter="onLaneHover(t)"
-              @mouseleave="onLaneLeave"
-              @focus="onLaneHover(t)"
-              @blur="onLaneLeave"
-              @click.stop="onLaneClick(t)"
-            ></button>
-          </div>
-          </div>
-          <!-- P4.3 标记数量徽标：刻度太细看不见时的根本解法 —— 数字一目了然，点开就是可跳转的列表。
-               位置在进度条右端、时间码左侧；无标记时整块不渲染（与标记轨同一条件）。 -->
-          <span v-if="markerTickList.length" ref="mkBadgeEl" class="p-mk-badge-wrap">
-            <button
-              class="p-mk-badge"
-              type="button"
-              :aria-expanded="markerListOpen"
-              :title="markerBadgeTitle"
-              :aria-label="markerBadgeTitle"
-              @click.stop="toggleMarkerList"
-            >
-              🚩 {{ markerTickList.length }}
-            </button>
-            <div v-if="markerListOpen" class="p-mk-list" role="menu" aria-label="标记列表">
+              <!-- P4.1：音量增益从控制条中部挪到音量滑块旁，三个按钮收敛成一个循环按钮
+                   （1×→1.5×→2×→1×）；WebAudio GainNode / 降级为音量映射的行为一行未改（见 setGain） -->
               <button
-                v-for="t in markerTickList"
-                :key="'ml' + t.key"
-                class="p-mk-item"
+                class="p-btn p-gain-btn"
+                :class="{ on: gainLevel > 1 }"
                 type="button"
-                role="menuitem"
-                :title="'跳到 ' + t.title"
-                @click.stop="onMarkPick(t)"
+                :aria-pressed="gainLevel > 1"
+                :title="gainTitle"
+                @click="cycleGain"
               >
-                <span class="p-mk-dot" :style="{ background: t.color || 'var(--accent)' }"></span>
-                <span class="p-mk-item-t">{{ t.title }}</span>
+                增益 {{ gainLevel }}×
+              </button>
+              <!-- 降级说明：只在浏览器不给 WebAudio 时出现，hover 出完整原因 -->
+              <span v-if="gainFallback" class="p-gain-note" :title="gainNote">增益降级</span>
+              <!-- P4.1：原来 1×/1.5×/2× 增益按钮的位置改成真正的「视频倍速」（用户一直把它误认成倍速） -->
+              <span class="p-speed">
+                <label class="p-speed-lab" for="msVideoSpeed">倍速</label>
+                <select
+                  id="msVideoSpeed"
+                  class="p-speed-sel"
+                  :value="speedLevel"
+                  :title="speedTitle"
+                  aria-label="视频倍速"
+                  @change="onSpeedChange"
+                >
+                  <!-- :selected 让首屏（含 SSR 证据）就显示当前档位，而不是浏览器默认的第一项 -->
+                  <option v-for="s in SPEED_LEVELS" :key="'sp' + s" :value="s" :selected="s === speedLevel">
+                    {{ speedLabel(s) }}
+                  </option>
+                </select>
+              </span>
+              <!-- P4-B AB 循环：A 设起点、B 设终点（再按各自清除），播放到 B 自动回跳 A -->
+              <span class="p-ab">
+                <button
+                  class="p-btn p-ab-btn"
+                  :class="{ on: abA != null }"
+                  type="button"
+                  title="设 A 点（再按 A 清除）快捷键 A"
+                  @click="setAbPoint('a')"
+                >
+                  A
+                </button>
+                <button
+                  class="p-btn p-ab-btn"
+                  :class="{ on: abB != null }"
+                  type="button"
+                  title="设 B 点（再按 B 清除）快捷键 B"
+                  @click="setAbPoint('b')"
+                >
+                  B
+                </button>
+                <button
+                  class="p-btn p-ab-btn"
+                  type="button"
+                  :disabled="abA == null && abB == null"
+                  title="清除 A/B"
+                  @click="clearAb"
+                >
+                  清
+                </button>
+                <span class="p-ab-text" :class="{ on: abOn }" :title="abTitle">{{ abText }}</span>
+              </span>
+              <!-- P4-B 逐帧：暂停态单帧步进（1/30 近似，有 requestVideoFrameCallback 时按实测帧间隔） -->
+              <span class="p-frame">
+                <button class="p-btn" type="button" title="上一帧（快捷键 , 或 Shift+←）" @click="stepFrame(-1)">⏴</button>
+                <button class="p-btn" type="button" title="下一帧（快捷键 . 或 Shift+→）" @click="stepFrame(1)">⏵</button>
+              </span>
+              <button
+                class="p-btn p-help-btn"
+                type="button"
+                :aria-expanded="helpVisible"
+                title="快捷键说明（?）"
+                @click="toggleHelp"
+              >
+                ?
+              </button>
+              <span class="p-ctrl-gap"></span>
+              <label class="p-q-lab" for="msVideoQ">画质</label>
+              <select id="msVideoQ" class="p-q" :value="curQ" @change="onQualityChange">
+                <option v-for="q in Q_VALUES" :key="q" :value="q">{{ q === 'orig' ? '原画（直连）' : Q_LABELS[q] }}</option>
+              </select>
+              <span class="p-q-now">{{ qLabel(curQ) }}</span>
+              <span v-if="qHintVisible" class="p-q-hint">转码中…</span>
+              <span class="p-ctrl-gap"></span>
+              <button v-if="hasPrev" class="p-btn" type="button" aria-label="上一部" @click="emit('prev')">⏮</button>
+              <button v-if="hasNext" class="p-btn" type="button" aria-label="下一部" @click="emit('next')">⏭</button>
+              <button
+                class="p-btn"
+                type="button"
+                :aria-label="fsActive ? '退出全屏' : '全屏'"
+                @click="toggleFullscreen"
+              >
+                {{ fsActive ? '⤢' : '⛶' }}
               </button>
             </div>
-          </span>
-          <!-- P5.19：时间码**一直**显示帧号（静止 / 暂停 / 播放 / 拖动同一条「位置 hh:mm:ss:ff / 总时长」，
-               文案由 playerExtras.seekTimecodeText 一处生成）。缺帧率的片退化成 mm:ss，
-               title 里如实说明「该片缺帧率数据」（seekNowTitle），不编假帧号。 -->
-          <span class="p-seek-now" :class="{ 'is-frame': hasFps }" :title="seekNowTitle">{{ seekNowText }}</span>
+          </div>
         </div>
 
-        <div class="p-ctrlline">
-          <button
-            class="p-btn p-btn-play"
-            type="button"
-            :aria-label="isPlaying ? '暂停' : '播放'"
-            @click="togglePlay"
-          >
-            {{ isPlaying ? '⏸' : '▶' }}
-          </button>
-          <button
-            class="p-btn"
-            type="button"
-            :aria-label="muted || volume === 0 ? '取消静音' : '静音'"
-            @click="toggleMute"
-          >
-            {{ muted || volume === 0 ? '🔇' : '🔊' }}
-          </button>
-          <input
-            class="p-vol"
-            type="range"
-            min="0"
-            max="1"
-            step="0.05"
-            :value="muted ? 0 : volume"
-            aria-label="音量"
-            @input="onVolumeInput"
-          />
-          <!-- P4.1：音量增益从控制条中部挪到音量滑块旁，三个按钮收敛成一个循环按钮
-               （1×→1.5×→2×→1×）；WebAudio GainNode / 降级为音量映射的行为一行未改（见 setGain） -->
-          <button
-            class="p-btn p-gain-btn"
-            :class="{ on: gainLevel > 1 }"
-            type="button"
-            :aria-pressed="gainLevel > 1"
-            :title="gainTitle"
-            @click="cycleGain"
-          >
-            增益 {{ gainLevel }}×
-          </button>
-          <!-- 降级说明：只在浏览器不给 WebAudio 时出现，hover 出完整原因 -->
-          <span v-if="gainFallback" class="p-gain-note" :title="gainNote">增益降级</span>
-          <!-- P4.1：原来 1×/1.5×/2× 增益按钮的位置改成真正的「视频倍速」（用户一直把它误认成倍速） -->
-          <span class="p-speed">
-            <label class="p-speed-lab" for="msVideoSpeed">倍速</label>
-            <select
-              id="msVideoSpeed"
-              class="p-speed-sel"
-              :value="speedLevel"
-              :title="speedTitle"
-              aria-label="视频倍速"
-              @change="onSpeedChange"
-            >
-              <!-- :selected 让首屏（含 SSR 证据）就显示当前档位，而不是浏览器默认的第一项 -->
-              <option v-for="s in SPEED_LEVELS" :key="'sp' + s" :value="s" :selected="s === speedLevel">
-                {{ speedLabel(s) }}
-              </option>
-            </select>
-          </span>
-          <!-- P4-B AB 循环：A 设起点、B 设终点（再按各自清除），播放到 B 自动回跳 A -->
-          <span class="p-ab">
-            <button
-              class="p-btn p-ab-btn"
-              :class="{ on: abA != null }"
-              type="button"
-              title="设 A 点（再按 A 清除）快捷键 A"
-              @click="setAbPoint('a')"
-            >
-              A
-            </button>
-            <button
-              class="p-btn p-ab-btn"
-              :class="{ on: abB != null }"
-              type="button"
-              title="设 B 点（再按 B 清除）快捷键 B"
-              @click="setAbPoint('b')"
-            >
-              B
-            </button>
-            <button
-              class="p-btn p-ab-btn"
-              type="button"
-              :disabled="abA == null && abB == null"
-              title="清除 A/B"
-              @click="clearAb"
-            >
-              清
-            </button>
-            <span class="p-ab-text" :class="{ on: abOn }" :title="abTitle">{{ abText }}</span>
-          </span>
-          <!-- P4-B 逐帧：暂停态单帧步进（1/30 近似，有 requestVideoFrameCallback 时按实测帧间隔） -->
-          <span class="p-frame">
-            <button class="p-btn" type="button" title="上一帧（快捷键 , 或 Shift+←）" @click="stepFrame(-1)">⏴</button>
-            <button class="p-btn" type="button" title="下一帧（快捷键 . 或 Shift+→）" @click="stepFrame(1)">⏵</button>
-          </span>
-          <button
-            class="p-btn p-help-btn"
-            type="button"
-            :aria-expanded="helpVisible"
-            title="快捷键说明（?）"
-            @click="toggleHelp"
-          >
-            ?
-          </button>
-          <span class="p-ctrl-gap"></span>
-          <label class="p-q-lab" for="msVideoQ">画质</label>
-          <select id="msVideoQ" class="p-q" :value="curQ" @change="onQualityChange">
-            <option v-for="q in Q_VALUES" :key="q" :value="q">{{ q === 'orig' ? '原画（直连）' : Q_LABELS[q] }}</option>
-          </select>
-          <span class="p-q-now">{{ qLabel(curQ) }}</span>
-          <span v-if="qHintVisible" class="p-q-hint">转码中…</span>
-          <span class="p-ctrl-gap"></span>
-          <button v-if="hasPrev" class="p-btn" type="button" aria-label="上一部" @click="emit('prev')">⏮</button>
-          <button v-if="hasNext" class="p-btn" type="button" aria-label="下一部" @click="emit('next')">⏭</button>
-          <button
-            class="p-btn"
-            type="button"
-            :aria-label="fsActive ? '退出全屏' : '全屏'"
-            @click="toggleFullscreen"
-          >
-            {{ fsActive ? '⤢' : '⛶' }}
-          </button>
+        <div class="p-tags">
+          <span v-for="(t, i) in tagList" :key="'t' + i" class="ptag"><b>{{ t[0] }}</b>{{ t[1] }}</span>
+          <span v-for="(a, i) in actorList" :key="'a' + i" class="ptag ptag-actor"><b>演员</b>{{ a }}</span>
+          <span v-if="!tagList.length && !actorList.length" class="ptag ptag-empty">无标签</span>
         </div>
       </div>
-    </div>
 
-    <div class="p-tags">
-      <span v-for="(t, i) in tagList" :key="'t' + i" class="ptag"><b>{{ t[0] }}</b>{{ t[1] }}</span>
-      <span v-for="(a, i) in actorList" :key="'a' + i" class="ptag ptag-actor"><b>演员</b>{{ a }}</span>
-      <span v-if="!tagList.length && !actorList.length" class="ptag ptag-empty">无标签</span>
+      <!-- P5.23 右侧常驻信息栏：原信息抽屉的内容常驻于此（结构不动，只换容器）。
+           桌面 = 静态列（不覆盖视频、自己纵向滚动）；窄屏 = 浮层（滑出覆盖视频，不挤压它）。 -->
+      <aside
+        class="p-side"
+        :class="{ 'is-closed': !sideOpen, 'is-float': isNarrow }"
+        aria-label="视频信息"
+      >
+        <slot name="side"></slot>
+      </aside>
+
+      <!-- 窄屏浮层展开时的遮罩：点一下收起（桌面常驻列不会有它） -->
+      <div v-if="isNarrow && sideOpen" class="p-side-scrim" @click="closeSide"></div>
+
+      <!-- 折叠 / 收起后的唤出把手：视频贴右边缘的一条竖向标签，不占视频宽度 -->
+      <button
+        v-if="!sideOpen"
+        class="p-side-tab"
+        type="button"
+        :aria-label="isNarrow ? '打开信息栏' : '展开信息栏'"
+        :title="isNarrow ? '打开信息栏' : '展开信息栏'"
+        @click="openSide"
+      >
+        <span class="p-side-tab-i" aria-hidden="true">‹</span>信息
+      </button>
     </div>
 
     <!-- P4-B 快捷键总表：控制条上的 ? 按钮或键盘 ? 打开；Esc 先关浮层（见 VideoPage.onKey 的 Escape 分支） -->
@@ -630,6 +671,81 @@ const canHover = computed(() => !isMobile.value)
 
 function onMobileMqChange(e) {
   isMobile.value = e ? !!e.matches : false
+}
+
+/* ============================================ P5.23 右侧常驻信息栏 ============================================ */
+
+/** 断点必须与样式里的 @media 完全一致：>=1200px 是「视频 + 常驻列」，以下改成浮层 */
+const narrowMq =
+  typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia('(max-width: 1199px)')
+    : null
+const isNarrow = ref(narrowMq ? narrowMq.matches : false)
+
+/** 折叠状态存储键：只记「用户希望这一列展开吗」，跨会话沿用（隐私模式写失败不影响行为） */
+const SIDE_LS_KEY = 'qt-player-side-open'
+
+function readSidePref() {
+  try {
+    const ls = typeof window !== 'undefined' ? window.localStorage : null
+    // 缺省 = 展开：用户要求「信息抽屉默认展开」，只有明确存过 '0' 才收起来
+    return !(ls && ls.getItem(SIDE_LS_KEY) === '0')
+  } catch {
+    return true
+  }
+}
+
+function writeSidePref(open) {
+  try {
+    const ls = typeof window !== 'undefined' ? window.localStorage : null
+    if (ls) ls.setItem(SIDE_LS_KEY, open ? '1' : '0')
+  } catch {
+    /* 隐私模式 / 配额满：只丢记忆，不影响本次会话 */
+  }
+}
+
+/** 桌面展开态（落 localStorage）。窄屏浮层不写回这里 —— 否则一次窗口缩放就把「展开」记成「收起」 */
+const sideOpenDesktop = ref(readSidePref())
+/** 窄屏浮层默认收起：一进播放页就用浮层盖住画面不是「常驻信息栏」的本意 */
+const sideOpen = ref(isNarrow.value ? false : sideOpenDesktop.value)
+
+function applyNarrow(next) {
+  isNarrow.value = !!next
+  sideOpen.value = isNarrow.value ? false : sideOpenDesktop.value
+}
+
+function onNarrowMqChange(e) {
+  applyNarrow(e ? !!e.matches : false)
+}
+
+/** 唯一的写入入口：窄屏只改本次会话的浮层开关，桌面同时落盘 */
+function setSideOpen(v) {
+  sideOpen.value = !!v
+  if (isNarrow.value) return
+  sideOpenDesktop.value = !!v
+  writeSidePref(!!v)
+}
+
+function openSide() {
+  setSideOpen(true)
+}
+
+function closeSide() {
+  setSideOpen(false)
+}
+
+function toggleSide() {
+  setSideOpen(!sideOpen.value)
+}
+
+/** 头部「信息」按钮：收起时展开并 emit('open-meta')（页面据此预热标签 / 人物库，与旧抽屉同一入口） */
+function onInfoBtn() {
+  if (sideOpen.value) {
+    closeSide()
+    return
+  }
+  openSide()
+  emit('open-meta')
 }
 
 const spriteSrc = computed(() => (hasSprite.value ? api.spriteUrl(props.video.id) : ''))
@@ -1593,6 +1709,8 @@ function onIosFsOut() {
 
 onMounted(() => {
   if (mobileMq && mobileMq.addEventListener) mobileMq.addEventListener('change', onMobileMqChange)
+  // P5.23：断点切换只改布局与浮层开关，不落盘（见 setSideOpen）
+  if (narrowMq && narrowMq.addEventListener) narrowMq.addEventListener('change', onNarrowMqChange)
   document.addEventListener('fullscreenchange', onFsChange)
   document.addEventListener('webkitfullscreenchange', onFsChange)
   // P4.3：标记列表浮层的「点外部收起」（capture，先于按钮 click）
@@ -1607,6 +1725,9 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (mobileMq && mobileMq.removeEventListener) {
     mobileMq.removeEventListener('change', onMobileMqChange)
+  }
+  if (narrowMq && narrowMq.removeEventListener) {
+    narrowMq.removeEventListener('change', onNarrowMqChange)
   }
   document.removeEventListener('fullscreenchange', onFsChange)
   document.removeEventListener('webkitfullscreenchange', onFsChange)
@@ -2062,19 +2183,26 @@ watch(
   }
 )
 
-/* ============================================ P4.4 全屏控制条自动隐藏 ============================================ */
+/* ============================================ P4.4 / P5.23 控制条自动隐藏 ============================================ */
 
 /**
- * 判定规则（完整条件见 playerExtras 的 ctrlCanHide，单测覆盖）：
- *   全屏 + 播放中 + 指针不在控制条上 + 没在拖进度条 + 没有浮层展开
- *   → 2.5s 内没有任何操作（mousemove / mousedown / keydown / touchstart）就淡出。
- * 非全屏一律常驻：鼠标一离开就消失会让人以为控制条坏了。
+ * P5.23：控制条改成**常驻叠加在视频上**（绝对定位贴底，不再占一行），所以隐藏规则从
+ * 「只有全屏才淡出」扩成两种场景（判定都在 playerExtras，单测覆盖）：
+ *   全屏      —— ctrlCanHide：播放中 + 指针不在控制条上 + 2.5s 无操作就淡出（既有 P4.4）；
+ *   非全屏    —— ctrlCanHideDocked：指针离开视频区（.p-fs-wrap 的 mouseleave）即收起；
+ *                指针在视频区内一直可见 —— 这就是用户要的「鼠标移入显示、移出隐藏」。
+ * 两条路径共用同一组闸门：暂停 / 拖进度条 / 浮层展开时不隐藏。
  * P4.7：「控制条内无焦点」已从条件里删掉 —— 点一下控制条按钮焦点就留在上面（点画面不会移走，
  * <video> 不可聚焦），条件恒不满足 = 永不隐藏。焦点改由隐藏前的 willHide/blurActiveInCtrl 处理。
  */
 const ctrlHidden = ref(false)
 /** 指针是否停在控制条上（mouseenter / mouseleave，并用坐标 + 矩形复核） */
 let ctrlHover = false
+/**
+ * 指针是否在视频区（.p-fs-wrap）内 —— P5.23 的隐藏判据。
+ * 初值 true：首帧可见（自动播放时用户可能还没碰鼠标，不能让控制条一上来就是收起的）。
+ */
+let stagePointerIn = true
 /** 最后一次指针位置：边界事件没来时用它兜底判断「指针其实还停在控制条上」 */
 let lastPointer = { x: -1, y: -1 }
 
@@ -2094,6 +2222,8 @@ const ctrlOverlayOpen = computed(
 )
 
 const ctrlAuto = createCtrlAutoHide({
+  // P5.23：控制条叠加在视频上 —— 非全屏也按「移出即隐藏」收起（全屏仍按 2.5s 空闲淡出）
+  hideOnLeave: true,
   onChange: (hidden) => {
     ctrlHidden.value = hidden
   },
@@ -2116,18 +2246,32 @@ function syncCtrlState() {
     playing: isPlaying.value,
     hover: ctrlHover || pointerOverCtrl(),
     dragging: qSeekDragging,
-    overlay: ctrlOverlayOpen.value
+    overlay: ctrlOverlayOpen.value,
+    // P5.23：false 是一次真正的「移出」—— 状态机据此立即收起（不等 2.5s）
+    pointerIn: stagePointerIn
   })
 }
 
+/** 指针进入视频区：立即显示控制条（同一套 activity 计时，全屏下也复用） */
+function onStageEnter(e) {
+  stagePointerIn = true
+  onUserActivity(e)
+}
+
+/** 指针离开视频区：收起控制条（暂停 / 拖动 / 浮层展开时由状态机自己拦下，不会误收） */
+function onStageLeave() {
+  stagePointerIn = false
+  syncCtrlState()
+}
+
 /**
- * 任意用户操作：立即显示并重置 2.5s 计时（非全屏直接返回，不产生无谓的计时器）。
+ * 任意用户操作：立即显示并重置计时。
+ * P5.23：不再「非全屏直接返回」—— 非全屏同样是覆盖层，按键 / 移动都要能把控制条唤出来。
  * 同时用坐标复核悬停态：隐藏态 .p-ctrl 没有指针事件，mouseenter / mouseleave 收不到，
  * 只信边界事件会让 ctrlHover 卡在旧值（要么永不隐藏，要么唤不出来）。
  */
 function onUserActivity(e) {
   if (e && typeof e.clientX === 'number') lastPointer = { x: e.clientX, y: e.clientY }
-  if (!fsActive.value) return
   ctrlAuto.activity()
   const over = pointerOverCtrl()
   if (over !== ctrlHover) {
@@ -2150,14 +2294,15 @@ function onCtrlPointerLeave(e) {
 
 /** 控制条内出现焦点（鼠标点按钮 / Tab 进入）→ 显示并重新计时；焦点本身不再阻止隐藏 */
 function onCtrlFocusIn() {
-  if (!fsActive.value) return
   ctrlAuto.activity()
   syncCtrlState()
 }
 
-/** 页面级快捷键（空格 / A / B / [ ] / F …）不经过播放器 DOM：文档级 keydown 也算「有操作」 */
+/**
+ * 页面级快捷键（空格 / A / B / [ ] / F …）不经过播放器 DOM：文档级 keydown 也算「有操作」。
+ * P5.23：非全屏也要唤出控制条 —— 否则指针停在右侧信息栏时键盘用户看不到控制条。
+ */
 function onDocKeydown() {
-  if (!fsActive.value) return
   onUserActivity()
 }
 
@@ -2165,11 +2310,12 @@ watch(fsActive, syncCtrlState)
 watch(isPlaying, syncCtrlState)
 watch(ctrlOverlayOpen, syncCtrlState)
 
-/* 换片 / 同片重开：控制条恢复常驻，不把上一部的隐藏状态带过来 */
+/* 换片 / 同片重开：控制条恢复常驻（pointerIn 复位成 true），不把上一部的隐藏状态带过来 */
 watch(
   () => (props.video ? props.video.id : '') + '#' + props.openSeq,
   () => {
     ctrlHover = false
+    stagePointerIn = true
     lastPointer = { x: -1, y: -1 }
     syncCtrlState()
   }
@@ -2625,7 +2771,12 @@ defineExpose({
   /** 当前内容位置（秒）：信息抽屉「在当前时间加标记」的起点；转码流已加上流起点 */
   getCurrentTime: absPos,
   /** P4.5：内容总时长（秒）：信息抽屉回填标记「区间终点」与片尾夹取用；转码流取索引里的 dur */
-  getDuration: contentDur
+  getDuration: contentDur,
+  /* ---- P5.23：右侧常驻信息栏的展开 / 折叠（页面「信息」入口与面板自己的收起按钮都走这里） ---- */
+  openSide,
+  closeSide,
+  toggleSide,
+  isSideOpen: () => sideOpen.value
 })
 </script>
 
@@ -2638,6 +2789,135 @@ defineExpose({
   flex-direction: column;
   background: var(--bg);
   color: var(--fg);
+}
+
+/* P5.23 播放页布局：头部(.p-head)不动，其下是「左侧视频区 + 右侧常驻信息栏」的一行。
+   flex 关系（外 → 内）：
+     .player (column) → .p-head / .p-body / .p-help(浮层)
+     .p-body (row)    → .p-main + .p-side
+     .p-main (column) → .p-fs-wrap (视频，flex:1 1 0 + min-height:0) + .p-tags (flex:0 0 auto)
+   舞台高度仍只由「播放器高度 − 头部 − 标签栏」决定：.p-fs-wrap 的 flex-basis 依旧是 0（P5.18），
+   右栏与舞台是同一行的两个兄弟，互不参与对方的尺寸计算。 */
+.p-body {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  position: relative;
+}
+
+.p-main {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 右侧常驻信息栏：宽度落在 320–420px（窄视口 320、宽视口封顶 420，中间跟 26vw）。
+   独立纵向滚动（overflow-y:auto），是 flex 里的一个兄弟列 —— 不覆盖视频、不挤压舞台高度。 */
+.p-side {
+  --p-side-w: clamp(320px, 26vw, 420px);
+  flex: 0 0 var(--p-side-w);
+  width: var(--p-side-w);
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg-2);
+  border-left: 1px solid var(--line);
+  scrollbar-width: thin;
+  transition: flex-basis 0.18s ease, width 0.18s ease;
+}
+
+/* 折叠 = 宽度归零（不是 visibility / 负 margin）：视频随即整宽铺满，两者不重叠 */
+.p-side.is-closed {
+  flex-basis: 0;
+  width: 0;
+  border-left: 0;
+  overflow: hidden;
+}
+
+/* 折叠后的唤出把手：绝对定位贴视频右边缘 —— 不占宽度、不挤压画面 */
+.p-side-tab {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 4px;
+  border: 1px solid var(--line);
+  border-right: 0;
+  border-radius: 8px 0 0 8px;
+  background: color-mix(in srgb, var(--bg-2) 88%, transparent);
+  color: var(--fg);
+  font-size: 12px;
+  line-height: 1.15;
+  letter-spacing: 1px;
+  writing-mode: vertical-rl;
+  cursor: pointer;
+}
+
+.p-side-tab:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.p-side-tab-i {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+/* 窄屏（<1200px）：右栏改浮层 —— 绝对定位滑出、覆盖视频，视频宽度不受影响（不挤压）。
+   <768px 再放宽到整屏浮层。断点必须与脚本里的 narrowMq 一致。 */
+@media (max-width: 1199px) {
+  .p-side {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    flex: 0 0 auto;
+    width: min(92vw, 420px);
+    max-width: min(92vw, 420px);
+    border-left: 1px solid var(--line);
+    box-shadow: -12px 0 24px rgba(0, 0, 0, 0.28);
+    transform: translateX(100%);
+    transition: transform 0.2s ease;
+  }
+
+  /* 浮层收起 = 挪出屏幕右侧：宽度保持、不参与 flex（absolute 本身就不占位） */
+  .p-side.is-closed {
+    flex-basis: auto;
+    width: min(92vw, 420px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-left: 1px solid var(--line);
+    transform: translateX(100%);
+  }
+
+  .p-side:not(.is-closed) {
+    transform: none;
+  }
+
+  /* 浮层展开时的遮罩：点一下收起；z-index 低于右栏，面板本身仍可点 */
+  .p-side-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    background: rgba(0, 0, 0, 0.38);
+  }
+}
+
+@media (max-width: 767px) {
+  .p-side,
+  .p-side.is-closed {
+    width: 100%;
+    max-width: 100%;
+  }
 }
 
 .p-head {
@@ -2721,18 +3001,27 @@ defineExpose({
   font-weight: 600;
 }
 
-/* 自绘控制条：原画（直连）与转码共用一套；颜色只取 mediaTheme 变量（--bg/--fg/--line/--accent → --qt-*） */
+/* 自绘控制条：原画（直连）与转码共用一套；颜色只取 mediaTheme 变量（--bg/--fg/--line/--accent → --qt-*）。
+   P5.23：改成**常驻叠加层** —— 绝对定位贴 .p-fs-wrap 下沿（= 画面下沿），脱离文档流，
+   不再像改动前那样作为 flex 的下一行占掉视频高度（旧做法视频区 = 舞台 + 控制条两段）。
+   半透明底 + 背衬模糊：亮暗两套主题都能读，也不会把画面切出一条硬边。 */
 .p-ctrl {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 4px 14px 8px;
-  background: var(--bg-2);
-  border-top: 1px solid var(--line);
+  padding: 8px 14px;
+  background: color-mix(in srgb, var(--bg-2) 86%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
   min-width: 0;
   overflow: visible;
-  /* P4.4：全屏自动隐藏的淡出（200ms）；非全屏永远不会加 .is-ctrl-hidden，等同常驻
-     P4.6：全屏隐藏态加了 transform 位移（覆盖层下沉自身高度），过渡同步扩到 transform */
+  /* P4.4 / P5.23：自动隐藏的淡出与下沉位移一并过渡（隐藏态定义见 .p-fs-wrap.is-ctrl-hidden） */
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
@@ -3092,6 +3381,8 @@ defineExpose({
    .p-stage 正好少掉这 15px（实测 550 → 534），也就是用户看到的「画面突然变矮一点、再回归」。
    改成 basis 0 之后，舞台高度只由「播放器高度 − 头部 − 标签栏」决定，与媒体元数据无关。 */
 .p-fs-wrap {
+  /* P5.23：控制条是它的绝对定位子元素 —— 这里必须成为包含块 */
+  position: relative;
   flex: 1 1 0;
   min-height: 0;
   display: flex;
@@ -3106,6 +3397,10 @@ defineExpose({
    与控制条等高的黑边（用户全屏截图即此）。 */
 .p-fs-wrap:fullscreen,
 .p-fs-wrap:-webkit-full-screen {
+  /* 显式写回 fixed/inset：上面 .p-fs-wrap 的 position:relative 是作者样式，
+     会盖掉 UA 给 :fullscreen 的定位，导致全屏元素只剩「内容宽度」。 */
+  position: fixed;
+  inset: 0;
   width: 100%;
   height: 100%;
   display: flex;
@@ -3122,26 +3417,13 @@ defineExpose({
   min-height: 0;
 }
 
-/* P4.6 全屏控制条 = 覆盖层：脱离文档流、贴底、盖在视频上（z-index 5）。
-   底部渐变（透明 → 半透明黑）保证文字/按钮在亮画面上也可读，且不再挤压视频高度。
-   定位基准：:fullscreen 元素由 UA 样式表置为 position:fixed（顶层渲染），本身就是包含块，
-   所以这里不改 .p-fs-wrap 的 position（作者样式若覆盖成 relative 会破坏全屏尺寸）。 */
+/* P4.6 / P5.23 全屏控制条：与窗口态同一套覆盖层定位（见上面的 .p-ctrl），
+   这里只补全屏专属的内边距 —— 底部留出刘海屏安全区，顶部多给 2px。
+   （P5.23 之前 .p-ctrl 只在全屏是 absolute；现在两种状态都是覆盖层，规则合并到基类。） */
 .p-fs-wrap:fullscreen .p-ctrl,
 .p-fs-wrap:-webkit-full-screen .p-ctrl {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 5;
   padding-top: 10px;
   padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
-  border-top: 0;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.86) 0%,
-    rgba(0, 0, 0, 0.62) 55%,
-    rgba(0, 0, 0, 0) 100%
-  );
 }
 
 /* P4.4 全屏控制条自动隐藏（判定规则见 playerExtras.ctrlCanHide）：
