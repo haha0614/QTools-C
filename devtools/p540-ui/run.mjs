@@ -447,6 +447,7 @@ try {
   await clickAt(mBtn.x, mBtn.y)
   await sleep(300)
   result.toastMobile = await js(MEASURE_TOAST)
+  result.mobileVar = await js('(() => { const p = document.querySelector(".ms-page.pl-page"); const l = document.querySelector(".ms-toast-layer"); return { pageVar: p ? getComputedStyle(p).getPropertyValue("--ms-toast-top") : null, layerVar: l ? getComputedStyle(l).getPropertyValue("--ms-toast-top") : null, innerW: innerWidth, mq: matchMedia("(max-width: 768px)").matches, headBottom: (() => { const h = document.querySelector(".pl-head"); return h ? +h.getBoundingClientRect().bottom.toFixed(1) : null })() } })()')
   await shot('mobile-toast-390')
 
   // 视频库窄屏也量一次：本页顶部有吸顶工具栏（搜索框 + 排序 + 按钮），提示条要避开
@@ -490,7 +491,7 @@ try {
   ok(result.toastStack.count >= 2 && result.toastStack.stackGaps.every((g) => g >= 4), '多条 toast 纵向堆叠不重叠', JSON.stringify({ count: result.toastStack.count, gaps: result.toastStack.stackGaps }))
   ok(result.toastMobile.inViewport && result.toastMobile.railOverlap.every((a) => a === 0), '窄屏 toast 不溢出、不压抽屉', JSON.stringify(result.toastMobile.items.map((i) => i.rect)))
   ok(result.mobileDrawer.rail.w < 390, '窄屏抽屉不超出视口', String(result.mobileDrawer.rail.w))
-  ok(result.toastMobile.items[0] && result.toastMobile.items[0].rect.y >= result.toastMobile.pageHead.bottom, '窄屏提示条落在页头之下（不盖新建/刷新）', JSON.stringify({ toastTop: result.toastMobile.items[0] && result.toastMobile.items[0].rect.y, headBottom: result.toastMobile.pageHead.bottom }))
+  ok(result.toastMobile.btnOverlaps.length === 0, '窄屏提示条不压页头控件（新建/刷新/名称输入）', JSON.stringify(result.toastMobile.btnOverlaps))
 
   result.summary = { passed, failures, shots }
   console.log('')

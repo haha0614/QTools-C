@@ -1,0 +1,66 @@
+
+== A · 资产页（16/22/32/64/180 + favicon + 应用图标）
+    [shot] devtools\p533-brand\out\01-icon16-1to1-plus-8x.png  25423 B
+    [shot] devtools\p533-brand\out\02-size-ladder-light-dark.png  118100 B
+    [shot] devtools\p533-brand\out\03-header-22px-light-4x.png  88654 B
+    [shot] devtools\p533-brand\out\04-header-22px-dark-4x.png  87902 B
+    [shot] devtools\p533-brand\out\05-favicon-tabs-light-scheme.png  94475 B
+    [shot] devtools\p533-brand\out\06-favicon-tabs-dark-scheme.png  94475 B
+    [shot] devtools\p533-brand\out\07-app-icon-180.png  4160 B
+  OK  a1) public/apple-touch-icon.png 已生成（180×180，截自 #atc）
+    16px 候选：[{"src":"/devtools/p533-brand/out/candidates/icon16-c1.svg","w":150,"h":150,"cw":16,"ch":16},{"src":"/devtools/p533-brand/out/candidates/icon16-c2.svg","w":150,"h":150,"cw":16,"ch":16},{"src":"/devtools/p533-brand/out/candidates/icon16-c3.svg","w":150,"h":150,"cw":16,"ch":16},{"src":"/devtools/p533-brand/out/candidates/icon16-c4.svg","w":150,"h":150,"cw":16,"ch":16}]
+
+== B · 真组件页（p525 harness 里同一份 MediaPlayer.vue）
+    {"has":true,"tag":"A","href":"/","aria":"青兔工具箱 · 返回首页","rect":{"x":16,"y":20.65625,"w":87.5,"h":22},"badge":false,"markTag":"svg","markPaths":5,"markW":18,"markH":18,"markColor":"rgb(64, 158, 255)","markStroke":"rgb(64, 158, 255)","text":"青兔工具箱","textSize":"12.5px","textWeight":"600","textDisplay":"block"}
+  OK  b1) .p-brand 仍是 <a href="/"> 且带 aria-label（P5.29 语义未回退）
+  OK  b2) 旧的「青」字方块徽标已移除（.p-brand-badge 不存在）
+  OK  b3) 图标是内联 <svg>，5 条 Lucide 路径 — svg / 5 paths
+  OK  b4) 图标 18px（16–18 区间） — 18×18
+  OK  b5) 整行仍是 22px 高（P5.25 几何未变） — 22
+  OK  b6) 文本 = 青兔工具箱（与 logo-lockup.svg 字标逐字一致） — "青兔工具箱"
+  OK  b7) 文本 12.5px/600（次级信息） — 12.5px/600
+  OK  b8) 图标吃强调色（--accent = #409eff） — rgb(64, 158, 255)
+    [shot] devtools\p533-brand\out\08-insitu-brand-light-6x.png  11475 B
+    [shot] devtools\p533-brand\out\09-insitu-head-light-2x.png  29830 B
+    dark: {"mark":"rgb(64, 158, 255)","text":"rgb(163, 166, 173)","bg":"rgb(29, 30, 31)"}
+  OK  b9) 暗色下图标仍是强调色（不做第二套配色） — rgb(64, 158, 255)
+    [shot] devtools\p533-brand\out\10-insitu-brand-dark-6x.png  12305 B
+    [shot] devtools\p533-brand\out\11-insitu-head-dark-2x.png  30546 B
+    narrow: {"display":"none","markW":18,"docScrollW":360,"winW":375}
+  OK  b10) 375 宽：文字隐藏（只留图标） — none
+  OK  b11) 375 宽：图标仍 18px（不缩成糊团） — 18
+  OK  b12) 375 宽：头部不溢出、无横向滚动 — 360/375
+    [shot] devtools\p533-brand\out\12-insitu-brand-narrow-6x.png  6273 B
+
+== C · 站内顶栏 / 左栏 Logo（交付 3：同一套 final 资产）
+  OK  c1) 左栏 Logo 渲染出 BrandMark（.qt-rail__logo-mark）
+    {"railMark":true,"railW":24,"railPaths":5,"railColor":"rgb(64, 158, 255)","railText":"青兔工具箱","oldBadge":false,"topbarMark":true,"topbarText":"青兔工具箱","dark":false}
+  OK  c2) 左栏 Logo = 24px Lucide rabbit（5 条路径） — 5 paths / 24px
+  OK  c3) 旧的「青」字方块徽标已移除（.qt-rail__logo-badge 不存在）
+  OK  c4) 左栏站点名保留（仍取 APP_INFO.name） — "青兔工具箱"
+  OK  c5) 顶栏品牌位也换成了同一枚图标 + 站点名 — "青兔工具箱"
+  OK  c6) 浅色主题下截图（html.dark 未挂） — false
+
+== D · P5.36 站点名统一（APP_INFO.name / <title> / 首页 h1 / 字标同字）
+    {"staticTitle":"青兔工具箱","appName":"青兔工具箱","brandName":"青兔工具箱","lockupAria":"青兔工具箱","faviconAria":"青兔工具箱","nameProbe":{"docTitle":"青兔工具箱","hero":"青兔工具箱","rail":"青兔工具箱","top":"青兔工具箱"}}
+  OK  d1) APP_INFO.name = 青兔工具箱（全站唯一来源） — "青兔工具箱"
+  OK  d2) index.html 静态 <title> = 青兔工具箱（首屏兜底同字） — "青兔工具箱"
+  OK  d3) 浏览器标签页标题 = 青兔工具箱 — "青兔工具箱"
+  OK  d4) 首页 hero h1 = 青兔工具箱 — "青兔工具箱"
+  OK  d5) 左栏 / 顶栏站点名 = 青兔工具箱 — ["青兔工具箱","青兔工具箱"]
+  OK  d6) 站点名与 logo 字标逐字一致（APP_INFO.name = BRAND.name = logo-lockup.svg / favicon.svg 的 aria-label） — 青兔工具箱 / 青兔工具箱 / 青兔工具箱 / 青兔工具箱
+  OK  d7) 站点名里已无「在线」二字 — "青兔工具箱"
+  OK  d8) 关于弹窗简介随之更新，且「在线工具集合」这类正常语义里的「在线」保留 — "青兔工具箱是一个纯前端运算的在线工具集合，打开即用、无需注册。"
+    [shot] devtools\p533-brand\out\19-p536-home-hero-1x.png  70583 B
+    [shot] devtools\p533-brand\out\13-shell-rail-logo-light-3x.png  7828 B
+    [shot] devtools\p533-brand\out\14-shell-topleft-light-1x.png  14238 B
+    [shot] devtools\p533-brand\out\17-shell-topbar-brand-420-light-6x.png  13334 B
+  OK  c7) 暗色重载后左栏 Logo 仍在
+    dark: {"dark":true,"railBg":"rgb(29, 30, 31)","text":"rgb(229, 234, 243)","mark":"rgb(64, 158, 255)"}
+  OK  c8) 暗色主题已生效（走 useTheme 的 resolveTheme 路径） — true
+  OK  c9) 暗色下图标仍是强调色、站点名转为浅色文字 — rgb(64, 158, 255) / rgb(229, 234, 243)
+    [shot] devtools\p533-brand\out\15-shell-rail-logo-dark-3x.png  8730 B
+    [shot] devtools\p533-brand\out\16-shell-topleft-dark-1x.png  14811 B
+    [shot] devtools\p533-brand\out\18-shell-topbar-brand-420-dark-6x.png  14287 B
+
+== 汇总：30 通过 / 0 失败，截图 19 张

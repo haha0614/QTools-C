@@ -33,8 +33,9 @@
   PASS toast 不压主操作按钮 — []
   PASS toast 在视口内且无横向溢出 — {"w":1600,"h":1000}
   PASS 多条 toast 纵向堆叠不重叠 — {"count":3,"gaps":[8,8]}
-  PASS 窄屏 toast 不溢出、不压抽屉 — [{"x":109.7,"y":60,"w":170.6,"h":36.2,"right":280.3,"bottom":96.2}]
+  PASS 窄屏 toast 不溢出、不压抽屉 — [{"x":109.7,"y":186,"w":170.6,"h":36.2,"right":280.3,"bottom":222.2}]
   PASS 窄屏抽屉不超出视口 — 176
+  PASS 窄屏提示条不压页头控件（新建/刷新/名称输入） — []
 
 == RESULT after ==
 {
@@ -2338,6 +2339,14 @@
     "btnOverlaps": [],
     "inViewport": true,
     "toolbar": null,
+    "pageHead": {
+      "x": 256.5,
+      "y": 16,
+      "w": 1248,
+      "h": 31,
+      "right": 1504.5,
+      "bottom": 47
+    },
     "layer": {
       "pos": "fixed",
       "top": "12px",
@@ -2424,6 +2433,14 @@
     "btnOverlaps": [],
     "inViewport": true,
     "toolbar": null,
+    "pageHead": {
+      "x": 256.5,
+      "y": 16,
+      "w": 1248,
+      "h": 31,
+      "right": 1504.5,
+      "bottom": 47
+    },
     "layer": {
       "pos": "fixed",
       "top": "12px",
@@ -2512,6 +2529,7 @@
       "right": 1585,
       "bottom": 86.4
     },
+    "pageHead": null,
     "layer": {
       "pos": "fixed",
       "top": "96px",
@@ -2589,11 +2607,11 @@
         "bg": "rgb(35, 35, 36)",
         "rect": {
           "x": 109.7,
-          "y": 60,
+          "y": 186,
           "w": 170.6,
           "h": 36.2,
           "right": 280.3,
-          "bottom": 96.2
+          "bottom": 222.2
         }
       }
     ],
@@ -2608,15 +2626,20 @@
     "railOverlap": [
       0
     ],
-    "btnOverlaps": [
-      "新建播放列表名称",
-      "刷新"
-    ],
+    "btnOverlaps": [],
     "inViewport": true,
     "toolbar": null,
+    "pageHead": {
+      "x": 10,
+      "y": 58,
+      "w": 370,
+      "h": 66.2,
+      "right": 380,
+      "bottom": 124.2
+    },
     "layer": {
       "pos": "fixed",
-      "top": "60px",
+      "top": "186px",
       "left": "0px",
       "right": "0px",
       "z": "900",
@@ -2631,6 +2654,13 @@
       "scrollW": 390,
       "innerW": 390
     }
+  },
+  "mobileVar": {
+    "pageVar": "138px",
+    "layerVar": "138px",
+    "innerW": 390,
+    "mq": true,
+    "headBottom": 124.2
   },
   "toastVideoMobile": {
     "count": 1,
@@ -2673,6 +2703,7 @@
       "right": 390,
       "bottom": 150
     },
+    "pageHead": null,
     "layer": {
       "pos": "fixed",
       "top": "216px",
@@ -2693,7 +2724,7 @@
   },
   "consoleLogs": [],
   "summary": {
-    "passed": 25,
+    "passed": 26,
     "failures": [],
     "shots": [
       "devtools\\p540-ui\\out\\after\\01-home-light-1600.png",
