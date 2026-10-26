@@ -157,6 +157,24 @@ async function shot(name) {
   fs.writeFileSync(path.join(OUT, name + '.png'), Buffer.from(r.data, 'base64'))
 }
 
+/** 打开 + 号菜单，并等清单真的加载出来（plLoad 是异步的：菜单先出现、列表后到） */
+async function openMenuReady() {
+  await cdp.evaluate(openMenu)
+  if (!(await waitFor('!!document.querySelector(".pl-menu")', 15000, '菜单'))) return false
+  return waitFor('!!document.querySelector(".pl-menu .pl-item")', 15000, '菜单里的列表项')
+}
+
+/** 等一条「新的」toast（与上一次读到的不一样且非空），返回它的文本 */
+async function waitNewToast(prev, timeoutMs) {
+  const end = Date.now() + (timeoutMs || 12000)
+  while (Date.now() < end) {
+    const t = await cdp.evaluate(lastToast)
+    if (t && t !== prev) return t
+    await sleep(120)
+  }
+  return ''
+}
+
 /** 打开卡片 + 号菜单 → 等菜单出现 */
 const openMenu = `(() => {
   const btn = document.querySelector('.card-pl-btn')
@@ -232,28 +250,27 @@ try {
   await cdp.send('Page.navigate', { url: 'http://127.0.0.1:' + PORT + '/' })
   await sleep(1200)
   await cdp.evaluate('localStorage.setItem("ms.owner", "' + OWNER + '")')
-  await cdp.send('Page.navigate', { url: 'http://127.0.0.1:' + PORT + '/#/media' })
+  await cdp.send('Page.navigate', { url: 'http://127.0.0.1:' + PORT + '/media' })
   const cardReady = await waitFor('!!document.querySelector(".card-pl-btn")', 30000, '视频卡片 + 号按钮')
+  if (!cardReady) {
+    console.log('  页面文本片段: ' + String(await cdp.evaluate('document.body.innerText.slice(0, 400)')).replace(/\n/g, ' | '))
+    await shot('00-no-cards')
+  }
   ok(cardReady, '视频库渲染出卡片与「加入播放列表」入口')
   const vid = await cdp.evaluate('(document.querySelector(".card[data-id]") || {}).dataset ? document.querySelector(".card[data-id]").dataset.id : ""')
   ok(!!vid, '拿到第一张卡片的视频 id', vid)
 
   console.log('== 1. 打开 + 号菜单')
-  await cdp.evaluate(openMenu)
-  const menuOpen = await waitFor('!!document.querySelector(".pl-menu")', 15000, '菜单')
-  ok(menuOpen, '菜单打开')
+  const menuOk = await openMenuReady()
+  ok(menuOk, '菜单打开且清单加载完成')
   const names = await cdp.evaluate('Array.from(document.querySelectorAll(".pl-menu .pl-name")).map(e => e.textContent.trim())')
   ok(Array.isArray(names) && names.includes('111') && names.includes(LIST_NAME), '菜单里有服务端的两个列表', JSON.stringify(names))
   await shot('01-menu')
 
-  console.log('== 2. 点「' + LIST_NAME + '」加入')
+  console.log('== 2. 点「' + LIST_NAME + '」加入（同一张卡、同一个菜单）')
+  let prev = await cdp.evaluate(lastToast)
   await cdp.evaluate(clickListItem(LIST_NAME))
-  let toast = ''
-  for (let i = 0; i < 60; i++) {
-    toast = await cdp.evaluate(lastToast)
-    if (toast) break
-    await sleep(120)
-  }
+  const toast = await waitNewToast(prev)
   ok(toast.indexOf('已加入播放列表「' + LIST_NAME + '」') === 0, '成功提示到位', toast)
   ok(toast.indexOf('1 个视频') > 0, '提示里报了真实新增数 1', toast)
 
@@ -262,89 +279,69 @@ try {
   ok(badge && badge.indexOf('已加入') >= 0, '菜单项变「已加入 ✓」', String(badge))
   await shot('02-joined')
 
-  console.log('== 4. 播放列表页数量 +1')
   const mid = await apiCount(OWNER, LIST_ID)
   ok(mid.count === startCount.count + 1, '服务端条目数 +1', startCount.count + ' -> ' + mid.count)
   ok(mid.ids.indexOf(vid) >= 0, 'DB 里就是刚才那部片', JSON.stringify(mid.ids))
-  await cdp.send('Page.navigate', { url: 'http://127.0.0.1:' + PORT + '/#/media/playlists' })
-  await waitFor('!!document.querySelector(".pl-side .pl-item")', 20000, '播放列表页')
-  const count1 = await cdp.evaluate(pageCount(LIST_NAME))
-  ok(String(count1).trim() === String(mid.count), '播放列表页「' + LIST_NAME + '」数量与库一致', String(count1))
-  await shot('03-playlists')
 
-  console.log('== 5. 幂等：再加一次同一部片')
-  await cdp.send('Page.navigate', { url: 'http://127.0.0.1:' + PORT + '/#/media' })
-  await waitFor('!!document.querySelector(".card-pl-btn")', 30000, '视频卡片')
-  await cdp.evaluate(openMenu)
-  await waitFor('!!document.querySelector(".pl-menu")', 15000, '菜单')
+  console.log('== 4. 幂等：同一个菜单里再点一次同一部片')
+  prev = await cdp.evaluate(lastToast)
   await cdp.evaluate(clickListItem(LIST_NAME))
-  let toast2 = ''
-  for (let i = 0; i < 60; i++) {
-    toast2 = await cdp.evaluate(lastToast)
-    if (toast2) break
-    await sleep(120)
-  }
+  const toast2 = await waitNewToast(prev)
   ok(/无需重复加入/.test(toast2), '重复加入给「无需重复加入」而不是失败', toast2)
   const after = await apiCount(OWNER, LIST_ID)
   ok(after.count === mid.count, '条目数没有重复插入', mid.count + ' -> ' + after.count)
+  await shot('06-dup')
+
+  console.log('== 5. 播放列表页数量 +1')
+  await cdp.send('Page.navigate', { url: 'http://127.0.0.1:' + PORT + '/media/playlists' })
+  await waitFor('!!document.querySelector(".pl-side .pl-item")', 25000, '播放列表页')
+  const count1 = await cdp.evaluate(pageCount(LIST_NAME))
+  ok(String(count1).trim() === String(after.count), '播放列表页「' + LIST_NAME + '」数量与库一致', String(count1))
+  await shot('03-playlists')
 
   console.log('== 6. 失败分级：403（编辑策略禁止写入）')
-  await cdp.send('Fetch.enable', { patterns: [{ urlPattern: '*/media/playlist/*/videos*', requestStage: 'Request' }] })
-  await cdp.send('Page.navigate', { url: 'http://127.0.0.1:' + PORT + '/#/media' })
+  await cdp.send('Page.navigate', { url: 'http://127.0.0.1:' + PORT + '/media' })
   await waitFor('!!document.querySelector(".card-pl-btn")', 30000, '视频卡片')
-  await cdp.evaluate(openMenu)
-  await waitFor('!!document.querySelector(".pl-menu")', 15000, '菜单')
+  await openMenuReady()
+  await cdp.send('Fetch.enable', { patterns: [{ urlPattern: '*/media/playlist/*/videos*', requestStage: 'Request' }] })
+  await sleep(300)
   const blockedMsg = '当前为演示/本地模式，站端不允许写入（管理员可在媒体库「编辑策略」中改为完全编辑）'
   stubbed = { code: 403, body: { error: blockedMsg } }
+  prev = await cdp.evaluate(lastToast)
   await cdp.evaluate(clickListItem(LIST_NAME))
-  let toast403 = ''
-  for (let i = 0; i < 60; i++) {
-    toast403 = await cdp.evaluate(lastToast)
-    if (/403/.test(toast403)) break
-    await sleep(120)
-  }
+  const toast403 = await waitNewToast(prev)
   ok(/403/.test(toast403) && /编辑策略禁止写入/.test(toast403), '403 提示点名「编辑策略禁止写入」', toast403)
   ok(toast403.indexOf(blockedMsg) >= 0, '403 透传后端原文', toast403)
   await shot('04-403')
 
   console.log('== 7. 失败分级：路由没注册（HTTP 200 + {code:401}）')
   stubbed = { code: 200, body: { code: 401, msg: '请求访问：/api/media/playlistx/1/videos，认证失败，无法访问系统资源' } }
-  await sleep(2200)
+  prev = await cdp.evaluate(lastToast)
   await cdp.evaluate(clickListItem(LIST_NAME))
-  let toast401 = ''
-  for (let i = 0; i < 60; i++) {
-    toast401 = await cdp.evaluate(lastToast)
-    if (/401/.test(toast401)) break
-    await sleep(120)
-  }
+  const toast401 = await waitNewToast(prev)
   ok(/401/.test(toast401) && /接口未就绪/.test(toast401), '401 提示「接口未就绪或需要登录」', toast401)
 
   console.log('== 8. 失败分级：列表不存在（404 + playlist not found）')
   stubbed = { code: 404, body: { error: 'playlist not found: 9' } }
-  await sleep(2200)
+  prev = await cdp.evaluate(lastToast)
   await cdp.evaluate(clickListItem(LIST_NAME))
-  let toast404 = ''
-  for (let i = 0; i < 60; i++) {
-    toast404 = await cdp.evaluate(lastToast)
-    if (/404/.test(toast404)) break
-    await sleep(120)
-  }
+  const toast404 = await waitNewToast(prev)
   ok(/404/.test(toast404) && /播放列表不存在/.test(toast404), '404（不存在）与「接口未就绪」区分开', toast404)
   await shot('05-404')
 
   await cdp.send('Fetch.disable')
   stubbed = null
 
-  console.log('== 9. 收尾：把加进去的片移出，列表回到起点')
-  const back = await fetch(API + '/playlist/' + LIST_ID + '/videos/' + encodeURIComponent(vid), {
-    method: 'DELETE',
-    headers: { 'X-Ms-Owner': OWNER }
-  })
-  ok(back.status === 200, 'DELETE 移出返回 200', String(back.status))
+  console.log('== 9. 收尾：把这一轮新增的片全部移出，列表回到起点')
+  const now = await apiCount(OWNER, LIST_ID)
+  const added = now.ids.filter((id) => startCount.ids.indexOf(id) < 0)
+  for (const id of added) {
+    await fetch(API + '/playlist/' + LIST_ID + '/videos/' + encodeURIComponent(id), { method: 'DELETE', headers: { 'X-Ms-Owner': OWNER } })
+  }
   const end = await apiCount(OWNER, LIST_ID)
-  ok(end.count === startCount.count, '列表回到起始条数', startCount.count + ' -> ' + end.count)
+  ok(end.count === startCount.count, '列表回到起始条数', now.count + ' -> ' + end.count)
 
-  const fsOut = { passed, failures, vid, startCount, toasts: { add: toast, dup: toast2, s403: toast403, s401: toast401, s404: toast404 } }
+  const fsOut = { passed, failures, vid, startCount, end: await apiCount(OWNER, LIST_ID), toasts: { add: toast, dup: toast2, s403: toast403, s401: toast401, s404: toast404 } }
   fs.writeFileSync(path.join(OUT, 'result.json'), JSON.stringify(fsOut, null, 2))
 } catch (e) {
   console.log('运行中断: ' + (e && e.stack ? e.stack : e))
