@@ -212,9 +212,13 @@ const crop = reactive({
   /** 选择框（相对图片显示框的像素） */
   sel: { x: 0, y: 0, w: 0, h: 0 },
   /** 缩放滑块：选择框边长占图片短边的百分比 */
-  zoom: 60
+  zoom: 60,
+  /** 指针悬停在选框内（改光标，告诉用户「这块可以拖」） */
+  hover: false
 })
 const cropImgEl = ref(null)
+const cropStageEl = ref(null)
+/** 当前这一次按下：{mode:'move'} = 拖已有选框，{mode:'new'} = 重新框选 */
 let drag = null
 
 const cropMinSide = computed(() => Math.min(crop.W || 1, crop.H || 1))
@@ -270,44 +274,112 @@ function onZoom() {
   crop.sel = { x, y, w: s, h: s }
 }
 
-/** 鼠标 / 触摸坐标 → 图片内像素（用 img 的真实盒，不用容器盒） */
+function clampPx(v, min, max) {
+  return v < min ? min : v > max ? max : v
+}
+
+/**
+ * 指针坐标 → 图片内像素（用 img 的真实盒，不用容器盒）
+ *
+ * <p>返回 {@code {x,y}} 是**夹进图片边界**后的值（算选框直接用）；{@code {rx,ry}} 是原始值
+ * （判断「这次按下在不在选框里」必须用原始值，否则图片外的那几个像素会被夹进来、
+ * 误判成「在框内」）。指针事件 / 触摸 / 触控笔统一从 clientX/clientY 取，pointer 事件本身就有。</p>
+ */
 function pointIn(ev) {
   const el = cropImgEl.value
   if (!el) return null
   const rect = el.getBoundingClientRect()
   if (!rect.width || !rect.height) return null
-  const cx = ev.clientX != null ? ev.clientX : ev.touches && ev.touches[0] ? ev.touches[0].clientX : 0
-  const cy = ev.clientY != null ? ev.clientY : ev.touches && ev.touches[0] ? ev.touches[0].clientY : 0
+  const t = (ev.touches && ev.touches[0]) || (ev.changedTouches && ev.changedTouches[0]) || null
+  const cx = ev.clientX != null ? ev.clientX : t ? t.clientX : null
+  const cy = ev.clientY != null ? ev.clientY : t ? t.clientY : null
+  if (cx == null || cy == null) return null
+  const rx = ((cx - rect.left) / rect.width) * crop.W
+  const ry = ((cy - rect.top) / rect.height) * crop.H
   return {
-    x: Math.min(crop.W, Math.max(0, ((cx - rect.left) / rect.width) * crop.W)),
-    y: Math.min(crop.H, Math.max(0, ((cy - rect.top) / rect.height) * crop.H))
+    rx,
+    ry,
+    x: clampPx(rx, 0, crop.W),
+    y: clampPx(ry, 0, crop.H),
+    inImage: rx >= -2 && rx <= crop.W + 2 && ry >= -2 && ry <= crop.H + 2
   }
 }
 
+/** 这一点落在当前选框内吗（8px 容差：细边框也能抓住，手指点不偏） */
+function inBox(p) {
+  if (!p || !p.inImage) return false
+  const s = crop.sel
+  if (s.w < 12 || s.h < 12) return false
+  const pad = 8
+  return p.rx >= s.x - pad && p.rx <= s.x + s.w + pad && p.ry >= s.y - pad && p.ry <= s.y + s.h + pad
+}
+
+/* P5.61：按下分两种语义 —— 在框内 = **拖位置**，在框外 = **重新框选**。
+   之前只有「重新框选」，按在框内会把选框先清成 0×0 再从按下点重新长出来，
+   表现为「蓝框不能拖、一按就跳走」。指针捕获（setPointerCapture）让手指/鼠标
+   拖出图片边界也不会丢事件；touch-action:none（CSS）让触摸屏拖框不再滚页面。 */
 function onCropDown(ev) {
   if (props.busy) return
   const p = pointIn(ev)
-  if (!p) return
-  drag = { ax: p.x, ay: p.y }
-  crop.sel = { x: p.x, y: p.y, w: 0, h: 0 }
+  if (!p || !p.inImage) return
+  if (inBox(p)) {
+    const s = crop.sel
+    drag = { mode: 'move', ax: p.x, ay: p.y, ox: s.x, oy: s.y, ow: s.w, oh: s.h }
+  } else {
+    drag = { mode: 'new', ax: p.x, ay: p.y }
+    crop.sel = { x: p.x, y: p.y, w: 0, h: 0 }
+  }
+  const stage = cropStageEl.value
+  if (stage && ev.pointerId != null && stage.setPointerCapture) {
+    try {
+      stage.setPointerCapture(ev.pointerId)
+    } catch (e) {
+      // 指针已被别处捕获：不致命，move/up 仍会派发到 stage
+    }
+  }
   if (typeof ev.preventDefault === 'function') ev.preventDefault()
 }
 
 function onCropMove(ev) {
-  if (!drag) return
   const p = pointIn(ev)
   if (!p) return
-  const x = Math.min(drag.ax, p.x)
-  const y = Math.min(drag.ay, p.y)
-  const w = Math.abs(p.x - drag.ax)
-  const h = Math.abs(p.y - drag.ay)
-  crop.sel = { x, y, w, h }
+  if (!drag) {
+    crop.hover = inBox(p)
+    return
+  }
+  if (drag.mode === 'move') {
+    // 拖动只改位置，尺寸不变；夹在图片边界内（越界就贴边停住，不会把框拖出去）
+    const nx = clampPx(drag.ox + (p.x - drag.ax), 0, Math.max(0, crop.W - drag.ow))
+    const ny = clampPx(drag.oy + (p.y - drag.ay), 0, Math.max(0, crop.H - drag.oh))
+    crop.sel = { x: nx, y: ny, w: drag.ow, h: drag.oh }
+  } else {
+    const x = Math.min(drag.ax, p.x)
+    const y = Math.min(drag.ay, p.y)
+    const w = Math.abs(p.x - drag.ax)
+    const h = Math.abs(p.y - drag.ay)
+    crop.sel = { x, y, w, h }
+  }
   if (typeof ev.preventDefault === 'function') ev.preventDefault()
 }
 
-function onCropUp() {
+function onCropUp(ev) {
   if (!drag) return
+  const mode = drag.mode
   drag = null
+  const stage = cropStageEl.value
+  if (stage && ev && ev.pointerId != null && stage.releasePointerCapture) {
+    try {
+      stage.releasePointerCapture(ev.pointerId)
+    } catch (e) {
+      // 没捕获成功过：忽略
+    }
+  }
+  const p = pointIn(ev)
+  crop.hover = p ? inBox(p) : false
+  if (mode === 'move') {
+    // 拖位置不动尺寸：zoom 滑块读数（边长占比）本来就是对的，不用重算
+    return
+  }
   // 点一下没拖动（< 8px）：视作「用中心 60%」，避免留下一个 1px 的框
   if (crop.sel.w < 8 || crop.sel.h < 8) {
     applyPreset('center')
@@ -459,13 +531,17 @@ onBeforeUnmount(() => {
       <div v-if="tab === 'album'" class="pa-body" data-role="avatar-album-tab">
         <!-- 裁剪态（P5.55）：拖拽框选 + 缩放滑块 + 脸部/中心/整图三档 -->
         <div v-if="crop.open" class="pa-crop" data-role="avatar-crop">
-          <p class="pa-crop-tip">在图片上拖拽选择区域（不拖则默认中心 60%）</p>
+          <p class="pa-crop-tip">
+            在图片上拖拽重新框选；按住蓝框内部拖动可移动位置；缩放滑块改大小（不拖则默认中心 60%）
+          </p>
           <div
+            ref="cropStageEl"
             class="pa-crop-stage"
-            @mousedown="onCropDown"
-            @mousemove="onCropMove"
-            @mouseup="onCropUp"
-            @mouseleave="onCropUp"
+            :class="{ 'pa-crop-stage-move': crop.hover }"
+            @pointerdown="onCropDown"
+            @pointermove="onCropMove"
+            @pointerup="onCropUp"
+            @pointercancel="onCropUp"
           >
             <div class="pa-crop-wrap">
               <img
@@ -911,6 +987,13 @@ onBeforeUnmount(() => {
   background: var(--bg-3);
   cursor: crosshair;
   user-select: none;
+  /* 触摸屏：拖框时不要滚页面（否则 pointermove 会被滚动手势吃掉） */
+  touch-action: none;
+}
+
+/* 指针在选框内：换成「可拖动」光标（拖动位置，不是重新框选） */
+.pa-crop-stage-move {
+  cursor: move;
 }
 
 /* 外层贴紧图片（inline-block），选择框的百分比定位才有正确的参考盒 */

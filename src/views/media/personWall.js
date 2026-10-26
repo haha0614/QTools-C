@@ -16,7 +16,11 @@
  *      thumbOf() 转成 /api/media/thumb/p/a164/0000，与相册卡封面同一个 URL 构造）；
  *   2. 名下没有相册但有视频 → 第一个视频的封面 /api/media/thumb/v/<videoId>（videoThumb() 注入）；
  *   3. 都没有 → 首字彩色圆底占位（initialOf）。
- * 命中率（真实数据 15 位人物）：1 档 10 位 + 2 档 4 位 = 14/15，只有「E2E演员」这种空壳人物落回首字。
+ * 命中率（真实数据 14 位人物）：1 档 10 位 + 2 档 4 位 = 14/14（P5.60 删掉测试空壳「E2E演员」后无人落回首字）。
+ *
+ * 非真人条目（P5.60）：media_person 里有两类「不是人」的行 ——「未归类」（相册归档容器）与
+ * 「素人」（无演员视频的兜底人物）。前者不该出现在人物墙（isPlaceholderPerson 判定 + 后端 isPlaceholder
+ * 标记，两条规则同一份实现），后者有业务含义要保留。判定见 isPlaceholderPerson。
  *
  * 约定：本模块不 import 任何运行时依赖（URL 构造由调用方以函数注入），
  *       所以 node 直接跑单测时不需要浏览器 / vue / axios。
@@ -101,6 +105,36 @@ function labelOf(node) {
 export function personKey(person) {
   const id = person && person.id != null ? String(person.id) : ''
   return id || nameOf(person)
+}
+
+/**
+ * 非真人「容器 / 兜底」实体（P5.60）。
+ *
+ * 判定分两层，**一次实现、页面与单测共用**：
+ *   1. 后端标记优先：`person.isPlaceholder` 由 `MediaPersonServiceImpl.personBriefList` 输出
+ *      （规则：名字在 PLACEHOLDER_NAMES 里，或 note 带 PLACEHOLDER_NOTE_MARK）—— 新后端一定走这条；
+ *   2. 老后端 / 离线快照兜底：响应里没有这个布尔值时按名字 + note 标记自己判（方案 B 的那套规则
+ *      收进这里，而不是散落在页面里，所以只有一处要维护）。
+ *
+ * 只排除「未归类」这种**归档容器**：它名下挂着相册（a158 a159），删不掉也不该当演员展示。
+ * 「素人」是**有业务含义的兜底人物**（没有演员的视频归到它），保留在人物墙。
+ */
+export const PLACEHOLDER_NAMES = ['未归类']
+
+/** note 里的机器可读标记：靠名字判会把「改个名」变成「它就冒出来了」，所以标记进库 */
+export const PLACEHOLDER_NOTE_MARK = '[placeholder]'
+
+/**
+ * 这条人物字典记录是不是**占位实体**（不是真人，人物墙不展示）。
+ * @param {object} person /persons 的一条（isPlaceholder / name / note 取得到就用）
+ * @returns {boolean}
+ */
+export function isPlaceholderPerson(person) {
+  if (!person || typeof person !== 'object') return false
+  if (person.isPlaceholder === true) return true
+  if (person.isPlaceholder === false) return false
+  if (text(person.note).indexOf(PLACEHOLDER_NOTE_MARK) >= 0) return true
+  return PLACEHOLDER_NAMES.indexOf(text(person.name)) >= 0
 }
 
 /** 首字占位：中文取第一个字，英文取首字母大写（Array.from 保证 emoji / 代理对不被截断） */
@@ -258,12 +292,30 @@ export function profileFacts(detail, max) {
   return out
 }
 
+/** 卡片上单个 chip 的值最长多少字（P5.60，见 profileChips） */
+export const CHIP_VALUE_MAX = 14
+
 /**
  * 资料 chip（**卡片**用）：按 PROFILE_FIELDS 顺序取有值的前 max 个（默认 3）。
  * 拼装规则与详情页共用 profileFacts —— 「取哪几个 / 空值怎么算 / 单位怎么加」只有一份实现。
+ *
+ * P5.60：卡片那一行 chip **只排一行**（用户口径：加宽是为了「一行放得下」，不是为了「加高」），
+ * 但库里真有超长值（深田咏美「三围 B87.8 / W63.5 / H91.1（2020 年時点）」一个字 30 字），
+ * 一个 chip 就能吃掉整行、把另外两个挤成省略号。所以卡片层的值截到 {@link CHIP_VALUE_MAX} 字加省略号：
+ * 「三围 B87.8 / W63…」。完整值不丢 —— chip 元素的 title 里有原文，详情页（profileFacts 不截断）给全量。
+ * 详情页不走这条截断：那是「看资料」的地方，不该为了排版丢字。
  */
 export function profileChips(detail, max) {
-  return profileFacts(detail, max == null ? CHIP_MAX : max).map((f) => f.label + ' ' + f.value)
+  return profileFacts(detail, max == null ? CHIP_MAX : max).map((f) => f.label + ' ' + clipValue(f.value, CHIP_VALUE_MAX))
+}
+
+/** 超长值截断（按 rune 截，不切坏代理对 / emoji）；未超长原样返回 */
+export function clipValue(value, max) {
+  const s = text(value)
+  const limit = num(max)
+  if (!limit || limit <= 0) return s
+  const chars = Array.from(s)
+  return chars.length <= limit ? s : chars.slice(0, limit).join('') + '…'
 }
 
 /** 别名：/persons 与 /person/{id} 两处都可能有，先取字典那份 */

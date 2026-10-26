@@ -1,0 +1,871 @@
+{
+  "passed": 52,
+  "failures": [
+    "GET /api/media/persons 仍返回「未归类」（容器不能删，靠前端过滤）"
+  ],
+  "facts": {
+    "backend": "http://127.0.0.1:8080 在线",
+    "viewports": {
+      "w1600": {
+        "viewport": "1600x1000",
+        "gridTemplateColumns": "335.25px 335.25px 335.25px 335.25px",
+        "minmaxPx": 280,
+        "cards": 13,
+        "cardWidth": {
+          "min": 335.25,
+          "max": 335.25
+        },
+        "cardHeight": {
+          "min": 103.7,
+          "max": 103.7
+        },
+        "docOverflow": {
+          "scroll": 1585,
+          "client": 1600
+        },
+        "countsWorst": {
+          "name": "素人",
+          "text": "159 部视频 · 2 本相册 · 118 张照片",
+          "whiteSpace": "nowrap",
+          "lineClamp": "none",
+          "h": 15.52,
+          "lh": 15.525,
+          "lines": 1,
+          "scrollW": 243,
+          "clientW": 243,
+          "fits": true,
+          "w": 243
+        },
+        "countsAll": [
+          {
+            "name": "素人",
+            "text": "159 部视频 · 2 本相册 · 118 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 243,
+            "clientW": 243,
+            "fits": true,
+            "w": 243
+          },
+          {
+            "name": "娜娜（nana）",
+            "text": "14 部视频 · 0 本相册 · 0 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 243,
+            "clientW": 243,
+            "fits": true,
+            "w": 243
+          },
+          {
+            "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+            "text": "2 部视频 · 0 本相册 · 0 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 243,
+            "clientW": 243,
+            "fits": true,
+            "w": 243
+          },
+          {
+            "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+            "text": "1 部视频 · 0 本相册 · 0 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 243,
+            "clientW": 243,
+            "fits": true,
+            "w": 243
+          },
+          {
+            "name": "梨霜儿",
+            "text": "0 部视频 · 1 本相册 · 2 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 243,
+            "clientW": 243,
+            "fits": true,
+            "w": 243
+          },
+          {
+            "name": "喵小吉 Aeolian-2",
+            "text": "0 部视频 · 1 本相册 · 48 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 243,
+            "clientW": 243,
+            "fits": true,
+            "w": 243
+          },
+          {
+            "name": "念念",
+            "text": "0 部视频 · 144 本相册 · 9017 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 243,
+            "clientW": 243,
+            "fits": true,
+            "w": 243
+          },
+          {
+            "name": "是小逗逗",
+            "text": "0 部视频 · 1 本相册 · 2 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 243,
+            "clientW": 243,
+            "fits": true,
+            "w": 243
+          },
+          {
+            "name": "唐翩翩",
+            "text": "0 部视频 · 1 本相册 · 33 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 243,
+            "clientW": 243,
+            "fits": true,
+            "w": 243
+          },
+          {
+            "name": "小鱼",
+            "text": "0 部视频 · 1 本相册 · 6 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 243,
+            "clientW": 243,
+            "fits": true,
+            "w": 243
+          },
+          {
+            "name": "桜井宁宁",
+            "text": "0 部视频 · 1 本相册 · 6 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 243,
+            "clientW": 243,
+            "fits": true,
+            "w": 243
+          },
+          {
+            "name": "玥儿玥er",
+            "text": "0 部视频 · 1 本相册 · 14 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 243,
+            "clientW": 243,
+            "fits": true,
+            "w": 243
+          },
+          {
+            "name": "Machi马吉",
+            "text": "0 部视频 · 3 本相册 · 381 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 243,
+            "clientW": 243,
+            "fits": true,
+            "w": 243
+          }
+        ],
+        "threeChipCards": [
+          {
+            "name": "娜娜（nana）",
+            "n": 3,
+            "rows": 1,
+            "txts": [
+              "国籍 中国",
+              "族裔 亚洲",
+              "性别 女"
+            ]
+          },
+          {
+            "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+            "n": 3,
+            "rows": 1,
+            "txts": [
+              "身高 158cm",
+              "三围 B87.8 / W63.5 …",
+              "出生 1998-03-18"
+            ]
+          },
+          {
+            "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+            "n": 3,
+            "rows": 1,
+            "txts": [
+              "身高 169cm",
+              "体重 48kg",
+              "三围 B87 / W57 / H8…"
+            ]
+          }
+        ],
+        "names": [
+          "素人",
+          "娜娜（nana）",
+          "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+          "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+          "梨霜儿",
+          "喵小吉 Aeolian-2",
+          "念念",
+          "是小逗逗",
+          "唐翩翩",
+          "小鱼",
+          "桜井宁宁",
+          "玥儿玥er",
+          "Machi马吉"
+        ],
+        "chipEllipsized": [
+          {
+            "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+            "ellipsized": [
+              "身高 158cm",
+              "三围 B87.8 / W63.5 …",
+              "出生 1998-03-18"
+            ]
+          },
+          {
+            "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+            "ellipsized": [
+              "身高 169cm",
+              "体重 48kg",
+              "三围 B87 / W57 / H8…"
+            ]
+          }
+        ]
+      },
+      "w1200": {
+        "viewport": "1200x900",
+        "gridTemplateColumns": "317.656px 317.672px 317.656px",
+        "minmaxPx": 280,
+        "cards": 13,
+        "cardWidth": {
+          "min": 317.66,
+          "max": 317.67
+        },
+        "cardHeight": {
+          "min": 103.7,
+          "max": 103.7
+        },
+        "docOverflow": {
+          "scroll": 1185,
+          "client": 1200
+        },
+        "countsWorst": {
+          "name": "素人",
+          "text": "159 部视频 · 2 本相册 · 118 张照片",
+          "whiteSpace": "nowrap",
+          "lineClamp": "none",
+          "h": 15.52,
+          "lh": 15.525,
+          "lines": 1,
+          "scrollW": 226,
+          "clientW": 226,
+          "fits": true,
+          "w": 226
+        },
+        "countsAll": [
+          {
+            "name": "素人",
+            "text": "159 部视频 · 2 本相册 · 118 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 226,
+            "clientW": 226,
+            "fits": true,
+            "w": 226
+          },
+          {
+            "name": "娜娜（nana）",
+            "text": "14 部视频 · 0 本相册 · 0 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 226,
+            "clientW": 226,
+            "fits": true,
+            "w": 226
+          },
+          {
+            "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+            "text": "2 部视频 · 0 本相册 · 0 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 226,
+            "clientW": 226,
+            "fits": true,
+            "w": 226
+          },
+          {
+            "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+            "text": "1 部视频 · 0 本相册 · 0 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 226,
+            "clientW": 226,
+            "fits": true,
+            "w": 226
+          },
+          {
+            "name": "梨霜儿",
+            "text": "0 部视频 · 1 本相册 · 2 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 226,
+            "clientW": 226,
+            "fits": true,
+            "w": 226
+          },
+          {
+            "name": "喵小吉 Aeolian-2",
+            "text": "0 部视频 · 1 本相册 · 48 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 226,
+            "clientW": 226,
+            "fits": true,
+            "w": 226
+          },
+          {
+            "name": "念念",
+            "text": "0 部视频 · 144 本相册 · 9017 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 226,
+            "clientW": 226,
+            "fits": true,
+            "w": 226
+          },
+          {
+            "name": "是小逗逗",
+            "text": "0 部视频 · 1 本相册 · 2 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 226,
+            "clientW": 226,
+            "fits": true,
+            "w": 226
+          },
+          {
+            "name": "唐翩翩",
+            "text": "0 部视频 · 1 本相册 · 33 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 226,
+            "clientW": 226,
+            "fits": true,
+            "w": 226
+          },
+          {
+            "name": "小鱼",
+            "text": "0 部视频 · 1 本相册 · 6 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 226,
+            "clientW": 226,
+            "fits": true,
+            "w": 226
+          },
+          {
+            "name": "桜井宁宁",
+            "text": "0 部视频 · 1 本相册 · 6 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 226,
+            "clientW": 226,
+            "fits": true,
+            "w": 226
+          },
+          {
+            "name": "玥儿玥er",
+            "text": "0 部视频 · 1 本相册 · 14 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 226,
+            "clientW": 226,
+            "fits": true,
+            "w": 226
+          },
+          {
+            "name": "Machi马吉",
+            "text": "0 部视频 · 3 本相册 · 381 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 15.52,
+            "lh": 15.525,
+            "lines": 1,
+            "scrollW": 226,
+            "clientW": 226,
+            "fits": true,
+            "w": 226
+          }
+        ],
+        "threeChipCards": [
+          {
+            "name": "娜娜（nana）",
+            "n": 3,
+            "rows": 1,
+            "txts": [
+              "国籍 中国",
+              "族裔 亚洲",
+              "性别 女"
+            ]
+          },
+          {
+            "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+            "n": 3,
+            "rows": 1,
+            "txts": [
+              "身高 158cm",
+              "三围 B87.8 / W63.5 …",
+              "出生 1998-03-18"
+            ]
+          },
+          {
+            "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+            "n": 3,
+            "rows": 1,
+            "txts": [
+              "身高 169cm",
+              "体重 48kg",
+              "三围 B87 / W57 / H8…"
+            ]
+          }
+        ],
+        "names": [
+          "素人",
+          "娜娜（nana）",
+          "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+          "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+          "梨霜儿",
+          "喵小吉 Aeolian-2",
+          "念念",
+          "是小逗逗",
+          "唐翩翩",
+          "小鱼",
+          "桜井宁宁",
+          "玥儿玥er",
+          "Machi马吉"
+        ],
+        "chipEllipsized": [
+          {
+            "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+            "ellipsized": [
+              "身高 158cm",
+              "三围 B87.8 / W63.5 …",
+              "出生 1998-03-18"
+            ]
+          },
+          {
+            "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+            "ellipsized": [
+              "身高 169cm",
+              "体重 48kg",
+              "三围 B87 / W57 / H8…"
+            ]
+          }
+        ]
+      },
+      "w375": {
+        "viewport": "375x812",
+        "gridTemplateColumns": "328px",
+        "minmaxPx": 280,
+        "cards": 13,
+        "cardWidth": {
+          "min": 328,
+          "max": 328
+        },
+        "cardHeight": {
+          "min": 101.03,
+          "max": 101.03
+        },
+        "docOverflow": {
+          "scroll": 360,
+          "client": 375
+        },
+        "countsWorst": {
+          "name": "素人",
+          "text": "159 部视频 · 2 本相册 · 118 张照片",
+          "whiteSpace": "nowrap",
+          "lineClamp": "none",
+          "h": 14.84,
+          "lh": 14.85,
+          "lines": 1,
+          "scrollW": 258,
+          "clientW": 258,
+          "fits": true,
+          "w": 258
+        },
+        "countsAll": [
+          {
+            "name": "素人",
+            "text": "159 部视频 · 2 本相册 · 118 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 14.84,
+            "lh": 14.85,
+            "lines": 1,
+            "scrollW": 258,
+            "clientW": 258,
+            "fits": true,
+            "w": 258
+          },
+          {
+            "name": "娜娜（nana）",
+            "text": "14 部视频 · 0 本相册 · 0 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 14.84,
+            "lh": 14.85,
+            "lines": 1,
+            "scrollW": 258,
+            "clientW": 258,
+            "fits": true,
+            "w": 258
+          },
+          {
+            "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+            "text": "2 部视频 · 0 本相册 · 0 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 14.84,
+            "lh": 14.85,
+            "lines": 1,
+            "scrollW": 258,
+            "clientW": 258,
+            "fits": true,
+            "w": 258
+          },
+          {
+            "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+            "text": "1 部视频 · 0 本相册 · 0 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 14.84,
+            "lh": 14.85,
+            "lines": 1,
+            "scrollW": 258,
+            "clientW": 258,
+            "fits": true,
+            "w": 258
+          },
+          {
+            "name": "梨霜儿",
+            "text": "0 部视频 · 1 本相册 · 2 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 14.84,
+            "lh": 14.85,
+            "lines": 1,
+            "scrollW": 258,
+            "clientW": 258,
+            "fits": true,
+            "w": 258
+          },
+          {
+            "name": "喵小吉 Aeolian-2",
+            "text": "0 部视频 · 1 本相册 · 48 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 14.84,
+            "lh": 14.85,
+            "lines": 1,
+            "scrollW": 258,
+            "clientW": 258,
+            "fits": true,
+            "w": 258
+          },
+          {
+            "name": "念念",
+            "text": "0 部视频 · 144 本相册 · 9017 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 14.84,
+            "lh": 14.85,
+            "lines": 1,
+            "scrollW": 258,
+            "clientW": 258,
+            "fits": true,
+            "w": 258
+          },
+          {
+            "name": "是小逗逗",
+            "text": "0 部视频 · 1 本相册 · 2 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 14.84,
+            "lh": 14.85,
+            "lines": 1,
+            "scrollW": 258,
+            "clientW": 258,
+            "fits": true,
+            "w": 258
+          },
+          {
+            "name": "唐翩翩",
+            "text": "0 部视频 · 1 本相册 · 33 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 14.84,
+            "lh": 14.85,
+            "lines": 1,
+            "scrollW": 258,
+            "clientW": 258,
+            "fits": true,
+            "w": 258
+          },
+          {
+            "name": "小鱼",
+            "text": "0 部视频 · 1 本相册 · 6 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 14.84,
+            "lh": 14.85,
+            "lines": 1,
+            "scrollW": 258,
+            "clientW": 258,
+            "fits": true,
+            "w": 258
+          },
+          {
+            "name": "桜井宁宁",
+            "text": "0 部视频 · 1 本相册 · 6 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 14.84,
+            "lh": 14.85,
+            "lines": 1,
+            "scrollW": 258,
+            "clientW": 258,
+            "fits": true,
+            "w": 258
+          },
+          {
+            "name": "玥儿玥er",
+            "text": "0 部视频 · 1 本相册 · 14 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 14.84,
+            "lh": 14.85,
+            "lines": 1,
+            "scrollW": 258,
+            "clientW": 258,
+            "fits": true,
+            "w": 258
+          },
+          {
+            "name": "Machi马吉",
+            "text": "0 部视频 · 3 本相册 · 381 张照片",
+            "whiteSpace": "nowrap",
+            "lineClamp": "none",
+            "h": 14.84,
+            "lh": 14.85,
+            "lines": 1,
+            "scrollW": 258,
+            "clientW": 258,
+            "fits": true,
+            "w": 258
+          }
+        ],
+        "threeChipCards": [
+          {
+            "name": "娜娜（nana）",
+            "n": 3,
+            "rows": 1,
+            "txts": [
+              "国籍 中国",
+              "族裔 亚洲",
+              "性别 女"
+            ]
+          },
+          {
+            "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+            "n": 3,
+            "rows": 1,
+            "txts": [
+              "身高 158cm",
+              "三围 B87.8 / W63.5 …",
+              "出生 1998-03-18"
+            ]
+          },
+          {
+            "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+            "n": 3,
+            "rows": 1,
+            "txts": [
+              "身高 169cm",
+              "体重 48kg",
+              "三围 B87 / W57 / H8…"
+            ]
+          }
+        ],
+        "names": [
+          "素人",
+          "娜娜（nana）",
+          "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+          "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+          "梨霜儿",
+          "喵小吉 Aeolian-2",
+          "念念",
+          "是小逗逗",
+          "唐翩翩",
+          "小鱼",
+          "桜井宁宁",
+          "玥儿玥er",
+          "Machi马吉"
+        ],
+        "chipEllipsized": [
+          {
+            "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+            "ellipsized": [
+              "身高 158cm",
+              "三围 B87.8 / W63.5 …",
+              "出生 1998-03-18"
+            ]
+          }
+        ]
+      }
+    },
+    "apiPersons": [
+      {
+        "id": 125,
+        "name": "素人"
+      },
+      {
+        "id": 122,
+        "name": "娜娜"
+      },
+      {
+        "id": 124,
+        "name": "深田咏美"
+      },
+      {
+        "id": 123,
+        "name": "河北彩花"
+      },
+      {
+        "id": 111,
+        "name": "念念"
+      },
+      {
+        "id": 112,
+        "name": "Machi马吉"
+      },
+      {
+        "id": 114,
+        "name": "唐翩翩"
+      },
+      {
+        "id": 115,
+        "name": "喵小吉 Aeolian-2"
+      },
+      {
+        "id": 116,
+        "name": "小鱼"
+      },
+      {
+        "id": 117,
+        "name": "是小逗逗"
+      },
+      {
+        "id": 118,
+        "name": "桜井宁宁"
+      },
+      {
+        "id": 119,
+        "name": "梨霜儿"
+      },
+      {
+        "id": 120,
+        "name": "玥儿玥er"
+      }
+    ],
+    "avatar": {
+      "img": 13,
+      "init": 0,
+      "total": 13
+    },
+    "detailRoute": "/media/person/125",
+    "detailCard": {
+      "id": "125",
+      "name": "素人"
+    },
+    "searchResult": [
+      "素人"
+    ]
+  }
+}

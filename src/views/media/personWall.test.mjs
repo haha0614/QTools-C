@@ -15,15 +15,20 @@
  *   6. buildCard：真实索引片段 + 真实 /persons 片段拼出的整卡数据。
  */
 import {
+  CHIP_VALUE_MAX,
+  PLACEHOLDER_NAMES,
+  PLACEHOLDER_NOTE_MARK,
   PROFILE_FIELDS,
   aliasOf,
   avatarOf,
   buildCard,
   buildWallIndex,
+  clipValue,
   countsText,
   explicitAvatarUrl,
   formatDay,
   initialOf,
+  isPlaceholderPerson,
   normalizeAvatarPath,
   personKey,
   profileChips,
@@ -122,7 +127,7 @@ eq(
   { url: '/api/media/thumb/v/v2', kind: 'video' },
   '头像 2 档：无相册有视频 → /api/media/thumb/v/<videoId>'
 )
-eq(avatarOf({ id: 126, name: 'E2E演员' }, null, emptyStats, urls), { url: '', kind: 'initial' }, '头像 3 档：都没有 → 首字占位（url 为空串）')
+eq(avatarOf({ id: 999, name: '空壳人物' }, null, emptyStats, urls), { url: '', kind: 'initial' }, '头像 3 档：都没有 → 首字占位（url 为空串）')
 eq(avatarOf({ id: 1, name: '甲' }, null, MAP.get('念念'), { thumbOf: () => '' }), { url: '', kind: 'initial' }, '降级：thumbOf 返空串 → 继续往下一档，最终首字占位')
 eq(avatarOf({ id: 1, name: '甲' }, null, null, urls), { url: '', kind: 'initial' }, '降级：stats 缺失也不抛错')
 
@@ -172,6 +177,13 @@ eq(profileChips({ heightCm: null, weightKg: '', measurements: '   ', nationality
 eq(profileChips({ careerStart: 2020, fakeBoobs: false }), ['出道 2020 年', '隆胸 否'], '资料 chip：年份与布尔有单位 / 有正反')
 eq(profileChips({}, 3), [], '资料 chip：空详情 → 空数组')
 eq(profileChips({ twitter: 'x', instagram: 'y', tattoos: 't', piercings: 'p' }, 2), ['纹身 t', '穿孔 p'], '资料 chip：max 参数生效（长文本与社交排在后面）')
+// P5.60：卡片 chip 只排一行，超长值截断（详情页 profileFacts 不截断）
+eq(clipValue('B90/W60/H90', CHIP_VALUE_MAX), 'B90/W60/H90', '截断：不超过上限原样返回')
+eq(clipValue('B87.8 / W63.5 / H91.1（2020 年時点）', CHIP_VALUE_MAX), 'B87.8 / W63.5 …', '截断：超长值取前 14 字加省略号')
+eq(clipValue('😀😀😀😀', 2), '😀😀…', '截断：按 rune 截，不切坏 emoji')
+eq(clipValue('abc', 0), 'abc', '截断：上限 <=0 = 不限')
+eq(profileChips({ measurements: 'B87.8 / W63.5 / H91.1（2020 年時点）' }), ['三围 B87.8 / W63.5 …'], '资料 chip：卡片层截断生效')
+eq(profileFacts({ measurements: 'B87.8 / W63.5 / H91.1（2020 年時点）' }), [{ key: 'measurements', label: '三围', value: 'B87.8 / W63.5 / H91.1（2020 年時点）' }], '资料 facts：详情页不截断（原文全给）')
 
 /* --------------------------- 4b. profileFacts（P5.52 详情页）--------------------------- */
 
@@ -237,9 +249,31 @@ eq(NO_IDX.counts, '14 部视频 · 0 本相册 · 0 张照片', '整卡：索引
 eq(NO_IDX.recent, '', '整卡：无 mtime → 不渲染「最近」行')
 eq(NO_IDX.alias, 'Nana', '整卡：别名来自字典')
 
-const EMPTY = buildCard({ id: 126, name: 'E2E演员' }, { stats: emptyStats, urls })
+const EMPTY = buildCard({ id: 999, name: '空壳人物' }, { stats: emptyStats, urls })
 eq(EMPTY.counts, '', '整卡：全空人物 → 数量行空串（不留空洞）')
 eq(EMPTY.chips, [], '整卡：全空人物 → 无 chip')
+
+/* ------------------------- 7. 非真人实体过滤（P5.60） ------------------------- */
+
+// 后端标记优先：新后端在 /persons 里给 isPlaceholder，前端不再猜名字
+eq(isPlaceholderPerson({ id: 113, name: '未归类', isPlaceholder: true }), true, '占位：后端 isPlaceholder=true 直接认')
+eq(isPlaceholderPerson({ id: 113, name: '随便改名', isPlaceholder: true }), true, '占位：改名也认（后端标记不看名字）')
+// 后端给了 false 就以它为准（名字恰好叫「未归类」的真人也该展示 —— 显式 false 是更强的信号）
+eq(isPlaceholderPerson({ id: 200, name: '未归类', isPlaceholder: false }), false, '占位：后端显式 false → 不当占位')
+// 老后端没有这个键：按名字兜底（方案 B 的规则，收在同一个函数里）
+eq(isPlaceholderPerson({ id: 113, name: '未归类' }), true, '占位：老后端无该字段 → 按名字兜底')
+eq(isPlaceholderPerson({ id: 113, name: ' 未归类 ' }), true, '占位：名字带空格也认')
+// note 标记：改名字之后仍认得出（库里给「未归类」的 note 打了 [placeholder]）
+eq(isPlaceholderPerson({ name: '归档容器', note: '非真实人物（库内占位分组）' + PLACEHOLDER_NOTE_MARK }), true, '占位：note 带标记 → 认')
+// 「素人」是有业务含义的兜底人物，**必须留下**
+eq(isPlaceholderPerson({ id: 125, name: '素人', note: '非真实人物（库内兜底行）' }), false, '占位：素人不排除（无演员视频的兜底人物）')
+eq(isPlaceholderPerson({ id: 122, name: '娜娜' }), false, '占位：普通真人不排除')
+eq(isPlaceholderPerson(null), false, '占位：空值不抛错')
+eq(isPlaceholderPerson({}), false, '占位：空对象不抛错')
+eq(PLACEHOLDER_NAMES, ['未归类'], '占位：容器名清单只有「未归类」')
+// buildCard 不受过滤影响：占位实体照样能拼出卡片（过滤是页面的事，不是拼装的事）
+const UNG = buildCard({ id: 113, name: '未归类' }, { stats: MAP.get('未归类'), urls })
+eq(UNG.name, '未归类', '占位：buildCard 仍能拼出「未归类」卡片（过滤在 visible 里做）')
 
 /* ---------------------------------- 结果 ---------------------------------- */
 

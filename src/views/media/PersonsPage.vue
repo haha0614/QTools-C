@@ -20,8 +20,8 @@
   单测见 personWall.test.mjs —— 页面这里只发请求与渲染。
   头像四级优先：avatarPath → 名下第一个相册的封面（/api/media/thumb/p/<albumId>/0000）→
                 名下第一个视频的封面（/api/media/thumb/v/<videoId>）→ 首字彩色圆底占位（加载失败同样回落）。
-  布局：网格 minmax(200px, 1fr) + grid-auto-rows: 1fr —— 整面墙等高；chip 区单行不换行（overflow 裁掉），
-        所以卡片不会因为某人资料多两行而撑破网格；没有数量的卡片不渲染那一行（不留空洞）。
+  布局：网格 minmax(280px, 1fr) + grid-auto-rows: 1fr —— 整面墙等高；数量行单行不折，
+        chip 区可换行不裁切；没有数量的卡片不渲染那一行（不留空洞）。
   埋点：沿用 useMediaTrack 的 pageView / dwell（与视频库、图片站同一套 page_view 口径）。
 
   P5.48：头像支持**手动指定**。卡片头像 hover 出现小「换」按钮 → PersonAvatarDialog 两 tab
@@ -30,6 +30,17 @@
          头像优先级变成五级：手动 avatarUrl（后端解析）→ 历史 avatarPath → 相册首图 → 视频封面 → 首字占位，
          拼装规则仍然只在 personWall.js 一处。
          入口只在编辑策略 full 档渲染（off / local 档连「换」按钮都不出现）。
+
+  P5.60（用户反馈 1 + 3）：
+    · 卡片「加宽」而不是「加高」：列宽 200 → 280，卡片回紧凑（min-height 108 → 84），
+      数量行改单行 nowrap（原来 -webkit-line-clamp: 2 就是用户说的「还是会折行」）；
+      ≤430px 收成单列，窄屏数量行也不会被省略号切。
+    · 「未归类」不再出现在人物墙：它是**相册归档容器**（名下 a158 images / a159 写真），不是人。
+      判定在 personWall.isPlaceholderPerson（后端 isPlaceholder 优先，老后端按名字 + note 兜底）。
+    · 「素人」**保留**：它是无演员视频的兜底人物（MediaPersonServiceImpl.AMATEUR_NAME），有业务含义，
+      note 补了一句说明（见 QTools/doc/p560_person_placeholder_cleanup.sql）。
+    · 「E2E演员」是端到端测试造的空壳人物（无相册 / 无视频 / 无引用），按测试残留从库里删除，
+      备份见 QTools/doc/backup/media_person_before_p560_*.sql。
 -->
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
@@ -37,7 +48,7 @@ import { useRouter } from 'vue-router'
 import { useMediaApi } from '@/composables/useMediaApi'
 import { useMediaTrack } from '@/composables/useMediaTrack'
 // P5.45：卡片信息（头像 / 数量 / 资料 chip / 最近更新）的唯一实现在 personWall.js
-import { buildCard, buildWallIndex, explicitAvatarUrl, personKey } from './personWall.js'
+import { buildCard, buildWallIndex, explicitAvatarUrl, isPlaceholderPerson, personKey } from './personWall.js'
 // P5.48：手动头像 —— 弹层 + 两个写接口 + 站端编辑策略闸门 + 页面级提示
 import PersonAvatarDialog from './PersonAvatarDialog.vue'
 import PageToast from './PageToast.vue'
@@ -99,9 +110,14 @@ function sortPersons(list) {
   })
 }
 
+/**
+ * P5.60：先剔掉**非真人占位实体**（「未归类」这类相册归档容器），再排序 / 过滤 / 渲染。
+ * 判定只在 personWall.isPlaceholderPerson 一处（后端 isPlaceholder 优先，老后端按名字 + note 标记兜底），
+ * 页面这里不做第二套规则；「素人」不是占位实体，照常展示。
+ */
 const visible = computed(() => {
   const q = keyword.value.trim().toLowerCase()
-  const list = sortPersons(persons.value)
+  const list = sortPersons(persons.value.filter((p) => !isPlaceholderPerson(p)))
   if (!q) return list
   return list.filter((p) => {
     const name = String((p && p.name) || '').toLowerCase()
@@ -504,12 +520,15 @@ onBeforeUnmount(() => {
   color: var(--fg-dim);
 }
 
-/* P5.45：卡片信息变多（头像 + 名字 + 数量 + chip + 最近更新），最小列宽 168 → 200。
-   grid-auto-rows: 1fr 让**整面墙**的行等高（不是只同排等高）—— 某人多一行 chip 时
-   其它卡片跟着长高到同一高度，网格始终是整齐的棋盘，不会出现高低错落。 */
+/* P5.60：用户口径「要加宽，不是加高」—— 最小列宽 200 → 280（P5.45 的 168 → 200 是同一路调整）。
+   280px 一列 = 12px 内边距 ×2 + 56px 头像 + 10px gap 之后还有 190px 文本宽，
+   「0 部视频 · 144 本相册 · 9017 张照片」这种最长实测文案（约 181px @11.5px）单行放得下，
+   所以数量行不再需要折行、卡片也不必为了容纳两行而拉高。
+   grid-auto-rows: 1fr 让**整面墙**的行等高（不是只同排等高）—— 某张卡因 chip 换行变高时
+   其它卡片跟着长到同一高度，网格始终是整齐的棋盘，不会出现高低错落。 */
 .pp-wall {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   grid-auto-rows: 1fr;
   gap: 12px;
 }
@@ -519,10 +538,12 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 10px;
   height: 100%;
-  /* P5.55：卡片拉长（84 → 108）—— chip 改换行后最多 2 行，加上名字 / 数量 / 最近更新，
-     84px 装不下（3 个 chip 必被裁）。拉高比「裁 chip」更划算：信息本来就该看完。 */
-  min-height: 108px;
-  padding: 12px;
+  /* P5.60：卡片回到紧凑高度（P5.55 的 108 → 84）—— 加宽后数量行只有一行、chip 也基本一行，
+     自然内容高 ≈ 92px（名字 20 + 数量 16 + chip 16 + 最近 14 + 行距 9 + 上下内边距 20），
+     84 只是下限（内容更高时由内容撑、由 grid-auto-rows: 1fr 统一拉平），
+     不再靠 min-height 硬撑出「空一大截」的观感。 */
+  min-height: 84px;
+  padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius, 10px);
   background: var(--bg-2);
@@ -632,38 +653,36 @@ onBeforeUnmount(() => {
   color: var(--fg-dim);
 }
 
-/* 数量行：允许折成 2 行 —— 200px 一列 + 48px 头像只剩约 150px 文本宽，
-   「0 部视频 · 144 本相册 · 9017 张照片」单行必被省略号吃掉「张照片」（数字就白给了）。
-   所以放到最多 2 行再裁；等高由 .pp-wall 的 grid-auto-rows: 1fr 统一抬到最高的那张，
-   不会出现「有的卡片 2 行、有的 1 行」的高低错落。 */
+/* 数量行（P5.60）：**单行、不折**—— 加宽到 280px 一列后最长实测文案也放得下（见 .pp-wall 注释）。
+   以前是 -webkit-line-clamp: 2（允许折两行），那正是用户说的「还是会折行」；
+   现在 white-space: nowrap 明令不折，省略号只是 ≤430px 单列窄屏的超长兜底（正常情况下 scrollWidth == clientWidth）。
+   等高仍由 .pp-wall 的 grid-auto-rows: 1fr 统一。 */
 .pw-counts {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
   font-size: 11.5px;
   line-height: 1.35;
   color: var(--fg-dim);
   font-variant-numeric: tabular-nums;
-  white-space: normal;
+  white-space: nowrap;
   overflow: hidden;
-  overflow-wrap: anywhere;
+  text-overflow: ellipsis;
 }
 
-/* chip 区（P5.55）：改成**可换行、不裁切** —— 用户要的是「3 个 chip 都能看见」。
-   以前是 flex-nowrap + overflow:hidden，200px 一列时第 3 个 chip 直接被裁掉半个。
-   现在塞不下就折到第二行；卡片最小高度已抬到 108px，两行 chip 不会把卡片撑破。
+/* chip 区（P5.60）：**单行**（flex-nowrap）—— 折行会让卡片长高，而那正是用户反对的
+   「拉长=变高」。加宽到 280px 后 3 个 chip 基本一行放得下；个别超长值已在
+   personWall.profileChips 里截到 14 字，真还放不下就让 chip 自己压缩、文字打省略号
+   （title 里有原文、详情页给全量），容器绝不折行。
    「最多 3 个」仍由 personWall.profileChips 决定，容器只负责排版。 */
 .pw-chips {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 4px;
-  row-gap: 3px;
   min-width: 0;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .pw-chip {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
   max-width: 100%;
   padding: 0 6px;
   border: 1px solid var(--line);
@@ -711,6 +730,16 @@ onBeforeUnmount(() => {
 
   .pw-counts {
     font-size: 11px;
+  }
+}
+
+/* P5.60：≤430px（手机竖屏，375 档）收成**单列** —— 两列时每张卡只有约 166px，
+   「X 部视频 · Y 本相册 · Z 张照片」必然被省略号切掉（用户抱怨的那件事在窄屏同样成立）。
+   单列 ≈ 343px 一列，文本宽 ≈ 271px，数量行照样单行完整；页面仍无横向滚动。 */
+@media (max-width: 430px) {
+  .pp-wall {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
   }
 }
 </style>
