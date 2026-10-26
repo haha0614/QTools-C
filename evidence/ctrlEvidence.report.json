@@ -1,0 +1,4200 @@
+{
+  "passed": 235,
+  "failures": [],
+  "report": {
+    "page": "http://127.0.0.1:5199/evidence/playerHarness.html",
+    "chrome": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "runs": [
+      {
+        "theme": "dark",
+        "viewport": {
+          "w": 1600,
+          "h": 1000
+        },
+        "devicePixelRatio": 1,
+        "tags": {
+          "pTagsInDom": false,
+          "ptagInDom": false
+        },
+        "stage": {
+          "now": {
+            "headH": 64.33,
+            "mainH": 895.88,
+            "fsWrapH": 895.88,
+            "stageH": 895.88,
+            "gapToViewportBottom": 0
+          },
+          "withOldTagsBar": {
+            "headH": 64.33,
+            "mainH": 895.88,
+            "fsWrapH": 851.69,
+            "stageH": 851.69,
+            "gapToViewportBottom": 44.19
+          },
+          "oldTagsBarH": 44.19,
+          "deltaH": 44.19,
+          "deltaFsWrapH": 44.19,
+          "stableAfterRemoval": true
+        },
+        "bar": {
+          "backgroundColor": "rgba(0, 0, 0, 0.2)",
+          "backgroundAlpha": 0.2,
+          "backgroundImage": "linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))",
+          "veilAlpha": 0,
+          "backdropFilter": "blur(9px) saturate(1.05)",
+          "borderTop": "1px solid rgba(255, 255, 255, 0.1)",
+          "padding": "8px 14px",
+          "composedRGB": "204,204,204",
+          "rect": {
+            "x": 0,
+            "y": 948,
+            "w": 1585,
+            "h": 52
+          },
+          "controls": [
+            {
+              "sel": ".p-btn-play",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-btn",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-seek-now",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            },
+            {
+              "sel": ".p-ab-text",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            }
+          ],
+          "looksLikeSolidBand": false
+        },
+        "buttonsPrimary": {
+          "total": 8,
+          "list": [
+            {
+              "cls": "p-btn p-btn-play",
+              "text": "▶",
+              "aria": "播放",
+              "title": "播放 / 暂停（空格）",
+              "rect": {
+                "x": 14,
+                "y": 959.5,
+                "w": 40,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "🔊",
+              "aria": "静音",
+              "title": "静音（M）",
+              "rect": {
+                "x": 60,
+                "y": 959.5,
+                "w": 35.86,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏴",
+              "aria": "上一帧",
+              "title": "上一帧（快捷键 , 或 Shift+←）",
+              "rect": {
+                "x": 1347,
+                "y": 959.5,
+                "w": 31,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏵",
+              "aria": "下一帧",
+              "title": "下一帧（快捷键 . 或 Shift+→）",
+              "rect": {
+                "x": 1382,
+                "y": 959.5,
+                "w": 31,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一部",
+              "title": "上一部（快捷键 P）",
+              "rect": {
+                "x": 1426,
+                "y": 959.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一部",
+              "title": "下一部（快捷键 N）",
+              "rect": {
+                "x": 1462,
+                "y": 959.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn p-gear",
+              "text": "⚙",
+              "aria": "播放设置",
+              "title": "播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键",
+              "rect": {
+                "x": 1505,
+                "y": 959.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⛶",
+              "aria": "全屏",
+              "title": "全屏（F）",
+              "rect": {
+                "x": 1541,
+                "y": 959.5,
+                "w": 30,
+                "h": 30
+              }
+            }
+          ]
+        },
+        "head": {
+          "titleFontWeight": "700",
+          "titleFontSize": "15.5px",
+          "titleOverflow": "ellipsis",
+          "titleRect": {
+            "x": 16,
+            "y": 10,
+            "w": 1208.42,
+            "h": 20.14
+          },
+          "metaItems": 6,
+          "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
+          "metaSeparator": "\"·\"",
+          "metaSeparatorMargin": "0px 7px",
+          "groups": 3,
+          "buttons": [
+            {
+              "text": "☆ 收藏",
+              "h": 30,
+              "radius": "8px",
+              "title": "收藏 / 取消收藏（快捷键 S）",
+              "aria": "收藏"
+            },
+            {
+              "text": "‹ 上一部",
+              "h": 30,
+              "radius": "8px",
+              "title": "上一部（快捷键 P）",
+              "aria": ""
+            },
+            {
+              "text": "下一部 ›",
+              "h": 30,
+              "radius": "8px",
+              "title": "下一部（快捷键 N）",
+              "aria": ""
+            },
+            {
+              "text": "关闭 E c",
+              "h": 30,
+              "radius": "8px",
+              "title": "关闭播放器（Esc）",
+              "aria": ""
+            }
+          ],
+          "separators": 2,
+          "headRect": {
+            "x": 0,
+            "y": 0,
+            "w": 1585,
+            "h": 64.33
+          }
+        },
+        "settingsOpen": false,
+        "settings": {
+          "open": false
+        },
+        "overflow": {
+          "docScrollW": 1585,
+          "docClientW": 1600,
+          "ctrlScrollW": 1557,
+          "ctrlClientW": 1557,
+          "headScrollW": 1585,
+          "headClientW": 1585,
+          "horizontalOverflow": false
+        },
+        "toggle": {
+          "sideOpen": false,
+          "rect": {
+            "x": 1565,
+            "y": 520.06,
+            "right": 1585,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 1585,
+          "sideW": 0,
+          "mainRight": 1585,
+          "viewportRight": 1600,
+          "aria": "展开信息栏",
+          "pressed": "false",
+          "text": "‹"
+        },
+        "kept": {
+          "seekInput": true,
+          "markerLane": true,
+          "markerTicks": 2,
+          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecodeAlwaysVisible": true,
+          "abReadout": "A/B",
+          "volumeSlider": true,
+          "previewLayer": false,
+          "helpButton": false,
+          "fullscreenButton": true
+        },
+        "shot": "E:\\111\\project\\QTools\\QTools-C\\src\\views\\media\\video\\../../../../evidence/shot-wide-1600x1000-dark.png"
+      },
+      {
+        "theme": "light",
+        "viewport": {
+          "w": 1600,
+          "h": 1000
+        },
+        "devicePixelRatio": 1,
+        "tags": {
+          "pTagsInDom": false,
+          "ptagInDom": false
+        },
+        "stage": {
+          "now": {
+            "headH": 64.33,
+            "mainH": 895.88,
+            "fsWrapH": 895.88,
+            "stageH": 895.88,
+            "gapToViewportBottom": 0
+          },
+          "withOldTagsBar": {
+            "headH": 64.33,
+            "mainH": 895.88,
+            "fsWrapH": 851.69,
+            "stageH": 851.69,
+            "gapToViewportBottom": 44.19
+          },
+          "oldTagsBarH": 44.19,
+          "deltaH": 44.19,
+          "deltaFsWrapH": 44.19,
+          "stableAfterRemoval": true
+        },
+        "bar": {
+          "backgroundColor": "rgba(0, 0, 0, 0.18)",
+          "backgroundAlpha": 0.18,
+          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06))",
+          "veilAlpha": 0.06,
+          "backdropFilter": "blur(9px) saturate(1.05)",
+          "borderTop": "1px solid rgba(0, 0, 0, 0.08)",
+          "padding": "8px 14px",
+          "composedRGB": "212,212,212",
+          "rect": {
+            "x": 0,
+            "y": 948,
+            "w": 1585,
+            "h": 52
+          },
+          "controls": [
+            {
+              "sel": ".p-btn-play",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-btn",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-seek-now",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            },
+            {
+              "sel": ".p-ab-text",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            }
+          ],
+          "looksLikeSolidBand": false
+        },
+        "buttonsPrimary": {
+          "total": 8,
+          "list": [
+            {
+              "cls": "p-btn p-btn-play",
+              "text": "▶",
+              "aria": "播放",
+              "title": "播放 / 暂停（空格）",
+              "rect": {
+                "x": 14,
+                "y": 959.5,
+                "w": 40,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "🔊",
+              "aria": "静音",
+              "title": "静音（M）",
+              "rect": {
+                "x": 60,
+                "y": 959.5,
+                "w": 35.86,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏴",
+              "aria": "上一帧",
+              "title": "上一帧（快捷键 , 或 Shift+←）",
+              "rect": {
+                "x": 1347,
+                "y": 959.5,
+                "w": 31,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏵",
+              "aria": "下一帧",
+              "title": "下一帧（快捷键 . 或 Shift+→）",
+              "rect": {
+                "x": 1382,
+                "y": 959.5,
+                "w": 31,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一部",
+              "title": "上一部（快捷键 P）",
+              "rect": {
+                "x": 1426,
+                "y": 959.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一部",
+              "title": "下一部（快捷键 N）",
+              "rect": {
+                "x": 1462,
+                "y": 959.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn p-gear",
+              "text": "⚙",
+              "aria": "播放设置",
+              "title": "播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键",
+              "rect": {
+                "x": 1505,
+                "y": 959.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⛶",
+              "aria": "全屏",
+              "title": "全屏（F）",
+              "rect": {
+                "x": 1541,
+                "y": 959.5,
+                "w": 30,
+                "h": 30
+              }
+            }
+          ]
+        },
+        "head": {
+          "titleFontWeight": "700",
+          "titleFontSize": "15.5px",
+          "titleOverflow": "ellipsis",
+          "titleRect": {
+            "x": 16,
+            "y": 10,
+            "w": 1208.42,
+            "h": 20.14
+          },
+          "metaItems": 6,
+          "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
+          "metaSeparator": "\"·\"",
+          "metaSeparatorMargin": "0px 7px",
+          "groups": 3,
+          "buttons": [
+            {
+              "text": "☆ 收藏",
+              "h": 30,
+              "radius": "8px",
+              "title": "收藏 / 取消收藏（快捷键 S）",
+              "aria": "收藏"
+            },
+            {
+              "text": "‹ 上一部",
+              "h": 30,
+              "radius": "8px",
+              "title": "上一部（快捷键 P）",
+              "aria": ""
+            },
+            {
+              "text": "下一部 ›",
+              "h": 30,
+              "radius": "8px",
+              "title": "下一部（快捷键 N）",
+              "aria": ""
+            },
+            {
+              "text": "关闭 E c",
+              "h": 30,
+              "radius": "8px",
+              "title": "关闭播放器（Esc）",
+              "aria": ""
+            }
+          ],
+          "separators": 2,
+          "headRect": {
+            "x": 0,
+            "y": 0,
+            "w": 1585,
+            "h": 64.33
+          }
+        },
+        "settingsOpen": false,
+        "settings": {
+          "open": false
+        },
+        "overflow": {
+          "docScrollW": 1585,
+          "docClientW": 1600,
+          "ctrlScrollW": 1557,
+          "ctrlClientW": 1557,
+          "headScrollW": 1585,
+          "headClientW": 1585,
+          "horizontalOverflow": false
+        },
+        "toggle": {
+          "sideOpen": false,
+          "rect": {
+            "x": 1565,
+            "y": 520.06,
+            "right": 1585,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 1585,
+          "sideW": 0,
+          "mainRight": 1585,
+          "viewportRight": 1600,
+          "aria": "展开信息栏",
+          "pressed": "false",
+          "text": "‹"
+        },
+        "kept": {
+          "seekInput": true,
+          "markerLane": true,
+          "markerTicks": 2,
+          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecodeAlwaysVisible": true,
+          "abReadout": "A/B",
+          "volumeSlider": true,
+          "previewLayer": false,
+          "helpButton": false,
+          "fullscreenButton": true
+        },
+        "shot": "E:\\111\\project\\QTools\\QTools-C\\src\\views\\media\\video\\../../../../evidence/shot-wide-1600x1000-light.png"
+      },
+      {
+        "theme": "dark",
+        "viewport": {
+          "w": 1000,
+          "h": 800
+        },
+        "devicePixelRatio": 1,
+        "tags": {
+          "pTagsInDom": false,
+          "ptagInDom": false
+        },
+        "stage": {
+          "now": {
+            "headH": 64.33,
+            "mainH": 695.88,
+            "fsWrapH": 695.88,
+            "stageH": 695.88,
+            "gapToViewportBottom": 0
+          },
+          "withOldTagsBar": {
+            "headH": 64.33,
+            "mainH": 695.88,
+            "fsWrapH": 651.69,
+            "stageH": 651.69,
+            "gapToViewportBottom": 44.19
+          },
+          "oldTagsBarH": 44.19,
+          "deltaH": 44.19,
+          "deltaFsWrapH": 44.19,
+          "stableAfterRemoval": true
+        },
+        "bar": {
+          "backgroundColor": "rgba(0, 0, 0, 0.2)",
+          "backgroundAlpha": 0.2,
+          "backgroundImage": "linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))",
+          "veilAlpha": 0,
+          "backdropFilter": "blur(9px) saturate(1.05)",
+          "borderTop": "1px solid rgba(255, 255, 255, 0.1)",
+          "padding": "8px 14px",
+          "composedRGB": "204,204,204",
+          "rect": {
+            "x": 0,
+            "y": 748,
+            "w": 985,
+            "h": 52
+          },
+          "controls": [
+            {
+              "sel": ".p-btn-play",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-btn",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-seek-now",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            },
+            {
+              "sel": ".p-ab-text",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            }
+          ],
+          "looksLikeSolidBand": false
+        },
+        "buttonsPrimary": {
+          "total": 8,
+          "list": [
+            {
+              "cls": "p-btn p-btn-play",
+              "text": "▶",
+              "aria": "播放",
+              "title": "播放 / 暂停（空格）",
+              "rect": {
+                "x": 14,
+                "y": 759.5,
+                "w": 40,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "🔊",
+              "aria": "静音",
+              "title": "静音（M）",
+              "rect": {
+                "x": 60,
+                "y": 759.5,
+                "w": 35.86,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏴",
+              "aria": "上一帧",
+              "title": "上一帧（快捷键 , 或 Shift+←）",
+              "rect": {
+                "x": 747,
+                "y": 759.5,
+                "w": 31,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏵",
+              "aria": "下一帧",
+              "title": "下一帧（快捷键 . 或 Shift+→）",
+              "rect": {
+                "x": 782,
+                "y": 759.5,
+                "w": 31,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一部",
+              "title": "上一部（快捷键 P）",
+              "rect": {
+                "x": 826,
+                "y": 759.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一部",
+              "title": "下一部（快捷键 N）",
+              "rect": {
+                "x": 862,
+                "y": 759.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn p-gear",
+              "text": "⚙",
+              "aria": "播放设置",
+              "title": "播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键",
+              "rect": {
+                "x": 905,
+                "y": 759.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⛶",
+              "aria": "全屏",
+              "title": "全屏（F）",
+              "rect": {
+                "x": 941,
+                "y": 759.5,
+                "w": 30,
+                "h": 30
+              }
+            }
+          ]
+        },
+        "head": {
+          "titleFontWeight": "700",
+          "titleFontSize": "15.5px",
+          "titleOverflow": "ellipsis",
+          "titleRect": {
+            "x": 16,
+            "y": 10,
+            "w": 608.42,
+            "h": 20.14
+          },
+          "metaItems": 6,
+          "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
+          "metaSeparator": "\"·\"",
+          "metaSeparatorMargin": "0px 7px",
+          "groups": 3,
+          "buttons": [
+            {
+              "text": "☆ 收藏",
+              "h": 30,
+              "radius": "8px",
+              "title": "收藏 / 取消收藏（快捷键 S）",
+              "aria": "收藏"
+            },
+            {
+              "text": "‹ 上一部",
+              "h": 30,
+              "radius": "8px",
+              "title": "上一部（快捷键 P）",
+              "aria": ""
+            },
+            {
+              "text": "下一部 ›",
+              "h": 30,
+              "radius": "8px",
+              "title": "下一部（快捷键 N）",
+              "aria": ""
+            },
+            {
+              "text": "关闭 E c",
+              "h": 30,
+              "radius": "8px",
+              "title": "关闭播放器（Esc）",
+              "aria": ""
+            }
+          ],
+          "separators": 2,
+          "headRect": {
+            "x": 0,
+            "y": 0,
+            "w": 985,
+            "h": 64.33
+          }
+        },
+        "settingsOpen": false,
+        "settings": {
+          "open": false
+        },
+        "overflow": {
+          "docScrollW": 985,
+          "docClientW": 1000,
+          "ctrlScrollW": 957,
+          "ctrlClientW": 957,
+          "headScrollW": 985,
+          "headClientW": 985,
+          "horizontalOverflow": false
+        },
+        "toggle": {
+          "sideOpen": false,
+          "rect": {
+            "x": 965,
+            "y": 420.06,
+            "right": 985,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 985,
+          "sideW": 420,
+          "mainRight": 985,
+          "viewportRight": 1000,
+          "aria": "展开信息栏",
+          "pressed": "false",
+          "text": "‹"
+        },
+        "kept": {
+          "seekInput": true,
+          "markerLane": true,
+          "markerTicks": 2,
+          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecodeAlwaysVisible": true,
+          "abReadout": "A/B",
+          "volumeSlider": true,
+          "previewLayer": false,
+          "helpButton": false,
+          "fullscreenButton": true
+        },
+        "shot": "E:\\111\\project\\QTools\\QTools-C\\src\\views\\media\\video\\../../../../evidence/shot-mid-1000x800-dark.png"
+      },
+      {
+        "theme": "light",
+        "viewport": {
+          "w": 1000,
+          "h": 800
+        },
+        "devicePixelRatio": 1,
+        "tags": {
+          "pTagsInDom": false,
+          "ptagInDom": false
+        },
+        "stage": {
+          "now": {
+            "headH": 64.33,
+            "mainH": 695.88,
+            "fsWrapH": 695.88,
+            "stageH": 695.88,
+            "gapToViewportBottom": 0
+          },
+          "withOldTagsBar": {
+            "headH": 64.33,
+            "mainH": 695.88,
+            "fsWrapH": 651.69,
+            "stageH": 651.69,
+            "gapToViewportBottom": 44.19
+          },
+          "oldTagsBarH": 44.19,
+          "deltaH": 44.19,
+          "deltaFsWrapH": 44.19,
+          "stableAfterRemoval": true
+        },
+        "bar": {
+          "backgroundColor": "rgba(0, 0, 0, 0.18)",
+          "backgroundAlpha": 0.18,
+          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06))",
+          "veilAlpha": 0.06,
+          "backdropFilter": "blur(9px) saturate(1.05)",
+          "borderTop": "1px solid rgba(0, 0, 0, 0.08)",
+          "padding": "8px 14px",
+          "composedRGB": "212,212,212",
+          "rect": {
+            "x": 0,
+            "y": 748,
+            "w": 985,
+            "h": 52
+          },
+          "controls": [
+            {
+              "sel": ".p-btn-play",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-btn",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-seek-now",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            },
+            {
+              "sel": ".p-ab-text",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            }
+          ],
+          "looksLikeSolidBand": false
+        },
+        "buttonsPrimary": {
+          "total": 8,
+          "list": [
+            {
+              "cls": "p-btn p-btn-play",
+              "text": "▶",
+              "aria": "播放",
+              "title": "播放 / 暂停（空格）",
+              "rect": {
+                "x": 14,
+                "y": 759.5,
+                "w": 40,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "🔊",
+              "aria": "静音",
+              "title": "静音（M）",
+              "rect": {
+                "x": 60,
+                "y": 759.5,
+                "w": 35.86,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏴",
+              "aria": "上一帧",
+              "title": "上一帧（快捷键 , 或 Shift+←）",
+              "rect": {
+                "x": 747,
+                "y": 759.5,
+                "w": 31,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏵",
+              "aria": "下一帧",
+              "title": "下一帧（快捷键 . 或 Shift+→）",
+              "rect": {
+                "x": 782,
+                "y": 759.5,
+                "w": 31,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一部",
+              "title": "上一部（快捷键 P）",
+              "rect": {
+                "x": 826,
+                "y": 759.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一部",
+              "title": "下一部（快捷键 N）",
+              "rect": {
+                "x": 862,
+                "y": 759.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn p-gear",
+              "text": "⚙",
+              "aria": "播放设置",
+              "title": "播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键",
+              "rect": {
+                "x": 905,
+                "y": 759.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⛶",
+              "aria": "全屏",
+              "title": "全屏（F）",
+              "rect": {
+                "x": 941,
+                "y": 759.5,
+                "w": 30,
+                "h": 30
+              }
+            }
+          ]
+        },
+        "head": {
+          "titleFontWeight": "700",
+          "titleFontSize": "15.5px",
+          "titleOverflow": "ellipsis",
+          "titleRect": {
+            "x": 16,
+            "y": 10,
+            "w": 608.42,
+            "h": 20.14
+          },
+          "metaItems": 6,
+          "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
+          "metaSeparator": "\"·\"",
+          "metaSeparatorMargin": "0px 7px",
+          "groups": 3,
+          "buttons": [
+            {
+              "text": "☆ 收藏",
+              "h": 30,
+              "radius": "8px",
+              "title": "收藏 / 取消收藏（快捷键 S）",
+              "aria": "收藏"
+            },
+            {
+              "text": "‹ 上一部",
+              "h": 30,
+              "radius": "8px",
+              "title": "上一部（快捷键 P）",
+              "aria": ""
+            },
+            {
+              "text": "下一部 ›",
+              "h": 30,
+              "radius": "8px",
+              "title": "下一部（快捷键 N）",
+              "aria": ""
+            },
+            {
+              "text": "关闭 E c",
+              "h": 30,
+              "radius": "8px",
+              "title": "关闭播放器（Esc）",
+              "aria": ""
+            }
+          ],
+          "separators": 2,
+          "headRect": {
+            "x": 0,
+            "y": 0,
+            "w": 985,
+            "h": 64.33
+          }
+        },
+        "settingsOpen": false,
+        "settings": {
+          "open": false
+        },
+        "overflow": {
+          "docScrollW": 985,
+          "docClientW": 1000,
+          "ctrlScrollW": 957,
+          "ctrlClientW": 957,
+          "headScrollW": 985,
+          "headClientW": 985,
+          "horizontalOverflow": false
+        },
+        "toggle": {
+          "sideOpen": false,
+          "rect": {
+            "x": 965,
+            "y": 420.06,
+            "right": 985,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 985,
+          "sideW": 420,
+          "mainRight": 985,
+          "viewportRight": 1000,
+          "aria": "展开信息栏",
+          "pressed": "false",
+          "text": "‹"
+        },
+        "kept": {
+          "seekInput": true,
+          "markerLane": true,
+          "markerTicks": 2,
+          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecodeAlwaysVisible": true,
+          "abReadout": "A/B",
+          "volumeSlider": true,
+          "previewLayer": false,
+          "helpButton": false,
+          "fullscreenButton": true
+        },
+        "shot": "E:\\111\\project\\QTools\\QTools-C\\src\\views\\media\\video\\../../../../evidence/shot-mid-1000x800-light.png"
+      },
+      {
+        "theme": "dark",
+        "viewport": {
+          "w": 760,
+          "h": 900
+        },
+        "devicePixelRatio": 1,
+        "tags": {
+          "pTagsInDom": false,
+          "ptagInDom": false
+        },
+        "stage": {
+          "now": {
+            "headH": 96.38,
+            "mainH": 763.83,
+            "fsWrapH": 763.83,
+            "stageH": 763.83,
+            "gapToViewportBottom": 0
+          },
+          "withOldTagsBar": {
+            "headH": 96.38,
+            "mainH": 763.83,
+            "fsWrapH": 719.64,
+            "stageH": 719.64,
+            "gapToViewportBottom": 44.19
+          },
+          "oldTagsBarH": 44.19,
+          "deltaH": 44.19,
+          "deltaFsWrapH": 44.19,
+          "stableAfterRemoval": true
+        },
+        "bar": {
+          "backgroundColor": "rgba(0, 0, 0, 0.2)",
+          "backgroundAlpha": 0.2,
+          "backgroundImage": "linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))",
+          "veilAlpha": 0,
+          "backdropFilter": "blur(9px) saturate(1.05)",
+          "borderTop": "1px solid rgba(255, 255, 255, 0.1)",
+          "padding": "6px 10px 10px",
+          "composedRGB": "204,204,204",
+          "rect": {
+            "x": 0,
+            "y": 802,
+            "w": 745,
+            "h": 98
+          },
+          "controls": [
+            {
+              "sel": ".p-btn-play",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-btn",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-seek-now",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            },
+            {
+              "sel": ".p-ab-text",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            }
+          ],
+          "looksLikeSolidBand": false
+        },
+        "buttonsPrimary": {
+          "total": 8,
+          "list": [
+            {
+              "cls": "p-btn p-btn-play",
+              "text": "▶",
+              "aria": "播放",
+              "title": "播放 / 暂停（空格）",
+              "rect": {
+                "x": 10,
+                "y": 809,
+                "w": 52,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "🔊",
+              "aria": "静音",
+              "title": "静音（M）",
+              "rect": {
+                "x": 68,
+                "y": 809,
+                "w": 38.61,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏴",
+              "aria": "上一帧",
+              "title": "上一帧（快捷键 , 或 Shift+←）",
+              "rect": {
+                "x": 284.72,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏵",
+              "aria": "下一帧",
+              "title": "下一帧（快捷键 . 或 Shift+→）",
+              "rect": {
+                "x": 326.72,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一部",
+              "title": "上一部（快捷键 P）",
+              "rect": {
+                "x": 377.72,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一部",
+              "title": "下一部（快捷键 N）",
+              "rect": {
+                "x": 421.72,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn p-gear",
+              "text": "⚙",
+              "aria": "播放设置",
+              "title": "播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键",
+              "rect": {
+                "x": 472.72,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⛶",
+              "aria": "全屏",
+              "title": "全屏（F）",
+              "rect": {
+                "x": 516.72,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            }
+          ]
+        },
+        "head": {
+          "titleFontWeight": "700",
+          "titleFontSize": "14px",
+          "titleOverflow": "ellipsis",
+          "titleRect": {
+            "x": 10,
+            "y": 8,
+            "w": 725,
+            "h": 18.19
+          },
+          "metaItems": 6,
+          "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
+          "metaSeparator": "\"·\"",
+          "metaSeparatorMargin": "0px 7px",
+          "groups": 3,
+          "buttons": [
+            {
+              "text": "☆ 收藏",
+              "h": 30,
+              "radius": "8px",
+              "title": "收藏 / 取消收藏（快捷键 S）",
+              "aria": "收藏"
+            },
+            {
+              "text": "‹ 上一部",
+              "h": 30,
+              "radius": "8px",
+              "title": "上一部（快捷键 P）",
+              "aria": ""
+            },
+            {
+              "text": "下一部 ›",
+              "h": 30,
+              "radius": "8px",
+              "title": "下一部（快捷键 N）",
+              "aria": ""
+            },
+            {
+              "text": "关闭 E c",
+              "h": 30,
+              "radius": "8px",
+              "title": "关闭播放器（Esc）",
+              "aria": ""
+            }
+          ],
+          "separators": 2,
+          "headRect": {
+            "x": 0,
+            "y": 0,
+            "w": 745,
+            "h": 96.38
+          }
+        },
+        "settingsOpen": false,
+        "settings": {
+          "open": false
+        },
+        "overflow": {
+          "docScrollW": 745,
+          "docClientW": 760,
+          "ctrlScrollW": 725,
+          "ctrlClientW": 725,
+          "headScrollW": 745,
+          "headClientW": 745,
+          "horizontalOverflow": false
+        },
+        "toggle": {
+          "sideOpen": false,
+          "rect": {
+            "x": 725,
+            "y": 486.08,
+            "right": 745,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 745,
+          "sideW": 745,
+          "mainRight": 745,
+          "viewportRight": 760,
+          "aria": "展开信息栏",
+          "pressed": "false",
+          "text": "‹"
+        },
+        "kept": {
+          "seekInput": true,
+          "markerLane": true,
+          "markerTicks": 2,
+          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecodeAlwaysVisible": true,
+          "abReadout": "A/B",
+          "volumeSlider": true,
+          "previewLayer": false,
+          "helpButton": false,
+          "fullscreenButton": true
+        },
+        "shot": "E:\\111\\project\\QTools\\QTools-C\\src\\views\\media\\video\\../../../../evidence/shot-narrow-760x900-dark.png"
+      },
+      {
+        "theme": "light",
+        "viewport": {
+          "w": 760,
+          "h": 900
+        },
+        "devicePixelRatio": 1,
+        "tags": {
+          "pTagsInDom": false,
+          "ptagInDom": false
+        },
+        "stage": {
+          "now": {
+            "headH": 96.38,
+            "mainH": 763.83,
+            "fsWrapH": 763.83,
+            "stageH": 763.83,
+            "gapToViewportBottom": 0
+          },
+          "withOldTagsBar": {
+            "headH": 96.38,
+            "mainH": 763.83,
+            "fsWrapH": 719.64,
+            "stageH": 719.64,
+            "gapToViewportBottom": 44.19
+          },
+          "oldTagsBarH": 44.19,
+          "deltaH": 44.19,
+          "deltaFsWrapH": 44.19,
+          "stableAfterRemoval": true
+        },
+        "bar": {
+          "backgroundColor": "rgba(0, 0, 0, 0.18)",
+          "backgroundAlpha": 0.18,
+          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06))",
+          "veilAlpha": 0.06,
+          "backdropFilter": "blur(9px) saturate(1.05)",
+          "borderTop": "1px solid rgba(0, 0, 0, 0.08)",
+          "padding": "6px 10px 10px",
+          "composedRGB": "212,212,212",
+          "rect": {
+            "x": 0,
+            "y": 802,
+            "w": 745,
+            "h": 98
+          },
+          "controls": [
+            {
+              "sel": ".p-btn-play",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-btn",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-seek-now",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            },
+            {
+              "sel": ".p-ab-text",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            }
+          ],
+          "looksLikeSolidBand": false
+        },
+        "buttonsPrimary": {
+          "total": 8,
+          "list": [
+            {
+              "cls": "p-btn p-btn-play",
+              "text": "▶",
+              "aria": "播放",
+              "title": "播放 / 暂停（空格）",
+              "rect": {
+                "x": 10,
+                "y": 809,
+                "w": 52,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "🔊",
+              "aria": "静音",
+              "title": "静音（M）",
+              "rect": {
+                "x": 68,
+                "y": 809,
+                "w": 38.61,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏴",
+              "aria": "上一帧",
+              "title": "上一帧（快捷键 , 或 Shift+←）",
+              "rect": {
+                "x": 284.72,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏵",
+              "aria": "下一帧",
+              "title": "下一帧（快捷键 . 或 Shift+→）",
+              "rect": {
+                "x": 326.72,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一部",
+              "title": "上一部（快捷键 P）",
+              "rect": {
+                "x": 377.72,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一部",
+              "title": "下一部（快捷键 N）",
+              "rect": {
+                "x": 421.72,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn p-gear",
+              "text": "⚙",
+              "aria": "播放设置",
+              "title": "播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键",
+              "rect": {
+                "x": 472.72,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⛶",
+              "aria": "全屏",
+              "title": "全屏（F）",
+              "rect": {
+                "x": 516.72,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            }
+          ]
+        },
+        "head": {
+          "titleFontWeight": "700",
+          "titleFontSize": "14px",
+          "titleOverflow": "ellipsis",
+          "titleRect": {
+            "x": 10,
+            "y": 8,
+            "w": 725,
+            "h": 18.19
+          },
+          "metaItems": 6,
+          "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
+          "metaSeparator": "\"·\"",
+          "metaSeparatorMargin": "0px 7px",
+          "groups": 3,
+          "buttons": [
+            {
+              "text": "☆ 收藏",
+              "h": 30,
+              "radius": "8px",
+              "title": "收藏 / 取消收藏（快捷键 S）",
+              "aria": "收藏"
+            },
+            {
+              "text": "‹ 上一部",
+              "h": 30,
+              "radius": "8px",
+              "title": "上一部（快捷键 P）",
+              "aria": ""
+            },
+            {
+              "text": "下一部 ›",
+              "h": 30,
+              "radius": "8px",
+              "title": "下一部（快捷键 N）",
+              "aria": ""
+            },
+            {
+              "text": "关闭 E c",
+              "h": 30,
+              "radius": "8px",
+              "title": "关闭播放器（Esc）",
+              "aria": ""
+            }
+          ],
+          "separators": 2,
+          "headRect": {
+            "x": 0,
+            "y": 0,
+            "w": 745,
+            "h": 96.38
+          }
+        },
+        "settingsOpen": false,
+        "settings": {
+          "open": false
+        },
+        "overflow": {
+          "docScrollW": 745,
+          "docClientW": 760,
+          "ctrlScrollW": 725,
+          "ctrlClientW": 725,
+          "headScrollW": 745,
+          "headClientW": 745,
+          "horizontalOverflow": false
+        },
+        "toggle": {
+          "sideOpen": false,
+          "rect": {
+            "x": 725,
+            "y": 486.08,
+            "right": 745,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 745,
+          "sideW": 745,
+          "mainRight": 745,
+          "viewportRight": 760,
+          "aria": "展开信息栏",
+          "pressed": "false",
+          "text": "‹"
+        },
+        "kept": {
+          "seekInput": true,
+          "markerLane": true,
+          "markerTicks": 2,
+          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecodeAlwaysVisible": true,
+          "abReadout": "A/B",
+          "volumeSlider": true,
+          "previewLayer": false,
+          "helpButton": false,
+          "fullscreenButton": true
+        },
+        "shot": "E:\\111\\project\\QTools\\QTools-C\\src\\views\\media\\video\\../../../../evidence/shot-narrow-760x900-light.png"
+      },
+      {
+        "theme": "dark",
+        "viewport": {
+          "w": 375,
+          "h": 780
+        },
+        "devicePixelRatio": 1,
+        "tags": {
+          "pTagsInDom": false,
+          "ptagInDom": false
+        },
+        "stage": {
+          "now": {
+            "headH": 171.13,
+            "mainH": 569.08,
+            "fsWrapH": 569.08,
+            "stageH": 569.08,
+            "gapToViewportBottom": 0
+          },
+          "withOldTagsBar": {
+            "headH": 171.13,
+            "mainH": 569.08,
+            "fsWrapH": 524.89,
+            "stageH": 524.89,
+            "gapToViewportBottom": 44.19
+          },
+          "oldTagsBarH": 44.19,
+          "deltaH": 44.19,
+          "deltaFsWrapH": 44.19,
+          "stableAfterRemoval": true
+        },
+        "bar": {
+          "backgroundColor": "rgba(0, 0, 0, 0.2)",
+          "backgroundAlpha": 0.2,
+          "backgroundImage": "linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))",
+          "veilAlpha": 0,
+          "backdropFilter": "blur(9px) saturate(1.05)",
+          "borderTop": "1px solid rgba(255, 255, 255, 0.1)",
+          "padding": "6px 10px 10px",
+          "composedRGB": "204,204,204",
+          "rect": {
+            "x": 0,
+            "y": 638,
+            "w": 360,
+            "h": 142
+          },
+          "controls": [
+            {
+              "sel": ".p-btn-play",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-btn",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-seek-now",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            },
+            {
+              "sel": ".p-ab-text",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            }
+          ],
+          "looksLikeSolidBand": false
+        },
+        "buttonsPrimary": {
+          "total": 8,
+          "list": [
+            {
+              "cls": "p-btn p-btn-play",
+              "text": "▶",
+              "aria": "播放",
+              "title": "播放 / 暂停（空格）",
+              "rect": {
+                "x": 10,
+                "y": 645,
+                "w": 52,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "🔊",
+              "aria": "静音",
+              "title": "静音（M）",
+              "rect": {
+                "x": 68,
+                "y": 645,
+                "w": 38.61,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏴",
+              "aria": "上一帧",
+              "title": "上一帧（快捷键 , 或 Shift+←）",
+              "rect": {
+                "x": 10,
+                "y": 689,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏵",
+              "aria": "下一帧",
+              "title": "下一帧（快捷键 . 或 Shift+→）",
+              "rect": {
+                "x": 52,
+                "y": 689,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一部",
+              "title": "上一部（快捷键 P）",
+              "rect": {
+                "x": 103,
+                "y": 689,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一部",
+              "title": "下一部（快捷键 N）",
+              "rect": {
+                "x": 147,
+                "y": 689,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn p-gear",
+              "text": "⚙",
+              "aria": "播放设置",
+              "title": "播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键",
+              "rect": {
+                "x": 198,
+                "y": 689,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⛶",
+              "aria": "全屏",
+              "title": "全屏（F）",
+              "rect": {
+                "x": 242,
+                "y": 689,
+                "w": 38,
+                "h": 38
+              }
+            }
+          ]
+        },
+        "head": {
+          "titleFontWeight": "700",
+          "titleFontSize": "14px",
+          "titleOverflow": "ellipsis",
+          "titleRect": {
+            "x": 10,
+            "y": 8,
+            "w": 340,
+            "h": 54.56
+          },
+          "metaItems": 6,
+          "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
+          "metaSeparator": "\"·\"",
+          "metaSeparatorMargin": "0px 7px",
+          "groups": 3,
+          "buttons": [
+            {
+              "text": "☆ 收藏",
+              "h": 30,
+              "radius": "8px",
+              "title": "收藏 / 取消收藏（快捷键 S）",
+              "aria": "收藏"
+            },
+            {
+              "text": "‹ 上一部",
+              "h": 30,
+              "radius": "8px",
+              "title": "上一部（快捷键 P）",
+              "aria": ""
+            },
+            {
+              "text": "下一部 ›",
+              "h": 30,
+              "radius": "8px",
+              "title": "下一部（快捷键 N）",
+              "aria": ""
+            },
+            {
+              "text": "关闭 E c",
+              "h": 30,
+              "radius": "8px",
+              "title": "关闭播放器（Esc）",
+              "aria": ""
+            }
+          ],
+          "separators": 2,
+          "headRect": {
+            "x": 0,
+            "y": 0,
+            "w": 360,
+            "h": 171.13
+          }
+        },
+        "settingsOpen": false,
+        "settings": {
+          "open": false
+        },
+        "overflow": {
+          "docScrollW": 360,
+          "docClientW": 375,
+          "ctrlScrollW": 340,
+          "ctrlClientW": 340,
+          "headScrollW": 360,
+          "headClientW": 360,
+          "horizontalOverflow": false
+        },
+        "toggle": {
+          "sideOpen": false,
+          "rect": {
+            "x": 340,
+            "y": 463.45,
+            "right": 360,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 360,
+          "sideW": 360,
+          "mainRight": 360,
+          "viewportRight": 375,
+          "aria": "展开信息栏",
+          "pressed": "false",
+          "text": "‹"
+        },
+        "kept": {
+          "seekInput": true,
+          "markerLane": true,
+          "markerTicks": 2,
+          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecodeAlwaysVisible": true,
+          "abReadout": "A/B",
+          "volumeSlider": true,
+          "previewLayer": false,
+          "helpButton": false,
+          "fullscreenButton": true
+        },
+        "shot": "E:\\111\\project\\QTools\\QTools-C\\src\\views\\media\\video\\../../../../evidence/shot-phone-375x780-dark.png"
+      },
+      {
+        "theme": "light",
+        "viewport": {
+          "w": 375,
+          "h": 780
+        },
+        "devicePixelRatio": 1,
+        "tags": {
+          "pTagsInDom": false,
+          "ptagInDom": false
+        },
+        "stage": {
+          "now": {
+            "headH": 171.13,
+            "mainH": 569.08,
+            "fsWrapH": 569.08,
+            "stageH": 569.08,
+            "gapToViewportBottom": 0
+          },
+          "withOldTagsBar": {
+            "headH": 171.13,
+            "mainH": 569.08,
+            "fsWrapH": 524.89,
+            "stageH": 524.89,
+            "gapToViewportBottom": 44.19
+          },
+          "oldTagsBarH": 44.19,
+          "deltaH": 44.19,
+          "deltaFsWrapH": 44.19,
+          "stableAfterRemoval": true
+        },
+        "bar": {
+          "backgroundColor": "rgba(0, 0, 0, 0.18)",
+          "backgroundAlpha": 0.18,
+          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06))",
+          "veilAlpha": 0.06,
+          "backdropFilter": "blur(9px) saturate(1.05)",
+          "borderTop": "1px solid rgba(0, 0, 0, 0.08)",
+          "padding": "6px 10px 10px",
+          "composedRGB": "212,212,212",
+          "rect": {
+            "x": 0,
+            "y": 638,
+            "w": 360,
+            "h": 142
+          },
+          "controls": [
+            {
+              "sel": ".p-btn-play",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-btn",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-seek-now",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            },
+            {
+              "sel": ".p-ab-text",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            }
+          ],
+          "looksLikeSolidBand": false
+        },
+        "buttonsPrimary": {
+          "total": 8,
+          "list": [
+            {
+              "cls": "p-btn p-btn-play",
+              "text": "▶",
+              "aria": "播放",
+              "title": "播放 / 暂停（空格）",
+              "rect": {
+                "x": 10,
+                "y": 645,
+                "w": 52,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "🔊",
+              "aria": "静音",
+              "title": "静音（M）",
+              "rect": {
+                "x": 68,
+                "y": 645,
+                "w": 38.61,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏴",
+              "aria": "上一帧",
+              "title": "上一帧（快捷键 , 或 Shift+←）",
+              "rect": {
+                "x": 10,
+                "y": 689,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏵",
+              "aria": "下一帧",
+              "title": "下一帧（快捷键 . 或 Shift+→）",
+              "rect": {
+                "x": 52,
+                "y": 689,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一部",
+              "title": "上一部（快捷键 P）",
+              "rect": {
+                "x": 103,
+                "y": 689,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一部",
+              "title": "下一部（快捷键 N）",
+              "rect": {
+                "x": 147,
+                "y": 689,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn p-gear",
+              "text": "⚙",
+              "aria": "播放设置",
+              "title": "播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键",
+              "rect": {
+                "x": 198,
+                "y": 689,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⛶",
+              "aria": "全屏",
+              "title": "全屏（F）",
+              "rect": {
+                "x": 242,
+                "y": 689,
+                "w": 38,
+                "h": 38
+              }
+            }
+          ]
+        },
+        "head": {
+          "titleFontWeight": "700",
+          "titleFontSize": "14px",
+          "titleOverflow": "ellipsis",
+          "titleRect": {
+            "x": 10,
+            "y": 8,
+            "w": 340,
+            "h": 54.56
+          },
+          "metaItems": 6,
+          "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
+          "metaSeparator": "\"·\"",
+          "metaSeparatorMargin": "0px 7px",
+          "groups": 3,
+          "buttons": [
+            {
+              "text": "☆ 收藏",
+              "h": 30,
+              "radius": "8px",
+              "title": "收藏 / 取消收藏（快捷键 S）",
+              "aria": "收藏"
+            },
+            {
+              "text": "‹ 上一部",
+              "h": 30,
+              "radius": "8px",
+              "title": "上一部（快捷键 P）",
+              "aria": ""
+            },
+            {
+              "text": "下一部 ›",
+              "h": 30,
+              "radius": "8px",
+              "title": "下一部（快捷键 N）",
+              "aria": ""
+            },
+            {
+              "text": "关闭 E c",
+              "h": 30,
+              "radius": "8px",
+              "title": "关闭播放器（Esc）",
+              "aria": ""
+            }
+          ],
+          "separators": 2,
+          "headRect": {
+            "x": 0,
+            "y": 0,
+            "w": 360,
+            "h": 171.13
+          }
+        },
+        "settingsOpen": false,
+        "settings": {
+          "open": false
+        },
+        "overflow": {
+          "docScrollW": 360,
+          "docClientW": 375,
+          "ctrlScrollW": 340,
+          "ctrlClientW": 340,
+          "headScrollW": 360,
+          "headClientW": 360,
+          "horizontalOverflow": false
+        },
+        "toggle": {
+          "sideOpen": false,
+          "rect": {
+            "x": 340,
+            "y": 463.45,
+            "right": 360,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 360,
+          "sideW": 360,
+          "mainRight": 360,
+          "viewportRight": 375,
+          "aria": "展开信息栏",
+          "pressed": "false",
+          "text": "‹"
+        },
+        "kept": {
+          "seekInput": true,
+          "markerLane": true,
+          "markerTicks": 2,
+          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecodeAlwaysVisible": true,
+          "abReadout": "A/B",
+          "volumeSlider": true,
+          "previewLayer": false,
+          "helpButton": false,
+          "fullscreenButton": true
+        },
+        "shot": "E:\\111\\project\\QTools\\QTools-C\\src\\views\\media\\video\\../../../../evidence/shot-phone-375x780-light.png"
+      },
+      {
+        "tag": "set-wide-dark",
+        "theme": "dark",
+        "viewport": {
+          "w": 1600,
+          "h": 1000
+        },
+        "devicePixelRatio": 1,
+        "tags": {
+          "pTagsInDom": false,
+          "ptagInDom": false
+        },
+        "stage": {
+          "now": {
+            "headH": 64.33,
+            "mainH": 895.88,
+            "fsWrapH": 895.88,
+            "stageH": 895.88,
+            "gapToViewportBottom": 0
+          },
+          "withOldTagsBar": {
+            "headH": 64.33,
+            "mainH": 895.88,
+            "fsWrapH": 851.69,
+            "stageH": 851.69,
+            "gapToViewportBottom": 44.19
+          },
+          "oldTagsBarH": 44.19,
+          "deltaH": 44.19,
+          "deltaFsWrapH": 44.19,
+          "stableAfterRemoval": true
+        },
+        "bar": {
+          "backgroundColor": "rgba(0, 0, 0, 0.2)",
+          "backgroundAlpha": 0.2,
+          "backgroundImage": "linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))",
+          "veilAlpha": 0,
+          "backdropFilter": "blur(9px) saturate(1.05)",
+          "borderTop": "1px solid rgba(255, 255, 255, 0.1)",
+          "padding": "8px 14px",
+          "composedRGB": "204,204,204",
+          "rect": {
+            "x": 0,
+            "y": 948,
+            "w": 1169,
+            "h": 52
+          },
+          "controls": [
+            {
+              "sel": ".p-btn-play",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-btn",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-seek-now",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            },
+            {
+              "sel": ".p-ab-text",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            }
+          ],
+          "looksLikeSolidBand": false
+        },
+        "buttonsPrimary": {
+          "total": 8,
+          "list": [
+            {
+              "cls": "p-btn p-btn-play",
+              "text": "▶",
+              "aria": "播放",
+              "title": "播放 / 暂停（空格）",
+              "rect": {
+                "x": 14,
+                "y": 959.5,
+                "w": 40,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "🔊",
+              "aria": "静音",
+              "title": "静音（M）",
+              "rect": {
+                "x": 60,
+                "y": 959.5,
+                "w": 35.86,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏴",
+              "aria": "上一帧",
+              "title": "上一帧（快捷键 , 或 Shift+←）",
+              "rect": {
+                "x": 931,
+                "y": 959.5,
+                "w": 31,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏵",
+              "aria": "下一帧",
+              "title": "下一帧（快捷键 . 或 Shift+→）",
+              "rect": {
+                "x": 966,
+                "y": 959.5,
+                "w": 31,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一部",
+              "title": "上一部（快捷键 P）",
+              "rect": {
+                "x": 1010,
+                "y": 959.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一部",
+              "title": "下一部（快捷键 N）",
+              "rect": {
+                "x": 1046,
+                "y": 959.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn p-gear on",
+              "text": "⚙",
+              "aria": "播放设置",
+              "title": "播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键",
+              "rect": {
+                "x": 1089,
+                "y": 959.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⛶",
+              "aria": "全屏",
+              "title": "全屏（F）",
+              "rect": {
+                "x": 1125,
+                "y": 959.5,
+                "w": 30,
+                "h": 30
+              }
+            }
+          ]
+        },
+        "head": {
+          "titleFontWeight": "700",
+          "titleFontSize": "15.5px",
+          "titleOverflow": "ellipsis",
+          "titleRect": {
+            "x": 16,
+            "y": 10,
+            "w": 1208.42,
+            "h": 20.14
+          },
+          "metaItems": 6,
+          "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
+          "metaSeparator": "\"·\"",
+          "metaSeparatorMargin": "0px 7px",
+          "groups": 3,
+          "buttons": [
+            {
+              "text": "☆ 收藏",
+              "h": 30,
+              "radius": "8px",
+              "title": "收藏 / 取消收藏（快捷键 S）",
+              "aria": "收藏"
+            },
+            {
+              "text": "‹ 上一部",
+              "h": 30,
+              "radius": "8px",
+              "title": "上一部（快捷键 P）",
+              "aria": ""
+            },
+            {
+              "text": "下一部 ›",
+              "h": 30,
+              "radius": "8px",
+              "title": "下一部（快捷键 N）",
+              "aria": ""
+            },
+            {
+              "text": "关闭 E c",
+              "h": 30,
+              "radius": "8px",
+              "title": "关闭播放器（Esc）",
+              "aria": ""
+            }
+          ],
+          "separators": 2,
+          "headRect": {
+            "x": 0,
+            "y": 0,
+            "w": 1585,
+            "h": 64.33
+          }
+        },
+        "settingsOpen": true,
+        "settings": {
+          "open": true,
+          "rect": {
+            "x": 839,
+            "y": 664.63,
+            "w": 320,
+            "h": 286.38
+          },
+          "rows": 7,
+          "insideViewport": true,
+          "interactive": [
+            {
+              "tag": "select",
+              "id": "msVideoSpeed",
+              "text": "0.5×0.75×1.0×1.25×1.",
+              "title": "视频倍速 1.0×（快捷键 [ 减速 / ] 加速）",
+              "aria": "视频倍速",
+              "rect": {
+                "x": 912,
+                "y": 675.63,
+                "w": 234,
+                "h": 28
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "增益 1×",
+              "title": "音量增益 1×（点一下切到 1.5×）",
+              "aria": "音量增益 1 倍",
+              "rect": {
+                "x": 912,
+                "y": 711.63,
+                "w": 68,
+                "h": 26
+              },
+              "clickable": true
+            },
+            {
+              "tag": "select",
+              "id": "msVideoQ",
+              "text": "原画（直连）720p480p360p",
+              "title": "画质：原画直连，或实时转码到 720p / 480p / 360p",
+              "aria": "画质",
+              "rect": {
+                "x": 912,
+                "y": 745.63,
+                "w": 234,
+                "h": 28
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "显示中",
+              "title": "字幕显示 / 隐藏（只影响本次播放，不改片源）",
+              "aria": "隐藏字幕",
+              "rect": {
+                "x": 912,
+                "y": 781.63,
+                "w": 56,
+                "h": 26
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "A",
+              "title": "设 A 点（再按 A 清除）快捷键 A",
+              "aria": "设 A 点",
+              "rect": {
+                "x": 912,
+                "y": 815.63,
+                "w": 30,
+                "h": 26
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "B",
+              "title": "设 B 点（再按 B 清除）快捷键 B",
+              "aria": "设 B 点",
+              "rect": {
+                "x": 950,
+                "y": 815.63,
+                "w": 30,
+                "h": 26
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "清",
+              "title": "清除 A / B 两点",
+              "aria": "清除 A/B",
+              "rect": {
+                "x": 988,
+                "y": 815.63,
+                "w": 32,
+                "h": 26
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "02:00 · 开场",
+              "title": "跳到 02:00 · 开场",
+              "aria": "",
+              "rect": {
+                "x": 912,
+                "y": 849.63,
+                "w": 234,
+                "h": 27.19
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "10:00–15:00 · 重点区间",
+              "title": "跳到 10:00–15:00 · 重点区间",
+              "aria": "",
+              "rect": {
+                "x": 912,
+                "y": 878.81,
+                "w": 234,
+                "h": 27.19
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "？快捷键说明",
+              "title": "快捷键说明（?）",
+              "aria": "快捷键说明",
+              "rect": {
+                "x": 1054,
+                "y": 914,
+                "w": 92,
+                "h": 26
+              },
+              "clickable": true
+            }
+          ],
+          "hasTitleOnAll": true,
+          "allClickable": true,
+          "markerItems": 2
+        },
+        "overflow": {
+          "docScrollW": 1585,
+          "docClientW": 1600,
+          "ctrlScrollW": 1141,
+          "ctrlClientW": 1141,
+          "headScrollW": 1585,
+          "headClientW": 1585,
+          "horizontalOverflow": false
+        },
+        "toggle": {
+          "sideOpen": true,
+          "rect": {
+            "x": 1149,
+            "y": 520.06,
+            "right": 1169,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 1169,
+          "sideW": 416,
+          "mainRight": 1169,
+          "viewportRight": 1600,
+          "aria": "收起信息栏",
+          "pressed": "true",
+          "text": "›"
+        },
+        "kept": {
+          "seekInput": true,
+          "markerLane": true,
+          "markerTicks": 2,
+          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecodeAlwaysVisible": true,
+          "abReadout": "A/B",
+          "volumeSlider": true,
+          "previewLayer": false,
+          "helpButton": true,
+          "fullscreenButton": true
+        },
+        "shot": "E:\\111\\project\\QTools\\QTools-C\\src\\views\\media\\video\\../../../../evidence/shot-set-wide-dark-open.png",
+        "gainClick": {
+          "before": "增益 1×",
+          "after": "增益 1.5×"
+        }
+      },
+      {
+        "tag": "set-mid-light",
+        "theme": "light",
+        "viewport": {
+          "w": 1000,
+          "h": 800
+        },
+        "devicePixelRatio": 1,
+        "tags": {
+          "pTagsInDom": false,
+          "ptagInDom": false
+        },
+        "stage": {
+          "now": {
+            "headH": 64.33,
+            "mainH": 695.88,
+            "fsWrapH": 695.88,
+            "stageH": 695.88,
+            "gapToViewportBottom": 0
+          },
+          "withOldTagsBar": {
+            "headH": 64.33,
+            "mainH": 695.88,
+            "fsWrapH": 651.69,
+            "stageH": 651.69,
+            "gapToViewportBottom": 44.19
+          },
+          "oldTagsBarH": 44.19,
+          "deltaH": 44.19,
+          "deltaFsWrapH": 44.19,
+          "stableAfterRemoval": true
+        },
+        "bar": {
+          "backgroundColor": "rgba(0, 0, 0, 0.18)",
+          "backgroundAlpha": 0.18,
+          "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06))",
+          "veilAlpha": 0.06,
+          "backdropFilter": "blur(9px) saturate(1.05)",
+          "borderTop": "1px solid rgba(0, 0, 0, 0.08)",
+          "padding": "8px 14px",
+          "composedRGB": "212,212,212",
+          "rect": {
+            "x": 0,
+            "y": 748,
+            "w": 985,
+            "h": 52
+          },
+          "controls": [
+            {
+              "sel": ".p-btn-play",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-btn",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-seek-now",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            },
+            {
+              "sel": ".p-ab-text",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.48,
+              "ratioOnChip": 4.78,
+              "chipRGB": "114,114,114",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            }
+          ],
+          "looksLikeSolidBand": false
+        },
+        "buttonsPrimary": {
+          "total": 8,
+          "list": [
+            {
+              "cls": "p-btn p-btn-play",
+              "text": "▶",
+              "aria": "播放",
+              "title": "播放 / 暂停（空格）",
+              "rect": {
+                "x": 14,
+                "y": 759.5,
+                "w": 40,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "🔊",
+              "aria": "静音",
+              "title": "静音（M）",
+              "rect": {
+                "x": 60,
+                "y": 759.5,
+                "w": 35.86,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏴",
+              "aria": "上一帧",
+              "title": "上一帧（快捷键 , 或 Shift+←）",
+              "rect": {
+                "x": 747,
+                "y": 759.5,
+                "w": 31,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏵",
+              "aria": "下一帧",
+              "title": "下一帧（快捷键 . 或 Shift+→）",
+              "rect": {
+                "x": 782,
+                "y": 759.5,
+                "w": 31,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一部",
+              "title": "上一部（快捷键 P）",
+              "rect": {
+                "x": 826,
+                "y": 759.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一部",
+              "title": "下一部（快捷键 N）",
+              "rect": {
+                "x": 862,
+                "y": 759.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn p-gear on",
+              "text": "⚙",
+              "aria": "播放设置",
+              "title": "播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键",
+              "rect": {
+                "x": 905,
+                "y": 759.5,
+                "w": 30,
+                "h": 30
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⛶",
+              "aria": "全屏",
+              "title": "全屏（F）",
+              "rect": {
+                "x": 941,
+                "y": 759.5,
+                "w": 30,
+                "h": 30
+              }
+            }
+          ]
+        },
+        "head": {
+          "titleFontWeight": "700",
+          "titleFontSize": "15.5px",
+          "titleOverflow": "ellipsis",
+          "titleRect": {
+            "x": 16,
+            "y": 10,
+            "w": 608.42,
+            "h": 20.14
+          },
+          "metaItems": 6,
+          "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
+          "metaSeparator": "\"·\"",
+          "metaSeparatorMargin": "0px 7px",
+          "groups": 3,
+          "buttons": [
+            {
+              "text": "☆ 收藏",
+              "h": 30,
+              "radius": "8px",
+              "title": "收藏 / 取消收藏（快捷键 S）",
+              "aria": "收藏"
+            },
+            {
+              "text": "‹ 上一部",
+              "h": 30,
+              "radius": "8px",
+              "title": "上一部（快捷键 P）",
+              "aria": ""
+            },
+            {
+              "text": "下一部 ›",
+              "h": 30,
+              "radius": "8px",
+              "title": "下一部（快捷键 N）",
+              "aria": ""
+            },
+            {
+              "text": "关闭 E c",
+              "h": 30,
+              "radius": "8px",
+              "title": "关闭播放器（Esc）",
+              "aria": ""
+            }
+          ],
+          "separators": 2,
+          "headRect": {
+            "x": 0,
+            "y": 0,
+            "w": 985,
+            "h": 64.33
+          }
+        },
+        "settingsOpen": true,
+        "settings": {
+          "open": true,
+          "rect": {
+            "x": 655,
+            "y": 464.63,
+            "w": 320,
+            "h": 286.38
+          },
+          "rows": 7,
+          "insideViewport": true,
+          "interactive": [
+            {
+              "tag": "select",
+              "id": "msVideoSpeed",
+              "text": "0.5×0.75×1.0×1.25×1.",
+              "title": "视频倍速 1.0×（快捷键 [ 减速 / ] 加速）",
+              "aria": "视频倍速",
+              "rect": {
+                "x": 728,
+                "y": 475.63,
+                "w": 234,
+                "h": 28
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "增益 1.5×",
+              "title": "音量增益 1.5×（点一下切到 2×）",
+              "aria": "音量增益 1.5 倍",
+              "rect": {
+                "x": 728,
+                "y": 511.63,
+                "w": 71.86,
+                "h": 26
+              },
+              "clickable": true
+            },
+            {
+              "tag": "select",
+              "id": "msVideoQ",
+              "text": "原画（直连）720p480p360p",
+              "title": "画质：原画直连，或实时转码到 720p / 480p / 360p",
+              "aria": "画质",
+              "rect": {
+                "x": 728,
+                "y": 545.63,
+                "w": 234,
+                "h": 28
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "显示中",
+              "title": "字幕显示 / 隐藏（只影响本次播放，不改片源）",
+              "aria": "隐藏字幕",
+              "rect": {
+                "x": 728,
+                "y": 581.63,
+                "w": 56,
+                "h": 26
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "A",
+              "title": "设 A 点（再按 A 清除）快捷键 A",
+              "aria": "设 A 点",
+              "rect": {
+                "x": 728,
+                "y": 615.63,
+                "w": 30,
+                "h": 26
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "B",
+              "title": "设 B 点（再按 B 清除）快捷键 B",
+              "aria": "设 B 点",
+              "rect": {
+                "x": 766,
+                "y": 615.63,
+                "w": 30,
+                "h": 26
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "清",
+              "title": "清除 A / B 两点",
+              "aria": "清除 A/B",
+              "rect": {
+                "x": 804,
+                "y": 615.63,
+                "w": 32,
+                "h": 26
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "02:00 · 开场",
+              "title": "跳到 02:00 · 开场",
+              "aria": "",
+              "rect": {
+                "x": 728,
+                "y": 649.63,
+                "w": 234,
+                "h": 27.19
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "10:00–15:00 · 重点区间",
+              "title": "跳到 10:00–15:00 · 重点区间",
+              "aria": "",
+              "rect": {
+                "x": 728,
+                "y": 678.81,
+                "w": 234,
+                "h": 27.19
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "？快捷键说明",
+              "title": "快捷键说明（?）",
+              "aria": "快捷键说明",
+              "rect": {
+                "x": 870,
+                "y": 714,
+                "w": 92,
+                "h": 26
+              },
+              "clickable": true
+            }
+          ],
+          "hasTitleOnAll": true,
+          "allClickable": true,
+          "markerItems": 2
+        },
+        "overflow": {
+          "docScrollW": 985,
+          "docClientW": 1000,
+          "ctrlScrollW": 957,
+          "ctrlClientW": 957,
+          "headScrollW": 985,
+          "headClientW": 985,
+          "horizontalOverflow": false
+        },
+        "toggle": {
+          "sideOpen": false,
+          "rect": {
+            "x": 965,
+            "y": 420.06,
+            "right": 985,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 985,
+          "sideW": 420,
+          "mainRight": 985,
+          "viewportRight": 1000,
+          "aria": "展开信息栏",
+          "pressed": "false",
+          "text": "‹"
+        },
+        "kept": {
+          "seekInput": true,
+          "markerLane": true,
+          "markerTicks": 2,
+          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecodeAlwaysVisible": true,
+          "abReadout": "A/B",
+          "volumeSlider": true,
+          "previewLayer": false,
+          "helpButton": true,
+          "fullscreenButton": true
+        },
+        "shot": "E:\\111\\project\\QTools\\QTools-C\\src\\views\\media\\video\\../../../../evidence/shot-set-mid-light-open.png",
+        "gainClick": {
+          "before": "增益 1.5×",
+          "after": "增益 2×"
+        }
+      },
+      {
+        "tag": "set-narrow-dark",
+        "theme": "dark",
+        "viewport": {
+          "w": 760,
+          "h": 900
+        },
+        "devicePixelRatio": 1,
+        "tags": {
+          "pTagsInDom": false,
+          "ptagInDom": false
+        },
+        "stage": {
+          "now": {
+            "headH": 96.38,
+            "mainH": 763.83,
+            "fsWrapH": 763.83,
+            "stageH": 763.83,
+            "gapToViewportBottom": 0
+          },
+          "withOldTagsBar": {
+            "headH": 96.38,
+            "mainH": 763.83,
+            "fsWrapH": 719.64,
+            "stageH": 719.64,
+            "gapToViewportBottom": 44.19
+          },
+          "oldTagsBarH": 44.19,
+          "deltaH": 44.19,
+          "deltaFsWrapH": 44.19,
+          "stableAfterRemoval": true
+        },
+        "bar": {
+          "backgroundColor": "rgba(0, 0, 0, 0.2)",
+          "backgroundAlpha": 0.2,
+          "backgroundImage": "linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))",
+          "veilAlpha": 0,
+          "backdropFilter": "blur(9px) saturate(1.05)",
+          "borderTop": "1px solid rgba(255, 255, 255, 0.1)",
+          "padding": "6px 10px 10px",
+          "composedRGB": "204,204,204",
+          "rect": {
+            "x": 0,
+            "y": 802,
+            "w": 745,
+            "h": 98
+          },
+          "controls": [
+            {
+              "sel": ".p-btn-play",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-btn",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgba(255, 255, 255, 0.6)"
+            },
+            {
+              "sel": ".p-seek-now",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            },
+            {
+              "sel": ".p-ab-text",
+              "color": "rgb(255, 255, 255)",
+              "chipColor": "rgba(0, 0, 0, 0.46)",
+              "chipAlpha": 0.46,
+              "ratioOnBar": 1.61,
+              "ratioOnChip": 5.09,
+              "chipRGB": "110,110,110",
+              "textShadow": "rgba(0, 0, 0, 0.5) 0px 1px 3px",
+              "borderColor": "rgb(255, 255, 255)"
+            }
+          ],
+          "looksLikeSolidBand": false
+        },
+        "buttonsPrimary": {
+          "total": 8,
+          "list": [
+            {
+              "cls": "p-btn p-btn-play",
+              "text": "▶",
+              "aria": "播放",
+              "title": "播放 / 暂停（空格）",
+              "rect": {
+                "x": 10,
+                "y": 809,
+                "w": 52,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "🔊",
+              "aria": "静音",
+              "title": "静音（M）",
+              "rect": {
+                "x": 68,
+                "y": 809,
+                "w": 38.61,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏴",
+              "aria": "上一帧",
+              "title": "上一帧（快捷键 , 或 Shift+←）",
+              "rect": {
+                "x": 284.72,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏵",
+              "aria": "下一帧",
+              "title": "下一帧（快捷键 . 或 Shift+→）",
+              "rect": {
+                "x": 326.72,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏮",
+              "aria": "上一部",
+              "title": "上一部（快捷键 P）",
+              "rect": {
+                "x": 377.72,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⏭",
+              "aria": "下一部",
+              "title": "下一部（快捷键 N）",
+              "rect": {
+                "x": 421.72,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn p-gear on",
+              "text": "⚙",
+              "aria": "播放设置",
+              "title": "播放设置：倍速 / 增益 / 画质 / 字幕 / AB / 标记 / 快捷键",
+              "rect": {
+                "x": 472.72,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            },
+            {
+              "cls": "p-btn",
+              "text": "⛶",
+              "aria": "全屏",
+              "title": "全屏（F）",
+              "rect": {
+                "x": 516.72,
+                "y": 809,
+                "w": 38,
+                "h": 38
+              }
+            }
+          ]
+        },
+        "head": {
+          "titleFontWeight": "700",
+          "titleFontSize": "14px",
+          "titleOverflow": "ellipsis",
+          "titleRect": {
+            "x": 10,
+            "y": 8,
+            "w": 725,
+            "h": 18.19
+          },
+          "metaItems": 6,
+          "metaText": "目录 样本目录 / 二级目录时长 125:32 分辨率 1920×1080 1080p编码 h264体积 4.20 GB字幕 有",
+          "metaSeparator": "\"·\"",
+          "metaSeparatorMargin": "0px 7px",
+          "groups": 3,
+          "buttons": [
+            {
+              "text": "☆ 收藏",
+              "h": 30,
+              "radius": "8px",
+              "title": "收藏 / 取消收藏（快捷键 S）",
+              "aria": "收藏"
+            },
+            {
+              "text": "‹ 上一部",
+              "h": 30,
+              "radius": "8px",
+              "title": "上一部（快捷键 P）",
+              "aria": ""
+            },
+            {
+              "text": "下一部 ›",
+              "h": 30,
+              "radius": "8px",
+              "title": "下一部（快捷键 N）",
+              "aria": ""
+            },
+            {
+              "text": "关闭 E c",
+              "h": 30,
+              "radius": "8px",
+              "title": "关闭播放器（Esc）",
+              "aria": ""
+            }
+          ],
+          "separators": 2,
+          "headRect": {
+            "x": 0,
+            "y": 0,
+            "w": 745,
+            "h": 96.38
+          }
+        },
+        "settingsOpen": true,
+        "settings": {
+          "open": true,
+          "rect": {
+            "x": 8,
+            "y": 504.63,
+            "w": 729,
+            "h": 300.38
+          },
+          "rows": 7,
+          "insideViewport": true,
+          "interactive": [
+            {
+              "tag": "select",
+              "id": "msVideoSpeed",
+              "text": "0.5×0.75×1.0×1.25×1.",
+              "title": "视频倍速 1.0×（快捷键 [ 减速 / ] 加速）",
+              "aria": "视频倍速",
+              "rect": {
+                "x": 71,
+                "y": 514.63,
+                "w": 655,
+                "h": 28
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "增益 2×",
+              "title": "音量增益 2×（点一下切到 1×）",
+              "aria": "音量增益 2 倍",
+              "rect": {
+                "x": 71,
+                "y": 550.63,
+                "w": 68,
+                "h": 30
+              },
+              "clickable": true
+            },
+            {
+              "tag": "select",
+              "id": "msVideoQ",
+              "text": "原画（直连）720p480p360p",
+              "title": "画质：原画直连，或实时转码到 720p / 480p / 360p",
+              "aria": "画质",
+              "rect": {
+                "x": 71,
+                "y": 588.63,
+                "w": 655,
+                "h": 28
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "显示中",
+              "title": "字幕显示 / 隐藏（只影响本次播放，不改片源）",
+              "aria": "隐藏字幕",
+              "rect": {
+                "x": 71,
+                "y": 624.63,
+                "w": 59.5,
+                "h": 30
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "A",
+              "title": "设 A 点（再按 A 清除）快捷键 A",
+              "aria": "设 A 点",
+              "rect": {
+                "x": 71,
+                "y": 662.63,
+                "w": 38,
+                "h": 30
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "B",
+              "title": "设 B 点（再按 B 清除）快捷键 B",
+              "aria": "设 B 点",
+              "rect": {
+                "x": 117,
+                "y": 662.63,
+                "w": 38,
+                "h": 30
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "清",
+              "title": "清除 A / B 两点",
+              "aria": "清除 A/B",
+              "rect": {
+                "x": 163,
+                "y": 662.63,
+                "w": 38,
+                "h": 30
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "02:00 · 开场",
+              "title": "跳到 02:00 · 开场",
+              "aria": "",
+              "rect": {
+                "x": 71,
+                "y": 700.63,
+                "w": 655,
+                "h": 27.19
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "10:00–15:00 · 重点区间",
+              "title": "跳到 10:00–15:00 · 重点区间",
+              "aria": "",
+              "rect": {
+                "x": 71,
+                "y": 729.81,
+                "w": 655,
+                "h": 27.19
+              },
+              "clickable": true
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "text": "？快捷键说明",
+              "title": "快捷键说明（?）",
+              "aria": "快捷键说明",
+              "rect": {
+                "x": 629,
+                "y": 765,
+                "w": 97,
+                "h": 30
+              },
+              "clickable": true
+            }
+          ],
+          "hasTitleOnAll": true,
+          "allClickable": true,
+          "markerItems": 2
+        },
+        "overflow": {
+          "docScrollW": 745,
+          "docClientW": 760,
+          "ctrlScrollW": 725,
+          "ctrlClientW": 725,
+          "headScrollW": 745,
+          "headClientW": 745,
+          "horizontalOverflow": false
+        },
+        "toggle": {
+          "sideOpen": false,
+          "rect": {
+            "x": 725,
+            "y": 486.08,
+            "right": 745,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 745,
+          "sideW": 745,
+          "mainRight": 745,
+          "viewportRight": 760,
+          "aria": "展开信息栏",
+          "pressed": "false",
+          "text": "‹"
+        },
+        "kept": {
+          "seekInput": true,
+          "markerLane": true,
+          "markerTicks": 2,
+          "timecode": "位置 00:00:00:00 / 02:05:32:00",
+          "timecodeAlwaysVisible": true,
+          "abReadout": "A/B",
+          "volumeSlider": true,
+          "previewLayer": false,
+          "helpButton": true,
+          "fullscreenButton": true
+        },
+        "shot": "E:\\111\\project\\QTools\\QTools-C\\src\\views\\media\\video\\../../../../evidence/shot-set-narrow-dark-open.png",
+        "gainClick": {
+          "before": "增益 2×",
+          "after": "增益 1×"
+        }
+      }
+    ],
+    "toggles": [
+      {
+        "tag": "wide-1600x1000-dark",
+        "open": {
+          "sideOpen": true,
+          "rect": {
+            "x": 1149,
+            "y": 520.06,
+            "right": 1169,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 1169,
+          "sideW": 416,
+          "mainRight": 1169,
+          "viewportRight": 1600,
+          "aria": "收起信息栏",
+          "pressed": "true",
+          "text": "›"
+        },
+        "closed": {
+          "sideOpen": false,
+          "rect": {
+            "x": 1565,
+            "y": 520.06,
+            "right": 1585,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 1585,
+          "sideW": 0,
+          "mainRight": 1585,
+          "viewportRight": 1600,
+          "aria": "展开信息栏",
+          "pressed": "false",
+          "text": "‹"
+        },
+        "back": {
+          "sideOpen": true,
+          "rect": {
+            "x": 1149,
+            "y": 520.06,
+            "right": 1169,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 1169,
+          "sideW": 416,
+          "mainRight": 1169,
+          "viewportRight": 1600,
+          "aria": "收起信息栏",
+          "pressed": "true",
+          "text": "›"
+        }
+      },
+      {
+        "tag": "wide-1600x1000-light",
+        "open": {
+          "sideOpen": true,
+          "rect": {
+            "x": 1149,
+            "y": 520.06,
+            "right": 1169,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 1169,
+          "sideW": 416,
+          "mainRight": 1169,
+          "viewportRight": 1600,
+          "aria": "收起信息栏",
+          "pressed": "true",
+          "text": "›"
+        },
+        "closed": {
+          "sideOpen": false,
+          "rect": {
+            "x": 1565,
+            "y": 520.06,
+            "right": 1585,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 1585,
+          "sideW": 0,
+          "mainRight": 1585,
+          "viewportRight": 1600,
+          "aria": "展开信息栏",
+          "pressed": "false",
+          "text": "‹"
+        },
+        "back": {
+          "sideOpen": true,
+          "rect": {
+            "x": 1149,
+            "y": 520.06,
+            "right": 1169,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 1169,
+          "sideW": 416,
+          "mainRight": 1169,
+          "viewportRight": 1600,
+          "aria": "收起信息栏",
+          "pressed": "true",
+          "text": "›"
+        }
+      },
+      {
+        "tag": "mid-1000x800-dark",
+        "open": {
+          "sideOpen": true,
+          "rect": {
+            "x": 545,
+            "y": 420.06,
+            "right": 565,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 565,
+          "sideW": 420,
+          "mainRight": 985,
+          "viewportRight": 1000,
+          "aria": "收起信息栏",
+          "pressed": "true",
+          "text": "›"
+        },
+        "closed": {
+          "sideOpen": false,
+          "rect": {
+            "x": 965,
+            "y": 420.06,
+            "right": 985,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 985,
+          "sideW": 420,
+          "mainRight": 985,
+          "viewportRight": 1000,
+          "aria": "展开信息栏",
+          "pressed": "false",
+          "text": "‹"
+        },
+        "back": {
+          "sideOpen": true,
+          "rect": {
+            "x": 545,
+            "y": 420.06,
+            "right": 565,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 565,
+          "sideW": 420,
+          "mainRight": 985,
+          "viewportRight": 1000,
+          "aria": "收起信息栏",
+          "pressed": "true",
+          "text": "›"
+        }
+      },
+      {
+        "tag": "mid-1000x800-light",
+        "open": {
+          "sideOpen": true,
+          "rect": {
+            "x": 545,
+            "y": 420.06,
+            "right": 565,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 565,
+          "sideW": 420,
+          "mainRight": 985,
+          "viewportRight": 1000,
+          "aria": "收起信息栏",
+          "pressed": "true",
+          "text": "›"
+        },
+        "closed": {
+          "sideOpen": false,
+          "rect": {
+            "x": 965,
+            "y": 420.06,
+            "right": 985,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 985,
+          "sideW": 420,
+          "mainRight": 985,
+          "viewportRight": 1000,
+          "aria": "展开信息栏",
+          "pressed": "false",
+          "text": "‹"
+        },
+        "back": {
+          "sideOpen": true,
+          "rect": {
+            "x": 545,
+            "y": 420.06,
+            "right": 565,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 565,
+          "sideW": 420,
+          "mainRight": 985,
+          "viewportRight": 1000,
+          "aria": "收起信息栏",
+          "pressed": "true",
+          "text": "›"
+        }
+      },
+      {
+        "tag": "narrow-760x900-dark",
+        "open": {
+          "sideOpen": true,
+          "rect": {
+            "x": 725,
+            "y": 486.08,
+            "right": 745,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 0,
+          "sideW": 745,
+          "mainRight": 745,
+          "viewportRight": 760,
+          "aria": "收起信息栏",
+          "pressed": "true",
+          "text": "›"
+        },
+        "closed": {
+          "sideOpen": false,
+          "rect": {
+            "x": 725,
+            "y": 486.08,
+            "right": 745,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 745,
+          "sideW": 745,
+          "mainRight": 745,
+          "viewportRight": 760,
+          "aria": "展开信息栏",
+          "pressed": "false",
+          "text": "‹"
+        },
+        "back": {
+          "sideOpen": true,
+          "rect": {
+            "x": 725,
+            "y": 486.08,
+            "right": 745,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 0,
+          "sideW": 745,
+          "mainRight": 745,
+          "viewportRight": 760,
+          "aria": "收起信息栏",
+          "pressed": "true",
+          "text": "›"
+        }
+      },
+      {
+        "tag": "narrow-760x900-light",
+        "open": {
+          "sideOpen": true,
+          "rect": {
+            "x": 725,
+            "y": 486.08,
+            "right": 745,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 0,
+          "sideW": 745,
+          "mainRight": 745,
+          "viewportRight": 760,
+          "aria": "收起信息栏",
+          "pressed": "true",
+          "text": "›"
+        },
+        "closed": {
+          "sideOpen": false,
+          "rect": {
+            "x": 725,
+            "y": 486.08,
+            "right": 745,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 745,
+          "sideW": 745,
+          "mainRight": 745,
+          "viewportRight": 760,
+          "aria": "展开信息栏",
+          "pressed": "false",
+          "text": "‹"
+        },
+        "back": {
+          "sideOpen": true,
+          "rect": {
+            "x": 725,
+            "y": 486.08,
+            "right": 745,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 0,
+          "sideW": 745,
+          "mainRight": 745,
+          "viewportRight": 760,
+          "aria": "收起信息栏",
+          "pressed": "true",
+          "text": "›"
+        }
+      },
+      {
+        "tag": "phone-375x780-dark",
+        "open": {
+          "sideOpen": true,
+          "rect": {
+            "x": 340,
+            "y": 463.45,
+            "right": 360,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 0,
+          "sideW": 360,
+          "mainRight": 360,
+          "viewportRight": 375,
+          "aria": "收起信息栏",
+          "pressed": "true",
+          "text": "›"
+        },
+        "closed": {
+          "sideOpen": false,
+          "rect": {
+            "x": 340,
+            "y": 463.45,
+            "right": 360,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 360,
+          "sideW": 360,
+          "mainRight": 360,
+          "viewportRight": 375,
+          "aria": "展开信息栏",
+          "pressed": "false",
+          "text": "‹"
+        },
+        "back": {
+          "sideOpen": true,
+          "rect": {
+            "x": 340,
+            "y": 463.45,
+            "right": 360,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 0,
+          "sideW": 360,
+          "mainRight": 360,
+          "viewportRight": 375,
+          "aria": "收起信息栏",
+          "pressed": "true",
+          "text": "›"
+        }
+      },
+      {
+        "tag": "phone-375x780-light",
+        "open": {
+          "sideOpen": true,
+          "rect": {
+            "x": 340,
+            "y": 463.45,
+            "right": 360,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 0,
+          "sideW": 360,
+          "mainRight": 360,
+          "viewportRight": 375,
+          "aria": "收起信息栏",
+          "pressed": "true",
+          "text": "›"
+        },
+        "closed": {
+          "sideOpen": false,
+          "rect": {
+            "x": 340,
+            "y": 463.45,
+            "right": 360,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 360,
+          "sideW": 360,
+          "mainRight": 360,
+          "viewportRight": 375,
+          "aria": "展开信息栏",
+          "pressed": "false",
+          "text": "‹"
+        },
+        "back": {
+          "sideOpen": true,
+          "rect": {
+            "x": 340,
+            "y": 463.45,
+            "right": 360,
+            "w": 20,
+            "h": 64
+          },
+          "transitionProperty": "right, opacity, background, border-color, color",
+          "transitionDuration": "0.18s, 0.18s, 0.18s, 0.18s, 0.18s",
+          "sideLeft": 0,
+          "sideW": 360,
+          "mainRight": 360,
+          "viewportRight": 375,
+          "aria": "收起信息栏",
+          "pressed": "true",
+          "text": "›"
+        }
+      }
+    ]
+  }
+}

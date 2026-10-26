@@ -24,15 +24,17 @@
     <header class="vp-head">
       <h2 class="vp-title" :title="video.title">{{ video.title }}</h2>
       <span v-if="isLocal" class="vp-local" title="本地编辑：仅保存在本浏览器，清除缓存即消失">本地</span>
-      <!-- 停靠态的同一个按钮 = 折叠信息栏（折叠后由播放器给回唤出把手） -->
+      <!-- P5.24：停靠态不再有「› 收起」按钮 —— 收藏 / 展开的入口只剩播放器贴左边缘那一个
+           chevron 开关（两个入口的图标 / 状态天然会走形，故合并为一个）。浮层态保留 × 关闭。 -->
       <button
+        v-if="!dock"
         class="vp-x"
         type="button"
-        :aria-label="dock ? '收起信息栏' : '关闭信息'"
-        :title="dock ? '收起信息栏' : '关闭信息'"
+        aria-label="关闭信息"
+        title="关闭信息"
         @click="emit('close')"
       >
-        {{ dock ? '›' : '×' }}
+        ×
       </button>
     </header>
 
@@ -968,34 +970,86 @@ onMounted(() => {
   border-color: var(--line-2);
 }
 
+/* P5.24 美化：内容区留白固定为 12px，区组之间统一 10px —— 与下面的卡片式分组配合，
+   整栏是「一列等距卡片」，不再是疏密不一的裸段落。 */
 .vp-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 10px 12px 18px;
+  padding: 12px 12px 20px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 
+/* 浮层态自己滚动 → 同样 6px 细滚动条、默认半透明、hover 加深（停靠态由 .p-side 负责）。
+   标准属性只在没有 ::-webkit-scrollbar 的浏览器里生效 —— Chromium 写了它就会忽略 6px 宽度。 */
+@supports not selector(::-webkit-scrollbar) {
+  .vp-body {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--fg) 16%, transparent) transparent;
+  }
+
+  .vp-body:hover {
+    scrollbar-color: color-mix(in srgb, var(--fg) 34%, transparent) transparent;
+  }
+}
+
+.vp-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.vp-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.vp-body::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--fg) 16%, transparent);
+}
+
+.vp-body:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--fg) 34%, transparent);
+}
+
+/* 卡片式分组：每组一块浅底（--bg，比面板底 --bg-2 更浅/更深，亮暗都成立）+ 圆角 + 内边距 */
 .vp-sec {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
+  padding: 10px 11px 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
 }
 
+/* 分区标题（人物 / 工作室 / 评分 / 标签 / 标记）统一：12px / 600 / 行高 1.4，
+   与组内内容固定 8px（.vp-sec 的 gap），上下间距由卡片 padding 统一。 */
 .vp-h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin: 0;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
+  line-height: 1.4;
   color: var(--fg-dim);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
 }
 
+/* 计数是胶囊徽标，等宽数字 —— 与标题同一基线与字号档位 */
 .vp-h3n {
-  margin-left: 5px;
-  font-weight: 400;
-  opacity: 0.75;
+  flex: 0 0 auto;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--bg-3);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  text-align: center;
+  color: var(--fg-dim);
+  font-variant-numeric: tabular-nums;
 }
 
 .vp-hint {
@@ -1012,27 +1066,35 @@ onMounted(() => {
   font-size: 12.5px;
 }
 
+/* 评分：星星靠左、数字右对齐（flex + margin-left:auto + 等宽数字），
+   窄栏放不下时整体换行而不是溢出（不产生横向滚动条）。 */
 .vp-rate {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px 8px;
 }
 
 .vp-stars {
   display: flex;
-  gap: 1px;
+  gap: 0;
 }
 
 .vp-star {
-  width: 22px;
+  width: 19px;
   height: 22px;
   padding: 0;
   border: 0;
   background: transparent;
   color: var(--line-2);
-  font-size: 16px;
+  font-size: 15px;
   line-height: 22px;
   cursor: pointer;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.vp-star:hover:not(:disabled) {
+  transform: scale(1.12);
 }
 
 .vp-star.on {
@@ -1044,11 +1106,17 @@ onMounted(() => {
   opacity: 0.6;
 }
 
+/* 分数贴右：margin-left:auto + 右对齐 + 等宽数字，值变化时宽度不抖 */
 .vp-rate-val {
+  margin-left: auto;
+  text-align: right;
+  white-space: nowrap;
   font-size: 12px;
   color: var(--fg-dim);
+  font-variant-numeric: tabular-nums;
 }
 
+/* 滑条与星星同一列宽、同一 28px 控件高，「清除」按钮与滑条垂直居中对齐 */
 .vp-rate-row {
   display: flex;
   align-items: center;
@@ -1056,20 +1124,38 @@ onMounted(() => {
 }
 
 .vp-slider {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 28px;
+  margin: 0;
   accent-color: var(--accent);
   cursor: pointer;
 }
 
+/* 按钮统一：高 28px、圆角 8px、hover 提亮边框与文字（填充色只用变量，亮暗都成立） */
 .vp-mini {
-  padding: 4px 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 8px;
   background: var(--bg-3);
   color: var(--fg-dim);
   font: inherit;
   font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
   cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.vp-mini:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .vp-mini:disabled {
@@ -1134,15 +1220,27 @@ onMounted(() => {
   cursor: default;
 }
 
+/* 「＋ 加演员 / ＋ 加标签」：与 .vp-mini 同高 28px，保持虚线胶囊的语言 */
 .vp-add {
-  padding: 3px 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 10px;
   border: 1px dashed var(--line-2);
   border-radius: 999px;
   background: transparent;
   color: var(--accent);
   font: inherit;
   font-size: 12px;
+  line-height: 1;
   cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.vp-add:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .vp-add:disabled {
@@ -1167,14 +1265,20 @@ onMounted(() => {
   gap: 5px;
 }
 
+/* 标记条目现在是「卡片里的卡片」：底色上提一档（--bg-3），圆角 8px */
 .vp-mark {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 4px 6px;
+  padding: 5px 7px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--bg);
+  border-radius: 8px;
+  background: var(--bg-3);
+  transition: border-color 0.15s ease;
+}
+
+.vp-mark:hover {
+  border-color: var(--line-2);
 }
 
 .vp-mark-pos {
@@ -1252,12 +1356,14 @@ onMounted(() => {
   padding-top: 4px;
 }
 
+/* 新增标记的输入框与按钮同一 28px 控件高（一行里不再有 24/26/28 三种高度） */
 .vp-mark-mmss {
   width: 68px;
-  padding: 3px 6px;
+  height: 28px;
+  padding: 0 6px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--bg);
+  border-radius: 8px;
+  background: var(--bg-3);
   color: var(--fg);
   font: inherit;
   font-size: 12px;
@@ -1267,23 +1373,30 @@ onMounted(() => {
 .vp-mark-label {
   flex: 1 1 90px;
   min-width: 0;
-  padding: 3px 6px;
+  height: 28px;
+  padding: 0 6px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--bg);
+  border-radius: 8px;
+  background: var(--bg-3);
   color: var(--fg);
   font: inherit;
   font-size: 12px;
 }
 
 .vp-mark-color {
-  width: 26px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--bg);
+  border-radius: 8px;
+  background: var(--bg-3);
   cursor: pointer;
+}
+
+.vp-mark-mmss:focus,
+.vp-mark-label:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 .vp-mini-ok {
@@ -1356,9 +1469,8 @@ onMounted(() => {
   cursor: default;
 }
 
-/* 区块标题旁的「本地」标记（local 档） */
+/* 区块标题旁的「本地」标记（local 档）：间距由 .vp-h3 的 gap 统一给 */
 .vp-h3-local {
-  margin-left: 6px;
   padding: 0 5px;
   border: 1px dashed var(--accent);
   border-radius: 999px;
