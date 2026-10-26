@@ -95,6 +95,10 @@
           aria-hidden="true"
           @error="scrubOn = false"
         />
+        <!-- P5.19 拖动跟随层的帧号：跟随帧是一张静止图，没有时间码就不知道拖到了哪一帧。
+             绝对定位（不参与 .p-stage 的 flex 布局 → 舞台定高不变）、pointer-events:none（不挡点击暂停），
+             与进度条右侧同一条口径（frameTimecode，缺帧率时退化成 mm:ss）。 -->
+        <span v-if="scrubOn" class="p-scrub-tc" :title="seekNowTitle">{{ frameTimecode(seekPos, frameFps) }}</span>
         <button v-if="tapVisible" class="p-tap" type="button" @click="onTapPlay">▶ 点击播放</button>
         <button v-if="restartVisible" class="p-restart" type="button" @click="onRestart">从头播放</button>
       </div>
@@ -189,11 +193,10 @@
                      失败（400/404/503）时这一层不渲染 → 用户看到的还是精灵图切片，不弹任何错。 -->
                 <div v-if="frameExact" class="p-hover-exact" :style="frameImgStyle"></div>
                 <span v-if="frameExact" class="p-preview-exact">精确帧</span>
-                <!-- 底部时间条：大字是**影片内容时间**（07:28），小字才是片段内部时间（片段 0:07 / 0:08） -->
-                <div class="p-preview-bar">
-                  <span class="p-preview-t">{{ previewLabelText }}</span>
-                  <span v-if="previewCaptionText" class="p-preview-sub">{{ previewCaptionText }}</span>
-                </div>
+                <!-- 底部时间条（P5.19）：大字是**带帧号的影片内容时间**（00:03:21:08），小字才是片段内部时间
+                     （片段 0:07 / 0:08），见 PreviewTimeBar.vue。z-index 3 → 压在 .p-hover-exact 精确帧之上，
+                     所以「精确帧浮层」看到的时间码同样是带帧号的那一条。 -->
+                <PreviewTimeBar :sec="previewInfo.labelSec" :fps="frameFps" :caption="previewCaptionText" />
               </div>
             </div>
           <!-- P4.1 标记轨（marker lane）：进度条下方独立一条，间距 var(--lane-gap)=3px（P4.3 起的值）。
@@ -254,8 +257,10 @@
               </button>
             </div>
           </span>
-          <!-- P5.16：拖动中显示帧级时间码「位置 hh:mm:ss:ff / 总时长」，不拖动时保持原来的 mm:ss 简洁格式 -->
-          <span class="p-seek-now" :class="{ 'is-frame': seekDragging && hasFps }">{{ seekNowText }}</span>
+          <!-- P5.19：时间码**一直**显示帧号（静止 / 暂停 / 播放 / 拖动同一条「位置 hh:mm:ss:ff / 总时长」，
+               文案由 playerExtras.seekTimecodeText 一处生成）。缺帧率的片退化成 mm:ss，
+               title 里如实说明「该片缺帧率数据」（seekNowTitle），不编假帧号。 -->
+          <span class="p-seek-now" :class="{ 'is-frame': hasFps }" :title="seekNowTitle">{{ seekNowText }}</span>
         </div>
 
         <div class="p-ctrlline">
@@ -435,11 +440,13 @@ import {
   createGainGraph,
   createRafSeek,
   createThrottle,
+  durText,
   fineDelta,
   FINE_DRAG_ZOOM,
   frameOf,
   frameStep,
   frameStepSize,
+  frameTimecode,
   frameToSec,
   halfFrameSec,
   normFps,
@@ -458,6 +465,8 @@ import {
   seekPxToRatio,
   seekPreview,
   seekRatioCss,
+  seekTimecodeText,
+  seekTimecodeTitle,
   seekThumbPx,
   seekTrackGeom,
   speedLabel,
@@ -467,6 +476,8 @@ import {
 } from './playerExtras'
 // P5.15：hover 精确帧的调度（debounce 250ms / LRU 60 张 / 同秒去重 / 失败静默回退，纯逻辑可单测）
 import { createFramePicker, frameSecond } from './framePicker'
+// P5.19：浮层底部时间条（大字改成带帧号的 hh:mm:ss:ff，SSR 可渲染验证）
+import PreviewTimeBar from './PreviewTimeBar.vue'
 
 const props = defineProps({
   /** 当前播放的视频对象 */
@@ -528,8 +539,8 @@ const frameFps = computed(() => normFps(props.video && props.video.fps))
 const hasFps = computed(() => frameFps.value > 0)
 /** 进度条步长：知道帧率就按「一帧」走（否则永远落不到某一帧），不知道时保持整秒 */
 const seekStep = computed(() => (hasFps.value ? 1 / frameFps.value : 1))
-/** 拖动中的响应式镜像（qSeekDragging 是给状态机用的普通变量，模板读不到它） */
-const seekDragging = ref(false)
+/* P5.19：原来给模板用的「拖动中」响应式镜像 seekDragging 已删除 —— 时间码不再区分拖动 / 静止，
+   模板里没有第二个消费者；真正的拖动状态仍是 qSeekDragging（控制条自动隐藏状态机用）。 */
 /** 自绘控制条用的状态镜像（真值仍以 <video> 为准，事件里同步） */
 const isPlaying = ref(false)
 const volume = ref(1)
@@ -605,9 +616,10 @@ const spriteSrc = computed(() => (hasSprite.value ? api.spriteUrl(props.video.id
 const previewSrc = computed(() => (hasPreview.value ? api.previewUrl(props.video.id) : ''))
 
 /* P5.2：三处徽标都由 seekPreview 一处换算（纯函数，playerExtras 单测覆盖），
-   浮层大字 = 影片内容时间（ratio × 内容时长，mm:ss / h:mm:ss），不是 8 秒片段时长 */
+   浮层大字 = 影片内容时间（ratio × 内容时长），不是 8 秒片段时长。
+   P5.19：大字改成带帧号的 hh:mm:ss:ff —— 格式化交给 PreviewTimeBar（frameTimecode），
+   与进度条右侧同一个纯函数，缺帧率时两边一起退化成 mm:ss。 */
 const previewInfo = computed(() => seekPreview(previewRatio.value, seekDur.value || 0, clipDur))
-const previewLabelText = computed(() => previewInfo.value.labelTime)
 const previewCaptionText = computed(() =>
   previewMode.value === 'clip' ? clipCaption(clipTime.value, previewInfo.value.clipDur) : ''
 )
@@ -632,31 +644,33 @@ const seekVars = computed(() => ({
 }))
 
 /**
- * P5.16 进度条右侧时间码：
- *   拖动中 → 「位置 hh:mm:ss:ff / 总时长」（帧号要两位，才看得出落在哪一帧）；
- *   不拖动 → 保持原来的「mm:ss / mm:ss」（fmtDur 对未知时长仍返回 --:--，行为不变）；
- *   fps 未知 → 一直用简洁格式（不知道帧率就不编帧号）。
+ * P5.19 进度条右侧时间码：**一直**显示帧号（P5.16 只在拖动中显示，用户要求改成常显）。
+ *   有 fps → 「位置 hh:mm:ss:ff / 总时长 hh:mm:ss:ff」，静止 / 暂停 / 播放 / 拖动完全同一条；
+ *   无 fps → 「位置 mm:ss / mm:ss」（不知道帧率就不编假帧号，见 playerExtras.frameTimecode）。
+ * 文案只有一个来源（playerExtras.seekTimecodeText），单测直接覆盖这条字符串。
+ * 刷新频率：不新增任何逐帧渲染 —— seekPos 仍由 onTimeUpdate（浏览器 timeupdate，约 4–5 次/秒）
+ * 与拖动时的 input / 逐帧步进写入，帧号变化肉眼可见，渲染次数与 P5.18 完全一致。
  */
-const seekNowText = computed(() => {
-  const fps = frameFps.value
-  if (fps && seekDragging.value) {
-    return '位置 ' + timecode(seekPos.value, fps) + ' / ' + timecode(seekDur.value || 0, fps)
-  }
-  return fmtDur(seekPos.value) + ' / ' + fmtDur(seekDur.value)
-})
+const seekNowText = computed(() => seekTimecodeText(seekPos.value, seekDur.value, frameFps.value))
+
+/** 时间码的 title：有帧率写清四位含义，缺帧率如实说明「该片缺帧率数据」 */
+const seekNowTitle = computed(() => seekTimecodeTitle(frameFps.value))
 
 /** 进度条 title：无 fps 时不能承诺「精细」，如实说明按整秒拖动 */
 const seekTitle = computed(() =>
-  hasFps.value ? 'Shift+拖动 = 精细（落到帧）' : '播放位置（该片未探测到帧率，按整秒拖动）'
+  hasFps.value ? 'Shift+拖动 = 精细（落到帧）' : '播放位置（该片缺帧率数据，按整秒拖动、不显示帧号）'
 )
 
-/** 无障碍文本：知道帧率时补上时间码与帧号（读屏用户也能知道落在哪一帧） */
+/** 无障碍文本：知道帧率时补上时间码与帧号（读屏用户也能听到落在哪一帧），两侧都带帧号 */
 const seekAriaText = computed(() => {
   const fps = frameFps.value
-  const base = fmtDur(seekPos.value) + ' / ' + fmtDur(seekDur.value)
-  if (!fps) return base
+  if (!fps) return durText(seekPos.value) + ' / ' + durText(seekDur.value)
   const n = frameOf(seekPos.value, fps)
-  return timecode(seekPos.value, fps) + '（第 ' + (n == null ? 0 : n) + ' 帧） / ' + fmtDur(seekDur.value)
+  return (
+    timecode(seekPos.value, fps) +
+    '（第 ' + (n == null ? 0 : n) + ' 帧） / ' +
+    timecode(seekDur.value || 0, fps)
+  )
 })
 
 /** 进度条已播放部分（CSS 渐变的断点）：原生 appearance 关掉后自己画填充，亮暗都跟 --accent */
@@ -895,13 +909,12 @@ const actorList = computed(() => props.video.actors || [])
 
 const qLabel = (q) => Q_LABELS[q] || '原画'
 
-/** app.js:230-234 fmtDur */
+/**
+ * app.js:230-234 fmtDur —— 实现搬到 playerExtras.durText（P5.19：进度条右侧退化文案与它必须同一口径，
+ * 而纯函数才可单测）。行为一字未改：0 / 未知 / 负数 → --:--。
+ */
 function fmtDur(sec) {
-  if (sec == null || !isFinite(sec) || sec <= 0) return '--:--'
-  const t = Math.round(sec)
-  const m = Math.floor(t / 60)
-  const s = t % 60
-  return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s
+  return durText(sec)
 }
 
 /** app.js:236-241 fmtSize */
@@ -1365,7 +1378,6 @@ function onSeekInput(e) {
   // P5.16：Shift 精细拖动是「接管」手势，原生 range 的 value 变化一律忽略
   if (fineDrag.active) return
   qSeekDragging = true
-  seekDragging.value = true
   syncCtrlState()
   // P5.16 帧级：value 是连续值（step = 1/fps），这里再吸一次帧栅格，
   // 保证 currentTime 恰好 = round(t*fps)/fps（浏览器对 step 的取整有浮点误差）。
@@ -1400,7 +1412,6 @@ function onSeekCommit(e) {
  */
 function commitSeekTo(target) {
   qSeekDragging = false
-  seekDragging.value = false
   syncCtrlState()
   hidePreview()
   const resume = dragAutoPaused // 拖动期间被 pauseForTranscodeDrag 暂停过
@@ -1468,7 +1479,6 @@ function onSeekPointerDown(e) {
   fineDrag.duration = dur
   fineDragging.value = true
   qSeekDragging = true
-  seekDragging.value = true
   syncCtrlState()
   hoverPreview.cancel()
   hidePreview()
@@ -2678,45 +2688,20 @@ defineExpose({
   opacity: 1;
 }
 
-/* 底部时间条（压在画面下沿的半透明条，不遮主体）：
-   大字 = **影片内容时间**（07:28），小字 = 片段内部时间（片段 0:07 / 0:08）。
-   两者分开标注，就是为了不再把 8 秒成片的时长误读成影片位置（P5.2 用户反馈）。 */
-.p-preview-bar {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  /* z-index 3 > 精确帧层 1：时间码永远压在画面之上 */
-  z-index: 3;
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 6px;
-  padding: 2px 6px;
-  background: color-mix(in srgb, var(--bg) 78%, transparent);
-  color: var(--fg);
-  font-variant-numeric: tabular-nums;
-  line-height: 1.3;
-}
+/* P5.19：浮层底部时间条（.p-preview-bar / -t / -sub）的样式已随组件搬到 PreviewTimeBar.vue —
+   大字在那里渲染「带帧号的内容时间」，样式跟着 DOM 走才不会两边各写一套。 */
 
-.p-preview-t {
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.p-preview-sub {
-  font-size: 10.5px;
-  color: var(--fg-dim);
-}
-
+/* P5.19 进度条右侧时间码：**一直**显示「位置 hh:mm:ss:ff / 总时长 hh:mm:ss:ff」。
+   一行不换行（溢出时宁可缩短轨道也不能把时间码折成两行 —— 折行后和标记轨、浮层锚点全错位）。 */
 .p-seek-now {
   flex-shrink: 0;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
   font-size: 12px;
   color: var(--fg-dim);
 }
 
-/* P5.16 拖动中的帧级时间码要更醒目一点：等宽数字 + 主文字色（位置是这一刻最重要的信息） */
+/* 知道帧率时（P5.16 起就有的口径，P5.19 起常亮）：等宽数字 + 主文字色，帧号是这一刻最重要的信息 */
 .p-seek-now.is-frame {
   color: var(--fg);
   letter-spacing: 0.2px;
@@ -2872,6 +2857,29 @@ defineExpose({
   height: 100%;
   object-fit: contain;
   background: #000;
+  pointer-events: none;
+}
+
+/* P5.19 拖动跟随层左上角的帧号：跟随帧没有原生时间码，拖到哪里只能靠这行字看出来。
+   绝对定位（.p-stage 是 flex，绝对定位不参与布局 → 舞台定高不受影响）、pointer-events:none
+   （不挡「点画面暂停」），z-index 2：压在跟随帧 1 之上，与「点击播放」同级（位置不重叠），
+   低于控制条 5。
+   半透明底 + --fg 文字 = mediaTheme 变量，亮暗主题都可读；窄屏字号在下面 @media 里再降一档。 */
+.p-scrub-tc {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 2;
+  max-width: calc(100% - 24px);
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  color: var(--fg);
+  font-size: 12.5px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
   pointer-events: none;
 }
 
@@ -3043,8 +3051,20 @@ defineExpose({
     display: none;
   }
 
+  /* P5.19：常显的「位置 hh:mm:ss:ff / hh:mm:ss:ff」比原来的 mm:ss 长 60%。
+     窄屏再大字号会把进度条轨道压到很窄，这里降一档（仍然 ≥11px，可读），
+     同时去掉 letter-spacing 省出 2 个字符的宽度；不换行由 .p-seek-now 的 nowrap 保证。 */
   .p-seek-now {
-    font-size: 12.5px;
+    font-size: 11px;
+    letter-spacing: 0;
+  }
+
+  /* 拖动跟随层的帧号：窄屏缩一档，位置贴近左上角，避免压住画面中心 */
+  .p-scrub-tc {
+    left: 8px;
+    top: 8px;
+    font-size: 11px;
+    padding: 1px 6px;
   }
 }
 

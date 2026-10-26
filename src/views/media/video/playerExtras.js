@@ -926,6 +926,62 @@ export function timecode(sec, fps) {
   return head + ':' + pad2(ff)
 }
 
+/* ==================== P5.19 帧号时间码文案（进度条 / 浮层共用一套口径） ==================== */
+
+/**
+ * 秒级时长文案 mm:ss：0 / 负数 / 非数字 → "--:--"。
+ * 与 MediaPlayer 的 fmtDur（app.js:230-234）**同一口径** —— 那边已改成调用本函数，
+ * 于是「时长 / 进度条退化文案」只有一套数字，不会一处 00:00、一处 --:--。
+ */
+export function durText(sec) {
+  const n = num(sec)
+  if (n == null || n <= 0) return '--:--'
+  const t = Math.round(n)
+  const m = Math.floor(t / 60)
+  const s = t % 60
+  return (m < 10 ? '0' : '') + m + ':' + pad2(s)
+}
+
+/**
+ * 帧号时间码（P5.19 唯一入口）：知道帧率 → hh:mm:ss:ff；不知道 → mm:ss。
+ * 为什么不补一个假帧号：帧号只能由帧率算出来，猜一个 30 会让 23.976 的片越拖越错
+ * （与 normFps 的注释同一理由），所以「不知道」就如实退化成 mm:ss（没有 ff 段）。
+ * sec 为 null / 负数（内容时长还没就绪）→ "--:--"，与旧的浮层标签 previewTimeLabel 一致。
+ */
+export function frameTimecode(sec, fps) {
+  const n = num(sec)
+  if (n == null || n < 0) return '--:--'
+  const f = normFps(fps)
+  return f ? timecode(n, f) : previewTimeLabel(n)
+}
+
+/**
+ * 进度条右侧的时间码（P5.19：静止 / 暂停 / 播放 / 拖动**都**走这一条，不再只在拖动时出帧号）：
+ *   有 fps → "位置 00:03:21 / 02:00:31:08"
+ *   无 fps → "位置 03:21 / 02:00"（mm:ss；时长未就绪时右边是 --:--）
+ */
+export function seekTimecodeText(posSec, durSec, fps) {
+  const f = normFps(fps)
+  if (f) {
+    const d = num(durSec)
+    // 总时长还没就绪（0 / 未知）→ "--:--"，与无帧率分支、与 fmtDur 同一口径：
+    // 「不知道」就写 --:--，不写成 00:00:00:00 这种看起来像「0 秒片」的假值。
+    const total = d != null && d > 0 ? timecode(d, f) : '--:--'
+    return '位置 ' + timecode(posSec, f) + ' / ' + total
+  }
+  return '位置 ' + durText(posSec) + ' / ' + durText(durSec)
+}
+
+/**
+ * 时间码的 title（悬停说明当前口径）：缺帧率时要**说清楚**为什么没有帧号
+ * （P5.19 验收第 4 条：「在 title 里说明该片缺帧率数据」）。
+ */
+export function seekTimecodeTitle(fps) {
+  return normFps(fps)
+    ? '时:分:秒:帧（hh:mm:ss:ff），帧号按该片探测到的帧率换算，暂停 / 播放 / 拖动都显示'
+    : '该片缺帧率数据，时间码退化为 mm:ss（不显示假帧号；探测到帧率后自动补上帧号）'
+}
+
 /**
  * 精细拖动的位移 → 内容时间增量（秒）。
  * zoom = 1 → 常规灵敏度（整条轨道 = 整个时长）；zoom = 10 → 同一像素位移只前进 1/10 时长。
