@@ -1,0 +1,2711 @@
+    [shot] devtools\p540-ui\out\after\01-home-light-1600.png
+    [shot] devtools\p540-ui\out\after\02-home-collapsed-1600.png
+    [shot] devtools\p540-ui\out\after\03-home-dark-1600.png
+    [shot] devtools\p540-ui\out\after\04-playlists-toast-light-1600.png
+    [shot] devtools\p540-ui\out\after\05-playlists-toast-stack-light-1600.png
+    [shot] devtools\p540-ui\out\after\06-playlists-toast-dark-1600.png
+    [shot] devtools\p540-ui\out\after\07-video-toast-1600.png
+    [shot] devtools\p540-ui\out\after\08-mobile-drawer-390.png
+    [shot] devtools\p540-ui\out\after\09-mobile-toast-390.png
+    [shot] devtools\p540-ui\out\after\10-mobile-video-toast-390.png
+
+-- 判据 --
+  PASS 左栏宽度已收窄且不窄于 168px — 176px
+  PASS 展开态导航文字全部不截断 — 首页=28/28 全部工具=56/56 视频库=42/42 图片站=42/42 人物=28/28 播放列表=56/56 浅色模式=56/56 GitHub=45/45 登录=28/28
+  PASS 站点名不被截断 — 80/80
+  PASS hover 高亮块与导航内容盒左右对齐 — {"navContentLeft":6,"navContentRight":169,"firstLinkLeft":6,"firstLinkRight":169}
+  PASS 首页无横向溢出 — 1585<=1600
+  PASS 折叠态仍为 56px — 56
+  PASS hero h1 computed font-family 含 SmileySans — SmileySans, MiSans, MiSans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "H
+  PASS document.fonts.check(SmileySans, 青兔工具箱) 为 true — true
+  PASS 得意黑 woff2 真被下载 — ["http://127.0.0.1:5403/src/assets/brand/v3/fonts/smiley-sans.woff2"]
+  PASS SmileySans @font-face 状态 loaded — [{"family":"SmileySans","weight":"100 900","status":"loaded"}]
+  PASS 「青」用得意黑字形（与 monospace 不同宽） — 25.6 vs 32
+  PASS 「龙」子集外→回退（与 monospace 同宽，5 字限制的证据） — 32 vs 32
+  PASS 折叠可再展开（宽度回落） — 176
+  PASS 暗色主题真生效（走应用自己的按钮） — {"isDark":true,"pageBg":"rgb(20, 20, 20)"}
+  PASS 再切回浅色成功（主题切换未破） — false
+  PASS 暗色下 toast 仍在顶部居中且不压左栏 — {"isDark":true,"cls":"ms-toast","bg":"rgb(35, 35, 36)","color":"rgb(229, 234, 243)","rect":{"x":707.5,"y":12,"w":170.1,"h":36.2},"railOverlap":0}
+  PASS 视频库 toast 不压左栏与工具栏控件 — {"items":[{"x":660.5,"y":96,"w":264,"h":36.2,"right":924.5,"bottom":132.2}],"toolbar":{"x":176,"y":0,"w":1409,"h":86.4,"right":1585,"bottom":86.4},"overlaps":[]}
+  PASS 窄屏视频库 toast 不溢出 — [{"x":63,"y":216,"w":264,"h":36.2,"right":327,"bottom":252.2}]
+  PASS toast 已渲染 — 1
+  PASS toast 与 .qt-rail 相交面积为 0 — {"toast":[{"x":711.1,"y":12,"w":162.7,"h":36.2,"right":873.9,"bottom":48.2}],"rail":{"x":0,"y":0,"w":176,"h":1000,"right":176,"bottom":1000},"overlap":[0]}
+  PASS toast 不压主操作按钮 — []
+  PASS toast 在视口内且无横向溢出 — {"w":1600,"h":1000}
+  PASS 多条 toast 纵向堆叠不重叠 — {"count":3,"gaps":[8,8]}
+  PASS 窄屏 toast 不溢出、不压抽屉 — [{"x":109.7,"y":60,"w":170.6,"h":36.2,"right":280.3,"bottom":96.2}]
+  PASS 窄屏抽屉不超出视口 — 176
+
+== RESULT after ==
+{
+  "railDesktop": {
+    "rail": {
+      "x": 0,
+      "y": 0,
+      "w": 176,
+      "h": 1000,
+      "right": 176,
+      "bottom": 1000
+    },
+    "collapsed": false,
+    "pad": {
+      "navL": "6px",
+      "navR": "6px",
+      "linkL": "8px",
+      "linkR": "8px",
+      "gap": "8px",
+      "logoL": "12px",
+      "logoGap": "8px",
+      "footL": "6px"
+    },
+    "align": {
+      "navContentLeft": 6,
+      "navContentRight": 169,
+      "firstLinkLeft": 6,
+      "firstLinkRight": 169
+    },
+    "linkTextRoom": 121,
+    "labels": [
+      {
+        "t": "首页",
+        "scroll": 28,
+        "client": 28,
+        "cut": false
+      },
+      {
+        "t": "全部工具",
+        "scroll": 56,
+        "client": 56,
+        "cut": false
+      },
+      {
+        "t": "视频库",
+        "scroll": 42,
+        "client": 42,
+        "cut": false
+      },
+      {
+        "t": "图片站",
+        "scroll": 42,
+        "client": 42,
+        "cut": false
+      },
+      {
+        "t": "人物",
+        "scroll": 28,
+        "client": 28,
+        "cut": false
+      },
+      {
+        "t": "播放列表",
+        "scroll": 56,
+        "client": 56,
+        "cut": false
+      },
+      {
+        "t": "浅色模式",
+        "scroll": 56,
+        "client": 56,
+        "cut": false
+      },
+      {
+        "t": "GitHub",
+        "scroll": 45,
+        "client": 45,
+        "cut": false
+      },
+      {
+        "t": "登录",
+        "scroll": 28,
+        "client": 28,
+        "cut": false
+      }
+    ],
+    "logoText": {
+      "scroll": 80,
+      "client": 80,
+      "cut": false
+    },
+    "overflowX": {
+      "scrollW": 1585,
+      "innerW": 1600
+    }
+  },
+  "hero": {
+    "text": "青兔工具箱",
+    "family": "SmileySans, MiSans, MiSans, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", Arial, sans-serif",
+    "weight": "600",
+    "size": "32px",
+    "rect": {
+      "x": 233,
+      "y": 65,
+      "w": 1295,
+      "h": 41.6,
+      "right": 1528,
+      "bottom": 106.6
+    },
+    "checkSubset": true,
+    "checkOutside": true,
+    "faces": [
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "loaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "loaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "loaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "loaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "loaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "loaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "loaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "loaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "loaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "loaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "loaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "loaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "loaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "loaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "loaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "loaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "loaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "loaded"
+      },
+      {
+        "family": "MiSans",
+        "weight": "400",
+        "status": "loaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "MiSans Semibold",
+        "weight": "400",
+        "status": "unloaded"
+      },
+      {
+        "family": "SmileySans",
+        "weight": "100 900",
+        "status": "loaded"
+      }
+    ],
+    "files": [
+      "http://127.0.0.1:5403/src/assets/brand/v3/fonts/smiley-sans.woff2"
+    ],
+    "width": {
+      "computed": 128,
+      "fallbackOnly": 160
+    },
+    "smileyFaces": [
+      {
+        "family": "SmileySans",
+        "weight": "100 900",
+        "status": "loaded"
+      }
+    ],
+    "subset": {
+      "long": 32,
+      "longBase": 32,
+      "qing": 25.6,
+      "qingBase": 32
+    },
+    "overflowX": {
+      "scrollW": 1585,
+      "innerW": 1600
+    }
+  },
+  "hover": {
+    "hoverBg": "rgb(242, 246, 252)",
+    "hoverColor": "rgb(48, 49, 51)",
+    "link": {
+      "x": 6,
+      "right": 169
+    },
+    "activeBar": {
+      "left": "0px",
+      "width": "3px",
+      "height": "18px"
+    },
+    "activeBox": {
+      "x": 6,
+      "right": 169
+    }
+  },
+  "railCollapsed": {
+    "rail": {
+      "x": 0,
+      "y": 0,
+      "w": 56,
+      "h": 1000,
+      "right": 56,
+      "bottom": 1000
+    },
+    "collapsed": true,
+    "pad": {
+      "navL": "8px",
+      "navR": "8px",
+      "linkL": "0px",
+      "linkR": "0px",
+      "gap": "0px",
+      "logoL": "0px",
+      "logoGap": "8px",
+      "footL": "8px"
+    },
+    "align": {
+      "navContentLeft": 8,
+      "navContentRight": 47,
+      "firstLinkLeft": 8,
+      "firstLinkRight": 47
+    },
+    "linkTextRoom": 21,
+    "labels": [
+      {
+        "t": "首页",
+        "scroll": 0,
+        "client": 0,
+        "cut": false
+      },
+      {
+        "t": "全部工具",
+        "scroll": 0,
+        "client": 0,
+        "cut": false
+      },
+      {
+        "t": "视频库",
+        "scroll": 0,
+        "client": 0,
+        "cut": false
+      },
+      {
+        "t": "图片站",
+        "scroll": 0,
+        "client": 0,
+        "cut": false
+      },
+      {
+        "t": "人物",
+        "scroll": 0,
+        "client": 0,
+        "cut": false
+      },
+      {
+        "t": "播放列表",
+        "scroll": 0,
+        "client": 0,
+        "cut": false
+      },
+      {
+        "t": "浅色模式",
+        "scroll": 0,
+        "client": 0,
+        "cut": false
+      },
+      {
+        "t": "GitHub",
+        "scroll": 0,
+        "client": 0,
+        "cut": false
+      },
+      {
+        "t": "登录",
+        "scroll": 0,
+        "client": 0,
+        "cut": false
+      }
+    ],
+    "logoText": {
+      "scroll": 0,
+      "client": 0,
+      "cut": false
+    },
+    "overflowX": {
+      "scrollW": 1585,
+      "innerW": 1600
+    }
+  },
+  "reExpanded": {
+    "collapsed": false,
+    "w": 176
+  },
+  "dark": {
+    "isDark": true,
+    "h1Color": "rgb(229, 234, 243)",
+    "h1Family": "SmileySans, MiSans, MiSans, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", Arial, sans-serif",
+    "railBg": "rgb(29, 30, 31)",
+    "pageBg": "rgb(20, 20, 20)"
+  },
+  "lightNote": {
+    "isDark": false
+  },
+  "railPlaylists": {
+    "rail": {
+      "x": 0,
+      "y": 0,
+      "w": 176,
+      "h": 1000,
+      "right": 176,
+      "bottom": 1000
+    },
+    "collapsed": false,
+    "pad": {
+      "navL": "6px",
+      "navR": "6px",
+      "linkL": "8px",
+      "linkR": "8px",
+      "gap": "8px",
+      "logoL": "12px",
+      "logoGap": "8px",
+      "footL": "6px"
+    },
+    "align": {
+      "navContentLeft": 6,
+      "navContentRight": 169,
+      "firstLinkLeft": 6,
+      "firstLinkRight": 169
+    },
+    "linkTextRoom": 121,
+    "labels": [
+      {
+        "t": "首页",
+        "scroll": 28,
+        "client": 28,
+        "cut": false
+      },
+      {
+        "t": "全部工具",
+        "scroll": 56,
+        "client": 56,
+        "cut": false
+      },
+      {
+        "t": "视频库",
+        "scroll": 42,
+        "client": 42,
+        "cut": false
+      },
+      {
+        "t": "图片站",
+        "scroll": 42,
+        "client": 42,
+        "cut": false
+      },
+      {
+        "t": "人物",
+        "scroll": 28,
+        "client": 28,
+        "cut": false
+      },
+      {
+        "t": "播放列表",
+        "scroll": 56,
+        "client": 56,
+        "cut": false
+      },
+      {
+        "t": "浅色模式",
+        "scroll": 56,
+        "client": 56,
+        "cut": false
+      },
+      {
+        "t": "GitHub",
+        "scroll": 45,
+        "client": 45,
+        "cut": false
+      },
+      {
+        "t": "登录",
+        "scroll": 28,
+        "client": 28,
+        "cut": false
+      }
+    ],
+    "logoText": {
+      "scroll": 80,
+      "client": 80,
+      "cut": false
+    },
+    "overflowX": {
+      "scrollW": 1585,
+      "innerW": 1600
+    }
+  },
+  "probe": {
+    "A_topcenter": {
+      "rect": {
+        "x": 711.1,
+        "y": 12,
+        "w": 162.7,
+        "h": 36.2,
+        "right": 873.9,
+        "bottom": 48.2
+      },
+      "railOverlap": 0,
+      "btnOverlaps": []
+    },
+    "B_topright": {
+      "rect": {
+        "x": 1406.3,
+        "y": 12,
+        "w": 162.7,
+        "h": 36.2,
+        "right": 1569,
+        "bottom": 48.2
+      },
+      "railOverlap": 0,
+      "btnOverlaps": [
+        "新建:1278",
+        "刷新:1519"
+      ]
+    }
+  },
+  "toastOne": {
+    "count": 1,
+    "items": [
+      {
+        "cls": "ms-toast",
+        "pos": "static",
+        "top": "auto",
+        "left": "auto",
+        "right": "auto",
+        "bg": "rgb(255, 255, 255)",
+        "rect": {
+          "x": 711.1,
+          "y": 12,
+          "w": 162.7,
+          "h": 36.2,
+          "right": 873.9,
+          "bottom": 48.2
+        }
+      }
+    ],
+    "rail": {
+      "x": 0,
+      "y": 0,
+      "w": 176,
+      "h": 1000,
+      "right": 176,
+      "bottom": 1000
+    },
+    "railOverlap": [
+      0
+    ],
+    "btnOverlaps": [],
+    "inViewport": true,
+    "toolbar": null,
+    "layer": {
+      "pos": "fixed",
+      "top": "12px",
+      "left": "0px",
+      "right": "0px",
+      "z": "900",
+      "pointer": "none"
+    },
+    "stackGaps": [],
+    "viewport": {
+      "w": 1600,
+      "h": 1000
+    },
+    "overflowX": {
+      "scrollW": 1585,
+      "innerW": 1600
+    }
+  },
+  "toastStack": {
+    "count": 3,
+    "items": [
+      {
+        "cls": "ms-toast",
+        "pos": "static",
+        "top": "auto",
+        "left": "auto",
+        "right": "auto",
+        "bg": "rgb(255, 255, 255)",
+        "rect": {
+          "x": 711.1,
+          "y": 12,
+          "w": 162.7,
+          "h": 36.2,
+          "right": 873.9,
+          "bottom": 48.2
+        }
+      },
+      {
+        "cls": "ms-toast",
+        "pos": "static",
+        "top": "auto",
+        "left": "auto",
+        "right": "auto",
+        "bg": "rgb(255, 255, 255)",
+        "rect": {
+          "x": 708,
+          "y": 56.2,
+          "w": 169.1,
+          "h": 36.2,
+          "right": 877,
+          "bottom": 92.4
+        }
+      },
+      {
+        "cls": "ms-toast",
+        "pos": "static",
+        "top": "auto",
+        "left": "auto",
+        "right": "auto",
+        "bg": "rgb(255, 255, 255)",
+        "rect": {
+          "x": 707.5,
+          "y": 100.4,
+          "w": 170.1,
+          "h": 36.2,
+          "right": 877.5,
+          "bottom": 136.6
+        }
+      }
+    ],
+    "rail": {
+      "x": 0,
+      "y": 0,
+      "w": 176,
+      "h": 1000,
+      "right": 176,
+      "bottom": 1000
+    },
+    "railOverlap": [
+      0,
+      0,
+      0
+    ],
+    "btnOverlaps": [],
+    "inViewport": true,
+    "toolbar": null,
+    "layer": {
+      "pos": "fixed",
+      "top": "12px",
+      "left": "0px",
+      "right": "0px",
+      "z": "900",
+      "pointer": "none"
+    },
+    "stackGaps": [
+      8,
+      8
+    ],
+    "viewport": {
+      "w": 1600,
+      "h": 1000
+    },
+    "overflowX": {
+      "scrollW": 1585,
+      "innerW": 1600
+    }
+  },
+  "toastDark": {
+    "isDark": true,
+    "cls": "ms-toast",
+    "bg": "rgb(35, 35, 36)",
+    "color": "rgb(229, 234, 243)",
+    "rect": {
+      "x": 707.5,
+      "y": 12,
+      "w": 170.1,
+      "h": 36.2
+    },
+    "railOverlap": 0
+  },
+  "videoPage": {
+    "hasToastLayer": false,
+    "legacyToastNodes": 0,
+    "toolbar": {
+      "x": 176,
+      "y": 0,
+      "w": 1409
+    },
+    "overflowX": {
+      "scrollW": 1585,
+      "innerW": 1600
+    }
+  },
+  "toastVideo": {
+    "count": 1,
+    "items": [
+      {
+        "cls": "ms-toast",
+        "pos": "static",
+        "top": "auto",
+        "left": "auto",
+        "right": "auto",
+        "bg": "rgb(35, 35, 36)",
+        "rect": {
+          "x": 660.5,
+          "y": 96,
+          "w": 264,
+          "h": 36.2,
+          "right": 924.5,
+          "bottom": 132.2
+        }
+      }
+    ],
+    "rail": {
+      "x": 0,
+      "y": 0,
+      "w": 176,
+      "h": 1000,
+      "right": 176,
+      "bottom": 1000
+    },
+    "railOverlap": [
+      0
+    ],
+    "btnOverlaps": [],
+    "inViewport": true,
+    "toolbar": {
+      "x": 176,
+      "y": 0,
+      "w": 1409,
+      "h": 86.4,
+      "right": 1585,
+      "bottom": 86.4
+    },
+    "layer": {
+      "pos": "fixed",
+      "top": "96px",
+      "left": "0px",
+      "right": "0px",
+      "z": "900",
+      "pointer": "none"
+    },
+    "stackGaps": [],
+    "viewport": {
+      "w": 1600,
+      "h": 1000
+    },
+    "overflowX": {
+      "scrollW": 1585,
+      "innerW": 1600
+    }
+  },
+  "mobileDrawer": {
+    "rail": {
+      "x": 0,
+      "y": 0,
+      "w": 176,
+      "h": 844
+    },
+    "drawerOpen": true,
+    "labels": [
+      {
+        "t": "首页",
+        "cut": false
+      },
+      {
+        "t": "全部工具",
+        "cut": false
+      },
+      {
+        "t": "视频库",
+        "cut": false
+      },
+      {
+        "t": "图片站",
+        "cut": false
+      },
+      {
+        "t": "人物",
+        "cut": false
+      },
+      {
+        "t": "播放列表",
+        "cut": false
+      },
+      {
+        "t": "暗色模式",
+        "cut": false
+      },
+      {
+        "t": "GitHub",
+        "cut": false
+      },
+      {
+        "t": "登录",
+        "cut": false
+      }
+    ]
+  },
+  "toastMobile": {
+    "count": 1,
+    "items": [
+      {
+        "cls": "ms-toast",
+        "pos": "static",
+        "top": "auto",
+        "left": "auto",
+        "right": "auto",
+        "bg": "rgb(35, 35, 36)",
+        "rect": {
+          "x": 109.7,
+          "y": 60,
+          "w": 170.6,
+          "h": 36.2,
+          "right": 280.3,
+          "bottom": 96.2
+        }
+      }
+    ],
+    "rail": {
+      "x": -176,
+      "y": 0,
+      "w": 176,
+      "h": 844,
+      "right": 0,
+      "bottom": 844
+    },
+    "railOverlap": [
+      0
+    ],
+    "btnOverlaps": [
+      "新建播放列表名称",
+      "刷新"
+    ],
+    "inViewport": true,
+    "toolbar": null,
+    "layer": {
+      "pos": "fixed",
+      "top": "60px",
+      "left": "0px",
+      "right": "0px",
+      "z": "900",
+      "pointer": "none"
+    },
+    "stackGaps": [],
+    "viewport": {
+      "w": 390,
+      "h": 844
+    },
+    "overflowX": {
+      "scrollW": 390,
+      "innerW": 390
+    }
+  },
+  "toastVideoMobile": {
+    "count": 1,
+    "items": [
+      {
+        "cls": "ms-toast",
+        "pos": "static",
+        "top": "auto",
+        "left": "auto",
+        "right": "auto",
+        "bg": "rgb(35, 35, 36)",
+        "rect": {
+          "x": 63,
+          "y": 216,
+          "w": 264,
+          "h": 36.2,
+          "right": 327,
+          "bottom": 252.2
+        }
+      }
+    ],
+    "rail": {
+      "x": -176,
+      "y": 0,
+      "w": 176,
+      "h": 844,
+      "right": 0,
+      "bottom": 844
+    },
+    "railOverlap": [
+      0
+    ],
+    "btnOverlaps": [],
+    "inViewport": true,
+    "toolbar": {
+      "x": 0,
+      "y": 48,
+      "w": 390,
+      "h": 102,
+      "right": 390,
+      "bottom": 150
+    },
+    "layer": {
+      "pos": "fixed",
+      "top": "216px",
+      "left": "0px",
+      "right": "0px",
+      "z": "900",
+      "pointer": "none"
+    },
+    "stackGaps": [],
+    "viewport": {
+      "w": 390,
+      "h": 844
+    },
+    "overflowX": {
+      "scrollW": 390,
+      "innerW": 390
+    }
+  },
+  "consoleLogs": [],
+  "summary": {
+    "passed": 25,
+    "failures": [],
+    "shots": [
+      "devtools\\p540-ui\\out\\after\\01-home-light-1600.png",
+      "devtools\\p540-ui\\out\\after\\02-home-collapsed-1600.png",
+      "devtools\\p540-ui\\out\\after\\03-home-dark-1600.png",
+      "devtools\\p540-ui\\out\\after\\04-playlists-toast-light-1600.png",
+      "devtools\\p540-ui\\out\\after\\05-playlists-toast-stack-light-1600.png",
+      "devtools\\p540-ui\\out\\after\\06-playlists-toast-dark-1600.png",
+      "devtools\\p540-ui\\out\\after\\07-video-toast-1600.png",
+      "devtools\\p540-ui\\out\\after\\08-mobile-drawer-390.png",
+      "devtools\\p540-ui\\out\\after\\09-mobile-toast-390.png",
+      "devtools\\p540-ui\\out\\after\\10-mobile-video-toast-390.png"
+    ]
+  }
+}

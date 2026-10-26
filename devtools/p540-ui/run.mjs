@@ -226,6 +226,8 @@ const MEASURE_TOAST = `(() => {
     btnOverlaps: nodes.flatMap((el) => btns.filter((b) => inter(el.getBoundingClientRect(), b.getBoundingClientRect()) > 0).map((b) => (b.textContent || b.placeholder || '').trim().slice(0, 10))),
     inViewport: nodes.every((el) => { const b = el.getBoundingClientRect(); return b.left >= -0.5 && b.right <= window.innerWidth + 0.5 && b.top >= -0.5 }),
     toolbar: tb ? rr(tb) : null,
+    pageHead: (() => { const h = document.querySelector('.pl-head'); return h ? rr(h) : null })(),
+    layer: (() => { const l = document.querySelector('.ms-toast-layer'); if (!l) return null; const c = getComputedStyle(l); return { pos: c.position, top: c.top, left: c.left, right: c.right, z: c.zIndex, pointer: c.pointerEvents } })(),
     stackGaps: gaps,
     viewport: { w: window.innerWidth, h: window.innerHeight },
     overflowX: { scrollW: document.documentElement.scrollWidth, innerW: window.innerWidth }
@@ -335,6 +337,17 @@ try {
 
   /* ============================================== 1. 首页：左栏 + hero 标题 */
   await viewport(1600, 1000, false)
+  // headless Chrome 会跟随宿主系统的 prefers-color-scheme：先钉成浅色，起点确定，
+  // 之后每一次变色都走应用自己的按钮（localStorage + html.dark），不靠改 class 作弊
+  await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'light' }] })
+  const isDark = () => js('document.documentElement.classList.contains("dark")')
+  const ensureTheme = async (want) => {
+    if ((await isDark()) !== want) {
+      await toggleTheme()
+      await sleep(650)
+    }
+    return isDark()
+  }
   await goto('/')
   await waitFor("!!document.querySelector('.hero__title')", 15000)
   await sleep(500)
@@ -361,17 +374,18 @@ try {
   await sleep(500)
   result.reExpanded = await js('(() => { const r = document.querySelector(".qt-rail").getBoundingClientRect(); return { collapsed: !!document.querySelector(".qt-shell.is-collapsed"), w: +r.width.toFixed(1) } })()')
 
-  await toggleTheme()
-  await sleep(700)
-  result.dark = await js('(() => { const h1 = document.querySelector(".hero__title"); return { isDark: document.documentElement.classList.contains("dark"), h1Color: getComputedStyle(h1).color, h1Family: getComputedStyle(h1).fontFamily, railBg: getComputedStyle(document.querySelector(".qt-rail")).backgroundColor } })()')
+  await ensureTheme(true)
+  await sleep(400)
+  result.dark = await js('(() => { const h1 = document.querySelector(".hero__title"); return { isDark: document.documentElement.classList.contains("dark"), h1Color: getComputedStyle(h1).color, h1Family: getComputedStyle(h1).fontFamily, railBg: getComputedStyle(document.querySelector(".qt-rail")).backgroundColor, pageBg: getComputedStyle(document.documentElement).backgroundColor } })()')
   await shot('home-dark-1600')
-  await toggleTheme()
-  await sleep(500)
+  result.lightNote = { isDark: await ensureTheme(false) }
+  await sleep(400)
 
   /* ============================================== 2. 播放列表页：toast */
   await goto('/media/playlists')
   await waitFor("!!document.querySelector('.pl-head')", 15000)
   await sleep(500)
+  await ensureTheme(false)
   result.railPlaylists = await js(MEASURE_RAIL)
   result.probe = await js(PROBE)
 
@@ -394,13 +408,13 @@ try {
   result.toastStack = await js(MEASURE_TOAST)
   await shot('playlists-toast-stack-light-1600')
 
-  await toggleTheme()
-  await sleep(600)
+  await ensureTheme(true)
+  await sleep(400)
   await setInput('444')
   await sleep(120)
   await clickAt(btnNew.x, btnNew.y)
   await sleep(280)
-  result.toastDark = await js('(() => { const nodes = Array.from(document.querySelectorAll("body *")).filter((el) => el.children.length === 0 && (el.textContent || "").trim().startsWith("已新建播放列表")); const el = nodes[0]; if (!el) return { missing: true, isDark: document.documentElement.classList.contains("dark") }; const c = getComputedStyle(el); const b = el.getBoundingClientRect(); return { isDark: document.documentElement.classList.contains("dark"), cls: String(el.className), bg: c.backgroundColor, color: c.color, rect: { x: +b.x.toFixed(1), y: +b.y.toFixed(1), w: +b.width.toFixed(1), h: +b.height.toFixed(1) } } })()')
+  result.toastDark = await js('(() => { const l = document.querySelector(".ms-toast-layer"); const el = l ? l.firstElementChild : null; if (!el) return { missing: true, isDark: document.documentElement.classList.contains("dark") }; const c = getComputedStyle(el); const b = el.getBoundingClientRect(); const rail = document.querySelector(".qt-rail").getBoundingClientRect(); const ox = Math.max(0, Math.min(b.right, rail.right) - Math.max(b.left, rail.left)); const oy = Math.max(0, Math.min(b.bottom, rail.bottom) - Math.max(b.top, rail.top)); return { isDark: document.documentElement.classList.contains("dark"), cls: String(el.className), bg: c.backgroundColor, color: c.color, rect: { x: +b.x.toFixed(1), y: +b.y.toFixed(1), w: +b.width.toFixed(1), h: +b.height.toFixed(1) }, railOverlap: +(ox * oy).toFixed(0) } })()')
   await shot('playlists-toast-dark-1600')
 
   /* ============================================== 3. 视频库页：同一套 toast 的宿主 */
@@ -463,6 +477,9 @@ try {
   ok(result.hero.subset.qing !== result.hero.subset.qingBase, '「青」用得意黑字形（与 monospace 不同宽）', result.hero.subset.qing + ' vs ' + result.hero.subset.qingBase)
   ok(result.hero.subset.long === result.hero.subset.longBase, '「龙」子集外→回退（与 monospace 同宽，5 字限制的证据）', result.hero.subset.long + ' vs ' + result.hero.subset.longBase)
   ok(result.reExpanded.w > 100, '折叠可再展开（宽度回落）', String(result.reExpanded.w))
+  ok(result.dark.isDark === true, '暗色主题真生效（走应用自己的按钮）', JSON.stringify({ isDark: result.dark.isDark, pageBg: result.dark.pageBg }))
+  ok(result.lightNote.isDark === false, '再切回浅色成功（主题切换未破）', String(result.lightNote.isDark))
+  ok(result.toastDark.isDark === true && result.toastDark.railOverlap === 0, '暗色下 toast 仍在顶部居中且不压左栏', JSON.stringify(result.toastDark))
   ok(result.toastVideo.railOverlap.every((a) => a === 0) && result.toastVideo.btnOverlaps.length === 0, '视频库 toast 不压左栏与工具栏控件', JSON.stringify({ items: result.toastVideo.items.map((i) => i.rect), toolbar: result.toastVideo.toolbar, overlaps: result.toastVideo.btnOverlaps }))
   ok(result.toastVideoMobile.inViewport && result.toastVideoMobile.railOverlap.every((a) => a === 0), '窄屏视频库 toast 不溢出', JSON.stringify(result.toastVideoMobile.items.map((i) => i.rect)))
 
@@ -473,6 +490,7 @@ try {
   ok(result.toastStack.count >= 2 && result.toastStack.stackGaps.every((g) => g >= 4), '多条 toast 纵向堆叠不重叠', JSON.stringify({ count: result.toastStack.count, gaps: result.toastStack.stackGaps }))
   ok(result.toastMobile.inViewport && result.toastMobile.railOverlap.every((a) => a === 0), '窄屏 toast 不溢出、不压抽屉', JSON.stringify(result.toastMobile.items.map((i) => i.rect)))
   ok(result.mobileDrawer.rail.w < 390, '窄屏抽屉不超出视口', String(result.mobileDrawer.rail.w))
+  ok(result.toastMobile.items[0] && result.toastMobile.items[0].rect.y >= result.toastMobile.pageHead.bottom, '窄屏提示条落在页头之下（不盖新建/刷新）', JSON.stringify({ toastTop: result.toastMobile.items[0] && result.toastMobile.items[0].rect.y, headBottom: result.toastMobile.pageHead.bottom }))
 
   result.summary = { passed, failures, shots }
   console.log('')
