@@ -196,6 +196,18 @@ import { blurCssVars, clampBlur, readStoredBlur, saveStoredBlur } from './person
 import { layoutCrop, originalSrc, parseCrop } from './personBgImage.js'
 // P5.84：图片盖不满卡片的区域 = 从同一张图拾到的颜色（采样 / 缓存 / 落地色的唯一实现在 personTone.js）
 import { parseColor, readToneCache, rgbCss, sampleTone, toneCacheKey, toneFill, writeToneCache } from './personTone.js'
+// P5.88：背景「手动调整位置与缩放」—— 叠加公式 / 存储 / LRU 上限的唯一实现在 personBgAdjust.js
+import {
+  applyAdjust,
+  isAuto,
+  readAdjustDefault,
+  readAdjustMap,
+  resolveAdjust,
+  setAdjust,
+  writeAdjustDefault,
+  writeAdjustMap
+} from './personBgAdjust.js'
+import PersonBgAdjustDialog from './PersonBgAdjustDialog.vue'
 
 const api = useMediaApi()
 const tk = useMediaTrack()
@@ -383,6 +395,28 @@ const bgGeom = reactive({})
 const bgGeomMemo = new Map()
 let wallResizeObserver = null
 
+/* P5.86：背景层什么时候才允许显示。
+   几何是 @load 之后算的，而卡片的**高度**还会晚一步才定下来（min-height: 84 → 内容/拾色撑到 103.7），
+   高度一变 ty 就要重算一次。若那时图片已经可见，看起来就是「图跳了一下」。
+   所以：几何最后一次变动后稳定 BG_SETTLE_MS 才淡入；**一旦显示就不再藏**（后续 resize / crop 变化
+   只更新变量，瞬时到位，不再有二次入场）。 */
+const bgReady = reactive({})
+const bgReadyTimers = new Map()
+const BG_SETTLE_MS = 150
+
+function armBgReady(key) {
+  if (bgReady[key]) return
+  const t = bgReadyTimers.get(key)
+  if (t) clearTimeout(t)
+  bgReadyTimers.set(
+    key,
+    setTimeout(() => {
+      bgReadyTimers.delete(key)
+      bgReady[key] = true
+    }, BG_SETTLE_MS)
+  )
+}
+
 /** 卡片当前的 crop 参数（ref 优先，退化到头像 URL）；没有就是整图 */
 function bgCropOf(card) {
   return parseCrop(card && card.avatar && card.avatar.ref) || parseCrop(card && card.avatar && card.avatar.url)
@@ -419,7 +453,9 @@ function computeBgGeom(card, img) {
     if (!out) return
     bgGeomMemo.set(key, out)
   }
-  bgGeom[String(card.key)] = out
+  // P5.88：把基准盒尺寸一并带走 —— 手动调整的 dx / dy 存的是这个盒子的比例，换算回 px 要用它
+  bgGeom[String(card.key)] = Object.assign({}, out, { bgW: bg.clientWidth, bgH: bg.clientHeight })
+  armBgReady(String(card.key))
 }
 
 /** 重扫整墙：尺寸变了（ResizeObserver）或卡片数据变了（crop / URL）都走这里 */
@@ -439,10 +475,130 @@ function bgGeomOf(card) {
   return g ? [g.imgW, g.imgH, g.tx, g.ty, g.cropX, g.cropY].join(',') : ''
 }
 
-function bgGeomStyleOf(card) {
+/**
+ * P5.86：背景层什么时候才允许显示。
+ *   1) 几何算好了（@load 之后异步算）—— 算好之前 .pw-bg-img 按**自然尺寸**停在 translate(0,0)，
+ *      那是「错的位置」，所以那段时间整层 opacity: 0；
+ *   2) 几何已经稳定 BG_SETTLE_MS —— 卡片高度会被晚到的文字/拾色再撑开一次（84 → 103.7），
+ *      高度一变 ty 就要重算；若那时已经可见，看到的就是「图跳了一下」。
+ * 两个条件都满足才淡入，且与 --pw-img-* 同一个 tick 落地：首帧就在正确位置，之后不再变。
+ */
+function bgReadyOf(card) {
+  return !!(card && bgGeom[String(card.key)] && bgReady[String(card.key)])
+}
+
+/* ---------------------------------- P5.88 背景手动调整（位置 + 缩放，叠在自动几何之上） */
+
+/**
+ * 逐人调整表（localStorage 的 ms.person.bgAdjust.v1，上限 500 条 LRU）+ 全局默认
+ * （ms.person.bgAdjust.default）。两份都是 reactive：弹层保存后卡片**立即**重挂 --pw-img-*，
+ * 不重算几何、不刷新页面。
+ */
+const bgAdjustMap = reactive(readAdjustMap(typeof localStorage === 'undefined' ? null : localStorage))
+const bgAdjustDefault = ref(readAdjustDefault(typeof localStorage === 'undefined' ? null : localStorage))
+/** 调整弹层（整页一个实例；打开时才把这张卡的 src / crop / 自然尺寸 / 盒子尺寸传进去） */
+const bgAdjustDialog = reactive({
+  open: false,
+  person: null,
+  src: '',
+  crop: null,
+  natW: 0,
+  natH: 0,
+  boxW: 0,
+  boxH: 0,
+  adjust: null
+})
+
+/** 某张卡当前生效的调整：逐人记录 > 全局默认 > null（= 自动几何） */
+function bgAdjustOf(card) {
+  return resolveAdjust(bgAdjustMap, bgAdjustDefault.value, card && card.id)
+}
+
+/**
+ * 自动几何 + 调整 = 真正下发给三层的几何：
+ *   imgW ×= scale；tx += dx × bgW；ty += dy × bgH（dx / dy 存的是盒子宽高的比例）
+ * 三层共用这一份变量，所以「三层 rect 逐像素一致」这条老断言在任何调整下都成立。
+ */
+function bgAppliedOf(card) {
   const g = card && bgGeom[String(card.key)]
   if (!g) return null
+  const adj = bgAdjustOf(card)
+  if (!adj) return g
+  const merged = applyAdjust(g, adj, g.bgW, g.bgH)
+  return Object.assign({}, merged, { bgW: g.bgW, bgH: g.bgH })
+}
+
+function bgGeomStyleOf(card) {
+  const g = bgAppliedOf(card)
+  if (!g) return null
   return { '--pw-img-w': g.imgW + 'px', '--pw-img-h': g.imgH + 'px', '--pw-img-tx': g.tx + 'px', '--pw-img-ty': g.ty + 'px' }
+}
+
+/** 只给实测脚本看：'scale,dx,dy,imgW,imgH,tx,ty'（空串 = 自动几何） */
+function bgAdjustAttrOf(card) {
+  const g = bgAppliedOf(card)
+  const adj = bgAdjustOf(card)
+  if (!g || !adj) return ''
+  return [adj.scale, adj.dx, adj.dy, g.imgW, g.imgH, g.tx, g.ty].join(',')
+}
+
+/** 按卡片键找卡片 DOM（调整弹层要拿它的 .pw-bg 尺寸与图片自然尺寸） */
+function cardNodeOf(key) {
+  if (!wallRef.value) return null
+  const nodes = wallRef.value.querySelectorAll('.pw-card')
+  for (let i = 0; i < nodes.length; i++) {
+    if (nodes[i].getAttribute('data-card-key') === String(key)) return nodes[i]
+  }
+  return null
+}
+
+/** 「⛶ 调背景」：只有这张卡真的有背景图时才打开（首字占位卡连按钮都不渲染） */
+function openBgAdjust(card) {
+  const src = card ? bgSrcOf(card) : ''
+  if (!card || !src) return
+  const key = String(card.key)
+  const node = cardNodeOf(key)
+  const img = node && node.querySelector('.pw-bg-sharp')
+  const bg = node && node.querySelector('.pw-bg')
+  const g = bgGeom[key]
+  bgAdjustDialog.person = { id: card.id, name: card.name }
+  bgAdjustDialog.src = src
+  bgAdjustDialog.crop = bgCropOf(card)
+  bgAdjustDialog.natW = (img && img.naturalWidth) || (g ? g.imgW : 0)
+  bgAdjustDialog.natH = (img && img.naturalHeight) || (g ? g.imgH : 0)
+  bgAdjustDialog.boxW = bg ? bg.clientWidth : 0
+  bgAdjustDialog.boxH = bg ? bg.clientHeight : 0
+  bgAdjustDialog.adjust = bgAdjustOf(card)
+  bgAdjustDialog.open = true
+}
+
+function closeBgAdjust() {
+  bgAdjustDialog.open = false
+}
+
+/**
+ * 保存 = 乐观更新：先改 reactive 表（卡片这一帧就是新构图）再落 localStorage；没有网络请求，
+ * 所以没有回滚路径。等于自动几何的调整不写库（setAdjust 会删掉这一条）。
+ */
+function saveBgAdjust(payload) {
+  const person = bgAdjustDialog.person
+  if (!person) return
+  const adjust = payload ? payload.adjust : null
+  const id = person.id != null && person.id !== '' ? String(person.id) : ''
+  if (id) {
+    setAdjust(bgAdjustMap, id, adjust)
+    writeAdjustMap(bgAdjustMap, typeof localStorage === 'undefined' ? null : localStorage)
+  }
+  if (payload && payload.asDefault) {
+    bgAdjustDefault.value = writeAdjustDefault(adjust, typeof localStorage === 'undefined' ? null : localStorage)
+  }
+  bgAdjustDialog.open = false
+  showToast(isAuto(adjust) ? '背景已恢复自动' : '背景调整已保存')
+}
+
+function clearBgAdjustDefault() {
+  bgAdjustDefault.value = writeAdjustDefault(null, typeof localStorage === 'undefined' ? null : localStorage)
+  showToast('已清除背景全局默认')
 }
 
 function markBgFailed(card) {
@@ -800,6 +956,8 @@ onBeforeUnmount(() => {
   tk.dwell()
   if (cardObserver) cardObserver.disconnect()
   cardObserver = null
+  bgReadyTimers.forEach((t) => clearTimeout(t))
+  bgReadyTimers.clear()
 })
 </script>
 
@@ -854,6 +1012,7 @@ onBeforeUnmount(() => {
         :class="{ 'has-bg': !!bgSrcOf(c), 'has-tone': !!toneOf(c) }"
         :style="[toneStyleOf(c), bgGeomStyleOf(c)]"
         :data-bg-geom="bgGeomOf(c)"
+        :data-bg-adjust="bgAdjustAttrOf(c)"
         :data-bg="bgSrcOf(c) ? '1' : '0'"
         :data-tone="toneOf(c)"
         :href="'#/media/person/' + encodeURIComponent(c.id !== '' && c.id != null ? c.id : c.name)"
@@ -868,7 +1027,7 @@ onBeforeUnmount(() => {
              层 3 .pw-bg-fog blur(半径 × 2.6) + 只盖左半的 mask（到 52%）—— 越往左越糊。
              层 0 .pw-glow 是垫在图片之下的极淡柔光（拾色色的亮化版），给左端「雾白 / 淡粉」的底。 -->
         <span v-if="bgSrcOf(c)" class="pw-glow" data-role="pw-glow" aria-hidden="true"></span>
-        <span v-if="bgSrcOf(c)" class="pw-bg" data-role="pw-bg" aria-hidden="true">
+        <span v-if="bgSrcOf(c)" class="pw-bg" :class="{ 'is-ready': bgReadyOf(c) }" data-role="pw-bg" aria-hidden="true">
           <img
             class="pw-bg-img pw-bg-sharp"
             data-role="pw-bg-sharp"
@@ -911,6 +1070,17 @@ onBeforeUnmount(() => {
             />
             <template v-else>{{ c.initial }}</template>
           </span>
+          <!-- P5.88：hover 才出现的「⛶ 调背景」—— 手动设置背景图位置与缩放（无背景图的卡不渲染） -->
+          <button
+            v-if="bgSrcOf(c)"
+            class="pw-adjust"
+            type="button"
+            title="调整背景位置与缩放"
+            data-role="bg-adjust-open"
+            @click.stop.prevent="openBgAdjust(c)"
+          >
+            ⛶
+          </button>
           <!-- P5.48：hover 头像才出现的小「换」按钮；off / local 档整块不渲染 -->
           <button
             v-if="canChangeAvatar(c)"
@@ -935,6 +1105,24 @@ onBeforeUnmount(() => {
         </span>
       </a>
     </div>
+
+    <!-- P5.88 调背景弹层（整页一个实例，同样不放进 v-for：卡片 hover 的 transform 会让 fixed 定位漂移） -->
+    <PersonBgAdjustDialog
+      :open="bgAdjustDialog.open"
+      :person="bgAdjustDialog.person"
+      :src="bgAdjustDialog.src"
+      :crop="bgAdjustDialog.crop"
+      :nat-w="bgAdjustDialog.natW"
+      :nat-h="bgAdjustDialog.natH"
+      :box-w="bgAdjustDialog.boxW"
+      :box-h="bgAdjustDialog.boxH"
+      :adjust="bgAdjustDialog.adjust"
+      :has-default="!!bgAdjustDefault"
+      :default-adjust="bgAdjustDefault"
+      @close="closeBgAdjust"
+      @save="saveBgAdjust"
+      @clear-default="clearBgAdjustDefault"
+    />
 
     <!-- P5.48 换头像弹层（整页一个实例，不放进 v-for：卡片 hover 的 transform 会让 fixed 定位漂移） -->
     <PersonAvatarDialog
@@ -1159,6 +1347,11 @@ onBeforeUnmount(() => {
   overflow: hidden;
   border-radius: inherit;
   pointer-events: none;
+  /* P5.86：hover 放大挂在**这一层容器**上（它的 transform 恒为 scale(1)，入场时不会变，
+     所以这个 transition 永远等不到「入场那天的一次位移」）。原来挂在 .pw-bg-img 上，
+     几何一写好就把 transform 从 translate(0,0) 过渡到目标位移 = 用户看到的那次滑入。 */
+  transform-origin: 50% 50%;
+  transition: transform 0.12s ease;
 }
 
 /* 三层共用同一组几何变量（由 layoutCrop 算好挂在卡片上），
@@ -1171,7 +1364,12 @@ onBeforeUnmount(() => {
   height: var(--pw-img-h, auto);
   max-width: none;
   transform: translate(var(--pw-img-tx, 0px), var(--pw-img-ty, 0px));
-  transition: transform 0.12s ease;
+  /* P5.86：这层**只过渡 opacity**。真因就是原来这里的 transition 含 transform：
+     --pw-img-tx/ty 由 @load 后异步算出的几何写入，从默认 0 变到目标值，于是走了 120ms 过渡 ——
+     看起来就是背景图「从中间滑到自己的位置」。transform 现在永远瞬时到位。 */
+  transition: opacity 0.12s linear;
+  /* 几何未算好（没有 .is-ready）时不显示：否则会先看到一张按自然尺寸停在 translate(0,0) 的图 */
+  opacity: 0;
   /* 每层都先按图片自身的左缘渐显一次（--pw-img-fade）；模糊 / 雾层再与自己的横向 mask 取交集 */
   -webkit-mask-image: var(--pw-img-fade);
   mask-image: var(--pw-img-fade);
@@ -1179,6 +1377,11 @@ onBeforeUnmount(() => {
   mask-repeat: no-repeat;
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
+}
+
+/* P5.86：几何到位才显示（--pw-img-* 与 .is-ready 来自同一份 bgGeom，同一个 tick 落地） */
+.pw-bg.is-ready .pw-bg-img {
+  opacity: 1;
 }
 
 /* P5.85 柔光（层 0）：垫在图片**之下**、卡片拾色底**之上**。用拾色色的亮化版
@@ -1257,10 +1460,11 @@ onBeforeUnmount(() => {
   mask-size: 100% 100%;
 }
 
-/* hover：三层一起放大 3%（同一 transform，rect 仍然一致），模糊层顺手提一档饱和 / 亮度 */
-.pw-card:hover .pw-bg-img,
-.pw-card:focus-visible .pw-bg-img {
-  transform: translate(var(--pw-img-tx, 0px), var(--pw-img-ty, 0px)) scale(1.03);
+/* hover：三层一起放大 3%（由外层 .pw-bg 承载，三层 rect 仍然一致），
+   模糊层顺手提一档饱和 / 亮度。scale 不在 .pw-bg-img 上 —— 那层的 transform 必须只由几何写死。 */
+.pw-card:hover .pw-bg,
+.pw-card:focus-visible .pw-bg {
+  transform: scale(1.03);
 }
 
 .pw-card:hover .pw-bg-blur,
@@ -1269,11 +1473,12 @@ onBeforeUnmount(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pw-bg-img,
-  .pw-card:hover .pw-bg-img,
-  .pw-card:focus-visible .pw-bg-img {
-    transform: translate(var(--pw-img-tx, 0px), var(--pw-img-ty, 0px));
+  .pw-bg-img {
     transition: none;
+  }
+  .pw-card:hover .pw-bg,
+  .pw-card:focus-visible .pw-bg {
+    transform: none;
   }
 }
 
@@ -1318,6 +1523,52 @@ onBeforeUnmount(() => {
   opacity: 1;
   border-color: var(--accent);
   color: var(--accent);
+}
+
+/* P5.88：「⛶ 调背景」—— 与「换」同一套小圆钮，挂在头像右上角（「换」在右下角，两者不重叠）。
+   卡片 hover 就出现（入口要能被发现），头像自己 hover / 聚焦时同样常亮。
+   调整按钮只改 CSS 变量，不参与卡片布局：等高、3 chip、375 单列都不受影响。 */
+.pw-adjust {
+  position: absolute;
+  right: -4px;
+  top: -4px;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  background: var(--bg-2);
+  color: var(--fg-dim);
+  font-size: 11px;
+  line-height: 1;
+  text-align: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.pw-card:hover .pw-adjust,
+.pw-card:focus-visible .pw-adjust,
+.pw-avatar-wrap:hover .pw-adjust,
+.pw-avatar-wrap:focus-within .pw-adjust {
+  opacity: 1;
+}
+
+.pw-adjust:hover,
+.pw-adjust:focus-visible {
+  opacity: 1;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pw-adjust {
+    transition: none;
+  }
 }
 
 .pw-avatar {

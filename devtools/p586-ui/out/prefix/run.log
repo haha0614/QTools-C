@@ -1,0 +1,6 @@
+PASS 24 / FAIL 5
+A3 入场全帧 rect / transform 一致 -> x=128.27 y=103.85 w=244.19 h=434.67 transforms=6
+B1b 10 帧 rect 与 transform 完全一致（D <= 0.5px） -> dx=112.12 dy=90.78 dw=244.19 dh=434.67 transforms=8
+B2b 10 帧 rect 与 transform 完全一致（D <= 0.5px） -> dx=112.09 dy=90.75 dw=97.67 dh=351.89 transforms=8
+B3b 10 帧 rect 与 transform 完全一致（D <= 0.5px） -> dx=112.1 dy=90.76 dw=97.67 dh=351.89 transforms=8
+F2 稳定帧在 +500ms 附近 -> 198.54ms
