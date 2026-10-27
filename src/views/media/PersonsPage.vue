@@ -153,6 +153,29 @@
     · 滑块 0–20（键 ms.person.bgBlur）不变，只改 --pw-bg-blur；渐变终点用 --pw-blur-fade-end（默认 70%）。
     · 作废（P5.83 的分区形态）：.pw-main 文字区、面板 flex: 0 0 40%、border-left 边界线、panelMagnify()、
       「文字 .right < 面板 .left」零重叠断言、P5.83 的 --pw-fg-2 提色。
+    · 见下面的 P5.85。
+
+  P5.85（用户需求）：「把过渡做成参考图那种柔和雾化渐变」——用户原话：「能不能把过渡做成类似于图二这种效果？」
+  P5.84 的 45%→70% 单层线性 mask 斜率恒定、过渡区只有 25% 卡宽，视觉上是可辨认的斜切，不够雾。
+    · mask 换成**缓动多停靠点**（smoothstep 手感，过渡区拉宽到 18%→78% 共 60% 卡宽）：
+      #000 0% / .92 18% / .62 34% / .3 50% / .08 64% / transparent --pw-blur-fade-end（**默认 78%**，
+      变量保留，声明在 .pw-card 上）。相邻停靠点 alpha 落差 0.08–0.3，没有斜率突变 → 看不出分界线。
+    · **渐进模糊**（参考图的雾感来自「越往左越糊」，不是单档糊 + 一条 alpha 斜坡）：同一张原图三层 ——
+      层 1 .pw-bg-sharp 清晰；层 2 .pw-bg-blur blur(半径) + 上述 mask；层 3 .pw-bg-fog
+      blur(半径 × 2.6)、mask 只盖左半（#000 0% → transparent 52%）。三层同 src / 同 transform，
+      rect 逐像素一致（本版唯一的硬断言，三层一起查）；同一 URL 浏览器只下一个请求。
+    · **左侧柔光** .pw-glow：垫在拾色底之上、图片之下的一层极淡径向光晕，色 = 拾色色的亮化版
+      color-mix(in srgb, var(--pw-tone) 70%, #fff)（暗色主题换成压暗版 #0b0d10），opacity 0.35 封顶。
+      **没有**纯白 / 纯黑遮罩块，也不加字色补偿 / text-shadow。
+    · **图片自身左缘渐显** --pw-img-fade（本轮实测才发现的真问题）：imgW = bgW × 0.44 / cropW 且**不放大**，
+      所以 cropW > 0.44 时图片比卡片窄，它的左边界就是卡片内一条**硬直竖线**（卡 125 上在卡内 129px）——
+      这条线在元素盒子内部，mask 停靠点再怎么缓动都碰不到它（P5.84 的截图里多条卡都能看到）。
+      做法：每层先按**图片宽度**做一次 transparent 0% → .45 9% → #000 20% 的左缘渐显，
+      模糊层 / 雾层再用 mask-composite: intersect 与自己那条停靠点渐变取交集 —— **停靠点数值一个字没改**。
+      实测接缝处相邻像素最大跳变 1.98 / 255（旧版 6.15 / 255）。
+    · 保留：滑块 0–20（--pw-bg-blur）、裁剪中心 76% / 50%（±1px）、不放大（imgW = bgW × 0.44 / cropW）、
+      拾色填充、文字直接压图。对比度仍**只记录 INFO**，不作门槛。
+    实测（三层 rect / mask computed / 三档滤镜 / 20 点色差表 / 接缝剖面 / 24 张截图）见 devtools/p585-ui/REPORT.md。
 -->
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, reactive, ref, watch } from 'vue'
@@ -353,7 +376,7 @@ function bgSrcOf(card) {
  *   imgH = imgW × natH / natW
  *   tx   = bgW × 0.76 − imgW × cx        ty = bgH × 0.5 − imgH × cy
  * 图片盖不满卡片的区域由拾色底（personTone）填充，不做任何放大去覆盖。
- * 用 clientWidth/clientHeight 而不是 rect 宽高：两层图都是 .pw-bg 的绝对定位子元素，left/top: 0 的原点
+ * 用 clientWidth/clientHeight 而不是 rect 宽高：三层图都是 .pw-bg 的绝对定位子元素，left/top: 0 的原点
  * 是 .pw-bg 的 **padding-box**（.pw-bg 自身没有边框，两者数值相同，口径按 padding-box 写死）。
  */
 const bgGeom = reactive({})
@@ -379,7 +402,7 @@ function bgGeomKey(img, crop) {
 }
 
 /**
- * 清晰层 @load 后算一次：两层同 src、同 transform（同一组 CSS 变量），算一次两层同时到位。
+ * 清晰层 @load 后算一次：三层同 src、同 transform（同一组 CSS 变量），算一次三层同时到位。
  * 详情晚到（头像从相册封面升级成显式头像 → crop 变了）时 src 不变、@load 不会再触发，
  * 所以 watch(cards) 里还会调一次 refreshBgGeom()。
  */
@@ -538,7 +561,7 @@ function queueTones(list) {
   if (queued) idle(pumpTones)
 }
 
-/** P5.84：卡片尺寸变了要重算背景几何（两层共用同一组 CSS 变量，只算一次） */
+/** P5.84：卡片尺寸变了要重算背景几何（三层共用同一组 CSS 变量，只算一次） */
 function ensureWallObserver() {
   if (typeof ResizeObserver !== 'function' || !wallRef.value || wallResizeObserver) return
   wallResizeObserver = new ResizeObserver(() => refreshBgGeom())
@@ -840,9 +863,11 @@ onBeforeUnmount(() => {
         :data-frame-inview="c.avatar.kind === 'frame' ? (frameInView[String(c.key)] ? '1' : '0') : ''"
         @click.prevent="openCard(c)"
       >
-        <!-- P5.84：整卡背景层 = **同一张原图两层**。底层清晰（.pw-bg-sharp）；上层同一张原图
-             加 blur + 横向 mask 渐隐（.pw-bg-blur）—— 左端糊、45% 起往右淡出、70% 之后只剩清晰图。
-             两层同 src / 同 transform，rect 逐像素一致。 -->
+        <!-- P5.85：整卡背景层 = **同一张原图三层**（同 src / 同 transform，rect 逐像素一致）。
+             层 1 .pw-bg-sharp 清晰；层 2 .pw-bg-blur blur(半径) + 缓动多停靠点 mask（到 78%）；
+             层 3 .pw-bg-fog blur(半径 × 2.6) + 只盖左半的 mask（到 52%）—— 越往左越糊。
+             层 0 .pw-glow 是垫在图片之下的极淡柔光（拾色色的亮化版），给左端「雾白 / 淡粉」的底。 -->
+        <span v-if="bgSrcOf(c)" class="pw-glow" data-role="pw-glow" aria-hidden="true"></span>
         <span v-if="bgSrcOf(c)" class="pw-bg" data-role="pw-bg" aria-hidden="true">
           <img
             class="pw-bg-img pw-bg-sharp"
@@ -857,6 +882,15 @@ onBeforeUnmount(() => {
           <img
             class="pw-bg-img pw-bg-blur"
             data-role="pw-bg-blur"
+            :src="bgSrcOf(c)"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            @error="markBgFailed(c)"
+          />
+          <img
+            class="pw-bg-img pw-bg-fog"
+            data-role="pw-bg-fog"
             :src="bgSrcOf(c)"
             alt=""
             loading="lazy"
@@ -1094,6 +1128,12 @@ onBeforeUnmount(() => {
   background: var(--bg-2);
   color: var(--fg);
   text-decoration: none;
+  /* P5.85：模糊层横向渐隐的终点（多停靠点 mask 的最后一段，默认 78%） */
+  --pw-blur-fade-end: 78%;
+  /* P5.85：图片**自身**的左缘渐显（按图片宽度算，不按卡片宽度）。
+     几何上图片可能比卡片窄（imgW = bgW × 0.44 / cropW，不放大），它的左边界本来是一条硬直竖线；
+     这条渐显以 intersect 的方式叠在每层 mask 上，把那条竖线化开。 */
+  --pw-img-fade: linear-gradient(to right, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.45) 9%, #000 20%);
   transition: transform 0.12s, border-color 0.12s;
 }
 
@@ -1121,8 +1161,8 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
-/* 两层共用同一组几何变量（由 layoutCrop 算好挂在卡片上），
-   所以两层 rect 逐像素一致 —— 本版唯一的硬断言。 */
+/* 三层共用同一组几何变量（由 layoutCrop 算好挂在卡片上），
+   所以三层 rect 逐像素一致 —— 本版唯一的硬断言。 */
 .pw-bg-img {
   position: absolute;
   left: 0;
@@ -1132,22 +1172,92 @@ onBeforeUnmount(() => {
   max-width: none;
   transform: translate(var(--pw-img-tx, 0px), var(--pw-img-ty, 0px));
   transition: transform 0.12s ease;
-}
-
-/* 上层：同一张原图 + 模糊 + 横向 mask 渐隐（左糊右清）。
-   mask 0–45% 全不透明（只看得到模糊图）→ 70%（--pw-blur-fade-end）渐隐到透明（露出底层清晰图）。
-   brightness(.9) 沿用 P5.69 的口径：模糊层比清晰层暗一档。 */
-.pw-bg-blur {
-  filter: blur(var(--pw-bg-blur, 6px)) saturate(1.1) brightness(0.9);
-  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 45%, transparent var(--pw-blur-fade-end, 70%));
-  mask-image: linear-gradient(to right, #000 0%, #000 45%, transparent var(--pw-blur-fade-end, 70%));
+  /* 每层都先按图片自身的左缘渐显一次（--pw-img-fade）；模糊 / 雾层再与自己的横向 mask 取交集 */
+  -webkit-mask-image: var(--pw-img-fade);
+  mask-image: var(--pw-img-fade);
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
 }
 
-/* hover：两层一起放大 3%（同一 transform，rect 仍然一致），模糊层顺手提一档饱和 / 亮度 */
+/* P5.85 柔光（层 0）：垫在图片**之下**、卡片拾色底**之上**。用拾色色的亮化版
+   （color-mix 往 #fff 提，暗色主题往 #0b0d10 压）做一层极淡的径向光晕，只在左端出现
+   （右边全透明），给左缘补上参考图那种「雾白 / 淡粉」的底。opacity 0.35 是上限：
+   它是柔光，不是白色遮罩块。 */
+.pw-glow {
+  position: absolute;
+  inset: 0;
+  opacity: 0.35;
+  background: radial-gradient(
+    145% 165% at 0% 50%,
+    color-mix(in srgb, var(--pw-tone, var(--bg-2)) 70%, #fff) 0%,
+    color-mix(in srgb, var(--pw-tone, var(--bg-2)) 70%, #fff) 26%,
+    transparent 70%
+  );
+}
+
+.dark .pw-glow {
+  background: radial-gradient(
+    145% 165% at 0% 50%,
+    color-mix(in srgb, var(--pw-tone, var(--bg-2)) 70%, #0b0d10) 0%,
+    color-mix(in srgb, var(--pw-tone, var(--bg-2)) 70%, #0b0d10) 26%,
+    transparent 70%
+  );
+}
+
+/* 层 2（中间档模糊）：blur(半径) + 缓动多停靠点横向 mask —— 不再是 45%→70% 的直线，
+   而是 0/18/34/50/64%（alpha 1 → .92 → .62 → .3 → .08）一路 smoothstep 到 78% 才透明。
+   过渡区从卡的 18% 一直铺到 78%，中间没有可辨认的斜率突变，所以看不出「分界线」。
+   brightness(.9) 沿用 P5.69 的口径：模糊层比清晰层暗一档。 */
+.pw-bg-blur {
+  filter: blur(var(--pw-bg-blur, 6px)) saturate(1.1) brightness(0.9);
+  -webkit-mask-image:
+    linear-gradient(
+      to right,
+      #000 0%,
+      rgba(0, 0, 0, 0.92) 18%,
+      rgba(0, 0, 0, 0.62) 34%,
+      rgba(0, 0, 0, 0.3) 50%,
+      rgba(0, 0, 0, 0.08) 64%,
+      transparent var(--pw-blur-fade-end, 78%)
+    ),
+    var(--pw-img-fade);
+  mask-image:
+    linear-gradient(
+      to right,
+      #000 0%,
+      rgba(0, 0, 0, 0.92) 18%,
+      rgba(0, 0, 0, 0.62) 34%,
+      rgba(0, 0, 0, 0.3) 50%,
+      rgba(0, 0, 0, 0.08) 64%,
+      transparent var(--pw-blur-fade-end, 78%)
+    ),
+    var(--pw-img-fade);
+  /* 两层 mask 取交集（intersect）：上面那排停靠点原样不动，只把图片左缘的硬竖线化开 */
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+/* 层 3（最糊）：同一张图 blur(半径 × 2.6)，mask 只盖左半（0% 实 → 52% 透明）。
+   叠加在层 2 上面 → 越往左越糊，而不是「同一档糊 + 一条 alpha 斜坡」。 */
+.pw-bg-fog {
+  filter: blur(calc(var(--pw-bg-blur, 6px) * 2.6));
+  -webkit-mask-image: linear-gradient(to right, #000 0%, transparent 52%), var(--pw-img-fade);
+  mask-image: linear-gradient(to right, #000 0%, transparent 52%), var(--pw-img-fade);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+/* hover：三层一起放大 3%（同一 transform，rect 仍然一致），模糊层顺手提一档饱和 / 亮度 */
 .pw-card:hover .pw-bg-img,
 .pw-card:focus-visible .pw-bg-img {
   transform: translate(var(--pw-img-tx, 0px), var(--pw-img-ty, 0px)) scale(1.03);
