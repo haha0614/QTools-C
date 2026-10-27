@@ -1,0 +1,55 @@
+dev server: http://127.0.0.1:56565
+
+[A] 批量生成两步确认
+  PASS 确认弹窗给出「将对 N 部片子生成」  — 将对 176 部片子生成简介（本地模型（内容梗概））； 已有内容的 68 部将 跳过： 本次实际生成 108 条， 跳过 68 条。
+  PASS 确认弹窗给出「已有内容将跳过/覆盖」  — 将对 176 部片子生成简介（本地模型（内容梗概））； 已有内容的 68 部将 跳过： 本次实际生成 108 条， 跳过 68 条。
+  PASS 未敲「确认」时开始按钮是禁用的
+  PASS 点一次「开始」不执行（未发出 create 请求）  — before=0 after=0
+  PASS 点一次之后仍停在确认段
+  PASS 只敲「确认」不勾全库确认 → 仍禁用（全库必须显式勾选）
+  PASS 敲了「确认」+ 勾了全库 → 按钮可用
+  PASS 「包括已有内容」默认未勾选（overwrite 默认 false）
+  PASS 确认后真的发出了 create 请求  — {"all":true,"mode":"llm","overwrite":false}
+  PASS create 请求 overwrite=false（默认只补空）  — {"all":true,"mode":"llm","overwrite":false}
+  PASS create 请求带上 all:true（无选中项时）
+
+[B] 停止（协作式）与成果汇总
+  PASS 运行段有进度文案  — 批量生成中 0 / 6 · 已生成 0 · 跳过 0 · 失败 0
+  PASS 点停止后立刻显示「正在停止…（等本条生成完）」  — 正在停止…（等本条生成完） 3 / 6 · 已生成 2 · 跳过 0 · 失败 0
+  PASS 停止按钮先查 active 再发 cancel  — cancel 请求数=1
+  PASS 停止后成果标题 = 已手动停止  — 已手动停止 ：已处理的部分已落库，剩余 3 条未处理
+  PASS 汇总：总条数 6  — [["total",6],["generated",2],["skipped",1],["failed",0],["remaining",3]]
+  PASS （processed 由后端 counts 提供）
+  PASS 汇总：未处理 3（第 3 条跑完就停、后 3 条未开始）  — [["total",6],["generated",2],["skipped",1],["failed",0],["remaining",3]]
+  PASS 汇总：已生成 2  — [["total",6],["generated",2],["skipped",1],["failed",0],["remaining",3]]
+  PASS 汇总：跳过原因分类（已有内容 1）  — 已有内容（未覆盖）：1
+  PASS 有旧值快照时提供「撤销本次批量」入口
+
+[B2] 自然完成也弹汇总
+  PASS 自然跑完也弹同一份汇总（标题=批量生成完成）  — 批量生成完成 
+  PASS 汇总数字与后端 counts 一致（6/4/2/0）  — {"total":6,"generated":4,"skipped":2,"failed":0,"remaining":0}
+
+[C] 人物卡片（拉长 / chip 全见 / 换按钮居中）
+  PASS 卡片高度紧凑（84px ≤ 最小高度 ≤ 110px，P5.60 由加高回到加宽）  — minH=104
+  PASS chip 容器单行不折行（nowrap + overflow:hidden）  — nowrap/hidden
+  PASS 3 个 chip 全部完整可见（无右边/下边溢出）  — checked 6 cards
+  PASS 存在 3 个 chip 的卡片（这是以前被裁的那批）  — [0,3,3,3,0,1]
+  PASS 记录「换」按钮旧样式（P5.48 line-height:1）的中心偏差作为基线  — {"dx":0,"dy":-0.25}
+  PASS 修复后「换」字水平/垂直都居中（偏差 ≤0.6px）  — {"dx":0,"dy":-0.5}
+
+[D] 换头像：框选裁剪
+  PASS 卡片 hover 出现「换」按钮（full 档，人物 112 = 名下有相册）
+  PASS 裁剪态渲染出图片（可框选）  — {"w":240,"h":320}
+  PASS 框选后得到归一化裁剪参数 x,y,w,h  — 0.2208,0.2375,0.4583,0.3438
+  PASS 脸部 / 中心 / 整图 三档可用（整图 = 0,0,1,1）  — {"face":"0.2917,0.2625,0.4208,0.3156","full":"0.0000,0.0000,1.0000,1.0000"}
+  PASS 保存时 ref 带裁剪参数（a<相册>:<seq>#crop=x,y,w,h）  — a161:0#crop=0.2917,0.2625,0.4208,0.3156
+  PASS kind=photo（裁剪只对相册图生效）  — {"kind":"photo","ref":"a161:0#crop=0.2917,0.2625,0.4208,0.3156"}
+  PASS 带 crop 参数返回的是裁过的图（尺寸变小）  — {"plain":{"w":400,"h":534},"cropped":{"w":168,"h":169}}
+  PASS 裁剪宽度比例与参数一致（±2%）  — w=168/400=0.420 期望 0.4208
+  PASS 越界 crop 参数 400（不静默退成整图）  — status=400
+  PASS 不带 crop 的老 URL 仍 200（向后兼容）  — status=200
+
+页面异常：无
+  PASS 运行期无 JS 异常
+
+===== 结果：40 passed, 0 failed =====

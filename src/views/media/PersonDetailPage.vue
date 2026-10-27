@@ -26,7 +26,7 @@ import { useMediaTrack } from '@/composables/useMediaTrack'
 import VideoCard from './video/VideoCard.vue'
 import AlbumCard from './photos/AlbumCard.vue'
 // P5.48：头像优先级与人物墙**同一份实现**（手动 → 历史 avatarPath → 相册首图 → 视频内容帧 → 首字占位）
-import { avatarOf, profileFacts } from './personWall.js'
+import { avatarOf, parseAvatarRef, profileFacts } from './personWall.js'
 import PersonAvatarDialog from './PersonAvatarDialog.vue'
 import PageToast from './PageToast.vue'
 import { usePageToast } from './usePageToast.js'
@@ -252,21 +252,16 @@ const avatarCurrent = computed(() => {
   return { kind, ref: p.avatarRef == null ? '' : String(p.avatarRef), url: avatar.value.url }
 })
 
-/** 乐观 URL：与后端 avatarUrlOf 同一规则（服务端回包会覆盖） */
+/** 乐观 URL：与后端 avatarUrlOf 同一规则（服务端回包会覆盖）；P5.64 起含 frame 型 */
 function optimisticAvatarUrl(payload) {
-  if (payload.kind === 'url') return payload.ref
-  // P5.61：ref 可能带 "#crop=x,y,w,h" 尾巴。主体段才是 <albumId>:<seq>，
-  // 尾巴要原样接到缩略图 URL 的 ?crop= 上（否则 Number("0#crop=…") = NaN，
-  // 乐观 URL 会拼成 /thumb/p/a164/0NaN，图片一闪一坏）。
-  const raw = String(payload.ref == null ? '' : payload.ref)
-  const hash = raw.indexOf('#')
-  const body = hash < 0 ? raw : raw.slice(0, hash)
-  const i = body.indexOf(':')
-  if (i <= 0) return ''
-  const url = api.photoThumbUrl(body.slice(0, i), Number(body.slice(i + 1)))
-  const tail = hash < 0 ? '' : raw.slice(hash)
-  const crop = tail.startsWith('#crop=') ? tail.slice(6) : ''
-  return crop ? url + '?crop=' + crop : url
+  const parsed = parseAvatarRef(payload.kind, payload.ref)
+  if (parsed.type === 'url') return parsed.raw
+  if (parsed.type === 'photo') {
+    const url = api.photoThumbUrl(parsed.albumId, parsed.seq)
+    return parsed.crop ? url + '?crop=' + parsed.crop : url
+  }
+  if (parsed.type === 'frame') return api.frameAvatarUrl(parsed.videoId, parsed.sec, parsed.crop)
+  return ''
 }
 
 /** 写本地人物节点，返回回滚函数 */

@@ -12,7 +12,9 @@
  *   4b. profileFacts（P5.52）：详情页用的全量清单 —— 不限条数、顺序不变、与 chip 同一份格式化规则；
  *   5. formatDay / normalizeAvatarPath / initialOf 的边界；
  * （P5.52 追加：profileFacts 与「3 个字段有值 → 3 个 chip」的打桩断言，见第 4b 节）
- *   6. buildCard：真实索引片段 + 真实 /persons 片段拼出的整卡数据。
+ *   6. buildCard：真实索引片段 + 真实 /persons 片段拼出的整卡数据；
+ *   8. parseAvatarRef（P5.64）：photo / frame / url 三种 ref 的拆分与脏值降级；
+ *   9. frameCandidateSeconds（P5.64）：「从视频画面」的 6 个候选时间点（整秒 / 去重 / 夹片长）。
  */
 import {
   CHIP_VALUE_MAX,
@@ -27,10 +29,12 @@ import {
   countsText,
   explicitAvatarUrl,
   formatDay,
+  frameCandidateSeconds,
   frameSecondOf,
   initialOf,
   isPlaceholderPerson,
   normalizeAvatarPath,
+  parseAvatarRef,
   personKey,
   profileChips,
   profileFacts,
@@ -300,6 +304,78 @@ eq(PLACEHOLDER_NAMES, ['未归类'], '占位：容器名清单只有「未归类
 // buildCard 不受过滤影响：占位实体照样能拼出卡片（过滤是页面的事，不是拼装的事）
 const UNG = buildCard({ id: 113, name: '未归类' }, { stats: MAP.get('未归类'), urls })
 eq(UNG.name, '未归类', '占位：buildCard 仍能拼出「未归类」卡片（过滤在 visible 里做）')
+
+/* ------------------------ 8. 手动头像 ref 解析（P5.64） ------------------------ */
+
+// photo 老形状与被拆分：<albumId>:<seq>[#crop=…]
+eq(parseAvatarRef('photo', 'a164:4'), { type: 'photo', albumId: 'a164', seq: 4, crop: '' }, 'ref：photo 老形状 a164:4')
+eq(
+  parseAvatarRef('photo', 'a164:4#crop=0.2917,0.2625,0.4208,0.3156'),
+  { type: 'photo', albumId: 'a164', seq: 4, crop: '0.2917,0.2625,0.4208,0.3156' },
+  'ref：photo 带裁剪尾巴'
+)
+// frame 新形状：frame:<videoId>:<sec>[#crop=…] —— 冒号位置语义与 photo 完全不同
+eq(parseAvatarRef('frame', 'frame:3f2a9c1b7d4e:562'), { type: 'frame', videoId: '3f2a9c1b7d4e', sec: 562, crop: '' }, 'ref：frame 整数秒')
+eq(
+  parseAvatarRef('frame', 'frame:3f2a9c1b7d4e:0#crop=0.1000,0.2000,0.5000,0.5000'),
+  { type: 'frame', videoId: '3f2a9c1b7d4e', sec: 0, crop: '0.1000,0.2000,0.5000,0.5000' },
+  'ref：frame 带裁剪尾巴（sec=0 不被当成假值）'
+)
+// url 型：原样返回，不能补前缀（老代码在这里会拼成 /https://… ）
+eq(parseAvatarRef('url', 'https://x.test/a.png'), { type: 'url', raw: 'https://x.test/a.png', crop: '' }, 'ref：url 原样')
+eq(parseAvatarRef('url', 'data:image/png;base64,AA'), { type: 'url', raw: 'data:image/png;base64,AA', crop: '' }, 'ref：data: 原样')
+// 脏值 / 缺键：一律 none（调用方退回后端回包），绝不抛
+eq(parseAvatarRef('frame', 'a164:4').type, 'none', 'ref：frame 型给了 photo 形状 → none（不猜）')
+eq(parseAvatarRef('frame', 'frame:nocolon').type, 'none', 'ref：frame 缺秒 → none')
+eq(parseAvatarRef('frame', 'frame::12').type, 'none', 'ref：frame 空 videoId → none')
+eq(parseAvatarRef('frame', 'frame:v:1.5').type, 'none', 'ref：frame 秒不是整数 → none')
+eq(parseAvatarRef('photo', 'a164').type, 'none', 'ref：photo 缺 seq → none')
+eq(parseAvatarRef('', '').type, 'none', 'ref：空值 → none')
+eq(parseAvatarRef('weird', 'a164:4').type, 'none', 'ref：未知 kind → none')
+
+/* ------------------------ 9. 候选帧时间点（P5.64） ------------------------ */
+
+eq(frameCandidateSeconds(600, 0), [30, 120, 210, 300, 390, 480], '候选帧：10 分钟片第 1 组（5%…80% 整秒）')
+eq(frameCandidateSeconds(600, 1), [90, 180, 270, 360, 450, 540], '候选帧：第 2 组整体后移 10%（15%…90%）')
+eq(new Set(frameCandidateSeconds(600, 0)).size, 6, '候选帧：第 1 组 6 个互不相同（6 宫格口径）')
+eq(frameCandidateSeconds(600, 0).every((s) => Number.isInteger(s) && s >= 0), true, '候选帧：全部非负整数（后端只有整秒落盘缓存）')
+// 短片：5% 与 20% 撞到同一秒 → 去重变短，且不超过片长
+const SHORT = frameCandidateSeconds(3, 0)
+eq(SHORT.length < 6, true, '候选帧：3 秒短片去重后少于 6 个')
+eq(SHORT.every((s) => s <= 2), true, '候选帧：秒数夹在 dur-1 之内（t=dur 已越过最后一帧）')
+eq(frameCandidateSeconds(0, 0), [0], '候选帧：时长未知 → 只有 t=0（片头帧）')
+eq(frameCandidateSeconds(600, 3).every((s) => s <= 599), true, '候选帧：比例超过 100% 也夹在片长内')
+
+/* ------------------- 10. P5.65：后端 photoCount / coverPath 优先 ------------------- */
+
+// 详情（personNode）自带聚合值时优先用它；索引缺失也照样有数字与封面
+const BAC = buildCard(
+  { id: 111, name: '念念' },
+  { detail: { photoCount: 9017, coverPath: 'thumbs/p/a164/0000.jpg', videoCount: 0, albumCount: 144 }, detail2: null, urls }
+)
+eq(BAC.avatar, { url: '/api/media/thumb/p/a164/0000', kind: 'album' }, 'P5.65：索引缺失时头像用详情 coverPath（thumbOf 同一套规则）')
+eq(BAC.counts, '0 部视频 · 144 本相册 · 9017 张照片', 'P5.65：索引缺失时照片数用详情 photoCount')
+
+// 索引与详情都有时数字必须一致（同一份库，两种口径不能打架）
+const BOTH = buildCard(
+  { id: 111, name: '念念' },
+  { stats: MAP.get('念念'), detail: { photoCount: 9017, coverPath: 'thumbs/p/a164/0000.jpg' }, urls }
+)
+eq(BOTH.counts, CARD.counts, 'P5.65：photoCount 与索引求和口径一致（数量行不变）')
+eq(BOTH.avatar, CARD.avatar, 'P5.65：coverPath 与索引封面一致（头像不变）')
+
+// 老后端（详情里没有这两个键）→ 一字不改地回退索引
+const LEGACY = buildCard({ id: 111, name: '念念' }, { stats: MAP.get('念念'), detail: { gender: '女' }, urls })
+eq(LEGACY.counts, CARD.counts, 'P5.65：老后端无 photoCount → 回退索引 photos')
+eq(LEGACY.avatar, CARD.avatar, 'P5.65：老后端无 coverPath → 回退索引 coverRel')
+
+// photoCount 为 0 是「已知的 0」，不能被当成「不知道」（countsText 的三段文案）
+eq(buildCard({ id: 122, name: '娜娜' }, { detail: { photoCount: 0, videoCount: 14, albumCount: 0 }, urls }).counts,
+  '14 部视频 · 0 本相册 · 0 张照片', 'P5.65：photoCount=0 与索引口径同文案（不会被跳过）')
+
+// 有封面但索引也给了封面时，索引的取帧兜底不受影响
+eq(buildCard({ id: 122, name: '娜娜' }, { stats: { albums: 0, photos: 0, videos: 14, coverRel: '', posterId: 'v1', posterDur: 600, mtime: 0 }, detail: { photoCount: 0 }, urls }).avatar.kind,
+  'frame', 'P5.65：无 coverPath 时取帧档照旧')
 
 /* ---------------------------------- 结果 ---------------------------------- */
 

@@ -1,0 +1,343 @@
+{
+  "passed": 40,
+  "failures": [],
+  "facts": {
+    "avatarBefore": "/api/media/thumb/p/a159/0000?crop=0.2111,0.1875,0.6000,0.3375",
+    "tabs": [
+      {
+        "tab": "album",
+        "text": "从相册挑选"
+      },
+      {
+        "tab": "frame",
+        "text": "从视频画面"
+      },
+      {
+        "tab": "url",
+        "text": "图片地址"
+      }
+    ],
+    "urlTab": true,
+    "strip": [
+      {
+        "id": "1d74d2cc5d20",
+        "on": true,
+        "title": "ASMR_18禁_豹纹内衣_19m",
+        "dur": "19:10",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/1d74d2cc5d20"
+      },
+      {
+        "id": "3af30c4342e0",
+        "on": false,
+        "title": "ASMR_中文音声_NTR儿媳_7m",
+        "dur": "6:47",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/3af30c4342e0"
+      },
+      {
+        "id": "1e63e13a4a47",
+        "on": false,
+        "title": "ASMR_剧情_灰丝床戏_15m",
+        "dur": "14:32",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/1e63e13a4a47"
+      },
+      {
+        "id": "4d47f311ddaa",
+        "on": false,
+        "title": "ASMR_双耳麦克风_5m",
+        "dur": "5:37",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/4d47f311ddaa"
+      },
+      {
+        "id": "9720b07923ef",
+        "on": false,
+        "title": "ASMR_双耳麦克风_白内衣_28m",
+        "dur": "28:00",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/9720b07923ef"
+      },
+      {
+        "id": "a93ac9788705",
+        "on": false,
+        "title": "ASMR_双耳麦克风_黑蕾丝_18m",
+        "dur": "18:20",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/a93ac9788705"
+      },
+      {
+        "id": "d6226ff91c1b",
+        "on": false,
+        "title": "ASMR_叫爸爸_口腔特写_6m",
+        "dur": "5:37",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/d6226ff91c1b"
+      },
+      {
+        "id": "a4f3c4ca2f21",
+        "on": false,
+        "title": "ASMR_大小姐金克丝3_黑丝_9m",
+        "dur": "9:05",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/a4f3c4ca2f21"
+      },
+      {
+        "id": "fc4cce426d14",
+        "on": false,
+        "title": "ASMR_天使なの_日语_61m",
+        "dur": "60:33",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/fc4cce426d14"
+      },
+      {
+        "id": "4344a70d142f",
+        "on": false,
+        "title": "ASMR_学习资料2_黑丝_8m",
+        "dur": "7:43",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/4344a70d142f"
+      },
+      {
+        "id": "1bdd449352e5",
+        "on": false,
+        "title": "ASMR_学习资料3_黑丝_16m",
+        "dur": "15:59",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/1bdd449352e5"
+      },
+      {
+        "id": "9875c50fb87c",
+        "on": false,
+        "title": "ASMR_学习资料4_双耳麦克风_11m",
+        "dur": "10:47",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/9875c50fb87c"
+      },
+      {
+        "id": "98b2441200f9",
+        "on": false,
+        "title": "ASMR_日南rinan_55m",
+        "dur": "54:39",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/98b2441200f9"
+      },
+      {
+        "id": "fd76ce693bdb",
+        "on": false,
+        "title": "ASMR_日语样本_moasmr047_4m",
+        "dur": "3:33",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/fd76ce693bdb"
+      },
+      {
+        "id": "044558382d56",
+        "on": false,
+        "title": "ASMR_日语耳舐め_黑PVC_KU100_59m",
+        "dur": "58:41",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/044558382d56"
+      },
+      {
+        "id": "bc215510b76c",
+        "on": false,
+        "title": "ASMR_池喵_老师办公室_13m",
+        "dur": "13:17",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/bc215510b76c"
+      },
+      {
+        "id": "96261952e0fe",
+        "on": false,
+        "title": "ASMR_池喵_黑丝高跟鞋_9m",
+        "dur": "8:57",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/96261952e0fe"
+      },
+      {
+        "id": "86e65d01c281",
+        "on": false,
+        "title": "ASMR_白丝绝对领域_7m",
+        "dur": "7:07",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/86e65d01c281"
+      },
+      {
+        "id": "9fd70d328858",
+        "on": false,
+        "title": "ASMR_白兔姐姐_黑色透视_15m",
+        "dur": "14:58",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/9fd70d328858"
+      },
+      {
+        "id": "00b0143dfc10",
+        "on": false,
+        "title": "ASMR_直播_3D形象_126m",
+        "dur": "125:51",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/00b0143dfc10"
+      },
+      {
+        "id": "56396a210fc1",
+        "on": false,
+        "title": "ASMR_真琴_胡桃cos_52m",
+        "dur": "52:00",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/56396a210fc1"
+      },
+      {
+        "id": "d62976a42317",
+        "on": false,
+        "title": "ASMR_菟菟萌酱_双耳舔耳_15m",
+        "dur": "15:09",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/d62976a42317"
+      },
+      {
+        "id": "55a4b64b3aec",
+        "on": false,
+        "title": "ASMR_金克丝家教老师_绳缚玩具_13m",
+        "dur": "12:46",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/55a4b64b3aec"
+      },
+      {
+        "id": "6e1b3058d4c2",
+        "on": false,
+        "title": "ASMR_韩国Eunsongs_胸部按摩_16m",
+        "dur": "15:32",
+        "cover": "http://127.0.0.1:56737/api/media/thumb/v/6e1b3058d4c2"
+      }
+    ],
+    "cells": [
+      {
+        "sec": 57,
+        "src": "blob:http://127.0.0.1:56737/136c8cde-3585-4abc-933f-a33c8c7d14b6"
+      },
+      {
+        "sec": 230,
+        "src": "blob:http://127.0.0.1:56737/ed7060c7-1dbe-4df1-945a-251f01e8d03f"
+      },
+      {
+        "sec": 402,
+        "src": "blob:http://127.0.0.1:56737/4adfed84-a392-4856-99cb-4af115e0747a"
+      },
+      {
+        "sec": 575,
+        "src": "blob:http://127.0.0.1:56737/0fae07ee-87b1-4739-a923-254ae22ed7e7"
+      },
+      {
+        "sec": 747,
+        "src": "blob:http://127.0.0.1:56737/c97a2963-75a1-4ee2-834e-66d941e1e346"
+      },
+      {
+        "sec": 920,
+        "src": "blob:http://127.0.0.1:56737/ccb42603-52cf-4810-968f-142fd2ed70e4"
+      }
+    ],
+    "callsAfterFirstBatch": 6,
+    "pickedSec": 402,
+    "pickedOtherSec": 57,
+    "cropImg": {
+      "src": "/api/media/frame/1d74d2cc5d20?t=402&w=480",
+      "w": 480,
+      "h": 270
+    },
+    "cropParamBefore": "0.3312,0.2000,0.3375,0.6000",
+    "cellsRound2": [
+      {
+        "sec": 172,
+        "src": "blob:http://127.0.0.1:56737/623b8aa0-4fff-4276-81d3-e9e90451794f"
+      },
+      {
+        "sec": 345,
+        "src": "blob:http://127.0.0.1:56737/14547561-a9c2-4a9b-bf4c-f27bcf522cef"
+      },
+      {
+        "sec": 517,
+        "src": "blob:http://127.0.0.1:56737/85b3d08b-ad12-4d97-a56e-820a53c1d05d"
+      },
+      {
+        "sec": 690,
+        "src": "blob:http://127.0.0.1:56737/f323f65e-36ba-4bcd-bf26-c7bb78078cff"
+      },
+      {
+        "sec": 862,
+        "src": "blob:http://127.0.0.1:56737/c927a4c7-5935-4bb8-a530-ed11d6a22376"
+      },
+      {
+        "sec": 1035,
+        "src": "blob:http://127.0.0.1:56737/1ab4be54-4d28-46ab-add1-138f947d4eb0"
+      }
+    ],
+    "callsAfterSecondBatch": 12,
+    "switchCalls": [
+      {
+        "url": "/api/media/frame/3af30c4342e0?t=20&w=480",
+        "aborted": true,
+        "done": false,
+        "error": "AbortError"
+      },
+      {
+        "url": "/api/media/frame/3af30c4342e0?t=81&w=480",
+        "aborted": true,
+        "done": false,
+        "error": "AbortError"
+      },
+      {
+        "url": "/api/media/frame/1d74d2cc5d20?t=57&w=480",
+        "aborted": false,
+        "done": true,
+        "error": ""
+      },
+      {
+        "url": "api/media/frame/1d74d2cc5d20?t=230&w=480",
+        "aborted": false,
+        "done": true,
+        "error": ""
+      },
+      {
+        "url": "api/media/frame/1d74d2cc5d20?t=402&w=480",
+        "aborted": false,
+        "done": true,
+        "error": ""
+      },
+      {
+        "url": "api/media/frame/1d74d2cc5d20?t=575&w=480",
+        "aborted": false,
+        "done": true,
+        "error": ""
+      },
+      {
+        "url": "api/media/frame/1d74d2cc5d20?t=747&w=480",
+        "aborted": false,
+        "done": true,
+        "error": ""
+      },
+      {
+        "url": "api/media/frame/1d74d2cc5d20?t=920&w=480",
+        "aborted": false,
+        "done": true,
+        "error": ""
+      }
+    ],
+    "abortedCount": 2,
+    "cellsAfterSwitch": [
+      57,
+      230,
+      402,
+      575,
+      747,
+      920
+    ],
+    "totalFrameCalls": 20,
+    "cropParamSaved": "0.3729,0.2741,0.2542,0.4519",
+    "putRef": "frame:1d74d2cc5d20:402#crop=0.3729,0.2741,0.2542,0.4519",
+    "put": {
+      "kind": "frame",
+      "ref": "frame:1d74d2cc5d20:402#crop=0.3729,0.2741,0.2542,0.4519"
+    },
+    "expectUrl": "/api/media/frame/1d74d2cc5d20?t=402&w=480&crop=0.3729,0.2741,0.2542,0.4519",
+    "avatarAfter": "/api/media/frame/1d74d2cc5d20?t=402&w=480&crop=0.3729,0.2741,0.2542,0.4519",
+    "pickedFrame": {
+      "url": "http://127.0.0.1:56737/api/media/frame/1d74d2cc5d20?t=402&w=480",
+      "status": 200,
+      "type": "image/jpeg",
+      "bytes": 17327
+    },
+    "otherFrame": {
+      "url": "http://127.0.0.1:56737/api/media/frame/1d74d2cc5d20?t=57&w=480",
+      "status": 200,
+      "bytes": 19301
+    },
+    "cover": {
+      "url": "http://127.0.0.1:56737/api/media/thumb/v/1d74d2cc5d20",
+      "status": 200,
+      "bytes": 23214
+    },
+    "zeroPerson": {
+      "id": "111",
+      "text": "这位人物名下还没有视频，改用「从相册挑选」吧",
+      "frameCalls": 0
+    }
+  }
+}

@@ -1,0 +1,263 @@
+{
+  "passed": 40,
+  "failures": [],
+  "facts": {
+    "confirmLead": "将对 176 部片子生成简介（本地模型（内容梗概））； 已有内容的 68 部将 跳过： 本次实际生成 108 条， 跳过 68 条。",
+    "generateBody": {
+      "all": true,
+      "mode": "llm",
+      "overwrite": false
+    },
+    "createJobPolls": 2,
+    "cancelIssued": false,
+    "stoppedCells": [
+      [
+        "total",
+        6
+      ],
+      [
+        "generated",
+        2
+      ],
+      [
+        "skipped",
+        1
+      ],
+      [
+        "failed",
+        0
+      ],
+      [
+        "remaining",
+        3
+      ]
+    ],
+    "generateBody2": {
+      "all": true,
+      "mode": "llm",
+      "overwrite": false
+    },
+    "doneCells": {
+      "total": 6,
+      "generated": 4,
+      "skipped": 2,
+      "failed": 0,
+      "remaining": 0
+    },
+    "cardGeo": {
+      "minH": 104,
+      "rows": [
+        {
+          "name": "素人",
+          "h": 104,
+          "chips": 0,
+          "chipRects": [],
+          "cardRect": {
+            "l": 192,
+            "r": 498,
+            "b": 167
+          }
+        },
+        {
+          "name": "娜娜（nana）",
+          "h": 104,
+          "chips": 3,
+          "chipRects": [
+            {
+              "t": 118,
+              "b": 136,
+              "l": 589,
+              "r": 648,
+              "txt": "国籍 中国"
+            },
+            {
+              "t": 118,
+              "b": 136,
+              "l": 652,
+              "r": 711,
+              "txt": "族裔 亚洲"
+            },
+            {
+              "t": 118,
+              "b": 136,
+              "l": 715,
+              "r": 764,
+              "txt": "性别 女"
+            }
+          ],
+          "cardRect": {
+            "l": 510,
+            "r": 817,
+            "b": 167
+          }
+        },
+        {
+          "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+          "h": 104,
+          "chips": 3,
+          "chipRects": [
+            {
+              "t": 118,
+              "b": 136,
+              "l": 908,
+              "r": 959,
+              "txt": "身高 158cm"
+            },
+            {
+              "t": 118,
+              "b": 136,
+              "l": 963,
+              "r": 1049,
+              "txt": "三围 B87.8 / W63.5 …"
+            },
+            {
+              "t": 118,
+              "b": 136,
+              "l": 1053,
+              "r": 1122,
+              "txt": "出生 1998-03-18"
+            }
+          ],
+          "cardRect": {
+            "l": 829,
+            "r": 1135,
+            "b": 167
+          }
+        },
+        {
+          "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+          "h": 104,
+          "chips": 3,
+          "chipRects": [
+            {
+              "t": 118,
+              "b": 136,
+              "l": 1226,
+              "r": 1283,
+              "txt": "身高 169cm"
+            },
+            {
+              "t": 118,
+              "b": 136,
+              "l": 1287,
+              "r": 1338,
+              "txt": "体重 48kg"
+            },
+            {
+              "t": 118,
+              "b": 136,
+              "l": 1342,
+              "r": 1440,
+              "txt": "三围 B87 / W57 / H8…"
+            }
+          ],
+          "cardRect": {
+            "l": 1147,
+            "r": 1453,
+            "b": 167
+          }
+        },
+        {
+          "name": "梨霜儿",
+          "h": 104,
+          "chips": 0,
+          "chipRects": [],
+          "cardRect": {
+            "l": 192,
+            "r": 498,
+            "b": 282
+          }
+        },
+        {
+          "name": "喵小吉 Aeolian-2",
+          "h": 104,
+          "chips": 1,
+          "chipRects": [
+            {
+              "t": 234,
+              "b": 252,
+              "l": 589,
+              "r": 638,
+              "txt": "性别 女"
+            }
+          ],
+          "cardRect": {
+            "l": 510,
+            "r": 817,
+            "b": 282
+          }
+        }
+      ],
+      "wrapperOverflow": "hidden",
+      "wrap": "nowrap"
+    },
+    "chipCounts": [
+      0,
+      3,
+      3,
+      3,
+      0,
+      1
+    ],
+    "changeBefore": {
+      "bx": 254,
+      "by": 135.84,
+      "tx": 254,
+      "ty": 135.59,
+      "w": 22,
+      "h": 22
+    },
+    "changeAfter": {
+      "bx": 254,
+      "by": 135.84,
+      "tx": 254,
+      "ty": 135.34,
+      "w": 22,
+      "h": 22
+    },
+    "changeDeltaBefore": {
+      "dx": 0,
+      "dy": -0.25
+    },
+    "changeDeltaAfter": {
+      "dx": 0,
+      "dy": -0.5
+    },
+    "cropCardFound": true,
+    "thumbUrl": "http://127.0.0.1:52407/api/media/thumb/p/a161/0000",
+    "cropStage": {
+      "w": 240,
+      "h": 320
+    },
+    "cropParam": "0.2208,0.2375,0.4583,0.3438",
+    "presets": {
+      "face": "0.2917,0.2625,0.4208,0.3156",
+      "full": "0.0000,0.0000,1.0000,1.0000"
+    },
+    "saveBtnExists": true,
+    "avatarBody": {
+      "kind": "photo",
+      "ref": "a161:0#crop=0.2917,0.2625,0.4208,0.3156"
+    },
+    "saveClicked": true,
+    "avatarRequests": [
+      "PUT http://127.0.0.1:52407/api/media/person/112/avatar"
+    ],
+    "plainUrl": "http://127.0.0.1:8080/api/media/thumb/p/a161/0000",
+    "cropUrl": "http://127.0.0.1:8080/api/media/thumb/p/a161/0000?crop=0.2917,0.2625,0.4208,0.3156",
+    "bytes": {
+      "plain": 35461,
+      "cropped": 8894
+    },
+    "dims": {
+      "plain": {
+        "w": 400,
+        "h": 534
+      },
+      "cropped": {
+        "w": 168,
+        "h": 169
+      }
+    }
+  }
+}

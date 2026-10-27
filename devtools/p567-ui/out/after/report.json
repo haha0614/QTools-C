@@ -1,0 +1,777 @@
+{
+  "passed": 120,
+  "failures": [],
+  "facts": {
+    "runs": [
+      {
+        "label": "1600/light",
+        "cards": 13,
+        "withBg": 13,
+        "noBg": 0,
+        "worstAll": 5.34,
+        "worstName": {
+          "name": "喵小吉 Aeolian-2",
+          "line": "name",
+          "text": "喵小吉 Aeolian-2",
+          "hasBg": true,
+          "color": "rgb(48, 49, 51)",
+          "textRgb": [
+            48,
+            49,
+            51
+          ],
+          "rect": {
+            "x": 618.25,
+            "y": 189.7,
+            "w": 243.25,
+            "h": 22.39,
+            "right": 861.5,
+            "bottom": 212.09
+          },
+          "samples": 242,
+          "dropped": 0,
+          "worst": 5.34,
+          "worstBg": [
+            166,
+            166,
+            164
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                166,
+                166,
+                164
+              ],
+              "ratio": 5.34
+            },
+            {
+              "rgb": [
+                167,
+                167,
+                165
+              ],
+              "ratio": 5.4
+            },
+            {
+              "rgb": [
+                168,
+                168,
+                166
+              ],
+              "ratio": 5.47
+            }
+          ]
+        },
+        "worstCounts": {
+          "name": "喵小吉 Aeolian-2",
+          "line": "counts",
+          "text": "0 部视频 · 1 本相册 · 48 张照片",
+          "hasBg": true,
+          "color": "rgb(48, 49, 51)",
+          "textRgb": [
+            48,
+            49,
+            51
+          ],
+          "rect": {
+            "x": 618.25,
+            "y": 215.09,
+            "w": 243.25,
+            "h": 15.52,
+            "right": 861.5,
+            "bottom": 230.61
+          },
+          "samples": 242,
+          "dropped": 0,
+          "worst": 5.34,
+          "worstBg": [
+            166,
+            166,
+            164
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                166,
+                166,
+                164
+              ],
+              "ratio": 5.34
+            },
+            {
+              "rgb": [
+                166,
+                166,
+                164
+              ],
+              "ratio": 5.34
+            },
+            {
+              "rgb": [
+                167,
+                167,
+                165
+              ],
+              "ratio": 5.4
+            }
+          ]
+        },
+        "heights": [
+          103.7,
+          103.7
+        ],
+        "docOverflow": [
+          1585,
+          1600
+        ]
+      },
+      {
+        "label": "1600/dark",
+        "cards": 13,
+        "withBg": 13,
+        "noBg": 0,
+        "worstAll": 6.27,
+        "worstName": {
+          "name": "小鱼",
+          "line": "name",
+          "text": "小鱼",
+          "hasBg": true,
+          "color": "rgb(229, 234, 243)",
+          "textRgb": [
+            229,
+            234,
+            243
+          ],
+          "rect": {
+            "x": 618.25,
+            "y": 315.91,
+            "w": 243.25,
+            "h": 22.39,
+            "right": 861.5,
+            "bottom": 338.3
+          },
+          "samples": 242,
+          "dropped": 0,
+          "worst": 6.27,
+          "worstBg": [
+            85,
+            84,
+            82
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                85,
+                84,
+                82
+              ],
+              "ratio": 6.27
+            },
+            {
+              "rgb": [
+                84,
+                83,
+                81
+              ],
+              "ratio": 6.36
+            },
+            {
+              "rgb": [
+                84,
+                83,
+                80
+              ],
+              "ratio": 6.37
+            }
+          ]
+        },
+        "worstCounts": {
+          "name": "玥儿玥er",
+          "line": "counts",
+          "text": "0 部视频 · 1 本相册 · 14 张照片",
+          "hasBg": true,
+          "color": "rgb(229, 234, 243)",
+          "textRgb": [
+            229,
+            234,
+            243
+          ],
+          "rect": {
+            "x": 1312.75,
+            "y": 341.3,
+            "w": 243.25,
+            "h": 15.52,
+            "right": 1556,
+            "bottom": 356.81
+          },
+          "samples": 242,
+          "dropped": 0,
+          "worst": 6.29,
+          "worstBg": [
+            83,
+            84,
+            85
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                83,
+                84,
+                85
+              ],
+              "ratio": 6.29
+            },
+            {
+              "rgb": [
+                83,
+                84,
+                85
+              ],
+              "ratio": 6.29
+            },
+            {
+              "rgb": [
+                83,
+                84,
+                85
+              ],
+              "ratio": 6.29
+            }
+          ]
+        },
+        "heights": [
+          103.7,
+          103.7
+        ],
+        "docOverflow": [
+          1585,
+          1600
+        ]
+      },
+      {
+        "label": "1200/light",
+        "cards": 13,
+        "withBg": 13,
+        "noBg": 0,
+        "worstAll": 5.34,
+        "worstName": {
+          "name": "喵小吉 Aeolian-2",
+          "line": "name",
+          "text": "喵小吉 Aeolian-2",
+          "hasBg": true,
+          "color": "rgb(48, 49, 51)",
+          "textRgb": [
+            48,
+            49,
+            51
+          ],
+          "rect": {
+            "x": 930.33,
+            "y": 189.7,
+            "w": 225.66,
+            "h": 22.39,
+            "right": 1155.98,
+            "bottom": 212.09
+          },
+          "samples": 224,
+          "dropped": 0,
+          "worst": 5.34,
+          "worstBg": [
+            166,
+            166,
+            164
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                166,
+                166,
+                164
+              ],
+              "ratio": 5.34
+            },
+            {
+              "rgb": [
+                167,
+                167,
+                165
+              ],
+              "ratio": 5.4
+            },
+            {
+              "rgb": [
+                168,
+                168,
+                166
+              ],
+              "ratio": 5.47
+            }
+          ]
+        },
+        "worstCounts": {
+          "name": "喵小吉 Aeolian-2",
+          "line": "counts",
+          "text": "0 部视频 · 1 本相册 · 48 张照片",
+          "hasBg": true,
+          "color": "rgb(48, 49, 51)",
+          "textRgb": [
+            48,
+            49,
+            51
+          ],
+          "rect": {
+            "x": 930.33,
+            "y": 215.09,
+            "w": 225.66,
+            "h": 15.52,
+            "right": 1155.98,
+            "bottom": 230.61
+          },
+          "samples": 224,
+          "dropped": 0,
+          "worst": 5.4,
+          "worstBg": [
+            167,
+            167,
+            165
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                167,
+                167,
+                165
+              ],
+              "ratio": 5.4
+            },
+            {
+              "rgb": [
+                167,
+                167,
+                165
+              ],
+              "ratio": 5.4
+            },
+            {
+              "rgb": [
+                167,
+                167,
+                165
+              ],
+              "ratio": 5.4
+            }
+          ]
+        },
+        "heights": [
+          103.7,
+          103.7
+        ],
+        "docOverflow": [
+          1185,
+          1200
+        ]
+      },
+      {
+        "label": "1200/dark",
+        "cards": 13,
+        "withBg": 13,
+        "noBg": 0,
+        "worstAll": 6.29,
+        "worstName": {
+          "name": "玥儿玥er",
+          "line": "name",
+          "text": "玥儿玥er",
+          "hasBg": true,
+          "color": "rgb(229, 234, 243)",
+          "textRgb": [
+            229,
+            234,
+            243
+          ],
+          "rect": {
+            "x": 930.33,
+            "y": 431.61,
+            "w": 225.66,
+            "h": 22.39,
+            "right": 1155.98,
+            "bottom": 454
+          },
+          "samples": 224,
+          "dropped": 0,
+          "worst": 6.29,
+          "worstBg": [
+            83,
+            84,
+            85
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                83,
+                84,
+                85
+              ],
+              "ratio": 6.29
+            },
+            {
+              "rgb": [
+                83,
+                84,
+                85
+              ],
+              "ratio": 6.29
+            },
+            {
+              "rgb": [
+                82,
+                83,
+                85
+              ],
+              "ratio": 6.38
+            }
+          ]
+        },
+        "worstCounts": {
+          "name": "玥儿玥er",
+          "line": "counts",
+          "text": "0 部视频 · 1 本相册 · 14 张照片",
+          "hasBg": true,
+          "color": "rgb(229, 234, 243)",
+          "textRgb": [
+            229,
+            234,
+            243
+          ],
+          "rect": {
+            "x": 930.33,
+            "y": 457,
+            "w": 225.66,
+            "h": 15.52,
+            "right": 1155.98,
+            "bottom": 472.52
+          },
+          "samples": 224,
+          "dropped": 0,
+          "worst": 6.29,
+          "worstBg": [
+            83,
+            84,
+            85
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                83,
+                84,
+                85
+              ],
+              "ratio": 6.29
+            },
+            {
+              "rgb": [
+                83,
+                84,
+                85
+              ],
+              "ratio": 6.29
+            },
+            {
+              "rgb": [
+                82,
+                83,
+                85
+              ],
+              "ratio": 6.38
+            }
+          ]
+        },
+        "heights": [
+          103.7,
+          103.7
+        ],
+        "docOverflow": [
+          1185,
+          1200
+        ]
+      },
+      {
+        "label": "375/light",
+        "cards": 13,
+        "withBg": 13,
+        "noBg": 0,
+        "worstAll": 5.33,
+        "worstName": {
+          "name": "喵小吉 Aeolian-2",
+          "line": "name",
+          "text": "喵小吉 Aeolian-2",
+          "hasBg": true,
+          "color": "rgb(48, 49, 51)",
+          "textRgb": [
+            48,
+            49,
+            51
+          ],
+          "rect": {
+            "x": 75,
+            "y": 666.16,
+            "w": 258,
+            "h": 22.39,
+            "right": 333,
+            "bottom": 688.55
+          },
+          "samples": 258,
+          "dropped": 0,
+          "worst": 5.33,
+          "worstBg": [
+            165,
+            166,
+            164
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                165,
+                166,
+                164
+              ],
+              "ratio": 5.33
+            },
+            {
+              "rgb": [
+                166,
+                166,
+                164
+              ],
+              "ratio": 5.34
+            },
+            {
+              "rgb": [
+                167,
+                167,
+                165
+              ],
+              "ratio": 5.4
+            }
+          ]
+        },
+        "worstCounts": {
+          "name": "喵小吉 Aeolian-2",
+          "line": "counts",
+          "text": "0 部视频 · 1 本相册 · 48 张照片",
+          "hasBg": true,
+          "color": "rgb(48, 49, 51)",
+          "textRgb": [
+            48,
+            49,
+            51
+          ],
+          "rect": {
+            "x": 75,
+            "y": 691.55,
+            "w": 258,
+            "h": 14.84,
+            "right": 333,
+            "bottom": 706.39
+          },
+          "samples": 258,
+          "dropped": 0,
+          "worst": 5.33,
+          "worstBg": [
+            165,
+            166,
+            164
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                165,
+                166,
+                164
+              ],
+              "ratio": 5.33
+            },
+            {
+              "rgb": [
+                166,
+                166,
+                164
+              ],
+              "ratio": 5.34
+            },
+            {
+              "rgb": [
+                166,
+                166,
+                164
+              ],
+              "ratio": 5.34
+            }
+          ]
+        },
+        "heights": [
+          101.03,
+          101.03
+        ],
+        "docOverflow": [
+          360,
+          375
+        ]
+      },
+      {
+        "label": "375/dark",
+        "cards": 13,
+        "withBg": 13,
+        "noBg": 0,
+        "worstAll": 8.17,
+        "worstName": {
+          "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+          "line": "name",
+          "text": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+          "hasBg": true,
+          "color": "rgb(229, 234, 243)",
+          "textRgb": [
+            229,
+            234,
+            243
+          ],
+          "rect": {
+            "x": 75,
+            "y": 339.06,
+            "w": 258,
+            "h": 22.39,
+            "right": 333,
+            "bottom": 361.45
+          },
+          "samples": 258,
+          "dropped": 0,
+          "worst": 8.17,
+          "worstBg": [
+            67,
+            67,
+            70
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                67,
+                67,
+                70
+              ],
+              "ratio": 8.17
+            },
+            {
+              "rgb": [
+                67,
+                67,
+                69
+              ],
+              "ratio": 8.18
+            },
+            {
+              "rgb": [
+                67,
+                66,
+                69
+              ],
+              "ratio": 8.27
+            }
+          ]
+        },
+        "worstCounts": {
+          "name": "娜娜（nana）",
+          "line": "counts",
+          "text": "14 部视频 · 0 本相册 · 0 张照片",
+          "hasBg": true,
+          "color": "rgb(229, 234, 243)",
+          "textRgb": [
+            229,
+            234,
+            243
+          ],
+          "rect": {
+            "x": 75,
+            "y": 255.42,
+            "w": 258,
+            "h": 14.84,
+            "right": 333,
+            "bottom": 270.27
+          },
+          "samples": 258,
+          "dropped": 0,
+          "worst": 8.75,
+          "worstBg": [
+            65,
+            62,
+            64
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                65,
+                62,
+                64
+              ],
+              "ratio": 8.75
+            },
+            {
+              "rgb": [
+                65,
+                62,
+                64
+              ],
+              "ratio": 8.75
+            },
+            {
+              "rgb": [
+                65,
+                62,
+                64
+              ],
+              "ratio": 8.75
+            }
+          ]
+        },
+        "heights": [
+          101.03,
+          101.03
+        ],
+        "docOverflow": [
+          360,
+          375
+        ]
+      }
+    ],
+    "network": {
+      "domImageElements": 26,
+      "avatarUrlsInDom": 26,
+      "backendThumbRequests": 13,
+      "uniqueThumbUrls": 13,
+      "duplicates": [],
+      "sample": {
+        "viewport": "1600/light",
+        "person": "素人",
+        "avatarSrc": "/api/media/thumb/p/a159/0000?crop=0.2111,0.1875,0.6000,0.3375",
+        "backgroundSrc": "/api/media/thumb/p/a159/0000?crop=0.2111,0.1875,0.6000,0.3375",
+        "equal": true
+      },
+      "proxyAllHits": 31,
+      "resourceEntries": 10,
+      "firstHits": [
+        "/api/media/track",
+        "/api/toolVisit/add",
+        "/api/media/edit-policy",
+        "/api/media/index",
+        "/api/media/persons",
+        "/api/media/person/125",
+        "/api/media/person/122",
+        "/api/media/person/124",
+        "/api/media/person/123",
+        "/api/media/person/111",
+        "/api/media/person/112",
+        "/api/media/person/114"
+      ]
+    },
+    "exceptions": []
+  }
+}

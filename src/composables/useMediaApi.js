@@ -748,6 +748,29 @@ export function frameUrl(id, sec, width) {
 }
 
 /**
+ * 帧头像 URL（P5.64）：`GET /media/frame/{id}?t=<整秒>&w=480[&crop=x,y,w,h]`
+ *
+ * <p>与后端 {@code MediaPersonServiceImpl#avatarUrlOf} 的 frame 分支**逐字同一口径**
+ * （只差一个 cache buster {@code algo}：后端回包不带它，这里也不带 —— 头像 URL 要能和回包对得上）。
+ * 正常情况下前端用的是回包里的 {@code avatarUrl}，这个函数只服务于「点完立刻看到」的乐观 URL。</p>
+ *
+ * @param {string} videoId 视频 id
+ * @param {number} sec     整秒
+ * @param {string} crop    归一化的 {@code x,y,w,h}（空 = 整图）
+ */
+export function frameAvatarUrl(videoId, sec, crop) {
+  const c = String(crop == null ? '' : crop).trim()
+  const base =
+    API_BASE +
+    '/media/frame/' +
+    encodeURIComponent(String(videoId == null ? '' : videoId)) +
+    '?t=' +
+    Math.max(0, Math.floor(Number(sec) || 0)) +
+    '&w=480'
+  return c ? base + '&crop=' + c : base
+}
+
+/**
  * 精确取帧（P5.18）：`GET /media/frame/{id}?t=<毫秒级秒数>` → 该**确切时刻**的一帧
  *
  * <p>与 {@link frameUrl} 的区别只在缓存语义：整秒取帧按 <秒>.jpg 永久落盘（hover 用，同一秒
@@ -902,6 +925,7 @@ const mediaApi = {
   spriteUrl,
   previewUrl,
   frameUrl,
+  frameAvatarUrl,
   frameExactUrl,
   photoThumbUrl,
   photoPreviewUrl,

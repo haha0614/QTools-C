@@ -6,7 +6,8 @@
  *   1. GET /api/media/persons       —— 人物字典（id / name / alias / useCount）；
  *   2. GET /api/media/index         —— 纯前端聚合：albums[].persons / albums[].count / videos[].persons /
  *                                      people[].{photos,count,albums,cover,mtime}；
- *   3. GET /api/media/person/{id}   —— 单人详情（avatarPath + P5-A 的 14 个资料字段 + 计数兜底）。
+ *   3. GET /api/media/person/{id}   —— 单人详情（avatarPath + P5-A 的 14 个资料字段 + 计数兜底
+ *                                      + P5.65 的 photoCount / coverPath：照片数与首册封面优先读它）。
  * 三份数据的拼装规则（谁优先、缺哪个降级到哪个、怎么排 chip、日期怎么格式化）集中在这里，
  * 页面只负责发请求与渲染，单测（personWall.test.mjs）覆盖所有降级分支。
  *
@@ -242,8 +243,59 @@ export function explicitAvatarUrl(detail) {
   return normalizeAvatarPath(detail && (detail.avatarPath || detail.avatar_path))
 }
 
+/**
+ * 手动头像 ref 解析（P5.64）：把 {@code avatarRef} 拆成两种位置语义
+ *
+ * <pre>
+ *   kind=photo  ref = "a164:4[#crop=x,y,w,h]"            → { type:'photo', albumId, seq, crop }
+ *   kind=frame  ref = "frame:<videoId>:<sec>[#crop=…]"   → { type:'frame', videoId, sec, crop }
+ *   kind=url    ref = "http(s)://…" / "data:image/…"     → { type:'url', raw, crop:'' }
+ * </pre>
+ *
+ * <p><b>为什么必须分开解析</b>：两种 ref 的冒号位置语义不同（相册序号 vs 视频秒），
+ * 老代码「第一个冒号左边是 albumId、右边是 seq」直接套到 frame 上会拼出
+ * {@code /thumb/p/frame/0} 这种永远 404 的地址（P5.61 的 NaN 坑是同一个来源）。
+ * 读不懂的 ref 一律 {@code type:'none'}，调用方退回后端回包 / 自动档。</p>
+ *
+ * @returns {{type:'photo'|'frame'|'url'|'none', albumId?:string, seq?:number, videoId?:string, sec?:number, crop:string, raw?:string}}
+ */
+export function parseAvatarRef(kind, ref) {
+  const raw = text(ref)
+  const k = text(kind).toLowerCase()
+  const hash = raw.indexOf('#')
+  const body = hash < 0 ? raw : raw.slice(0, hash)
+  const tail = hash < 0 ? '' : raw.slice(hash)
+  const crop = tail.slice(0, 6).toLowerCase() === '#crop=' ? tail.slice(6) : ''
+  if (!raw) return { type: 'none', crop: '' }
+  if (k === 'url') return { type: 'url', raw, crop: '' }
+  if (k === 'frame') {
+    if (!/^frame:/i.test(body)) return { type: 'none', crop: '' }
+    const rest = body.slice(6)
+    const colon = rest.lastIndexOf(':')
+    if (colon <= 0) return { type: 'none', crop: '' }
+    const videoId = rest.slice(0, colon)
+    const secText = rest.slice(colon + 1)
+    // 秒必须是纯数字：后端 frame 型 ref 只吃 {@code [0-9]+}（t 带小数走的是另一路「精确取帧」，
+    // 不落缓存，头像不能用它）。这里跟后端同一口径，宁可退回自动档也不给一个后端会 400 的 ref。
+    if (!videoId || !/^\d+$/.test(secText)) return { type: 'none', crop: '' }
+    return { type: 'frame', videoId, sec: Number(secText), crop }
+  }
+  if (k === 'photo') {
+    const colon = body.indexOf(':')
+    if (colon <= 0) return { type: 'none', crop: '' }
+    const seqText = body.slice(colon + 1)
+    // 与后端同口径：seq 只吃纯数字（Integer.parseInt 能过的那种）
+    if (!/^\d+$/.test(seqText)) return { type: 'none', crop: '' }
+    return { type: 'photo', albumId: body.slice(0, colon), seq: Number(seqText), crop }
+  }
+  return { type: 'none', crop: '' }
+}
+
 /** 头像 ③ 档的取帧落点：时长 × 0.3（避开片头黑屏 / 标题卡） */
 export const FRAME_AT_RATIO = 0.3
+
+/** 「从视频画面挑一帧」的一组候选比例（P5.64；见 frameCandidateSeconds） */
+export const FRAME_RATIOS = [0.05, 0.2, 0.35, 0.5, 0.65, 0.8]
 
 /**
  * 视频内容帧的取帧秒数（**整数秒**）：后端只有整秒那一支会落盘永久缓存（thumbs/frames/<hash>/<秒>.jpg），
@@ -254,6 +306,35 @@ export function frameSecondOf(dur) {
   const d = num(dur)
   if (d <= 0) return 0
   return Math.max(0, Math.floor(d * FRAME_AT_RATIO))
+}
+
+/**
+ * 「从视频画面挑一帧」的候选时间点（P5.64）：时长 × 0.05/0.2/0.35/0.5/0.65/0.8，整秒
+ *
+ * <p>为什么是这 6 个比例：0.05 避开片头黑屏 / 标题卡，0.8 之后常是黑场与字幕；
+ * 中间均匀铺开才有「挑得到」的感觉。「换一组时间点」= round + 1，整组后移 10%
+ * （第 2 组 15%…90%），落到上一组没覆盖的区间。</p>
+ *
+ * <p>整秒是硬要求：后端只有整秒那一支按 <秒>.jpg 永久落盘缓存，带小数走「精确取帧、每次真跑 ffmpeg」。
+ * 同一秒只留一次（短片里 5% 与 20% 会撞到同一秒），所以返回长度可能 &lt; 6。
+ * 时长未知（0）→ 只有一个 t=0。</p>
+ *
+ * @param {number} dur   时长（秒）
+ * @param {number} round 第几组（0 起；偏移 = round × 10%）
+ * @returns {number[]} 非负整秒，去重后升序
+ */
+export function frameCandidateSeconds(dur, round) {
+  const d = Number(dur) || 0
+  const r = Math.max(0, Math.floor(Number(round) || 0))
+  const maxSec = d > 0 ? Math.max(0, Math.floor(d) - 1) : 0
+  const out = []
+  for (const base of FRAME_RATIOS) {
+    const ratio = Math.min(1, base + r * 0.1)
+    const sec = d > 0 ? Math.min(maxSec, Math.max(0, Math.floor(d * ratio))) : 0
+    if (out.indexOf(sec) >= 0) continue
+    out.push(sec)
+  }
+  return out
 }
 
 /**
@@ -276,6 +357,13 @@ export function avatarOf(person, detail, stats, urls) {
   const u = urls || {}
   const explicit = explicitAvatarUrl(detail)
   if (explicit) return { url: explicit, kind: 'profile' }
+  // P5.65：详情接口（personNode）直接给「名下第一个相册的封面」时优先用它 ——
+  // 与索引侧 albums[].cover 同一个来源、同一个 URL 构造（thumbOf）；老后端没有这个键才回退索引。
+  const backendCover = text(detail && (detail.coverPath || detail.cover_path))
+  if (backendCover && typeof u.thumbOf === 'function') {
+    const url = u.thumbOf(backendCover)
+    if (url) return { url, kind: 'album' }
+  }
   if (stats && stats.coverRel && typeof u.thumbOf === 'function') {
     const url = u.thumbOf(stats.coverRel)
     if (url) return { url, kind: 'album' }
@@ -361,10 +449,13 @@ export function buildCard(person, ctx) {
   const detail = c.detail || null
   const stats = c.stats || null
   const name = text(person && person.name)
+  // P5.65：「Z 张照片」优先用详情里的 photoCount（后端一条聚合，口径 = 人名下可见相册的相片总数），
+  // 老后端没有这个键才回退索引侧 albums[].count 的前端求和。
+  const backendPhotos = detail && (detail.photoCount !== undefined ? detail.photoCount : detail.photo_count)
   const counts = countsText(
     stats ? stats.videos : detail && detail.videoCount,
     stats ? stats.albums : detail && detail.albumCount,
-    stats ? stats.photos : 0
+    backendPhotos !== undefined && backendPhotos !== null ? backendPhotos : stats ? stats.photos : 0
   )
   const mtime = stats ? stats.mtime : 0
   const day = formatDay(mtime)

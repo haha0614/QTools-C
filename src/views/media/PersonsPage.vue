@@ -43,6 +43,18 @@
       note 补了一句说明（见 QTools/doc/p560_person_placeholder_cleanup.sql）。
     · 「E2E演员」是端到端测试造的空壳人物（无相册 / 无视频 / 无引用），按测试残留从库里删除，
       备份见 QTools/doc/backup/media_person_before_p560_*.sql。
+
+  P5.67（用户需求）：「卡片背景也用头像，展示面积比头像大」—— 卡片内两层：
+    · .pw-bg  同一张头像（**同一个 URL**，浏览器只下载一次）铺满卡片，object-fit: cover、
+      object-position: center 25%（偏上，尽量露出人脸）、blur(12px) saturate(1.1) brightness(.9)。
+      四周再外扩 16px（inset: -16px）——12px 的高斯模糊会从图片边缘往里渗，图若正好压着卡片边，
+      模糊后边上会透出底色；外扩后模糊只吃图片自身像素，卡片内看不到「模糊边缘发白」。
+    · .pw-mask 遮罩（亮色白 / 暗色黑，左强右弱），保证文字压在照片上仍可读。
+    可读性口径：背景是照片 → 数量行 / 最近更新 / 别名在 has-bg 卡片上从 --fg-dim 提到 --fg
+    （--fg-dim 压在照片上最坏只有 2.5–3.9:1，提色后实测最差 5.33:1，见 devtools/p567-ui/REPORT.md）。
+    背景与头像用**同一个 URL**，浏览器把两个 img 合并成同一次请求（实测 26 个 img → 后端只收到 13 次）；
+    姓名此前继承 .media-scope a 的强调蓝 #409eff（压在卡片上 2.78:1），本轮显式改回 --fg（12.6:1）。
+    首字占位 / 头像失败 / 背景自身 onerror 一律不渲染背景层（保持纯色卡片，不出空背景或碎图）。
 -->
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, reactive, ref, watch } from 'vue'
@@ -50,7 +62,7 @@ import { useRouter } from 'vue-router'
 import { useMediaApi } from '@/composables/useMediaApi'
 import { useMediaTrack } from '@/composables/useMediaTrack'
 // P5.45：卡片信息（头像 / 数量 / 资料 chip / 最近更新）的唯一实现在 personWall.js
-import { buildCard, buildWallIndex, explicitAvatarUrl, isPlaceholderPerson, personKey } from './personWall.js'
+import { buildCard, buildWallIndex, explicitAvatarUrl, isPlaceholderPerson, parseAvatarRef, personKey } from './personWall.js'
 // P5.48：手动头像 —— 弹层 + 两个写接口 + 站端编辑策略闸门 + 页面级提示
 import PersonAvatarDialog from './PersonAvatarDialog.vue'
 import PageToast from './PageToast.vue'
@@ -200,6 +212,31 @@ function markAvatarFailed(card) {
   if (card && card.key) avatarFailed[String(card.key)] = true
 }
 
+/* --------------------------------------------------------- P5.67 卡片背景层 */
+
+/** 背景图自己加载失败（头像可能是好的）：只摘背景层，不动头像 */
+const bgFailed = reactive({})
+
+/**
+ * 卡片背景层的 src —— 与头像**同一个 URL、同一套可用性规则**：
+ *   1. 首字占位（kind=initial，avatarSrcOf 返回空串）/ 头像加载失败 / 背景自己加载失败
+ *      → 空串 = 不渲染背景层。用户口径「背景图像也是头像」：没有头像就没有背景，
+ *      卡片保持纯色，不出空背景、不出碎图。
+ *   2. 取帧档（kind=frame）沿用 avatarSrcOf 的懒加载：进入视口前也是空串。
+ * 网络层不额外下载：背景与头像用同一个 URL，浏览器把它们合并成同一次请求
+ * （实测：13 张卡 × 2 个图元素 = 26 个 img，后端只收到 13 次 thumb 请求，见 devtools/p567-ui）。
+ */
+function bgSrcOf(card) {
+  if (!card || !card.key) return ''
+  const key = String(card.key)
+  if (avatarFailed[key] || bgFailed[key]) return ''
+  return avatarSrcOf(card)
+}
+
+function markBgFailed(card) {
+  if (card && card.key) bgFailed[String(card.key)] = true
+}
+
 function openCard(card) {
   const id = card && card.id !== '' && card.id != null ? card.id : card && card.name
   if (id == null || id === '') return
@@ -227,21 +264,21 @@ const avatarCurrent = computed(() => {
   return { kind, ref: d.avatarRef == null ? '' : String(d.avatarRef), url: explicitAvatarUrl(d) }
 })
 
-/** 乐观 URL：与后端 avatarUrlOf 同一条规则，只为「点完立刻看到」；服务端回包会覆盖它 */
+/**
+ * 乐观 URL：与后端 avatarUrlOf 同一条规则，只为「点完立刻看到」；服务端回包会覆盖它。
+ *
+ * P5.64：拆串走 personWall.parseAvatarRef（photo 的 {@code <albumId>:<seq>} 与 frame 的
+ * {@code frame:<videoId>:<sec>} 位置语义不同，不能用同一段 indexOf(':') 硬套）。
+ */
 function optimisticAvatarUrl(payload) {
-  if (payload.kind === 'url') return payload.ref
-  // P5.61：ref 可能带 "#crop=x,y,w,h" 尾巴。主体段才是 <albumId>:<seq>，
-  // 尾巴要原样接到缩略图 URL 的 ?crop= 上（否则 Number("0#crop=…") = NaN，
-  // 乐观 URL 会拼成 /thumb/p/a164/0NaN，图片一闪一坏）。
-  const raw = String(payload.ref == null ? '' : payload.ref)
-  const hash = raw.indexOf('#')
-  const body = hash < 0 ? raw : raw.slice(0, hash)
-  const i = body.indexOf(':')
-  if (i <= 0) return ''
-  const url = api.photoThumbUrl(body.slice(0, i), Number(body.slice(i + 1)))
-  const tail = hash < 0 ? '' : raw.slice(hash)
-  const crop = tail.startsWith('#crop=') ? tail.slice(6) : ''
-  return crop ? url + '?crop=' + crop : url
+  const parsed = parseAvatarRef(payload.kind, payload.ref)
+  if (parsed.type === 'url') return parsed.raw
+  if (parsed.type === 'photo') {
+    const url = api.photoThumbUrl(parsed.albumId, parsed.seq)
+    return parsed.crop ? url + '?crop=' + parsed.crop : url
+  }
+  if (parsed.type === 'frame') return api.frameAvatarUrl(parsed.videoId, parsed.sec, parsed.crop)
+  return ''
 }
 
 /** 写本地详情，返回「回滚函数」（把这张卡恢复成保存前的样子，含头像加载失败标记） */
@@ -252,6 +289,8 @@ function applyLocalAvatar(id, patch) {
   const failedBefore = avatarFailed[key]
   details[key] = Object.assign({}, had ? details[key] : {}, patch)
   delete avatarFailed[key]
+  // P5.67：换头像 = 换 URL → 清掉「背景失败」，让背景层跟着新图重新挂上
+  delete bgFailed[key]
   return () => {
     if (had) details[key] = before
     else delete details[key]
@@ -265,6 +304,8 @@ function mergeServerPerson(id, res) {
   if (body && typeof body === 'object' && !Array.isArray(body) && body.id != null) {
     details[String(id)] = body
     delete avatarFailed[String(id)]
+    // P5.67：服务端回包可能换了头像 URL，背景层同样跟着新图重挂
+    delete bgFailed[String(id)]
   }
 }
 
@@ -422,6 +463,8 @@ onBeforeUnmount(() => {
         v-for="c in cards"
         :key="c.key"
         class="pw-card"
+        :class="{ 'has-bg': !!bgSrcOf(c) }"
+        :data-bg="bgSrcOf(c) ? '1' : '0'"
         :href="'#/media/person/' + encodeURIComponent(c.id !== '' && c.id != null ? c.id : c.name)"
         :data-person-id="c.id"
         :data-avatar="c.avatar.kind"
@@ -429,6 +472,17 @@ onBeforeUnmount(() => {
         :data-frame-inview="c.avatar.kind === 'frame' ? (frameInView[String(c.key)] ? '1' : '0') : ''"
         @click.prevent="openCard(c)"
       >
+        <!-- P5.67：底层 = 同一张头像铺满卡片（模糊 + 遮罩），头像/文字在上面两层 -->
+        <span v-if="bgSrcOf(c)" class="pw-bg" aria-hidden="true">
+          <img
+            :src="bgSrcOf(c)"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            @error="markBgFailed(c)"
+          />
+        </span>
+        <span v-if="bgSrcOf(c)" class="pw-mask" aria-hidden="true"></span>
         <span class="pw-avatar-wrap">
           <span class="pw-avatar">
             <img
@@ -596,6 +650,12 @@ onBeforeUnmount(() => {
 }
 
 .pw-card {
+  /* P5.67：卡片是背景层的定位容器，圆角裁切靠 overflow: hidden（背景不溢出卡片）；
+     isolate 让每张卡自成一个层叠上下文 —— 背景（0）/ 遮罩（1）/ 头像与文字（2）的次序只在卡内比较，
+     不会和相邻卡片的 hover 层缠在一起。 */
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -619,9 +679,120 @@ onBeforeUnmount(() => {
   border-color: var(--line-2);
 }
 
+/* ------------------------------------------------ P5.67 卡片背景层（头像铺满） */
+
+/* 底层：整卡铺满的模糊人像。inset 负值外扩 16px —— 见文件头 P5.67 注释（避免模糊边缘透底） */
+.pw-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.pw-bg img {
+  position: absolute;
+  inset: -16px;
+  width: calc(100% + 32px);
+  height: calc(100% + 32px);
+  /* center 25%：人像竖图里脸通常在偏上 1/4，cover 按这个锚点裁，尽量露出人脸 */
+  object-fit: cover;
+  object-position: center 25%;
+  filter: blur(12px) saturate(1.1) brightness(0.9);
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+/* hover：背景轻轻放大 + 提亮（120ms）。缩放锚在中心，卡片边框由 .pw-card 的 overflow 裁住；
+   「换」按钮在 .pw-avatar-wrap（z-index: 2）里，永远压在背景之上，不会被盖住/挡住点击。 */
+.pw-card:hover .pw-bg img,
+.pw-card:focus-visible .pw-bg img {
+  transform: scale(1.03);
+  filter: blur(12px) saturate(1.12) brightness(1);
+}
+
+/* 遮罩：左强右弱 —— 左侧是头像 + 名字（要最清楚），右侧只留人像氛围。
+   取值是按「最坏情况」算的：亮色下背景可能整片近黑（255×α），暗色下可能整片近白（18×α + 255×(1-α)）；
+   文字色统一用 --fg 时，亮色 α=.62（只有卡片最右边那一小条，名字被省略号截断时才到得了）→ 5.0:1 解析值，
+   暗色 α=.66 → 4.9:1 解析值；实测像素最差 5.33:1（亮）/ 6.27:1（暗），见 devtools/p567-ui/REPORT.md。
+   亮色右边留到 .62 是为了让人像在卡片右侧真的看得见（左侧 .93 保证头像与名字区最清楚）。 */
+.pw-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.93) 0%,
+    rgba(255, 255, 255, 0.88) 50%,
+    rgba(255, 255, 255, 0.62) 100%
+  );
+}
+
+html.dark .pw-mask {
+  background: linear-gradient(
+    90deg,
+    rgba(18, 18, 18, 0.9) 0%,
+    rgba(18, 18, 18, 0.82) 46%,
+    rgba(18, 18, 18, 0.66) 100%
+  );
+}
+
+/* 文字压在照片上：数量行 / 最近更新 / 别名从「卡片底上的次级色」--fg-dim 提到 --fg。
+   --fg-dim 对纯底是 4.9:1，但压在照片上（遮罩最薄处 + 近黑/近白像素）只剩 2.5–3.9:1；
+   提到 --fg 后三档实测最差 5.33:1。没有背景层的卡片（首字占位 / 无头像）保持原来的 --fg-dim。 */
+.pw-card.has-bg .pw-counts,
+.pw-card.has-bg .pw-alias,
+.pw-card.has-bg .pw-recent {
+  color: var(--fg);
+}
+
+/* 最近更新那行平时带 opacity: .85（压在纯色底上没问题）；压在照片上会再掉一档对比度，has-bg 时取消 */
+.pw-card.has-bg .pw-recent {
+  opacity: 1;
+}
+
+/* 浏览器不支持 filter（模糊失效 → 背景是清晰原图）：退化成更厚的半透明遮罩，文字照样 ≥4.5:1 */
+@supports not (filter: blur(4px)) {
+  .pw-bg img {
+    filter: none;
+  }
+
+  .pw-mask {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.96) 0%,
+      rgba(255, 255, 255, 0.93) 46%,
+      rgba(255, 255, 255, 0.84) 100%
+    );
+  }
+
+  html.dark .pw-mask {
+    background: linear-gradient(
+      90deg,
+      rgba(18, 18, 18, 0.95) 0%,
+      rgba(18, 18, 18, 0.92) 46%,
+      rgba(18, 18, 18, 0.84) 100%
+    );
+  }
+}
+
+/* 系统要求减少动效：hover 不再放大/提亮 */
+@media (prefers-reduced-motion: reduce) {
+  .pw-bg img,
+  .pw-card:hover .pw-bg img,
+  .pw-card:focus-visible .pw-bg img {
+    transform: none;
+    transition: none;
+  }
+}
+
 /* 头像外层（P5.48）：只负责定位「换」按钮，尺寸口径与旧 .pw-avatar 完全一致 */
 .pw-avatar-wrap {
   position: relative;
+  /* P5.67：压在背景（0）/ 遮罩（1）之上 */
+  z-index: 2;
   flex: 0 0 56px;
   width: 56px;
   height: 56px;
@@ -691,6 +862,9 @@ onBeforeUnmount(() => {
 }
 
 .pw-body {
+  /* P5.67：文字层在遮罩之上（与头像同层，同为 2） */
+  position: relative;
+  z-index: 2;
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
@@ -699,6 +873,11 @@ onBeforeUnmount(() => {
 }
 
 .pw-name {
+  /* P5.67：姓名**显式**给 --fg。卡片是 <a>，mediaTheme 的 .media-scope a{color:--accent} 特异性
+     高过 .pw-card{color:--fg}，所以姓名此前一直继承强调蓝 #409eff —— 压在纯白卡片上只有 2.78:1、
+     压在照片背景上更低（实测 1.25:1）。姓名是卡片主信息不是行内链接，改为 --fg 后亮色 12.6:1、
+     压在照片上最差 5.9:1（实测见 devtools/p567-ui/REPORT.md）。 */
+  color: var(--fg);
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;

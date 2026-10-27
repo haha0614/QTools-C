@@ -1,0 +1,149 @@
+后端在线：http://127.0.0.1:8080（/api/media/persons 返回 13 条）
+计数代理：http://127.0.0.1:57078 → http://127.0.0.1:8080
+dev server: http://127.0.0.1:57079
+
+[C] 请求数（计数代理：后端实际收到的 thumb 请求）
+  PASS C 有「头像 + 背景」两张同 URL 的卡片  — 13 张
+  PASS C 两个用点的绝对 URL 完全相同
+  PASS C 每个头像 URL 后端只收到 1 次请求（同 URL 复用）  — 重复：[]
+  PASS C 每个头像 URL 后端只收到 1 次（13 张卡 × 2 个图元素 → 13 个 URL）  — 实际 13 次 / 13 个 URL
+  PASS C resource timing 里每个 thumb URL 也只有一条  — 10 条（去重后 10）
+      DOM 图元素 26 个 / 后端 thumb 请求 13 次 / 去重 URL 13 个
+      样例（1600/light · 素人）
+        avatar  src = /api/media/thumb/p/a159/0000?crop=0.2111,0.1875,0.6000,0.3375
+        bg src      = /api/media/thumb/p/a159/0000?crop=0.2111,0.1875,0.6000,0.3375
+        相等        = true
+
+[1600/light] 1600x1000
+  PASS 1600/light 主题生效（html.dark=false）
+  PASS 1600/light 有卡片渲染出背景层  — 13/13 张
+  PASS 1600/light data-bg 与 .pw-bg 存在性一致
+  PASS 1600/light 遮罩层与背景层同生同灭（mask=1）
+  PASS 1600/light 卡片 overflow:hidden（背景不溢出圆角）
+  PASS 1600/light 层级 背景(0) < 遮罩(1) < 文字(2)  — {"bg":"0","mask":"1","body":"2"}
+  PASS 1600/light 背景样式 = blur(12px) saturate(1.1) brightness(.9)  — blur(12px) saturate(1.1) brightness(0.9)
+  PASS 1600/light 背景 object-position: center 25%（露脸）  — 50% 25%
+  PASS 1600/light 有背景的卡片一定不是首字占位
+  PASS 1600/light 背景图 URL === 头像 URL（逐卡）  — 13 张全等
+  PASS 1600/light 背景图与头像都是 loading="lazy"
+  PASS 1600/light 姓名对比度 ≥ 4.5:1  — 5.34:1（喵小吉 Aeolian-2 @ 底色 166,166,164）
+  PASS 1600/light 数量行对比度 ≥ 4.5:1  — 5.34:1（喵小吉 Aeolian-2 @ 底色 166,166,164）
+  PASS 1600/light 整墙等高  — 103.7–103.7px
+  PASS 1600/light 数量行单行且不被省略号切  — 0 张不合格
+  PASS 1600/light 3 个 chip 可见不越界  — 3 张带 3 chip
+  PASS 1600/light 无横向滚动  — scrollW=1585 clientW=1600
+  PASS 1600/light hover 背景放大到 scale(1.03)  — 1.03
+  PASS 1600/light hover 过渡 120ms  — 0.12s, 0.12s
+  PASS 1600/light hover 时「换」按钮在背景之上且可见  — onTop=true opacity=1
+  PASS 1600/light 点卡片跳人物详情  — /media/person/125
+
+[1600/dark] 1600x1000
+  PASS 1600/dark 主题生效（html.dark=true）
+  PASS 1600/dark 有卡片渲染出背景层  — 13/13 张
+  PASS 1600/dark data-bg 与 .pw-bg 存在性一致
+  PASS 1600/dark 遮罩层与背景层同生同灭（mask=1）
+  PASS 1600/dark 卡片 overflow:hidden（背景不溢出圆角）
+  PASS 1600/dark 层级 背景(0) < 遮罩(1) < 文字(2)  — {"bg":"0","mask":"1","body":"2"}
+  PASS 1600/dark 背景样式 = blur(12px) saturate(1.1) brightness(.9)  — blur(12px) saturate(1.1) brightness(0.9)
+  PASS 1600/dark 背景 object-position: center 25%（露脸）  — 50% 25%
+  PASS 1600/dark 有背景的卡片一定不是首字占位
+  PASS 1600/dark 背景图 URL === 头像 URL（逐卡）  — 13 张全等
+  PASS 1600/dark 背景图与头像都是 loading="lazy"
+  PASS 1600/dark 姓名对比度 ≥ 4.5:1  — 6.27:1（小鱼 @ 底色 85,84,82）
+  PASS 1600/dark 数量行对比度 ≥ 4.5:1  — 6.29:1（玥儿玥er @ 底色 83,84,85）
+  PASS 1600/dark 整墙等高  — 103.7–103.7px
+  PASS 1600/dark 数量行单行且不被省略号切  — 0 张不合格
+  PASS 1600/dark 3 个 chip 可见不越界  — 3 张带 3 chip
+  PASS 1600/dark 无横向滚动  — scrollW=1585 clientW=1600
+
+[1200/light] 1200x900
+  PASS 1200/light 主题生效（html.dark=false）
+  PASS 1200/light 有卡片渲染出背景层  — 13/13 张
+  PASS 1200/light data-bg 与 .pw-bg 存在性一致
+  PASS 1200/light 遮罩层与背景层同生同灭（mask=1）
+  PASS 1200/light 卡片 overflow:hidden（背景不溢出圆角）
+  PASS 1200/light 层级 背景(0) < 遮罩(1) < 文字(2)  — {"bg":"0","mask":"1","body":"2"}
+  PASS 1200/light 背景样式 = blur(12px) saturate(1.1) brightness(.9)  — blur(12px) saturate(1.1) brightness(0.9)
+  PASS 1200/light 背景 object-position: center 25%（露脸）  — 50% 25%
+  PASS 1200/light 有背景的卡片一定不是首字占位
+  PASS 1200/light 背景图 URL === 头像 URL（逐卡）  — 13 张全等
+  PASS 1200/light 背景图与头像都是 loading="lazy"
+  PASS 1200/light 姓名对比度 ≥ 4.5:1  — 5.34:1（喵小吉 Aeolian-2 @ 底色 166,166,164）
+  PASS 1200/light 数量行对比度 ≥ 4.5:1  — 5.4:1（喵小吉 Aeolian-2 @ 底色 167,167,165）
+  PASS 1200/light 整墙等高  — 103.7–103.7px
+  PASS 1200/light 数量行单行且不被省略号切  — 0 张不合格
+  PASS 1200/light 3 个 chip 可见不越界  — 3 张带 3 chip
+  PASS 1200/light 无横向滚动  — scrollW=1185 clientW=1200
+
+[1200/dark] 1200x900
+  PASS 1200/dark 主题生效（html.dark=true）
+  PASS 1200/dark 有卡片渲染出背景层  — 13/13 张
+  PASS 1200/dark data-bg 与 .pw-bg 存在性一致
+  PASS 1200/dark 遮罩层与背景层同生同灭（mask=1）
+  PASS 1200/dark 卡片 overflow:hidden（背景不溢出圆角）
+  PASS 1200/dark 层级 背景(0) < 遮罩(1) < 文字(2)  — {"bg":"0","mask":"1","body":"2"}
+  PASS 1200/dark 背景样式 = blur(12px) saturate(1.1) brightness(.9)  — blur(12px) saturate(1.1) brightness(0.9)
+  PASS 1200/dark 背景 object-position: center 25%（露脸）  — 50% 25%
+  PASS 1200/dark 有背景的卡片一定不是首字占位
+  PASS 1200/dark 背景图 URL === 头像 URL（逐卡）  — 13 张全等
+  PASS 1200/dark 背景图与头像都是 loading="lazy"
+  PASS 1200/dark 姓名对比度 ≥ 4.5:1  — 6.29:1（玥儿玥er @ 底色 83,84,85）
+  PASS 1200/dark 数量行对比度 ≥ 4.5:1  — 6.29:1（玥儿玥er @ 底色 83,84,85）
+  PASS 1200/dark 整墙等高  — 103.7–103.7px
+  PASS 1200/dark 数量行单行且不被省略号切  — 0 张不合格
+  PASS 1200/dark 3 个 chip 可见不越界  — 3 张带 3 chip
+  PASS 1200/dark 无横向滚动  — scrollW=1185 clientW=1200
+
+[375/light] 375x812
+  PASS 375/light 主题生效（html.dark=false）
+  PASS 375/light 有卡片渲染出背景层  — 13/13 张
+  PASS 375/light data-bg 与 .pw-bg 存在性一致
+  PASS 375/light 遮罩层与背景层同生同灭（mask=1）
+  PASS 375/light 卡片 overflow:hidden（背景不溢出圆角）
+  PASS 375/light 层级 背景(0) < 遮罩(1) < 文字(2)  — {"bg":"0","mask":"1","body":"2"}
+  PASS 375/light 背景样式 = blur(12px) saturate(1.1) brightness(.9)  — blur(12px) saturate(1.1) brightness(0.9)
+  PASS 375/light 背景 object-position: center 25%（露脸）  — 50% 25%
+  PASS 375/light 有背景的卡片一定不是首字占位
+  PASS 375/light 背景图 URL === 头像 URL（逐卡）  — 13 张全等
+  PASS 375/light 背景图与头像都是 loading="lazy"
+  PASS 375/light 姓名对比度 ≥ 4.5:1  — 5.33:1（喵小吉 Aeolian-2 @ 底色 165,166,164）
+  PASS 375/light 数量行对比度 ≥ 4.5:1  — 5.33:1（喵小吉 Aeolian-2 @ 底色 165,166,164）
+  PASS 375/light 整墙等高  — 101.03–101.03px
+  PASS 375/light 数量行单行且不被省略号切  — 0 张不合格
+  PASS 375/light 3 个 chip 可见不越界  — 3 张带 3 chip
+  PASS 375/light 无横向滚动  — scrollW=360 clientW=375
+
+[375/dark] 375x812
+  PASS 375/dark 主题生效（html.dark=true）
+  PASS 375/dark 有卡片渲染出背景层  — 13/13 张
+  PASS 375/dark data-bg 与 .pw-bg 存在性一致
+  PASS 375/dark 遮罩层与背景层同生同灭（mask=1）
+  PASS 375/dark 卡片 overflow:hidden（背景不溢出圆角）
+  PASS 375/dark 层级 背景(0) < 遮罩(1) < 文字(2)  — {"bg":"0","mask":"1","body":"2"}
+  PASS 375/dark 背景样式 = blur(12px) saturate(1.1) brightness(.9)  — blur(12px) saturate(1.1) brightness(0.9)
+  PASS 375/dark 背景 object-position: center 25%（露脸）  — 50% 25%
+  PASS 375/dark 有背景的卡片一定不是首字占位
+  PASS 375/dark 背景图 URL === 头像 URL（逐卡）  — 13 张全等
+  PASS 375/dark 背景图与头像都是 loading="lazy"
+  PASS 375/dark 姓名对比度 ≥ 4.5:1  — 8.17:1（深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜） @ 底色 67,67,70）
+  PASS 375/dark 数量行对比度 ≥ 4.5:1  — 8.75:1（娜娜（nana） @ 底色 65,62,64）
+  PASS 375/dark 整墙等高  — 101.03–101.03px
+  PASS 375/dark 数量行单行且不被省略号切  — 0 张不合格
+  PASS 375/dark 3 个 chip 可见不越界  — 3 张带 3 chip
+  PASS 375/dark 无横向滚动  — scrollW=360 clientW=375
+
+[G] 无头像（首字占位）的卡片没有背景层
+  PASS G 墙上存在首字占位卡片  — 1 张（无头像测试）
+  PASS G 首字占位卡片没有 .pw-bg 背景层
+  PASS G 首字占位卡片 data-bg="0"
+  PASS G 首字占位仍然显示首字  — 无
+  PASS G 首字占位卡片背景仍是纯色（无 background-image）
+  PASS G 打桩追加的「无头像测试」落在首字占位且无背景层
+
+[H] 头像 404 → 回落首字，背景层静默移除
+  PASS H 有卡片因头像 404 回落首字  — 13 张：素人、娜娜（nana）、深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）
+  PASS H 这些卡片没有背景层（不出现空背景/碎图）
+  PASS H thumb 全 404 时整墙没有任何背景层  — 仍带背景的卡片 0 张
+
+=== 截图：E:\111\project\QTools\QTools-C\devtools\p567-ui\out\after
+PASS 120 / FAIL 0

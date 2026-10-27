@@ -3,12 +3,18 @@
   入口：人物墙卡片头像 hover 的「换」按钮、人物详情页头像 hover 的「换」按钮
         （编辑策略 off / local 档不渲染入口，页面侧判定）
 
-  两个 tab：
+  三个 tab：
     1) 从相册挑选 —— 该人物名下相册的缩略图网格（每行 6 张）。相册按 IntersectionObserver **懒加载**：
        滚到哪本相册才去 GET /api/media/album/{id} 拿它的 photos[]，首屏只发 1-2 个请求；
        每本相册最多渲染 PHOTO_PER_ALBUM 张（防止 144 册 × 100 张把 DOM 撑爆）。
-       点选即保存 → emit('save', { kind:'photo', ref:'<albumId>:<seq>' })
+       点选即裁剪 → emit('save', { kind:'photo', ref:'<albumId>:<seq>[#crop=…]' })
     2) 图片地址 —— 输入 http(s):// 或 data:image/ 地址，带预览与基本校验（同后端同规则）。
+    3) 从视频画面（P5.64）—— 该人物名下视频的横向缩略条（默认选第一个）→ 选中视频抽 **6 帧候选**
+       （t = 时长 × 0.05/0.2/0.35/0.5/0.65/0.8，整秒，w=480）→ 点某帧进同一个裁剪态 →
+       emit('save', { kind:'frame', ref:'frame:<videoId>:<sec>[#crop=…]' })。
+       「换一组时间点」把 6 个比例整体后移 10%，抽到上一组没覆盖的区间。
+       取帧是 6 个 / 轮、最多 2 个并发（后端 ffmpeg 名额默认 4），切换视频用 AbortController
+       取消未完成的请求 —— 否则用户快速点视频会把旧视频的帧排到新视频后面。
 
   契约（保存与回滚都在调用方）：本组件**不发写请求**，只 emit。原因：
     保存后卡片 / 详情页要「立即变 + 失败回滚」，那份状态（详情对象 / 卡片键 / 失败标记）
@@ -22,6 +28,8 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { useMediaApi } from '@/composables/useMediaApi'
+// 候选时间点的规则（比例 / 整秒 / 去重）只有 personWall.js 一份实现：单测在 personWall.test.mjs
+import { frameCandidateSeconds } from './personWall.js'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -42,6 +50,9 @@ const PHOTO_PER_ALBUM = 24
 /** 图片地址列宽上限：与 media_person.avatar_ref VARCHAR(512) 对齐 */
 const REF_MAX = 512
 
+/** 「从视频画面」一次列多少条视频（横向缩略条，滚到底为止） */
+const VIDEO_PAGE_SIZE = 24
+
 const tab = ref('album')
 
 const albums = ref([])
@@ -53,6 +64,23 @@ const photoState = reactive({})
 
 const urlInput = ref('')
 const urlErr = ref('')
+
+/* ---- tab 3：从视频画面（P5.64） ---- */
+
+/** 该人物名下的视频 [{id,title,dur,cover}] */
+const videos = ref([])
+const videoTotal = ref(0)
+const videosLoading = ref(false)
+const videosErr = ref('')
+/** 当前选中的视频 id（'' = 没选 / 没有视频） */
+const videoSelId = ref('')
+
+/** 一组候选帧 [{sec,url}]（url 是 blob: 或直连取帧地址） */
+const frames = ref([])
+const framesLoading = ref(false)
+const framesErr = ref('')
+/** 第几组时间点（0 起）：「换一组时间点」+1，整体后移 10% */
+const frameRound = ref(0)
 
 function unwrap(res) {
   if (res && typeof res === 'object' && res.data && typeof res.data === 'object') return res.data
@@ -163,6 +191,155 @@ function stopObserver() {
   }
 }
 
+/* --------------------------------------------------------------- 从视频画面（P5.64）
+
+   一次交互 = 「选视频 → 6 帧候选 → 点一帧进裁剪态 → 保存 frame:<videoId>:<sec>[#crop=…]」。
+
+   请求预算是硬约束（验收口径 6-12 个 / tab）：一组只有 6 个，两个 worker 并发（后端 ffmpeg
+   名额默认 4，5 个以上同时取帧会排队 429）。切视频必须 abort —— 否则旧视频的 6 个请求会排在
+   新视频前面回来，格子里的画面变成上一部片子的帧。
+
+   取帧走 fetch + AbortController 而不是直接丢给 <img>：<img> 的请求没法取消，
+   「切换视频时取消未完成请求」这条就做不到。取到 blob 之后才塞 <img :src="blob:…">。 */
+
+/** 当前正在取帧的这一批（切视频 / 关闭弹层时 abort） */
+let frameAbort = null
+/** 批次令牌：只有最新那一批能改 frames / framesLoading（旧批 abort 后的收尾不能把新批的状态抹掉） */
+let frameSeq = 0
+/** 当前这一批渲染用的 objectURL（换批 / 卸载时 revoke，否则 blob 一直挂在内存里） */
+let frameBlobs = []
+
+const currentVideo = computed(() => {
+  const id = videoSelId.value
+  return id ? videos.value.find((v) => v.id === id) || null : null
+})
+
+function releaseFrames() {
+  if (frameAbort) {
+    frameAbort.abort()
+    frameAbort = null
+  }
+  for (const url of frameBlobs) URL.revokeObjectURL(url)
+  frameBlobs = []
+  frames.value = []
+  framesLoading.value = false
+}
+
+/** 取这一组 6 帧：最多 2 个并发，失败的单格退回直连 URL（后端 404 时 <img> 自然会报错） */
+async function loadFrames(round) {
+  const video = currentVideo.value
+  releaseFrames()
+  if (!video) return
+  const secs = frameCandidateSeconds(video.dur, round)
+  frameRound.value = Number(round) || 0
+  if (!secs.length) {
+    framesErr.value = '这段视频没有可用画面'
+    return
+  }
+  const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null
+  frameAbort = ctrl
+  const token = ++frameSeq
+  const created = []
+  const slots = new Array(secs.length).fill(null)
+  framesLoading.value = true
+  framesErr.value = ''
+  try {
+    let cursor = 0
+    const fetchOne = async () => {
+      while (cursor < secs.length) {
+        const idx = cursor++
+        const sec = secs[idx]
+        // 用 frameAvatarUrl（而不是 frameUrl）：它和**后端 avatarUrlOf 的 frame 分支逐字同形**
+        // （?t=<sec>&w=480，不带 algo），落库后卡片要的那张图正好命中这次已经取过的缓存。
+        const src = api.frameAvatarUrl(video.id, sec)
+        if (ctrl && ctrl.signal.aborted) return
+        try {
+          const res = await fetch(src, ctrl ? { signal: ctrl.signal } : undefined)
+          if (!res.ok) throw new Error('HTTP ' + res.status)
+          const objUrl = URL.createObjectURL(await res.blob())
+          created.push(objUrl)
+          slots[idx] = { sec, url: objUrl, src }
+        } catch (err) {
+          if (ctrl && ctrl.signal.aborted) return
+          slots[idx] = { sec, url: src, src, failed: true }
+        }
+      }
+    }
+    await Promise.all([fetchOne(), fetchOne()])
+    if (token !== frameSeq) return
+    frames.value = slots.filter(Boolean)
+    frameBlobs = created
+    if (!frames.value.length) framesErr.value = '取帧失败：后端未配置 ffmpeg 或该视频无法解码'
+  } finally {
+    if (token === frameSeq) {
+      frameAbort = null
+      framesLoading.value = false
+    } else {
+      // 已被下一批取代：这一批拿到的 objectURL 要自己回收，否则永远挂在内存里
+      for (const url of created) URL.revokeObjectURL(url)
+    }
+  }
+}
+
+async function loadVideos() {
+  if (!personId.value || videosLoading.value) return
+  videosLoading.value = true
+  videosErr.value = ''
+  try {
+    const res = await api.listPersonVideos(personId.value, { page: 1, size: VIDEO_PAGE_SIZE }, { silent: true })
+    const out = normalizePage(res)
+    videos.value = out.rows
+      .filter((v) => v && v.id != null && v.id !== '')
+      .map((v) => ({
+        id: String(v.id),
+        title: String(v.title || v.id),
+        dur: Number(v.dur) || 0,
+        cover: api.videoThumbUrl(v.id)
+      }))
+    videoTotal.value = out.total
+    if (videos.value.length) {
+      // 默认选中第一个并立刻抽帧：打开 tab 一片空白等于让人以为「没有视频」
+      videoSelId.value = ''
+      selectVideo(videos.value[0].id)
+    } else {
+      videoSelId.value = ''
+      releaseFrames()
+    }
+  } catch (err) {
+    videos.value = []
+    videoTotal.value = 0
+    videosErr.value = '视频读取失败：' + ((err && err.message) || '请求失败')
+  } finally {
+    videosLoading.value = false
+  }
+}
+
+function selectVideo(id) {
+  const next = String(id == null ? '' : id)
+  if (next === videoSelId.value) return
+  videoSelId.value = next
+  loadFrames(0)
+}
+
+/** 「换一组时间点」：比例整体后移 10%，落到上一组没覆盖的区间 */
+function nextFrameRound() {
+  loadFrames(frameRound.value + 1)
+}
+
+/** 秒数显示：m:ss */
+function secondLabel(sec) {
+  const s = Math.max(0, Math.floor(Number(sec) || 0))
+  const m = Math.floor(s / 60)
+  const r = s % 60
+  return m + ':' + (r < 10 ? '0' + r : String(r))
+}
+
+/** 时长显示：m:ss（未知 → ''） */
+function durLabel(dur) {
+  const d = Math.floor(Number(dur) || 0)
+  return d > 0 ? secondLabel(d) : ''
+}
+
 /* ------------------------------------------------------------------ 图片地址 */
 
 const urlValue = computed(() => String(urlInput.value || '').trim())
@@ -200,11 +377,15 @@ function applyUrl() {
    （scale=400:-2）与大图预览（scale=1600:-2）用的是**同一套等比缩放**，两者比例完全一致。
    所以这里显示大图预览做更高清的选择，但算出来的比例对缩略图同样成立。 */
 
-/** 裁剪态（null = 没在裁，显示相册网格） */
+/** 裁剪态（open=false = 没在裁，显示当前 tab 的列表） */
 const crop = reactive({
   open: false,
+  /** 'photo' = 相册里的一张（<albumId>:<seq>）；'frame' = 视频里的一帧（frame:<videoId>:<sec>） */
+  kind: 'photo',
   albumId: '',
   seq: 0,
+  videoId: '',
+  sec: 0,
   url: '',
   fallbackUrl: '',
   W: 0,
@@ -424,6 +605,9 @@ function onCropImgLoad(ev) {
 function pickPhoto(album, photo) {
   if (props.busy) return
   crop.open = true
+  crop.kind = 'photo'
+  crop.videoId = ''
+  crop.sec = 0
   crop.albumId = String(album.id)
   crop.seq = photo.seq
   // 裁剪用大图预览（更清晰）；没有大图（is_big≠1）时同一张缩略图也能裁，比例一致
@@ -445,12 +629,56 @@ function closeCrop() {
   crop.open = false
 }
 
-/** 用这张（带裁剪）→ 落库形状 a164:4#crop=x,y,w,h */
+/**
+ * 用这张（带裁剪）→ 落库形状
+ *
+ * <p>photo：{@code a164:4#crop=x,y,w,h}（老形状，一字不变）；<br>
+ * frame：{@code frame:<videoId>:<sec>#crop=x,y,w,h}（P5.64 新形状 —— <b>不复用</b>
+ * {@code <albumId>:<seq>} 语义：同一个字符串位置上，一个是相册序号、一个是秒）。</p>
+ */
 function saveCrop() {
   if (props.busy) return
-  const base = crop.albumId + ':' + crop.seq
+  const isFrame = crop.kind === 'frame'
+  const base = isFrame ? 'frame:' + crop.videoId + ':' + crop.sec : crop.albumId + ':' + crop.seq
   const full = Math.abs(crop.sel.w - crop.W) < 2 && Math.abs(crop.sel.h - crop.H) < 2
-  emit('save', { kind: 'photo', ref: full ? base : base + '#crop=' + cropParam() })
+  emit('save', { kind: isFrame ? 'frame' : 'photo', ref: full ? base : base + '#crop=' + cropParam() })
+}
+
+/** 视频里的一帧 → 进同一个裁剪态（拖拽 / 缩放 / 脸部·中心·整图全部复用） */
+function pickFrame(sec) {
+  if (props.busy) return
+  const video = currentVideo.value
+  if (!video) return
+  // 同一口径：裁剪态里显示的这张，就是落库后卡片会请求的那张（同一份缓存）
+  const url = api.frameAvatarUrl(video.id, sec)
+  crop.open = true
+  crop.kind = 'frame'
+  crop.videoId = video.id
+  crop.sec = Math.max(0, Math.floor(Number(sec) || 0))
+  crop.albumId = ''
+  crop.seq = 0
+  crop.url = url
+  crop.fallbackUrl = url
+  crop.W = 0
+  crop.H = 0
+  crop.sel = { x: 0, y: 0, w: 0, h: 0 }
+  crop.zoom = 60
+}
+
+/** 这一帧正是当前头像吗（打勾用：ref 可能带 #crop 尾巴，只比主体段） */
+function isCurrentFrame(videoId, sec) {
+  if (String((props.current && props.current.kind) || '') !== 'frame') return false
+  const body = currentRef.value.split('#')[0]
+  return body === 'frame:' + videoId + ':' + sec
+}
+
+/** 换 tab：先退出裁剪态（否则会看到上一个 tab 的图配着新 tab 的语义） */
+function setTab(next) {
+  if (tab.value === next) return
+  crop.open = false
+  drag = null
+  tab.value = next
+  if (next === 'frame' && !videos.value.length && !videosLoading.value) loadVideos()
 }
 
 /* ------------------------------------------------------------------ 生命周期 */
@@ -458,7 +686,17 @@ function saveCrop() {
 function reset() {
   stopObserver()
   crop.open = false
+  crop.kind = 'photo'
+  crop.videoId = ''
+  crop.sec = 0
   crop.sel = { x: 0, y: 0, w: 0, h: 0 }
+  releaseFrames()
+  frameRound.value = 0
+  videos.value = []
+  videoTotal.value = 0
+  videosErr.value = ''
+  videosLoading.value = false
+  videoSelId.value = ''
   tab.value = 'album'
   albums.value = []
   albumTotal.value = 0
@@ -490,6 +728,7 @@ if (typeof window !== 'undefined') window.addEventListener('keydown', onKeydown)
 
 onBeforeUnmount(() => {
   stopObserver()
+  releaseFrames()
   if (typeof window !== 'undefined') window.removeEventListener('keydown', onKeydown)
 })
 </script>
@@ -510,9 +749,20 @@ onBeforeUnmount(() => {
           :class="{ on: tab === 'album' }"
           :aria-selected="tab === 'album'"
           data-tab="album"
-          @click="tab = 'album'"
+          @click="setTab('album')"
         >
           从相册挑选
+        </button>
+        <button
+          type="button"
+          class="pa-tab"
+          role="tab"
+          :class="{ on: tab === 'frame' }"
+          :aria-selected="tab === 'frame'"
+          data-tab="frame"
+          @click="setTab('frame')"
+        >
+          从视频画面
         </button>
         <button
           type="button"
@@ -521,15 +771,14 @@ onBeforeUnmount(() => {
           :class="{ on: tab === 'url' }"
           :aria-selected="tab === 'url'"
           data-tab="url"
-          @click="tab = 'url'"
+          @click="setTab('url')"
         >
           图片地址
         </button>
       </div>
 
-      <!-- tab 1：相册缩略图网格（每行 6 张，懒加载）；选中一张后进入裁剪态 -->
-      <div v-if="tab === 'album'" class="pa-body" data-role="avatar-album-tab">
-        <!-- 裁剪态（P5.55）：拖拽框选 + 缩放滑块 + 脸部/中心/整图三档 -->
+      <div class="pa-body">
+        <!-- 裁剪态（P5.55 / P5.64）：相册里的一张、视频里的一帧共用同一套拖拽 / 缩放 / 三档预设 -->
         <div v-if="crop.open" class="pa-crop" data-role="avatar-crop">
           <p class="pa-crop-tip">
             在图片上拖拽重新框选；按住蓝框内部拖动可移动位置；缩放滑块改大小（不拖则默认中心 60%）
@@ -582,7 +831,9 @@ onBeforeUnmount(() => {
           </div>
           <p class="pa-crop-param" data-role="avatar-crop-param">{{ cropParam() }}</p>
         </div>
-        <template v-else>
+
+        <!-- tab 1：相册缩略图网格（每行 6 张，懒加载）；选中一张后进入裁剪态 -->
+        <div v-else-if="tab === 'album'" data-role="avatar-album-tab">
         <p v-if="albumsLoading" class="pa-state">相册加载中…</p>
         <p v-else-if="albumsErr" class="pa-state pa-state-err">{{ albumsErr }}</p>
         <p v-else-if="!albums.length" class="pa-state">这位人物名下还没有相册，改用「图片地址」吧</p>
@@ -624,11 +875,69 @@ onBeforeUnmount(() => {
           </section>
           <p v-if="albums.length < albumTotal" class="pa-more">仅列出前 {{ albums.length }} 本（共 {{ albumTotal }} 本）</p>
         </template>
-        </template>
-      </div>
+        </div>
 
-      <!-- tab 2：外部图片地址（带预览 + 基本校验） -->
-      <div v-else class="pa-body" data-role="avatar-url-tab">
+        <!-- tab 3：从视频画面（P5.64）—— 选视频 → 6 帧候选 → 点一帧进裁剪态 -->
+        <div v-else-if="tab === 'frame'" data-role="avatar-frame-tab">
+          <p v-if="videosLoading" class="pa-state">视频加载中…</p>
+          <p v-else-if="videosErr" class="pa-state pa-state-err">{{ videosErr }}</p>
+          <p v-else-if="!videos.length" class="pa-state">这位人物名下还没有视频，改用「从相册挑选」吧</p>
+          <template v-else>
+            <div class="pa-videos" data-role="avatar-video-strip">
+              <button
+                v-for="v in videos"
+                :key="v.id"
+                type="button"
+                class="pa-video"
+                :class="{ on: v.id === videoSelId }"
+                :disabled="busy"
+                :title="v.title"
+                :data-video="v.id"
+                @click="selectVideo(v.id)"
+              >
+                <span class="pa-video-cover"><img :src="v.cover" alt="" loading="lazy" decoding="async" /></span>
+                <span class="pa-video-title">{{ v.title }}</span>
+                <span v-if="durLabel(v.dur)" class="pa-video-dur">{{ durLabel(v.dur) }}</span>
+              </button>
+            </div>
+            <div class="pa-frames-head">
+              <span class="pa-frames-title">
+                点一帧做头像<em v-if="currentVideo">：{{ currentVideo.title }}</em>
+              </span>
+              <button
+                class="pa-btn pa-btn-sm"
+                type="button"
+                :disabled="busy || framesLoading"
+                data-role="avatar-frame-next"
+                @click="nextFrameRound"
+              >
+                换一组时间点
+              </button>
+            </div>
+            <p v-if="framesLoading" class="pa-state pa-state-sm">取帧中…（第 {{ frameRound + 1 }} 组）</p>
+            <p v-else-if="framesErr" class="pa-state pa-state-sm pa-state-err">{{ framesErr }}</p>
+            <div v-else-if="frames.length" class="pa-grid pa-grid-frames" data-role="avatar-frame-grid">
+              <button
+                v-for="f in frames"
+                :key="f.sec"
+                type="button"
+                class="pa-cell pa-cell-frame"
+                :class="{ on: currentVideo && isCurrentFrame(currentVideo.id, f.sec) }"
+                :disabled="busy"
+                :data-sec="f.sec"
+                :title="'用这一帧：' + secondLabel(f.sec)"
+                @click="pickFrame(f.sec)"
+              >
+                <img :src="f.url" alt="" loading="lazy" decoding="async" />
+                <span class="pa-cell-sec">{{ secondLabel(f.sec) }}</span>
+              </button>
+            </div>
+            <p v-if="videos.length < videoTotal" class="pa-more">仅列出前 {{ videos.length }} 个（共 {{ videoTotal }} 个）</p>
+          </template>
+        </div>
+
+        <!-- tab 2：外部图片地址（带预览 + 基本校验） -->
+        <div v-else data-role="avatar-url-tab">
         <label class="pa-label" for="pa-url">图片地址</label>
         <input
           id="pa-url"
@@ -648,6 +957,7 @@ onBeforeUnmount(() => {
         <div v-if="urlPreview" class="pa-preview" data-role="avatar-url-preview">
           <img :src="urlPreview" alt="预览" />
           <span>预览</span>
+        </div>
         </div>
       </div>
 
@@ -1056,9 +1366,127 @@ onBeforeUnmount(() => {
   word-break: break-all;
 }
 
+/* ---------------- 从视频画面（P5.64） ---------------- */
+
+/* 横向缩略条：24 个视频一行放不下就横滑（滑动手势不带动整页滚动） */
+.pa-videos {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.pa-video {
+  flex: 0 0 auto;
+  width: 132px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-3);
+  color: var(--fg-dim);
+  cursor: pointer;
+  overflow: hidden;
+  text-align: left;
+}
+
+.pa-video.on {
+  border-color: var(--accent);
+}
+
+.pa-video:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.pa-video-cover {
+  display: block;
+  aspect-ratio: 16 / 9;
+  background: var(--bg-3);
+}
+
+.pa-video-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pa-video-title {
+  display: block;
+  padding: 4px 6px 0;
+  font-size: 11.5px;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pa-video.on .pa-video-title {
+  color: var(--accent);
+}
+
+.pa-video-dur {
+  display: block;
+  padding: 0 6px 5px;
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pa-frames-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 6px;
+}
+
+.pa-frames-title {
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--fg-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pa-frames-title em {
+  font-style: normal;
+  opacity: 0.85;
+}
+
+.pa-frames-head .pa-btn {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+/* 6 帧候选：刻意保持 6 列（验收口径），与相册的「每行 6 张」一致 */
+.pa-grid-frames {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+/* 帧是视频画面：16:9 比正方形更好认（正方形会把成片裁成一块） */
+.pa-cell-frame {
+  aspect-ratio: 16 / 9;
+}
+
+.pa-cell-sec {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  padding: 0 4px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 560px) {
   .pa-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .pa-grid-frames {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 </style>
