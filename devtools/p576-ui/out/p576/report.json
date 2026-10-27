@@ -1,6 +1,32 @@
 {
-  "passed": 69,
-  "failures": [],
+  "passed": 44,
+  "failures": [
+    "A1 背景图铺满整卡（四边都在卡片外 → 看不到任何拾色填充） -> img 321.4,565.7,-40.1,394.9 / card 192,527.3,63,166.7",
+    "A3 图片右缘不早于卡片右缘（右侧不留底色条；整张原图铺过去后右缘可被卡片裁住） -> img.right 565.74 vs bg.right 526.25",
+    "A12 亮色姓名 text-shadow = 0 1px 3px rgba(255,255,255,.95) -> none",
+    "A13 亮色数量行同样带 text-shadow -> none",
+    "B w1600-light-b0 背景图铺满整卡（无拾色残留） -> img 244.37x435 @x321.37 right 565.74 / card 335.25x103.7 right 527.25",
+    "B w1600-light-b6 背景图铺满整卡（无拾色残留） -> img 244.37x435 @x321.37 right 565.74 / card 335.25x103.7 right 527.25",
+    "B w1200-light-b0 背景图铺满整卡（无拾色残留） -> img 411.53x231.48 @x581.67 right 993.2 / card 317.67x103.7 right 839.33",
+    "B w1200-light-b6 背景图铺满整卡（无拾色残留） -> img 411.53x231.48 @x581.67 right 993.2 / card 317.67x103.7 right 839.33",
+    "B w375-light-b0 背景图铺满整卡（无拾色残留） -> img 239.06x425.53 @x142.57 right 381.64 / card 328x101.03 right 344",
+    "B w375-light-b6 背景图铺满整卡（无拾色残留） -> img 239.06x425.53 @x142.57 right 381.64 / card 328x101.03 right 344",
+    "B w1600-dark-b0 背景图铺满整卡（无拾色残留） -> img 244.37x435 @x321.37 right 565.74 / card 335.25x103.7 right 527.25",
+    "B w1600-dark-b6 背景图铺满整卡（无拾色残留） -> img 244.37x435 @x321.37 right 565.74 / card 335.25x103.7 right 527.25",
+    "B w1200-dark-b0 背景图铺满整卡（无拾色残留） -> img 411.53x231.48 @x581.67 right 993.2 / card 317.67x103.7 right 839.33",
+    "B w1200-dark-b6 背景图铺满整卡（无拾色残留） -> img 411.53x231.48 @x581.67 right 993.2 / card 317.67x103.7 right 839.33",
+    "B w375-dark-b0 背景图铺满整卡（无拾色残留） -> img 239.06x425.53 @x142.57 right 381.64 / card 328x101.03 right 344",
+    "B w375-dark-b6 背景图铺满整卡（无拾色残留） -> img 239.06x425.53 @x142.57 right 381.64 / card 328x101.03 right 344",
+    "C light/1600 对比度 ≥3:1 门槛（未达 4.5 目标，如实记录） -> name 1 (@91,27,23, rgb(48, 49, 51)) / counts 1.01",
+    "C light/1200 对比度 ≥3:1 门槛（未达 4.5 目标，如实记录） -> name 1.01 (@85,33,31, rgb(48, 49, 51)) / counts 1",
+    "C light/375 对比度 ≥3:1 门槛（未达 4.5 目标，如实记录） -> name 1.17 (@89,47,54, rgb(48, 49, 51)) / counts 1.18",
+    "C dark/1600 对比度 ≥3:1 门槛（未达 4.5 目标，如实记录） -> name 1.2 (@215,214,210, rgb(229, 234, 243)) / counts 1.2",
+    "C dark/1200 对比度 ≥3:1 门槛（未达 4.5 目标，如实记录） -> name 1.21 (@206,216,214, rgb(229, 234, 243)) / counts 1.2",
+    "C dark/375 对比度 ≥3:1 门槛（未达 4.5 目标，如实记录） -> name 1.21 (@206,216,215, rgb(229, 234, 243)) / counts 1.21",
+    "E2 light 长文案卡对比度 ≥3:1 门槛（未达 4.5，如实记录） -> name 1.56 (@78,78,77) / counts 1.52 / chip -",
+    "E2 dark 长文案卡对比度 ≥3:1 门槛（未达 4.5，如实记录） -> name 1.21 (@206,216,215) / counts 1.2 / chip -",
+    "E6 0 档：不模糊，且背景图仍铺满整卡 -> blur(0px) saturate(1.1) brightness(0.9) / img 244.37x435"
+  ],
   "facts": {
     "shot-w1600-light-b0": {
       "tag": "w1600-light-b0",
@@ -18,25 +44,25 @@
         ],
         "cardRight": 527.25,
         "img": [
-          57.3,
-          101.7
+          244.37,
+          435
         ],
-        "imgX": 468.7,
-        "imgRight": 525.99,
+        "imgX": 321.37,
+        "imgRight": 565.74,
         "css": {
           "position": "absolute",
           "top": "0px",
-          "right": "275.953px",
-          "height": "101.703px",
-          "width": "57.2969px",
+          "right": "88.875px",
+          "height": "435px",
+          "width": "244.375px",
           "maxWidth": "none",
           "objectFit": "contain",
-          "objectPosition": "0% 50%",
-          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-          "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+          "objectPosition": "0% 0%",
+          "maskImage": "none",
+          "filter": "saturate(1.1) brightness(0.9)"
         },
-        "filter": "blur(0px) saturate(1.1) brightness(0.9)",
-        "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+        "filter": "saturate(1.1) brightness(0.9)",
+        "shadow": "none"
       }
     },
     "shot-w1600-light-b6": {
@@ -55,25 +81,25 @@
         ],
         "cardRight": 527.25,
         "img": [
-          57.3,
-          101.7
+          244.37,
+          435
         ],
-        "imgX": 468.7,
-        "imgRight": 525.99,
+        "imgX": 321.37,
+        "imgRight": 565.74,
         "css": {
           "position": "absolute",
           "top": "0px",
-          "right": "275.953px",
-          "height": "101.703px",
-          "width": "57.2969px",
+          "right": "88.875px",
+          "height": "435px",
+          "width": "244.375px",
           "maxWidth": "none",
           "objectFit": "contain",
-          "objectPosition": "0% 50%",
-          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-          "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+          "objectPosition": "0% 0%",
+          "maskImage": "none",
+          "filter": "saturate(1.1) brightness(0.9)"
         },
-        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
-        "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+        "filter": "saturate(1.1) brightness(0.9)",
+        "shadow": "none"
       }
     },
     "shot-w1200-light-b0": {
@@ -92,25 +118,25 @@
         ],
         "cardRight": 839.33,
         "img": [
-          181.33,
-          101.7
+          411.53,
+          231.48
         ],
-        "imgX": 683.11,
-        "imgRight": 864.44,
+        "imgX": 581.67,
+        "imgRight": 993.2,
         "css": {
           "position": "absolute",
           "top": "0px",
-          "right": "134.344px",
-          "height": "101.703px",
-          "width": "181.328px",
+          "right": "-95.8594px",
+          "height": "231.484px",
+          "width": "411.531px",
           "maxWidth": "none",
           "objectFit": "contain",
-          "objectPosition": "0% 50%",
-          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-          "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+          "objectPosition": "0% 0%",
+          "maskImage": "none",
+          "filter": "saturate(1.1) brightness(0.9)"
         },
-        "filter": "blur(0px) saturate(1.1) brightness(0.9)",
-        "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+        "filter": "saturate(1.1) brightness(0.9)",
+        "shadow": "none"
       }
     },
     "shot-w1200-light-b6": {
@@ -129,25 +155,25 @@
         ],
         "cardRight": 839.33,
         "img": [
-          181.33,
-          101.7
+          411.53,
+          231.48
         ],
-        "imgX": 683.11,
-        "imgRight": 864.44,
+        "imgX": 581.67,
+        "imgRight": 993.2,
         "css": {
           "position": "absolute",
           "top": "0px",
-          "right": "134.344px",
-          "height": "101.703px",
-          "width": "181.328px",
+          "right": "-95.8594px",
+          "height": "231.484px",
+          "width": "411.531px",
           "maxWidth": "none",
           "objectFit": "contain",
-          "objectPosition": "0% 50%",
-          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-          "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+          "objectPosition": "0% 0%",
+          "maskImage": "none",
+          "filter": "saturate(1.1) brightness(0.9)"
         },
-        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
-        "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+        "filter": "saturate(1.1) brightness(0.9)",
+        "shadow": "none"
       }
     },
     "shot-w375-light-b0": {
@@ -166,25 +192,25 @@
         ],
         "cardRight": 344,
         "img": [
-          55.61,
-          99.03
+          239.06,
+          425.53
         ],
-        "imgX": 287.38,
-        "imgRight": 342.99,
+        "imgX": 142.57,
+        "imgRight": 381.64,
         "css": {
           "position": "absolute",
           "top": "0px",
-          "right": "270.391px",
-          "height": "99.0312px",
-          "width": "55.6094px",
+          "right": "86.9375px",
+          "height": "425.531px",
+          "width": "239.062px",
           "maxWidth": "none",
           "objectFit": "contain",
-          "objectPosition": "0% 50%",
-          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-          "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+          "objectPosition": "0% 0%",
+          "maskImage": "none",
+          "filter": "saturate(1.1) brightness(0.9)"
         },
-        "filter": "blur(0px) saturate(1.1) brightness(0.9)",
-        "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+        "filter": "saturate(1.1) brightness(0.9)",
+        "shadow": "none"
       }
     },
     "shot-w375-light-b6": {
@@ -203,25 +229,25 @@
         ],
         "cardRight": 344,
         "img": [
-          55.61,
-          99.03
+          239.06,
+          425.53
         ],
-        "imgX": 287.38,
-        "imgRight": 342.99,
+        "imgX": 142.57,
+        "imgRight": 381.64,
         "css": {
           "position": "absolute",
           "top": "0px",
-          "right": "270.391px",
-          "height": "99.0312px",
-          "width": "55.6094px",
+          "right": "86.9375px",
+          "height": "425.531px",
+          "width": "239.062px",
           "maxWidth": "none",
           "objectFit": "contain",
-          "objectPosition": "0% 50%",
-          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-          "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+          "objectPosition": "0% 0%",
+          "maskImage": "none",
+          "filter": "saturate(1.1) brightness(0.9)"
         },
-        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
-        "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+        "filter": "saturate(1.1) brightness(0.9)",
+        "shadow": "none"
       }
     },
     "shot-w1600-dark-b0": {
@@ -240,24 +266,24 @@
         ],
         "cardRight": 527.25,
         "img": [
-          57.3,
-          101.7
+          244.37,
+          435
         ],
-        "imgX": 468.7,
-        "imgRight": 525.99,
+        "imgX": 321.37,
+        "imgRight": 565.74,
         "css": {
           "position": "absolute",
           "top": "0px",
-          "right": "275.953px",
-          "height": "101.703px",
-          "width": "57.2969px",
+          "right": "88.875px",
+          "height": "435px",
+          "width": "244.375px",
           "maxWidth": "none",
           "objectFit": "contain",
-          "objectPosition": "0% 50%",
-          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-          "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+          "objectPosition": "0% 0%",
+          "maskImage": "none",
+          "filter": "saturate(1.1) brightness(0.9)"
         },
-        "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+        "filter": "saturate(1.1) brightness(0.9)",
         "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
       }
     },
@@ -277,24 +303,24 @@
         ],
         "cardRight": 527.25,
         "img": [
-          57.3,
-          101.7
+          244.37,
+          435
         ],
-        "imgX": 468.7,
-        "imgRight": 525.99,
+        "imgX": 321.37,
+        "imgRight": 565.74,
         "css": {
           "position": "absolute",
           "top": "0px",
-          "right": "275.953px",
-          "height": "101.703px",
-          "width": "57.2969px",
+          "right": "88.875px",
+          "height": "435px",
+          "width": "244.375px",
           "maxWidth": "none",
           "objectFit": "contain",
-          "objectPosition": "0% 50%",
-          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-          "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+          "objectPosition": "0% 0%",
+          "maskImage": "none",
+          "filter": "saturate(1.1) brightness(0.9)"
         },
-        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+        "filter": "saturate(1.1) brightness(0.9)",
         "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
       }
     },
@@ -314,24 +340,24 @@
         ],
         "cardRight": 839.33,
         "img": [
-          181.33,
-          101.7
+          411.53,
+          231.48
         ],
-        "imgX": 683.11,
-        "imgRight": 864.44,
+        "imgX": 581.67,
+        "imgRight": 993.2,
         "css": {
           "position": "absolute",
           "top": "0px",
-          "right": "134.344px",
-          "height": "101.703px",
-          "width": "181.328px",
+          "right": "-95.8594px",
+          "height": "231.484px",
+          "width": "411.531px",
           "maxWidth": "none",
           "objectFit": "contain",
-          "objectPosition": "0% 50%",
-          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-          "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+          "objectPosition": "0% 0%",
+          "maskImage": "none",
+          "filter": "saturate(1.1) brightness(0.9)"
         },
-        "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+        "filter": "saturate(1.1) brightness(0.9)",
         "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
       }
     },
@@ -351,24 +377,24 @@
         ],
         "cardRight": 839.33,
         "img": [
-          181.33,
-          101.7
+          411.53,
+          231.48
         ],
-        "imgX": 683.11,
-        "imgRight": 864.44,
+        "imgX": 581.67,
+        "imgRight": 993.2,
         "css": {
           "position": "absolute",
           "top": "0px",
-          "right": "134.344px",
-          "height": "101.703px",
-          "width": "181.328px",
+          "right": "-95.8594px",
+          "height": "231.484px",
+          "width": "411.531px",
           "maxWidth": "none",
           "objectFit": "contain",
-          "objectPosition": "0% 50%",
-          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-          "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+          "objectPosition": "0% 0%",
+          "maskImage": "none",
+          "filter": "saturate(1.1) brightness(0.9)"
         },
-        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+        "filter": "saturate(1.1) brightness(0.9)",
         "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
       }
     },
@@ -388,24 +414,24 @@
         ],
         "cardRight": 344,
         "img": [
-          55.61,
-          99.03
+          239.06,
+          425.53
         ],
-        "imgX": 287.38,
-        "imgRight": 342.99,
+        "imgX": 142.57,
+        "imgRight": 381.64,
         "css": {
           "position": "absolute",
           "top": "0px",
-          "right": "270.391px",
-          "height": "99.0312px",
-          "width": "55.6094px",
+          "right": "86.9375px",
+          "height": "425.531px",
+          "width": "239.062px",
           "maxWidth": "none",
           "objectFit": "contain",
-          "objectPosition": "0% 50%",
-          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-          "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+          "objectPosition": "0% 0%",
+          "maskImage": "none",
+          "filter": "saturate(1.1) brightness(0.9)"
         },
-        "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+        "filter": "saturate(1.1) brightness(0.9)",
         "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
       }
     },
@@ -425,24 +451,24 @@
         ],
         "cardRight": 344,
         "img": [
-          55.61,
-          99.03
+          239.06,
+          425.53
         ],
-        "imgX": 287.38,
-        "imgRight": 342.99,
+        "imgX": 142.57,
+        "imgRight": 381.64,
         "css": {
           "position": "absolute",
           "top": "0px",
-          "right": "270.391px",
-          "height": "99.0312px",
-          "width": "55.6094px",
+          "right": "86.9375px",
+          "height": "425.531px",
+          "width": "239.062px",
           "maxWidth": "none",
           "objectFit": "contain",
-          "objectPosition": "0% 50%",
-          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-          "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+          "objectPosition": "0% 0%",
+          "maskImage": "none",
+          "filter": "saturate(1.1) brightness(0.9)"
         },
-        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+        "filter": "saturate(1.1) brightness(0.9)",
         "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
       }
     },
@@ -463,25 +489,25 @@
           ],
           "cardRight": 527.25,
           "img": [
-            57.3,
-            101.7
+            244.37,
+            435
           ],
-          "imgX": 468.7,
-          "imgRight": 525.99,
+          "imgX": 321.37,
+          "imgRight": 565.74,
           "css": {
             "position": "absolute",
             "top": "0px",
-            "right": "275.953px",
-            "height": "101.703px",
-            "width": "57.2969px",
+            "right": "88.875px",
+            "height": "435px",
+            "width": "244.375px",
             "maxWidth": "none",
             "objectFit": "contain",
-            "objectPosition": "0% 50%",
-            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-            "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+            "objectPosition": "0% 0%",
+            "maskImage": "none",
+            "filter": "saturate(1.1) brightness(0.9)"
           },
-          "filter": "blur(0px) saturate(1.1) brightness(0.9)",
-          "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+          "filter": "saturate(1.1) brightness(0.9)",
+          "shadow": "none"
         }
       },
       {
@@ -500,25 +526,25 @@
           ],
           "cardRight": 527.25,
           "img": [
-            57.3,
-            101.7
+            244.37,
+            435
           ],
-          "imgX": 468.7,
-          "imgRight": 525.99,
+          "imgX": 321.37,
+          "imgRight": 565.74,
           "css": {
             "position": "absolute",
             "top": "0px",
-            "right": "275.953px",
-            "height": "101.703px",
-            "width": "57.2969px",
+            "right": "88.875px",
+            "height": "435px",
+            "width": "244.375px",
             "maxWidth": "none",
             "objectFit": "contain",
-            "objectPosition": "0% 50%",
-            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-            "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+            "objectPosition": "0% 0%",
+            "maskImage": "none",
+            "filter": "saturate(1.1) brightness(0.9)"
           },
-          "filter": "blur(6px) saturate(1.1) brightness(0.9)",
-          "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+          "filter": "saturate(1.1) brightness(0.9)",
+          "shadow": "none"
         }
       },
       {
@@ -537,25 +563,25 @@
           ],
           "cardRight": 839.33,
           "img": [
-            181.33,
-            101.7
+            411.53,
+            231.48
           ],
-          "imgX": 683.11,
-          "imgRight": 864.44,
+          "imgX": 581.67,
+          "imgRight": 993.2,
           "css": {
             "position": "absolute",
             "top": "0px",
-            "right": "134.344px",
-            "height": "101.703px",
-            "width": "181.328px",
+            "right": "-95.8594px",
+            "height": "231.484px",
+            "width": "411.531px",
             "maxWidth": "none",
             "objectFit": "contain",
-            "objectPosition": "0% 50%",
-            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-            "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+            "objectPosition": "0% 0%",
+            "maskImage": "none",
+            "filter": "saturate(1.1) brightness(0.9)"
           },
-          "filter": "blur(0px) saturate(1.1) brightness(0.9)",
-          "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+          "filter": "saturate(1.1) brightness(0.9)",
+          "shadow": "none"
         }
       },
       {
@@ -574,25 +600,25 @@
           ],
           "cardRight": 839.33,
           "img": [
-            181.33,
-            101.7
+            411.53,
+            231.48
           ],
-          "imgX": 683.11,
-          "imgRight": 864.44,
+          "imgX": 581.67,
+          "imgRight": 993.2,
           "css": {
             "position": "absolute",
             "top": "0px",
-            "right": "134.344px",
-            "height": "101.703px",
-            "width": "181.328px",
+            "right": "-95.8594px",
+            "height": "231.484px",
+            "width": "411.531px",
             "maxWidth": "none",
             "objectFit": "contain",
-            "objectPosition": "0% 50%",
-            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-            "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+            "objectPosition": "0% 0%",
+            "maskImage": "none",
+            "filter": "saturate(1.1) brightness(0.9)"
           },
-          "filter": "blur(6px) saturate(1.1) brightness(0.9)",
-          "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+          "filter": "saturate(1.1) brightness(0.9)",
+          "shadow": "none"
         }
       },
       {
@@ -611,25 +637,25 @@
           ],
           "cardRight": 344,
           "img": [
-            55.61,
-            99.03
+            239.06,
+            425.53
           ],
-          "imgX": 287.38,
-          "imgRight": 342.99,
+          "imgX": 142.57,
+          "imgRight": 381.64,
           "css": {
             "position": "absolute",
             "top": "0px",
-            "right": "270.391px",
-            "height": "99.0312px",
-            "width": "55.6094px",
+            "right": "86.9375px",
+            "height": "425.531px",
+            "width": "239.062px",
             "maxWidth": "none",
             "objectFit": "contain",
-            "objectPosition": "0% 50%",
-            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-            "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+            "objectPosition": "0% 0%",
+            "maskImage": "none",
+            "filter": "saturate(1.1) brightness(0.9)"
           },
-          "filter": "blur(0px) saturate(1.1) brightness(0.9)",
-          "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+          "filter": "saturate(1.1) brightness(0.9)",
+          "shadow": "none"
         }
       },
       {
@@ -648,25 +674,25 @@
           ],
           "cardRight": 344,
           "img": [
-            55.61,
-            99.03
+            239.06,
+            425.53
           ],
-          "imgX": 287.38,
-          "imgRight": 342.99,
+          "imgX": 142.57,
+          "imgRight": 381.64,
           "css": {
             "position": "absolute",
             "top": "0px",
-            "right": "270.391px",
-            "height": "99.0312px",
-            "width": "55.6094px",
+            "right": "86.9375px",
+            "height": "425.531px",
+            "width": "239.062px",
             "maxWidth": "none",
             "objectFit": "contain",
-            "objectPosition": "0% 50%",
-            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-            "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+            "objectPosition": "0% 0%",
+            "maskImage": "none",
+            "filter": "saturate(1.1) brightness(0.9)"
           },
-          "filter": "blur(6px) saturate(1.1) brightness(0.9)",
-          "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+          "filter": "saturate(1.1) brightness(0.9)",
+          "shadow": "none"
         }
       },
       {
@@ -685,24 +711,24 @@
           ],
           "cardRight": 527.25,
           "img": [
-            57.3,
-            101.7
+            244.37,
+            435
           ],
-          "imgX": 468.7,
-          "imgRight": 525.99,
+          "imgX": 321.37,
+          "imgRight": 565.74,
           "css": {
             "position": "absolute",
             "top": "0px",
-            "right": "275.953px",
-            "height": "101.703px",
-            "width": "57.2969px",
+            "right": "88.875px",
+            "height": "435px",
+            "width": "244.375px",
             "maxWidth": "none",
             "objectFit": "contain",
-            "objectPosition": "0% 50%",
-            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-            "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+            "objectPosition": "0% 0%",
+            "maskImage": "none",
+            "filter": "saturate(1.1) brightness(0.9)"
           },
-          "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+          "filter": "saturate(1.1) brightness(0.9)",
           "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
         }
       },
@@ -722,24 +748,24 @@
           ],
           "cardRight": 527.25,
           "img": [
-            57.3,
-            101.7
+            244.37,
+            435
           ],
-          "imgX": 468.7,
-          "imgRight": 525.99,
+          "imgX": 321.37,
+          "imgRight": 565.74,
           "css": {
             "position": "absolute",
             "top": "0px",
-            "right": "275.953px",
-            "height": "101.703px",
-            "width": "57.2969px",
+            "right": "88.875px",
+            "height": "435px",
+            "width": "244.375px",
             "maxWidth": "none",
             "objectFit": "contain",
-            "objectPosition": "0% 50%",
-            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-            "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+            "objectPosition": "0% 0%",
+            "maskImage": "none",
+            "filter": "saturate(1.1) brightness(0.9)"
           },
-          "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+          "filter": "saturate(1.1) brightness(0.9)",
           "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
         }
       },
@@ -759,24 +785,24 @@
           ],
           "cardRight": 839.33,
           "img": [
-            181.33,
-            101.7
+            411.53,
+            231.48
           ],
-          "imgX": 683.11,
-          "imgRight": 864.44,
+          "imgX": 581.67,
+          "imgRight": 993.2,
           "css": {
             "position": "absolute",
             "top": "0px",
-            "right": "134.344px",
-            "height": "101.703px",
-            "width": "181.328px",
+            "right": "-95.8594px",
+            "height": "231.484px",
+            "width": "411.531px",
             "maxWidth": "none",
             "objectFit": "contain",
-            "objectPosition": "0% 50%",
-            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-            "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+            "objectPosition": "0% 0%",
+            "maskImage": "none",
+            "filter": "saturate(1.1) brightness(0.9)"
           },
-          "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+          "filter": "saturate(1.1) brightness(0.9)",
           "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
         }
       },
@@ -796,24 +822,24 @@
           ],
           "cardRight": 839.33,
           "img": [
-            181.33,
-            101.7
+            411.53,
+            231.48
           ],
-          "imgX": 683.11,
-          "imgRight": 864.44,
+          "imgX": 581.67,
+          "imgRight": 993.2,
           "css": {
             "position": "absolute",
             "top": "0px",
-            "right": "134.344px",
-            "height": "101.703px",
-            "width": "181.328px",
+            "right": "-95.8594px",
+            "height": "231.484px",
+            "width": "411.531px",
             "maxWidth": "none",
             "objectFit": "contain",
-            "objectPosition": "0% 50%",
-            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-            "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+            "objectPosition": "0% 0%",
+            "maskImage": "none",
+            "filter": "saturate(1.1) brightness(0.9)"
           },
-          "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+          "filter": "saturate(1.1) brightness(0.9)",
           "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
         }
       },
@@ -833,24 +859,24 @@
           ],
           "cardRight": 344,
           "img": [
-            55.61,
-            99.03
+            239.06,
+            425.53
           ],
-          "imgX": 287.38,
-          "imgRight": 342.99,
+          "imgX": 142.57,
+          "imgRight": 381.64,
           "css": {
             "position": "absolute",
             "top": "0px",
-            "right": "270.391px",
-            "height": "99.0312px",
-            "width": "55.6094px",
+            "right": "86.9375px",
+            "height": "425.531px",
+            "width": "239.062px",
             "maxWidth": "none",
             "objectFit": "contain",
-            "objectPosition": "0% 50%",
-            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-            "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+            "objectPosition": "0% 0%",
+            "maskImage": "none",
+            "filter": "saturate(1.1) brightness(0.9)"
           },
-          "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+          "filter": "saturate(1.1) brightness(0.9)",
           "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
         }
       },
@@ -870,24 +896,24 @@
           ],
           "cardRight": 344,
           "img": [
-            55.61,
-            99.03
+            239.06,
+            425.53
           ],
-          "imgX": 287.38,
-          "imgRight": 342.99,
+          "imgX": 142.57,
+          "imgRight": 381.64,
           "css": {
             "position": "absolute",
             "top": "0px",
-            "right": "270.391px",
-            "height": "99.0312px",
-            "width": "55.6094px",
+            "right": "86.9375px",
+            "height": "425.531px",
+            "width": "239.062px",
             "maxWidth": "none",
             "objectFit": "contain",
-            "objectPosition": "0% 50%",
-            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
-            "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+            "objectPosition": "0% 0%",
+            "maskImage": "none",
+            "filter": "saturate(1.1) brightness(0.9)"
           },
-          "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+          "filter": "saturate(1.1) brightness(0.9)",
           "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
         }
       }
@@ -895,59 +921,59 @@
     "contrast-light-1600": {
       "cards": 13,
       "nameW": {
-        "name": "是小逗逗",
+        "name": "念念",
         "line": "name",
-        "samples": 136,
+        "samples": 123,
         "color": "rgb(48, 49, 51)",
-        "worst": 4.68,
+        "worst": 1,
         "worstBg": [
-          159,
-          154,
-          151
+          91,
+          27,
+          23
         ],
-        "best": 7.05
+        "best": 7.11
       },
       "countW": {
-        "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+        "name": "念念",
         "line": "counts",
-        "samples": 136,
+        "samples": 120,
         "color": "rgb(48, 49, 51)",
-        "worst": 4.7,
+        "worst": 1.01,
         "worstBg": [
-          160,
-          154,
-          154
+          90,
+          26,
+          23
         ],
-        "best": 7.07
+        "best": 7.11
       }
     },
     "contrast-light-1200": {
       "cards": 13,
       "nameW": {
-        "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+        "name": "念念",
         "line": "name",
-        "samples": 124,
+        "samples": 114,
         "color": "rgb(48, 49, 51)",
-        "worst": 4.7,
+        "worst": 1.01,
         "worstBg": [
-          160,
-          154,
-          154
+          85,
+          33,
+          31
         ],
-        "best": 7.05
+        "best": 7.11
       },
       "countW": {
-        "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+        "name": "念念",
         "line": "counts",
-        "samples": 124,
+        "samples": 113,
         "color": "rgb(48, 49, 51)",
-        "worst": 4.7,
+        "worst": 1,
         "worstBg": [
-          160,
-          154,
-          154
+          91,
+          27,
+          23
         ],
-        "best": 7.07
+        "best": 7.11
       }
     },
     "contrast-light-375": {
@@ -955,115 +981,115 @@
       "nameW": {
         "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
         "line": "name",
-        "samples": 152,
+        "samples": 11,
         "color": "rgb(48, 49, 51)",
-        "worst": 4.64,
+        "worst": 1.17,
         "worstBg": [
-          159,
-          153,
-          153
+          89,
+          47,
+          54
         ],
-        "best": 7.07
+        "best": 1.38
       },
       "countW": {
         "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
         "line": "counts",
-        "samples": 152,
+        "samples": 1,
         "color": "rgb(48, 49, 51)",
-        "worst": 4.59,
+        "worst": 1.18,
         "worstBg": [
-          158,
-          152,
-          152
+          89,
+          48,
+          54
         ],
-        "best": 7.07
+        "best": 1.18
       }
     },
     "contrast-dark-1600": {
       "cards": 13,
       "nameW": {
-        "name": "玥儿玥er",
+        "name": "桜井宁宁",
         "line": "name",
-        "samples": 136,
+        "samples": 133,
         "color": "rgb(229, 234, 243)",
-        "worst": 5.82,
+        "worst": 1.2,
         "worstBg": [
-          87,
-          89,
-          92
+          215,
+          214,
+          210
         ],
-        "best": 9.18
+        "best": 6.34
       },
       "countW": {
-        "name": "玥儿玥er",
+        "name": "素人",
         "line": "counts",
-        "samples": 136,
+        "samples": 131,
         "color": "rgb(229, 234, 243)",
-        "worst": 5.75,
+        "worst": 1.2,
         "worstBg": [
-          87,
-          90,
-          93
+          206,
+          217,
+          215
         ],
-        "best": 9.16
+        "best": 9.39
       }
     },
     "contrast-dark-1200": {
       "cards": 13,
       "nameW": {
-        "name": "玥儿玥er",
+        "name": "素人",
         "line": "name",
-        "samples": 124,
+        "samples": 112,
         "color": "rgb(229, 234, 243)",
-        "worst": 5.4,
+        "worst": 1.21,
         "worstBg": [
-          91,
-          94,
-          97
+          206,
+          216,
+          214
         ],
-        "best": 9.18
+        "best": 9.25
       },
       "countW": {
-        "name": "玥儿玥er",
+        "name": "素人",
         "line": "counts",
-        "samples": 124,
+        "samples": 121,
         "color": "rgb(229, 234, 243)",
-        "worst": 5.35,
+        "worst": 1.2,
         "worstBg": [
-          91,
-          95,
-          97
+          206,
+          217,
+          215
         ],
-        "best": 9.16
+        "best": 9.39
       }
     },
     "contrast-dark-375": {
       "cards": 6,
       "nameW": {
-        "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+        "name": "素人",
         "line": "name",
-        "samples": 152,
+        "samples": 137,
         "color": "rgb(229, 234, 243)",
-        "worst": 7.3,
+        "worst": 1.21,
         "worstBg": [
-          67,
-          77,
-          67
+          206,
+          216,
+          215
         ],
-        "best": 9.2
+        "best": 9.25
       },
       "countW": {
-        "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+        "name": "素人",
         "line": "counts",
-        "samples": 152,
+        "samples": 147,
         "color": "rgb(229, 234, 243)",
-        "worst": 7.43,
+        "worst": 1.21,
         "worstBg": [
-          65,
-          76,
-          68
+          205,
+          216,
+          215
         ],
-        "best": 9.2
+        "best": 9.39
       }
     },
     "contrast": [
@@ -1071,30 +1097,30 @@
         "theme": "light",
         "w": 1600,
         "nameW": {
-          "name": "是小逗逗",
+          "name": "念念",
           "line": "name",
-          "samples": 136,
+          "samples": 123,
           "color": "rgb(48, 49, 51)",
-          "worst": 4.68,
+          "worst": 1,
           "worstBg": [
-            159,
-            154,
-            151
+            91,
+            27,
+            23
           ],
-          "best": 7.05
+          "best": 7.11
         },
         "countW": {
-          "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+          "name": "念念",
           "line": "counts",
-          "samples": 136,
+          "samples": 120,
           "color": "rgb(48, 49, 51)",
-          "worst": 4.7,
+          "worst": 1.01,
           "worstBg": [
-            160,
-            154,
-            154
+            90,
+            26,
+            23
           ],
-          "best": 7.07
+          "best": 7.11
         },
         "cards": 13
       },
@@ -1102,30 +1128,30 @@
         "theme": "light",
         "w": 1200,
         "nameW": {
-          "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+          "name": "念念",
           "line": "name",
-          "samples": 124,
+          "samples": 114,
           "color": "rgb(48, 49, 51)",
-          "worst": 4.7,
+          "worst": 1.01,
           "worstBg": [
-            160,
-            154,
-            154
+            85,
+            33,
+            31
           ],
-          "best": 7.05
+          "best": 7.11
         },
         "countW": {
-          "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+          "name": "念念",
           "line": "counts",
-          "samples": 124,
+          "samples": 113,
           "color": "rgb(48, 49, 51)",
-          "worst": 4.7,
+          "worst": 1,
           "worstBg": [
-            160,
-            154,
-            154
+            91,
+            27,
+            23
           ],
-          "best": 7.07
+          "best": 7.11
         },
         "cards": 13
       },
@@ -1135,28 +1161,28 @@
         "nameW": {
           "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
           "line": "name",
-          "samples": 152,
+          "samples": 11,
           "color": "rgb(48, 49, 51)",
-          "worst": 4.64,
+          "worst": 1.17,
           "worstBg": [
-            159,
-            153,
-            153
+            89,
+            47,
+            54
           ],
-          "best": 7.07
+          "best": 1.38
         },
         "countW": {
           "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
           "line": "counts",
-          "samples": 152,
+          "samples": 1,
           "color": "rgb(48, 49, 51)",
-          "worst": 4.59,
+          "worst": 1.18,
           "worstBg": [
-            158,
-            152,
-            152
+            89,
+            48,
+            54
           ],
-          "best": 7.07
+          "best": 1.18
         },
         "cards": 6
       },
@@ -1164,30 +1190,30 @@
         "theme": "dark",
         "w": 1600,
         "nameW": {
-          "name": "玥儿玥er",
+          "name": "桜井宁宁",
           "line": "name",
-          "samples": 136,
+          "samples": 133,
           "color": "rgb(229, 234, 243)",
-          "worst": 5.82,
+          "worst": 1.2,
           "worstBg": [
-            87,
-            89,
-            92
+            215,
+            214,
+            210
           ],
-          "best": 9.18
+          "best": 6.34
         },
         "countW": {
-          "name": "玥儿玥er",
+          "name": "素人",
           "line": "counts",
-          "samples": 136,
+          "samples": 131,
           "color": "rgb(229, 234, 243)",
-          "worst": 5.75,
+          "worst": 1.2,
           "worstBg": [
-            87,
-            90,
-            93
+            206,
+            217,
+            215
           ],
-          "best": 9.16
+          "best": 9.39
         },
         "cards": 13
       },
@@ -1195,30 +1221,30 @@
         "theme": "dark",
         "w": 1200,
         "nameW": {
-          "name": "玥儿玥er",
+          "name": "素人",
           "line": "name",
-          "samples": 124,
+          "samples": 112,
           "color": "rgb(229, 234, 243)",
-          "worst": 5.4,
+          "worst": 1.21,
           "worstBg": [
-            91,
-            94,
-            97
+            206,
+            216,
+            214
           ],
-          "best": 9.18
+          "best": 9.25
         },
         "countW": {
-          "name": "玥儿玥er",
+          "name": "素人",
           "line": "counts",
-          "samples": 124,
+          "samples": 121,
           "color": "rgb(229, 234, 243)",
-          "worst": 5.35,
+          "worst": 1.2,
           "worstBg": [
-            91,
-            95,
-            97
+            206,
+            217,
+            215
           ],
-          "best": 9.16
+          "best": 9.39
         },
         "cards": 13
       },
@@ -1226,46 +1252,46 @@
         "theme": "dark",
         "w": 375,
         "nameW": {
-          "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+          "name": "素人",
           "line": "name",
-          "samples": 152,
+          "samples": 137,
           "color": "rgb(229, 234, 243)",
-          "worst": 7.3,
+          "worst": 1.21,
           "worstBg": [
-            67,
-            77,
-            67
+            206,
+            216,
+            215
           ],
-          "best": 9.2
+          "best": 9.25
         },
         "countW": {
-          "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+          "name": "素人",
           "line": "counts",
-          "samples": 152,
+          "samples": 147,
           "color": "rgb(229, 234, 243)",
-          "worst": 7.43,
+          "worst": 1.21,
           "worstBg": [
-            65,
-            76,
-            68
+            205,
+            216,
+            215
           ],
-          "best": 9.2
+          "best": 9.39
         },
         "cards": 6
       }
     ],
     "fade": {
       "card": "synthetic-solid",
-      "grayJump": 6,
+      "grayJump": 0,
       "zoneCols": 63,
       "leftMean": [
-        190.56,
-        188.69,
-        185.04
+        115,
+        115,
+        115
       ],
       "tone": "rgb(193, 191, 187)",
-      "distToTone": 3.89,
-      "distToBg2": 3.89
+      "distToTone": 130.55,
+      "distToBg2": 130.55
     },
     "longtext-light": {
       "theme": "light",
@@ -1286,12 +1312,12 @@
         "bottom": 145.2
       },
       "imgRect": {
-        "x": 468.7,
-        "y": 64,
-        "w": 57.3,
-        "h": 101.7,
-        "right": 525.99,
-        "bottom": 165.7
+        "x": 321.37,
+        "y": -40.12,
+        "w": 244.37,
+        "h": 435,
+        "right": 565.74,
+        "bottom": 394.88
       },
       "cardRect": {
         "x": 192,
@@ -1305,12 +1331,12 @@
       "name": {
         "text": "长文案压测人物姓名超长版本一二三四五",
         "color": "rgb(48, 49, 51)",
-        "samples": 136,
-        "worst": 7.04,
+        "samples": 135,
+        "worst": 1.56,
         "worstBg": [
-          193,
-          190,
-          187
+          78,
+          78,
+          77
         ],
         "rect": {
           "x": 271,
@@ -1324,12 +1350,12 @@
       "counts": {
         "text": "159 部视频 · 2 本相册 · ",
         "color": "rgb(48, 49, 51)",
-        "samples": 136,
-        "worst": 7.02,
+        "samples": 135,
+        "worst": 1.52,
         "worstBg": [
-          192,
-          190,
-          187
+          78,
+          76,
+          74
         ],
         "rect": {
           "x": 271,
@@ -1360,12 +1386,12 @@
         "bottom": 145.2
       },
       "imgRect": {
-        "x": 468.7,
-        "y": 64,
-        "w": 57.3,
-        "h": 101.7,
-        "right": 525.99,
-        "bottom": 165.7
+        "x": 321.37,
+        "y": -40.12,
+        "w": 244.37,
+        "h": 435,
+        "right": 565.74,
+        "bottom": 394.88
       },
       "cardRect": {
         "x": 192,
@@ -1379,12 +1405,12 @@
       "name": {
         "text": "长文案压测人物姓名超长版本一二三四五",
         "color": "rgb(229, 234, 243)",
-        "samples": 136,
-        "worst": 9.14,
+        "samples": 120,
+        "worst": 1.21,
         "worstBg": [
-          60,
-          60,
-          60
+          206,
+          216,
+          215
         ],
         "rect": {
           "x": 271,
@@ -1398,12 +1424,12 @@
       "counts": {
         "text": "159 部视频 · 2 本相册 · ",
         "color": "rgb(229, 234, 243)",
-        "samples": 136,
-        "worst": 9.14,
+        "samples": 131,
+        "worst": 1.2,
         "worstBg": [
-          60,
-          60,
-          60
+          206,
+          217,
+          215
         ],
         "rect": {
           "x": 271,
@@ -1494,11 +1520,11 @@
       }
     ],
     "tonePerf": {
-      "firstVisitMs": 1316.5999999940395,
-      "cachedVisitMs": 1367.300000011921,
+      "firstVisitMs": 1328.4000000059605,
+      "cachedVisitMs": 1324.5999999940395,
       "cache": {
-        "bytes": 1830,
-        "keys": 26
+        "bytes": 1616,
+        "keys": 23
       }
     }
   }

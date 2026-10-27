@@ -176,3 +176,33 @@ export function sampleTone(url, size) {
     img.src = url
   })
 }
+/* ------------------------------------------------- P5.81 文字自适应配色（不加遮罩） */
+
+/** 对比度（WCAG 2.x） */
+export function contrastRatio(a, b) {
+  const la = luminance(a)
+  const lb = luminance(b)
+  return Math.round(((Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05)) * 100) / 100
+}
+
+/** 深色 / 浅色两套文字方案（颜色 + 晕） */
+export const TEXT_LIGHT = Object.freeze({ color: '#f7f7f7', shadow: '0 1px 3px rgba(0, 0, 0, 0.85)' })
+export const TEXT_DARK = Object.freeze({ color: '#111111', shadow: '0 1px 2px rgba(255, 255, 255, 0.9)' })
+/** 自适应阈值：区域平均亮度 ≥ 0.5 用深色字，否则用浅色字 */
+export const TEXT_SPLIT = 0.5
+/** 低于这个对比度才补「极窄左侧渐变」兜底 */
+export const SCRIM_FLOOR = 3
+
+/**
+ * 给定「文字所在区域」的平均色，选一套文字方案。
+ * 返回 { mode: 'light'|'dark', color, shadow, ratio, needsScrim }
+ *   ratio = 选中方案与区域平均色的对比度（真实像素的最坏值会更低，实测见 REPORT）
+ */
+export function chooseTextTone(regionRgb) {
+  if (!regionRgb || regionRgb.length < 3) return null
+  const rl = luminance(regionRgb)
+  const mode = rl >= TEXT_SPLIT ? 'dark' : 'light'
+  const spec = mode === 'dark' ? TEXT_DARK : TEXT_LIGHT
+  const ratio = contrastRatio(parseColor(spec.color), regionRgb)
+  return { mode, color: spec.color, shadow: spec.shadow, ratio, regionLum: Math.round(rl * 1000) / 1000, needsScrim: ratio < SCRIM_FLOOR }
+}

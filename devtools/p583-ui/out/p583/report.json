@@ -1,0 +1,348 @@
+{
+  "passed": 43,
+  "failures": [],
+  "facts": {
+    "cardCount": 13,
+    "panelRows": [
+      {
+        "key": "125",
+        "w": 133.3,
+        "ratio": 0.4,
+        "cardW": 335.25,
+        "cardH": 103.7,
+        "clientH": 102,
+        "panelH": 101.7,
+        "hGap": -0.3,
+        "rightGap": 1
+      },
+      {
+        "key": "122",
+        "w": 133.3,
+        "ratio": 0.4,
+        "cardW": 335.25,
+        "cardH": 103.7,
+        "clientH": 102,
+        "panelH": 101.7,
+        "hGap": -0.3,
+        "rightGap": 1
+      },
+      {
+        "key": "124",
+        "w": 133.3,
+        "ratio": 0.4,
+        "cardW": 335.25,
+        "cardH": 103.7,
+        "clientH": 102,
+        "panelH": 101.7,
+        "hGap": -0.3,
+        "rightGap": 1
+      },
+      {
+        "key": "123",
+        "w": 133.3,
+        "ratio": 0.4,
+        "cardW": 335.25,
+        "cardH": 103.7,
+        "clientH": 102,
+        "panelH": 101.7,
+        "hGap": -0.3,
+        "rightGap": 1
+      },
+      {
+        "key": "119",
+        "w": 133.3,
+        "ratio": 0.4,
+        "cardW": 335.25,
+        "cardH": 103.7,
+        "clientH": 102,
+        "panelH": 101.7,
+        "hGap": -0.3,
+        "rightGap": 1
+      },
+      {
+        "key": "115",
+        "w": 133.3,
+        "ratio": 0.4,
+        "cardW": 335.25,
+        "cardH": 103.7,
+        "clientH": 102,
+        "panelH": 101.7,
+        "hGap": -0.3,
+        "rightGap": 1
+      },
+      {
+        "key": "111",
+        "w": 133.3,
+        "ratio": 0.4,
+        "cardW": 335.25,
+        "cardH": 103.7,
+        "clientH": 102,
+        "panelH": 101.7,
+        "hGap": -0.3,
+        "rightGap": 1
+      },
+      {
+        "key": "117",
+        "w": 133.3,
+        "ratio": 0.4,
+        "cardW": 335.25,
+        "cardH": 103.7,
+        "clientH": 102,
+        "panelH": 101.7,
+        "hGap": -0.3,
+        "rightGap": 1
+      },
+      {
+        "key": "114",
+        "w": 133.3,
+        "ratio": 0.4,
+        "cardW": 335.25,
+        "cardH": 103.7,
+        "clientH": 102,
+        "panelH": 101.7,
+        "hGap": -0.3,
+        "rightGap": 1
+      },
+      {
+        "key": "116",
+        "w": 133.3,
+        "ratio": 0.4,
+        "cardW": 335.25,
+        "cardH": 103.7,
+        "clientH": 102,
+        "panelH": 101.7,
+        "hGap": -0.3,
+        "rightGap": 1
+      },
+      {
+        "key": "118",
+        "w": 133.3,
+        "ratio": 0.4,
+        "cardW": 335.25,
+        "cardH": 103.7,
+        "clientH": 102,
+        "panelH": 101.7,
+        "hGap": -0.3,
+        "rightGap": 1
+      },
+      {
+        "key": "120",
+        "w": 133.3,
+        "ratio": 0.4,
+        "cardW": 335.25,
+        "cardH": 103.7,
+        "clientH": 102,
+        "panelH": 101.7,
+        "hGap": -0.3,
+        "rightGap": 1
+      },
+      {
+        "key": "112",
+        "w": 133.3,
+        "ratio": 0.4,
+        "cardW": 335.25,
+        "cardH": 103.7,
+        "clientH": 102,
+        "panelH": 101.7,
+        "hGap": -0.3,
+        "rightGap": 1
+      }
+    ],
+    "coverRows": [
+      {
+        "key": "125",
+        "leftGap": 0,
+        "topGap": -72.65,
+        "rightGap": -64.28,
+        "bottomGap": -174.72
+      },
+      {
+        "key": "122",
+        "leftGap": -32.16,
+        "topGap": 0,
+        "rightGap": -138.06,
+        "bottomGap": -68
+      },
+      {
+        "key": "124",
+        "leftGap": -64.08,
+        "topGap": 0,
+        "rightGap": -146.31,
+        "bottomGap": -90.59
+      },
+      {
+        "key": "123",
+        "leftGap": -47.1,
+        "topGap": 0,
+        "rightGap": -123.12,
+        "bottomGap": -68
+      },
+      {
+        "key": "119",
+        "leftGap": 0,
+        "topGap": 0,
+        "rightGap": -294.16,
+        "bottomGap": -217.63
+      },
+      {
+        "key": "115",
+        "leftGap": 0,
+        "topGap": -20.81,
+        "rightGap": -74.44,
+        "bottomGap": -186.85
+      },
+      {
+        "key": "111",
+        "leftGap": 0,
+        "topGap": -24.22,
+        "rightGap": -96.52,
+        "bottomGap": -216.54
+      },
+      {
+        "key": "117",
+        "leftGap": -159.6,
+        "topGap": 0,
+        "rightGap": -238.44,
+        "bottomGap": -197.47
+      },
+      {
+        "key": "114",
+        "leftGap": 0,
+        "topGap": -18.75,
+        "rightGap": -163.32,
+        "bottomGap": -75.63
+      },
+      {
+        "key": "116",
+        "leftGap": 0,
+        "topGap": -2.67,
+        "rightGap": -68.63,
+        "bottomGap": -8.69
+      },
+      {
+        "key": "118",
+        "leftGap": 0,
+        "topGap": 0,
+        "rightGap": -236.86,
+        "bottomGap": -174.64
+      },
+      {
+        "key": "120",
+        "leftGap": 0,
+        "topGap": 0,
+        "rightGap": -169.1,
+        "bottomGap": -98.23
+      },
+      {
+        "key": "112",
+        "leftGap": 0,
+        "topGap": -16.64,
+        "rightGap": -73.78,
+        "bottomGap": -156.08
+      }
+    ],
+    "probeWall": {
+      "x": 192,
+      "y": 63,
+      "w": 1377,
+      "h": 450.81,
+      "right": 1569,
+      "bottom": 513.81
+    },
+    "minContrast": {
+      "value": 9.88,
+      "where": "1600/light/122/chip1",
+      "fg": "rgb(61,62,64)",
+      "bg": "rgb(242,246,252)",
+      "pxBg": "rgb(242,246,252)",
+      "text": "国籍 中国"
+    },
+    "overlapViolations": [],
+    "bleedViolations": [],
+    "geometry": [
+      {
+        "key": "125",
+        "avatar": "http://127.0.0.1:59848/api/media/thumb/p/a159/0000?crop=0.2111,0.1875,0.6000,0.3375",
+        "original": "http://127.0.0.1:59848/api/media/thumb/p/a159/0000",
+        "nat": "400x712",
+        "geom": "imgW=196.283 imgH=349.383 tx=0 ty=-73.468 cropX=0.5111 cropY=0.35625",
+        "panelClient": "132x102",
+        "centerX": 100.32,
+        "wantX": 100.32,
+        "dx": 0,
+        "centerY": 51,
+        "wantY": 51,
+        "dy": 0,
+        "imgRectDx": 0,
+        "imgRectDy": 0,
+        "imgRectW": 196.28,
+        "imgW": 196.28,
+        "avatarHasCrop": true,
+        "originalHasCrop": false,
+        "geomOk": true
+      },
+      {
+        "key": "122",
+        "avatar": "http://127.0.0.1:59848/api/media/frame/485470e2cc08?t=93&w=480&crop=0.2708,0.0000,0.3375,0.6000",
+        "original": "http://127.0.0.1:59848/api/media/frame/485470e2cc08?t=93&w=480",
+        "nat": "480x270",
+        "geom": "imgW=302.222 imgH=170 tx=-32.522 ty=0 cropX=0.43955 cropY=0.3",
+        "panelClient": "132x102",
+        "centerX": 100.32,
+        "wantX": 100.32,
+        "dx": 0,
+        "centerY": 51,
+        "wantY": 51,
+        "dy": 0,
+        "imgRectDx": 0,
+        "imgRectDy": 0,
+        "imgRectW": 302.22,
+        "imgW": 302.22,
+        "avatarHasCrop": true,
+        "originalHasCrop": false,
+        "geomOk": true
+      },
+      {
+        "key": "124",
+        "avatar": "http://127.0.0.1:59848/api/media/frame/046839cff1cd?t=1472&w=480&crop=0.3333,0.0000,0.2979,0.5296",
+        "original": "http://127.0.0.1:59848/api/media/frame/046839cff1cd?t=1472&w=480",
+        "nat": "480x270",
+        "geom": "imgW=342.397 imgH=192.598 tx=-64.801 ty=0 cropX=0.48224999999999996 cropY=0.2648",
+        "panelClient": "132x102",
+        "centerX": 100.32,
+        "wantX": 100.32,
+        "dx": 0,
+        "centerY": 51,
+        "wantY": 51,
+        "dy": 0,
+        "imgRectDx": 0,
+        "imgRectDy": 0,
+        "imgRectW": 342.39,
+        "imgW": 342.4,
+        "avatarHasCrop": true,
+        "originalHasCrop": false,
+        "geomOk": true
+      }
+    ],
+    "blur": [
+      {
+        "v": 0,
+        "filter": "blur(0px) saturate(1.1) brightness(0.95)",
+        "root": "0px",
+        "stored": "0"
+      },
+      {
+        "v": 6,
+        "filter": "blur(6px) saturate(1.1) brightness(0.95)",
+        "root": "6px",
+        "stored": "6"
+      },
+      {
+        "v": 20,
+        "filter": "blur(20px) saturate(1.1) brightness(0.95)",
+        "root": "20px",
+        "stored": "20"
+      }
+    ]
+  }
+}

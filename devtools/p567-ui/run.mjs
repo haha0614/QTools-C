@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 /**
  * p567-ui/run.mjs —— P5.67「人物卡片背景 = 同一张头像铺满」的真浏览器实测
+ * 【已作废 · P5.83】本脚本断言的是「整卡背景图 + .pw-mask 遮罩 + 文字压图」模型。
+ * P5.83 已改成「左文右图分区」：.pw-mask / .pw-scrim / 自适应字色 / 整卡几何全部删除。
+ * 本文件保留作历史记录，**不要再当作当前验收依据**——现行断言见 devtools/p583-ui/run.mjs。
  * 跑法：cd QTools-C && node devtools/p567-ui/run.mjs [tag]        （默认 after）
  *
  * 被测对象是应用本身（vite dev 现编，真 SFC + 真 useMediaApi + 真 request.js），

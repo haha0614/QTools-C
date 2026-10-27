@@ -1,0 +1,257 @@
+{
+  "passed": 100,
+  "failures": [],
+  "facts": {
+    "scrollDiag_": {
+      "y": 237,
+      "docH": 1182,
+      "innerH": 905,
+      "railPos": "fixed"
+    },
+    "url_home": {
+      "before": "/",
+      "after": "/",
+      "scrollBefore": 237,
+      "scrollAfter": 237
+    },
+    "url__media": {
+      "before": "/media#sort=res-desc",
+      "after": "/media#sort=res-desc",
+      "scrollBefore": 0,
+      "scrollAfter": 0
+    },
+    "scrollDiag_media_photos": {
+      "y": 400,
+      "docH": 1809,
+      "innerH": 905,
+      "railPos": "fixed"
+    },
+    "url__media_photos": {
+      "before": "/media/photos#s=bytes-asc&p=albums-asc",
+      "after": "/media/photos#s=bytes-asc&p=albums-asc",
+      "scrollBefore": 400,
+      "scrollAfter": 400
+    },
+    "url__media_persons": {
+      "before": "/media/persons",
+      "after": "/media/persons",
+      "scrollBefore": 0,
+      "scrollAfter": 0
+    },
+    "aria": {
+      "role": "dialog",
+      "modal": "true",
+      "labelledby": "qt-auth-dialog-title",
+      "labelText": "登录",
+      "teleported": true,
+      "bodyOverflow": "hidden",
+      "active": "INPUT|username|用户名"
+    },
+    "focusTrap": {
+      "prevented": true,
+      "inPanel": true,
+      "isFirst": true,
+      "count": 5,
+      "from": "qt-auth-linkbtn"
+    },
+    "realLogin401": {
+      "identifier": "p570_no_such_user_1793074537904",
+      "text": "用户名或密码错误",
+      "calls": [
+        {
+          "method": "POST",
+          "body": "{\"identifier\":\"p570_no_such_user_1793074537904\",\"password\":\"wrong-password-123\"}"
+        }
+      ]
+    },
+    "successAfter": {
+      "state": {
+        "url": "/media/photos#s=title-desc&p=albums-desc",
+        "urlNoHash": "/media/photos",
+        "path": "/media/photos",
+        "scrollY": 0,
+        "marker": "alive-before-login"
+      },
+      "sidebar": {
+        "text": "暗色模式 GitHub 个人中心 悬浮窗测试",
+        "user": "悬浮窗测试",
+        "hasLoginBtn": false,
+        "token": "stub-token-p570",
+        "userCache": "{\"id\":9001,\"username\":\"p570tester\",\"nickname\":\"悬浮窗测试\",\"avatar\":null,\"identities\":[{\"type\":\"username\",\"identifier\":\"p570tester\"}],\"createdAt\":\"2026-01-01T09:00:00\",\"lastLoginAt\":\"2026-01-01T09:00:00\"}"
+      }
+    },
+    "narrow375": {
+      "panelW": 375,
+      "panelLeft": 0,
+      "panelRight": 375,
+      "docScrollW": 375,
+      "panelScrollable": false,
+      "overflowY": "auto",
+      "clientH": 667,
+      "scrollH": 667,
+      "closeVisible": true,
+      "vw": 375
+    },
+    "narrow375Register": {
+      "w": 375,
+      "left": 0,
+      "right": 375,
+      "clientH": 667,
+      "scrollH": 667,
+      "scrolled": 0,
+      "docScrollW": 375,
+      "fields": 4
+    },
+    "narrow375Short": {
+      "clientH": 420,
+      "scrollH": 433,
+      "scrolled": 13,
+      "docScrollW": 375
+    },
+    "mobileDrawer": {
+      "drawer": false,
+      "dialog": true
+    },
+    "deepLink": {
+      "path": "/login",
+      "card": true,
+      "form": true,
+      "dialog": false,
+      "title": "登录",
+      "userAutocomplete": "username",
+      "pwdAutocomplete": "current-password",
+      "showPwd": false,
+      "register": true
+    },
+    "inlineSwitch": {
+      "before": "/login",
+      "after": "/login"
+    },
+    "registerToLogin": {
+      "before": "/register",
+      "after": "/register"
+    },
+    "meEntry": {
+      "reason": "登录后可跨设备同步收藏与浏览记录",
+      "before": "/me",
+      "after": "/me"
+    },
+    "registerSwitch": {
+      "dialog": true,
+      "title": "注册",
+      "registerForm": true,
+      "loginForm": false,
+      "fields": [
+        "邀请码（由站长提供）",
+        "用户名（3–32 位字母、数字或下划线）",
+        "密码（至少 8 位，含字母和数字）",
+        "确认密码"
+      ],
+      "focused": "邀请码（由站长提供）",
+      "before": "/media/photos",
+      "after": "/media/photos#s=photos-desc&p=name-asc"
+    },
+    "passwordMismatch": {
+      "regInputs": [
+        {
+          "ph": "邀请码（由站长提供）",
+          "type": "text"
+        },
+        {
+          "ph": "用户名（3–32 位字母、数字或下划线）",
+          "type": "text"
+        },
+        {
+          "ph": "密码（至少 8 位，含字母和数字）",
+          "type": "password"
+        },
+        {
+          "ph": "确认密码",
+          "type": "password"
+        }
+      ],
+      "errors": [
+        "两次输入的密码不一致"
+      ],
+      "wire": 0
+    },
+    "badInvite": {
+      "text": "邀请码无效或已用尽",
+      "wire": {
+        "url": "/api/app/auth/register",
+        "requestBody": "{\"username\":\"p570mismatch\",\"password\":\"Passw0rd123\",\"inviteCode\":\"WRONG-INVITE-2026\"}",
+        "status": 400,
+        "responseBody": "{\"error\":\"邀请码无效或已用尽\"}"
+      }
+    },
+    "registerOk": {
+      "user": "p570reg74687098",
+      "url": {
+        "before": "/media/photos#s=photos-desc&p=name-asc",
+        "after": "/media/photos#s=photos-desc&p=name-asc"
+      },
+      "panel": {
+        "notice": "注册成功，等待站长审核",
+        "title": "登录",
+        "loginForm": true,
+        "registerForm": false
+      },
+      "sidebar": {
+        "text": "暗色模式\nGitHub\n登录",
+        "user": "",
+        "token": "",
+        "loginBtn": true
+      },
+      "wire": {
+        "url": "/api/app/auth/register",
+        "requestBody": "{\"username\":\"p570reg74687098\",\"password\":\"Passw0rd123\",\"inviteCode\":\"QINGTUYWM\"}",
+        "status": 200,
+        "responseBody": "{\"user\":{\"id\":84,\"username\":\"p570reg74687098\",\"nickname\":\"p570reg74687098\",\"avatar\":null},\"pending\":true,\"message\":\"注册成功，等待站长审核\"}"
+      }
+    },
+    "duplicate": {
+      "text": "用户名已存在",
+      "wire": {
+        "url": "/api/app/auth/register",
+        "requestBody": "{\"username\":\"p570reg74687098\",\"password\":\"Passw0rd123\",\"inviteCode\":\"QINGTUYWM\"}",
+        "status": 409,
+        "responseBody": "{\"error\":\"用户名已存在\"}"
+      }
+    },
+    "backToLogin": {
+      "title": "登录",
+      "focused": "username",
+      "url": "/media/photos"
+    },
+    "pendingLogin": {
+      "user": "",
+      "error": "账号待审核，请联系站长",
+      "dialog": true,
+      "loginForm": true,
+      "token": false,
+      "before": "/media/photos#s=title-asc&p=albums-asc",
+      "after": "/media/photos#s=title-asc&p=albums-asc",
+      "wire": {
+        "url": "/api/app/auth/login",
+        "requestBody": "{\"identifier\":\"p570late74701138\",\"password\":\"Passw0rd123\"}",
+        "status": 403,
+        "responseBody": "{\"error\":\"账号待审核，请联系站长\"}"
+      }
+    },
+    "themes": {
+      "light": {
+        "panel": "rgb(255, 255, 255)",
+        "title": "rgb(48, 49, 51)",
+        "titleRatio": 13.02,
+        "inputRatio": 6.11
+      },
+      "dark": {
+        "panel": "rgb(35, 35, 36)",
+        "title": "rgb(229, 234, 243)",
+        "titleRatio": 13.01,
+        "inputRatio": 10.47
+      }
+    },
+    "chunkAborts": []
+  }
+}

@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 /**
  * p572-ui/run.mjs —— P5.72「人物卡片背景模糊度滑块」的真浏览器实测
+ * 【已作废 · P5.83】本脚本断言遮罩变量 --pw-mask-* 与 .pw-mask 的联动（P5.76 起这些变量已删除）；
+ * P5.83 起模糊只作用于右侧图片面板内的单层图。本文件保留作历史记录，不要当作当前验收依据——
+ * 现行断言见 devtools/p583-ui/run.mjs。
  * 跑法：cd QTools-C && node devtools/p572-ui/run.mjs [tag]        （默认 after）
  *
  * 被测对象是应用本身（vite dev 现编，真 SFC / 真 useMediaApi / 真 request.js），

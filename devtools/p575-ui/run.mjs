@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 /**
  * p575-ui/run.mjs —— P5.75「横向分区遮罩（左压暗护文字 / 右几乎透明露照片）」的真浏览器实测
+ * 【已作废 · P5.83】本脚本断言横向分区遮罩与文字半透明垫底；这两层在 P5.76 删除，P5.83 又改成
+ * 「左文右图分区」（文字落在纯卡片底色上，不再压图）。本文件保留作历史记录，不要当作当前
+ * 验收依据——现行断言见 devtools/p583-ui/run.mjs。
  * 跑法：cd QTools-C && node devtools/p575-ui/run.mjs [tag]        （默认 after）
  *
  * 被测对象是应用本身（vite dev 现编，真 SFC / 真 useMediaApi / 真 request.js），

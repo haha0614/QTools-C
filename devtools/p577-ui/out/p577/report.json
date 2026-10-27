@@ -1,14 +1,8 @@
 {
-  "passed": 80,
-  "failures": [
-    "放开打桩后自动回到 online（无需刷新） -> 20079ms（offline 探测间隔 15s）",
-    "恢复时只弹一次「在线服务已恢复」",
-    "恢复后提示条自动消失",
-    "恢复后侧栏在线入口自动解锁",
-    "媒体站卡片恢复可点（href 回来了）"
-  ],
+  "passed": 85,
+  "failures": [],
   "facts": {
-    "lastStubbed": "FAILED http://127.0.0.1:52919/api/toolInfo/list",
+    "lastStubbed": "FAILED http://127.0.0.1:57249/api/toolInfo/list",
     "normal": {
       "status": "online",
       "banner": false,
@@ -78,21 +72,21 @@
     "offlineTimeline": {
       "degraded": [
         {
-          "at": 0,
+          "at": 1,
           "status": "degraded"
         }
       ],
       "offline": [
         {
-          "at": 1,
+          "at": 0,
           "status": "degraded"
         },
         {
-          "at": 3117,
+          "at": 3257,
           "status": "offline"
         }
       ],
-      "toOfflineMs": 3117
+      "toOfflineMs": 3257
     },
     "offline": {
       "status": "offline",
@@ -194,22 +188,30 @@
       "error": "",
       "status": "offline"
     },
-    "recoverMs": 20079,
+    "recoverMs": 14911,
     "recoverTimeline": [
       {
         "at": 0,
         "status": "offline"
+      },
+      {
+        "at": 14911,
+        "status": "online"
       }
     ],
+    "recoverStart": {
+      "visibility": "visible",
+      "hidden": false
+    },
     "afterRecover": {
-      "status": "offline",
-      "banner": true,
-      "lockedNav": 4,
+      "status": "online",
+      "banner": false,
+      "lockedNav": 0,
       "hrefs": [
         true,
         true,
         true,
-        false
+        true
       ]
     },
     "sectionsAfterRecover": [
@@ -281,29 +283,29 @@
     },
     "consoleErrors": [
       {
-        "t": 1793071994132,
+        "t": 1793072389724,
         "kind": "error",
-        "text": "[Home] 工具列表加载失败： AxiosError: Network Error at XMLHttpRequest.handleError (http://127.0.0.1:52919/node_modules/.vite/deps/axios.js?v=d763dbdd:2365:19)"
+        "text": "[Home] 工具列表加载失败： AxiosError: Network Error at XMLHttpRequest.handleError (http://127.0.0.1:57249/node_modules/.vite/deps/axios.js?v=d763dbdd:2365:19)"
       },
       {
-        "t": 1793072013647,
+        "t": 1793072409216,
         "kind": "error",
-        "text": "[Home] 工具列表加载失败： AxiosError: Network Error at XMLHttpRequest.handleError (http://127.0.0.1:52919/node_modules/.vite/deps/axios.js?v=d763dbdd:2365:19)"
+        "text": "[Home] 工具列表加载失败： AxiosError: Network Error at XMLHttpRequest.handleError (http://127.0.0.1:57249/node_modules/.vite/deps/axios.js?v=d763dbdd:2365:19)"
       },
       {
-        "t": 1793072042937,
+        "t": 1793072433110,
         "kind": "error",
-        "text": "[Home] 工具列表加载失败： AxiosError: Network Error at XMLHttpRequest.handleError (http://127.0.0.1:52919/node_modules/.vite/deps/axios.js?v=d763dbdd:2365:19)"
+        "text": "[Home] 工具列表加载失败： AxiosError: Network Error at XMLHttpRequest.handleError (http://127.0.0.1:57249/node_modules/.vite/deps/axios.js?v=d763dbdd:2365:19)"
       },
       {
-        "t": 1793072048160,
+        "t": 1793072438885,
         "kind": "error",
-        "text": "[Home] 工具列表加载失败： AxiosError: Network Error at XMLHttpRequest.handleError (http://127.0.0.1:52919/node_modules/.vite/deps/axios.js?v=d763dbdd:2365:19)"
+        "text": "[Home] 工具列表加载失败： AxiosError: Network Error at XMLHttpRequest.handleError (http://127.0.0.1:57249/node_modules/.vite/deps/axios.js?v=d763dbdd:2365:19)"
       },
       {
-        "t": 1793072052744,
+        "t": 1793072443422,
         "kind": "error",
-        "text": "[Home] 工具列表加载失败： AxiosError: Network Error at XMLHttpRequest.handleError (http://127.0.0.1:52919/node_modules/.vite/deps/axios.js?v=d763dbdd:2365:19)"
+        "text": "[Home] 工具列表加载失败： AxiosError: Network Error at XMLHttpRequest.handleError (http://127.0.0.1:57249/node_modules/.vite/deps/axios.js?v=d763dbdd:2365:19)"
       }
     ],
     "stubCount": 33

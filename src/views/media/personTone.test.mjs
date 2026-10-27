@@ -17,7 +17,9 @@ import {
   rgbCss,
   toneCacheKey,
   toneFill,
-  writeToneCache
+  writeToneCache,
+  chooseTextTone,
+  contrastRatio
 } from './personTone.js'
 
 let passed = 0
@@ -122,6 +124,21 @@ writeToneCache(big, st)
 const kept = Object.keys(readToneCache(st))
 eq(kept.length, TONE_CACHE_MAX, '5.8 超上限只留 ' + TONE_CACHE_MAX + ' 条')
 ok(!kept.includes('k0') && kept.includes('k' + (TONE_CACHE_MAX + 24)), '5.9 丢最旧的，留最新的')
+
+console.log('[6] 文字自适应配色（P5.81）')
+const toneDark = [26, 24, 22]
+const toneLight = [238, 236, 232]
+const pickDark = chooseTextTone(toneDark)
+const pickLight = chooseTextTone(toneLight)
+eq(pickDark.mode, 'light', '6.1 暗区域 → 浅色字')
+eq(pickLight.mode, 'dark', '6.2 亮区域 → 深色字')
+ok(pickDark.ratio >= 4.5, '6.3 暗区域用浅色字后对比度 ≥4.5', pickDark.ratio)
+ok(pickLight.ratio >= 4.5, '6.4 亮区域用深色字后对比度 ≥4.5', pickLight.ratio)
+eq(pickDark.needsScrim, false, '6.5 达标时不需要兜底渐变')
+const mid = chooseTextTone([128, 128, 128])
+ok(mid == null || mid.needsScrim === true || mid.ratio >= 3, '6.6 中灰区域如实标注（可能要兜底）', mid && mid.ratio)
+eq(chooseTextTone(null), null, '6.7 没有采样 → null')
+ok(contrastRatio([0, 0, 0], [255, 255, 255]) >= 21, '6.8 黑白对比度 ≈ 21:1', contrastRatio([0, 0, 0], [255, 255, 255]))
 
 console.log('')
 if (failures.length) {

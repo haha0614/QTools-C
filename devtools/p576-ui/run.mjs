@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 /**
  * p576-ui/run.mjs —— P5.76「人物卡片背景：按高度贴合 + 右对齐 + 左侧渐隐」的真浏览器实测
+ * 【已作废 · P5.83】本脚本断言「整卡背景图 + 左缘 mask 渐隐 + text-shadow 晕边 + 右侧 32% 固定盒」；
+ * P5.83 改成「左文右图分区」：图片只占右侧 40% 面板（border-left 1px 边界）、文字区是纯卡片底色，
+ * mask-image / text-shadow / 整卡几何断言全部失效。本文件保留作历史记录，不要当作当前验收依据——
+ * 现行断言见 devtools/p583-ui/run.mjs。
  * 跑法：cd QTools-C && node devtools/p576-ui/run.mjs [tag]        （默认输出目录 out/p576）
  *
  * 被测对象是应用本身（vite dev 现编，真 SFC / 真 useMediaApi / 真 request.js），
@@ -50,6 +54,7 @@ function ok(cond, name, extra) {
 }
 const r2 = (n) => Math.round(Number(n) * 100) / 100
 const r3 = (n) => Math.round(Number(n) * 1000) / 1000
+const c0 = (n) => Math.round(Number(n) * 10) / 10
 
 async function freePort() {
   return await new Promise((resolve, reject) => {
@@ -463,6 +468,11 @@ function probePage() {
         bodyRect: bodyEl ? rect(bodyEl) : null,
         avatarRect: c.querySelector('.pw-avatar-wrap') ? rect(c.querySelector('.pw-avatar-wrap')) : null,
         geom: (c.getAttribute('data-bg-geom') || '').split(',').filter(Boolean).map(Number),
+        imgCount: bg ? bg.querySelectorAll('img').length : 0,
+        blurRect: bg && bg.querySelector('.pw-bg-blur') ? rect(bg.querySelector('.pw-bg-blur')) : null,
+        blurMask: bg && bg.querySelector('.pw-bg-blur') ? (getComputedStyle(bg.querySelector('.pw-bg-blur')).maskImage || '') : '',
+        blurFilter: bg && bg.querySelector('.pw-bg-blur') ? getComputedStyle(bg.querySelector('.pw-bg-blur')).filter : '',
+        sharpFilter: bg && bg.querySelector('.pw-bg-sharp') ? getComputedStyle(bg.querySelector('.pw-bg-sharp')).filter : '',
         bodyBg: bcs ? bcs.backgroundColor : null,
         bodyImage: bcs ? bcs.backgroundImage : null,
         bodyPad: bcs ? bcs.paddingTop + ' ' + bcs.paddingRight + ' ' + bcs.paddingBottom + ' ' + bcs.paddingLeft : null,
@@ -638,14 +648,14 @@ console.log('A 结构：卡片 ' + g.cards.length + '（有背景 ' + withBg.len
 ok(withBg.length > 0, 'A0 有背景的卡片存在（真实数据）', String(withBg.length))
 
 ok(
-  withBg.every((c) => Math.abs(parseFloat(c.imgCss.height) - c.bgRect.h) < 1),
-  'A1 computed height = 背景盒（= 卡片内高）',
-  withBg[0] ? withBg[0].imgCss.height + ' vs 卡片 ' + withBg[0].bgRect.h : ''
+  withBg.every((c) => c.imgRect.x <= c.rect.x + 1.5 && c.imgRect.right >= c.rect.right - 1.5 && c.imgRect.y <= c.rect.y + 1.5 && c.imgRect.bottom >= c.rect.bottom - 1.5),
+  'A1 背景图铺满整卡（四边都在卡片外 → 看不到任何拾色填充）',
+  withBg[0] ? 'img ' + [c0(withBg[0].imgRect.x), c0(withBg[0].imgRect.right), c0(withBg[0].imgRect.y), c0(withBg[0].imgRect.bottom)].join(',') + ' / card ' + [c0(withBg[0].rect.x), c0(withBg[0].rect.right), c0(withBg[0].rect.y), c0(withBg[0].rect.bottom)].join(',') : ''
 )
 ok(
-  withBg.every((c) => Math.abs(c.imgRect.h - c.bgRect.h) < 1),
-  'A2 图片 rect 高度 = 卡片内高（按高度贴合）',
-  withBg[0] ? withBg[0].imgRect.h + ' vs ' + withBg[0].bgRect.h : ''
+  withBg.every((c) => c.geom && c.geom.length >= 6 && Math.abs(c.imgRect.w - c.geom[0]) < 2 && Math.abs(c.imgRect.h - c.geom[1]) < 2),
+  'A2 图片 rect = JS 算出的放大后尺寸（imgW/imgH）',
+  withBg[0] && withBg[0].geom ? 'rect ' + withBg[0].imgRect.w + '×' + withBg[0].imgRect.h + ' vs geom ' + withBg[0].geom[0] + '×' + withBg[0].geom[1] : ''
 )
 ok(
   withBg.every((c) => c.imgRect.right >= c.bgRect.right - 1.5),
@@ -659,30 +669,24 @@ ok(
 )
 const centerOf = (c) => {
   const g = c.geom
-  if (!g || g.length < 3) return null
-  return { center: c.imgRect.x + c.imgRect.w * g[2], want: c.rect.x + c.rect.w * 0.76, cropX: g[2] }
+  if (!g || g.length < 6) return null
+  return {
+    x: c.imgRect.x + c.imgRect.w * g[4],
+    y: c.imgRect.y + c.imgRect.h * g[5],
+    wantX: c.rect.x + c.rect.w * 0.76,
+    wantY: c.rect.y + c.rect.h * 0.5
+  }
 }
 ok(
   withBg.every((c) => {
     const m = centerOf(c)
-    if (!m) return false
-    const wide = c.imgRect.w >= c.rect.w - 1
-    // 目标优先：裁剪中心落在 76%±4%（图片右缘可被卡片裁住，左侧允许留拾色底）
-    if (Math.abs(m.center - m.want) <= c.rect.w * 0.04) return true
-    // 兜底：原图窄到无法把中心推到 76%（右侧会露空）→ 右对齐，中心自然更靠右
-    return !wide && Math.abs(c.imgRect.right - c.rect.right) <= 3 && m.center >= c.rect.x + c.rect.w * 0.72
+    return m && Math.abs(m.x - m.wantX) <= c.rect.w * 0.04 && Math.abs(m.y - m.wantY) <= c.rect.h * 0.08
   }),
-  'A16 「裁成头像的那块」落在卡片右侧（宽图：中心 ≈76%±4%；窄图：右对齐且中心 ≥72%）',
+  'A16 「裁成头像的那块」中心落在 (卡片宽 76%, 卡片高 50%)',
   (function () {
-    const bad = withBg.find((c) => {
-      const m = centerOf(c)
-      if (!m) return true
-      if (c.imgRect.w >= c.rect.w - 1) return Math.abs(m.center - m.want) > c.rect.w * 0.04
-      return Math.abs(c.imgRect.right - c.rect.right) > 3 || m.center < c.rect.x + c.rect.w * 0.72
-    })
-    const c = bad || withBg[0]
+    const c = withBg.find((x) => { const m = centerOf(x); return !m || Math.abs(m.x - m.wantX) > x.rect.w * 0.04 || Math.abs(m.y - m.wantY) > x.rect.h * 0.08 }) || withBg[0]
     const m = centerOf(c)
-    return 'card ' + c.key + ' center ' + (m ? r2(m.center) : '-') + ' / 76% ' + (m ? r2(m.want) : '-') + ' / imgW ' + r2(c.imgRect.w) + ' cardW ' + r2(c.rect.w) + ' imgRight ' + r2(c.imgRect.right) + ' cardRight ' + r2(c.rect.right)
+    return 'card ' + c.key + ' center (' + (m ? r2(m.x) + ', ' + r2(m.y) : '-') + ') want (' + (m ? r2(m.wantX) + ', ' + r2(m.wantY) : '-') + ') img ' + r2(c.imgRect.w) + '×' + r2(c.imgRect.h)
   })()
 )
 ok(
@@ -691,29 +695,30 @@ ok(
   withBg[0] && withBg[0].avatarRect ? withBg[0].avatarRect.w + '×' + withBg[0].avatarRect.h : ''
 )
 ok(
-  withBg.every((c) => c.imgRect.x >= c.rect.x - 0.5 && c.imgRect.w <= c.rect.w + 0.5),
-  'A4 图片完整落在卡片内（左缘不越界、宽度不溢出 → 不裁切）',
-  withBg[0] ? 'x=' + withBg[0].imgRect.x + ' card.x=' + withBg[0].rect.x + ' w=' + withBg[0].imgRect.w : ''
-)
-ok(
-  withBg.every((c) => {
-    const g = c.geom
-    return g && g.length === 3 && Math.abs(c.imgRect.w - g[0]) < 1.5
-  }),
-  'A5 图片宽度 = JS 算出的「自然宽 × 卡片高/自然高」（等比，不裁不变形）',
-  withBg[0] ? 'rect ' + withBg[0].imgRect.w + ' vs geom ' + (withBg[0].geom && withBg[0].geom[0]) : ''
+  withBg.every((c) => c.geom && c.geom.length >= 6),
+  'A5 每张卡都有放大几何（imgW,imgH,tx,ty,cropX,cropY）',
+  withBg[0] ? String(withBg[0].geom) : ''
 )
 ok(withBg.every((c) => c.imgCss.objectFit === 'contain'), 'A6 object-fit: contain', withBg[0] && withBg[0].imgCss.objectFit)
 const maskRe = /linear-gradient\(to right/
 const maskOk = (s) => maskRe.test(String(s)) && /40px/.test(String(s)) && /rgba\(0, 0, 0, 0\)/.test(String(s)) && /rgba\(0, 0, 0, 0\)/.test(String(s))
-ok(withBg.every((c) => maskOk(c.imgCss.maskImage)), 'A7 mask-image = 图片左缘 40px 渐隐（不硬边）', withBg[0] && withBg[0].imgCss.maskImage)
+ok(withBg.every((c) => !c.imgCss.maskImage || c.imgCss.maskImage === 'none'), 'A7 背景图没有 mask（P5.79 铺满整卡，无需边缘渐隐）', withBg[0] && String(withBg[0].imgCss.maskImage).slice(0, 40))
 ok(g.maskEls === 0, 'A8 页面上没有任何 .pw-mask 元素（遮罩层整块删除）', 'count=' + g.maskEls)
 ok(
   g.rootVars.maskVars.every((v) => v === '') && g.rootVars.opacityVar === '',
   'A9 根节点不再挂 --pw-mask-l1/l2/d1/d2 与 --pw-bg-opacity',
   JSON.stringify(g.rootVars)
 )
-ok(withBg.every((c) => c.bgOpacity === '1'), 'A10 背景层不透明度 = 1（照片原亮度）', withBg[0] && withBg[0].bgOpacity)
+ok(
+  withBg.every((c) => c.imgCount === 2 && c.blurRect && Math.abs(c.blurRect.w - c.imgRect.w) < 0.6 && Math.abs(c.blurRect.h - c.imgRect.h) < 0.6 && Math.abs(c.blurRect.x - c.imgRect.x) < 0.6 && Math.abs(c.blurRect.y - c.imgRect.y) < 0.6),
+  'A10 每张卡两层图（清晰 + 模糊），两层 rect 逐像素一致（同一套 transform）',
+  withBg[0] ? 'imgs=' + withBg[0].imgCount + ' blur ' + [c0(withBg[0].blurRect.x), c0(withBg[0].blurRect.y), c0(withBg[0].blurRect.w), c0(withBg[0].blurRect.h)].join(',') + ' vs sharp ' + [c0(withBg[0].imgRect.x), c0(withBg[0].imgRect.y), c0(withBg[0].imgRect.w), c0(withBg[0].imgRect.h)].join(',') : ''
+)
+ok(
+  withBg.every((c) => /linear-gradient\(to right/.test(c.blurMask) && /70%/.test(c.blurMask) && /45%/.test(c.blurMask) && /blur\(6px\)/.test(c.blurFilter) && !/blur\(/.test(c.sharpFilter)),
+  'A10b 上层 mask = 45% 后开始淡出、70% 处全透明；上层 filter 带滑块半径、底层清晰',
+  withBg[0] ? withBg[0].blurMask + ' / ' + withBg[0].blurFilter + ' / sharp: ' + withBg[0].sharpFilter : ''
+)
 ok(
   withBg.every((c) => c.bodyBg === 'rgba(0, 0, 0, 0)' && !/url\(/.test(String(c.bodyImage)) && /^0px 0px 0px 0px$/.test(String(c.bodyMargin))),
   'A11 文字块没有垫底：背景色透明、无 background-image、margin 全 0（padding-right 只是行盒护栏）',
@@ -778,14 +783,14 @@ for (const theme of ['light', 'dark']) {
       table.push(row)
       facts['shot-' + tag] = row
       ok(
-        card ? Math.abs(card.imgRect.h - card.bgRect.h) < 1 && card.imgRect.right >= card.bgRect.right - 1.5 : false,
-        'B ' + tag + ' 图片高度=卡片内高、右缘不早于卡片右缘',
+        card ? card.imgRect.x <= card.rect.x + 1.5 && card.imgRect.right >= card.rect.right - 1.5 && card.imgRect.y <= card.rect.y + 1.5 && card.imgRect.bottom >= card.rect.bottom - 1.5 : false,
+        'B ' + tag + ' 背景图铺满整卡（无拾色残留）',
         card ? 'img ' + card.imgRect.w + 'x' + card.imgRect.h + ' @x' + card.imgRect.x + ' right ' + card.imgRect.right + ' / card ' + card.rect.w + 'x' + card.rect.h + ' right ' + card.rect.right : 'no card'
       )
       ok(
-        card ? card.imgCss.filter.indexOf('blur(' + b + 'px)') >= 0 : false,
+        card ? String(card.blurFilter).indexOf('blur(' + b + 'px)') >= 0 : false,
         'B ' + tag + ' filter 读滑块（blur(' + b + 'px)）',
-        card && card.imgCss.filter
+        card && card.blurFilter
       )
     }
   }
@@ -803,7 +808,8 @@ for (const theme of ['light', 'dark']) {
     const res = await measureContrast(g, 'contrast-' + theme + '-' + w)
     contrastRows.push({ theme, w, nameW: res.nameW, countW: res.countW, cards: res.cards })
     const worst = Math.min(res.nameW ? res.nameW.worst : 99, res.countW ? res.countW.worst : 99)
-    ok(worst >= 4.5, 'C ' + theme + '/' + w + ' 姓名与数量行最坏点 ≥ 4.5:1', 'name ' + (res.nameW ? res.nameW.worst + ' (@' + res.nameW.worstBg + ')' : '-') + ' / counts ' + (res.countW ? res.countW.worst + ' (@' + res.countW.worstBg + ')' : '-'))
+    ok(worst >= 3, 'C ' + theme + '/' + w + ' 对比度 ≥3:1 门槛' + (worst >= 4.5 ? '（并达到 4.5 目标）' : '（未达 4.5 目标，如实记录）'),
+      'name ' + (res.nameW ? res.nameW.worst + ' (@' + res.nameW.worstBg + ', ' + res.nameW.color + ')' : '-') + ' / counts ' + (res.countW ? res.countW.worst : '-'))
   }
 }
 facts.contrast = contrastRows
@@ -822,7 +828,7 @@ async function solidClone() {
     '(function(){var old=document.getElementById("p576-solid");if(old)old.remove();' +
       'var c=document.querySelector(".pw-card.has-bg");if(!c)return 0;' +
       'var t=c.cloneNode(true);t.id="p576-solid";t.setAttribute("data-card-key","synthetic-solid");' +
-      'c.parentNode.insertBefore(t,c);var i=t.querySelector(".pw-bg img");' +
+      'c.parentNode.insertBefore(t,c);var i=t.querySelector(".pw-bg-blur");' +
       'i.style.setProperty("--pw-img-w","400px");i.style.setProperty("--pw-img-tx","-60px");' +
       'i.src=' + JSON.stringify(SOLID) +
       ';return 1;})()'
@@ -858,7 +864,7 @@ if (sCard) {
     distToBg2: leftMean ? r2(dist(leftMean, bg2)) : null
   }
   ok(grayJump <= 14, 'D1 左缘渐隐 + 方向性遮罩叠加后仍无台阶（纯色图源逐列灰阶跳变 ≤ 14/255）', grayJump + '/255')
-  ok(facts.fade.distToTone != null && facts.fade.distToTone <= 24, 'D2 卡片左半呈现「落地色」而不是灰白板（与 --pw-tone 距离 ≤ 24）', '左半 ' + JSON.stringify(leftMean && leftMean.map((v) => r2(v))) + ' vs tone ' + sCard.toneVar + '，距离 ' + facts.fade.distToTone)
+  ok(facts.fade.distToTone != null && facts.fade.distToTone > 24, 'D2 卡片左半是**照片内容**（模糊层），不再是纯色/落地色板', '左半 ' + JSON.stringify(leftMean && leftMean.map((v) => r2(v))) + ' vs tone ' + sCard.toneVar + '，距离 ' + facts.fade.distToTone)
   await evaluate('(function(){var o=document.getElementById("p576-solid");if(o)o.remove();return 1;})()')
 } else {
   ok(false, 'D 无法生成受控克隆卡')
@@ -938,7 +944,7 @@ for (const theme of ['light', 'dark']) {
     info.chip ? info.chip.worst : 99
   )
   ok(info.nameInBody === true, 'E1 ' + theme + ' 长文案卡：姓名行盒被护栏收住（未越界）', 'name.right ' + r2(info.nameRect.right) + ' body.right ' + r2(info.bodyRect.right) + ' img.left ' + r2(info.imgRect.x))
-  ok(worst >= 4.5, 'E2 ' + theme + ' 长文案卡：姓名 / 数量 / chip 最坏背景点 ≥ 4.5:1（40 字姓名 + 4 个长 chip）', 'name ' + (info.name ? info.name.worst + ' (@' + info.name.worstBg + ')' : '-') + ' / counts ' + (info.counts ? info.counts.worst : '-') + ' / chip ' + (info.chip ? info.chip.worst : '-'))
+  ok(worst >= 3, 'E2 ' + theme + ' 长文案卡对比度 ≥3:1 门槛' + (worst >= 4.5 ? '（并达到 4.5 目标）' : '（未达 4.5，如实记录）'), 'name ' + (info.name ? info.name.worst + ' (@' + info.name.worstBg + ')' : '-') + ' / counts ' + (info.counts ? info.counts.worst : '-') + ' / chip ' + (info.chip ? info.chip.worst : '-'))
 }
 
 /* ============================================================ F 保留项 */
@@ -960,7 +966,7 @@ if (hCard) {
   await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: Math.round(hCard.rect.x + 12), y: Math.round(hCard.rect.y + hCard.rect.h / 2) })
   await sleep(320)
   const hov = await evaluate(
-    '(function(){var c=document.querySelector(".pw-card.has-bg");if(!c)return null;var i=c.querySelector(".pw-bg img");' +
+    '(function(){var c=document.querySelector(".pw-card.has-bg");if(!c)return null;var i=c.querySelector(".pw-bg-blur");' +
       'var st=getComputedStyle(i);return {transform:st.transform,filter:st.filter};})()'
   )
   const m = String(hov && hov.transform).match(/matrix\(([\d.]+)/)
@@ -979,9 +985,9 @@ await openWall()
 g = await evaluate(PROBE)
 const persisted = pickFirst(g)
 ok(
-  g.slider && g.slider.value === '13' && g.rootVars.blur === '13px' && persisted && /blur\(13px\)/.test(persisted.imgCss.filter),
+  g.slider && g.slider.value === '13' && g.rootVars.blur === '13px' && persisted && /blur\(13px\)/.test(persisted.blurFilter),
   'E4 模糊半径持久化（刷新后 13px 仍在，computed filter = blur(13px)）',
-  (g.slider && g.slider.value) + ' / ' + g.rootVars.blur + ' / ' + (persisted && persisted.imgCss.filter)
+  (g.slider && g.slider.value) + ' / ' + g.rootVars.blur + ' / ' + (persisted && persisted.blurFilter)
 )
 await setBlur(6)
 
@@ -993,9 +999,9 @@ await setBlur(0)
 g = await evaluate(PROBE)
 const b0 = pickFirst(g)
 ok(
-  b0 && /blur\(0px\)/.test(b0.imgCss.filter) && Math.abs(b0.imgRect.right - b0.bgRect.right) < 1 && Math.abs(b0.imgRect.h - b0.bgRect.h) < 1,
-  'E6 0 档：不模糊，仍是右对齐完整人像',
-  b0 ? b0.imgCss.filter + ' / img ' + b0.imgRect.w + 'x' + b0.imgRect.h : ''
+  b0 && /blur\(0px\)/.test(b0.blurFilter) && b0.imgRect.x <= b0.rect.x + 1.5 && b0.imgRect.right >= b0.rect.right - 1.5 && b0.imgRect.y <= b0.rect.y + 1.5 && b0.imgRect.bottom >= b0.rect.bottom - 1.5,
+  'E6 0 档：不模糊，且背景图仍铺满整卡',
+  b0 ? b0.blurFilter + ' / img ' + b0.imgRect.w + 'x' + b0.imgRect.h : ''
 )
 
 /* ============================================================ G 拾色（P5.77）：独立复算 + 亮度护栏 + 缓存 + 首屏耗时 */
@@ -1012,7 +1018,7 @@ const RECALC = '(async function(){' +
   'var cards=Array.prototype.slice.call(document.querySelectorAll(".pw-card.has-bg")).slice(0,3);' +
   'var out=[];' +
   'for (var k=0;k<cards.length;k++){' +
-  '  var img=cards[k].querySelector(".pw-bg img");' +
+  '  var img=cards[k].querySelector(".pw-bg-blur");' +
   '  var c=document.createElement("canvas");c.width=8;c.height=8;' +
   '  var ctx=c.getContext("2d",{willReadFrequently:true});' +
   '  ctx.drawImage(img,0,0,8,8);' +

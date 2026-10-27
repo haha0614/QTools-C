@@ -928,7 +928,7 @@ onMounted(() => {
     color: var(--qt-text-secondary);
   }
 
-  /* 徽标（P5.77）：离线 = 绿点「离线 · 数据不上传」；在线 = 「需后端」；在线服务挂掉 = 警告色「暂不可用」 */
+  /* 徽标（P5.77）：离线 = 绿点「离线 · 数据不上传」；在线服务平时不出徽标，掉线时才是警告色「暂不可用」 */
   &__tag {
     display: inline-flex;
     align-items: center;
