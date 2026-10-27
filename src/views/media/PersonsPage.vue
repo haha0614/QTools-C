@@ -1107,10 +1107,6 @@ function measureCardBg() {
   const wall = wallRef.value
   if (!wall) return
   const dpr = typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1
-  const byKey = {}
-  for (const card of cards.value) {
-    if (card && card.key != null) byKey[String(card.key)] = card
-  }
   wall.querySelectorAll('.pw-card').forEach((node) => {
     const key = String(node.getAttribute('data-card-key') || '')
     const bg = node.querySelector('.pw-bg')
@@ -1792,8 +1788,16 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 10px;
   height: 100%;
-  /* P5.60：卡片紧凑高度（84 是下限，内容更高时由 grid-auto-rows: 1fr 统一拉平） */
-  min-height: 84px;
+  /* P5.94：高度**由 CSS 钉死**，不再由晚到的数据撑起来。
+     原来这里是 min-height: 84px —— 首屏第一帧只有姓名（.pw-body 22.4），卡片就是 84；
+     随后 /api/index（counts）与 /api/person/<id>（chips / recent）到达，.pw-body 变成 81.7，
+     卡片在**同一张卡上**从 84 跳到 103.7（实测 Δ=19.7px，见 devtools/p594-ui）。
+     于是「先量到 84 再量到 103.7」：.pw-bg-card 那张按 h=84 烘的图被拉伸进 101.7 高的盒子
+     = 用户看到的「背景先被拉高，然后恢复正常」。
+     104 = 满内容 81.7（22.4 姓名 + 15.5 counts + 18 chips + 16.8 recent + 3×3 gap）
+     + 20 padding + 2 border，四舍五入。所有卡都 ≥ 104、内容都 ≤ 104，
+     所以首帧与稳定帧的 .pw-bg 盒子逐像素相同（clientHeight 恒 102 → URL 恒 w=332&h=102）。 */
+  min-height: 104px;
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius, 10px);
@@ -1831,11 +1835,14 @@ onBeforeUnmount(() => {
   overflow: hidden;
   border-radius: inherit;
   pointer-events: none;
-  /* P5.86：hover 放大挂在**这一层容器**上（它的 transform 恒为 scale(1)，入场时不会变，
-     所以这个 transition 永远等不到「入场那天的一次位移」）。原来挂在 .pw-bg-img 上，
-     几何一写好就把 transform 从 translate(0,0) 过渡到目标位移 = 用户看到的那次滑入。 */
+  /* P5.86：hover 放大挂在**这一层容器**上（它的 transform 恒为 scale(1)，入场时不会变）。
+     原来挂在 .pw-bg-img 上，几何一写好就把 transform 从 translate(0,0) 过渡到目标位移
+     = 用户看到的那次滑入。
+     P5.94：这一层静止态改成 **transition: none** —— 高度 / transform 一律瞬时就位，入场那天
+     不存在任何过渡动画；0.12s 缓动只写在下面的 :hover / :focus-visible 规则里
+     （pointer 驱动，加载时永远不成立）。 */
   transform-origin: 50% 50%;
-  transition: transform 0.12s ease;
+  transition: none;
 }
 
 /* 三层共用同一组几何变量（由 layoutCrop 算好挂在卡片上），
@@ -1870,15 +1877,22 @@ onBeforeUnmount(() => {
 
 /* P5.90 服务端预渲染：一张图铺满 .pw-bg，像素级就是最终构图。
    没有 transform / mask / filter —— 定位与缩放已经在服务端烘进字节里，这里只负责「贴上去」。
-   object-fit: fill 是对的：图就是按这个盒子的像素尺寸生成的（w/h 来自 clientWidth × DPR）。 */
+
+   P5.94：object-fit 由 fill 改成 **cover**。fill 的语义是「不管原图宽高比，硬拉满盒子」——
+   只要盒子和出图的比例有一点不一致（两段式期间低清图是按**旧高度**烘的、或窗口尺寸在
+   低清回来之后又变了），图就被纵向拉伸，肉眼就是「背景被拉高」。cover 保证**只裁切、不拉伸**：
+   比例一致时两种取值的渲染结果逐像素相同（缩放因子都等于 盒宽/图宽），比例不一致时只是
+   裁掉多余的一圈，不存在变形。object-position 取中心，裁切对称。 */
 .pw-bg-card {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   max-width: none;
-  object-fit: fill;
+  object-fit: cover;
+  object-position: center;
   opacity: 0;
+  /* 只有淡入：这层没有 height / transform 过渡可跑 */
   transition: opacity 0.12s linear;
   -webkit-mask-image: none;
   mask-image: none;
@@ -1969,6 +1983,8 @@ onBeforeUnmount(() => {
 .pw-card:hover .pw-bg,
 .pw-card:focus-visible .pw-bg {
   transform: scale(1.03);
+  /* P5.94：缓动只活在这条 hover 规则里（静止态是 transition: none），所以加载过程一次都不会跑 */
+  transition: transform 0.12s ease;
 }
 
 .pw-card:hover .pw-bg-blur,

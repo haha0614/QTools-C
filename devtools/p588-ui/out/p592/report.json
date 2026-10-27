@@ -1,0 +1,105 @@
+{
+  "passed": 45,
+  "failures": [],
+  "facts": {
+    "mode": "card",
+    "baseline": {
+      "cards": 13,
+      "withBg": 13,
+      "buttons": 13,
+      "chips": 13,
+      "cols": 4,
+      "key": "125",
+      "autoGeom": ""
+    },
+    "heights": [
+      103.7,
+      103.7
+    ],
+    "drag": {
+      "dxBefore": "dx 0",
+      "dxAfter": "dx -43.3",
+      "dyBefore": "dy 0",
+      "dyAfter": "dy +21.4",
+      "moved": [
+        0,
+        0
+      ],
+      "beforeRect": [
+        533.5,
+        443.86,
+        518,
+        157.27
+      ],
+      "afterRect": [
+        533.5,
+        443.86,
+        518,
+        157.27
+      ]
+    },
+    "scale": [
+      {
+        "pct": 50,
+        "previewImgW": 259,
+        "cardImgW": 333.25,
+        "expectCard": 0,
+        "scale": 0.5
+      },
+      {
+        "pct": 100,
+        "previewImgW": 518,
+        "cardImgW": 333.25,
+        "expectCard": 0
+      },
+      {
+        "pct": 300,
+        "previewImgW": 1554,
+        "cardImgW": 333.25,
+        "expectCard": 0,
+        "scale": 3
+      }
+    ],
+    "saved": {
+      "adjust": "1.6,0.09,-0.14",
+      "rect": [
+        193,
+        64,
+        333.25,
+        101.7
+      ],
+      "transform": "none",
+      "trio": 0
+    },
+    "reset": {
+      "rect": [
+        193,
+        64,
+        333.25,
+        101.7
+      ],
+      "autoRect": [
+        193,
+        64,
+        333.25,
+        101.7
+      ],
+      "dev": 0,
+      "center": [
+        null,
+        null
+      ]
+    },
+    "default": {
+      "stored": "{\"scale\":1.5,\"dx\":0.04,\"dy\":0.08}",
+      "otherCard": "1.5,0.04,0.08",
+      "afterClear": ""
+    },
+    "chipCard": {
+      "key": "122",
+      "chips": 3,
+      "h": 103.7
+    },
+    "nav": "/media/person/125"
+  }
+}

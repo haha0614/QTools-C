@@ -156,7 +156,7 @@ async function main() {
         '     proto: e.nextHopProtocol, initiator: e.initiatorType };',
         ' });',
         ' var cards = P.cards, imgs = P.imgs;',
-        ' return JSON.stringify({ probe: { marks: P.marks, cards: cards, imgs: imgs, allDoneAt: P.allDoneAt || null, cardCount: P.cardCount },',
+        ' return JSON.stringify({ probe: { marks: P.marks, cards: cards, imgs: imgs, allDoneAt: P.allDoneAt || null, allFullAt: P.allFullAt || null, cardCount: P.cardCount },',
         '   fcp: (performance.getEntriesByType("paint").filter(function(x){return x.name==="first-contentful-paint"})[0]||{}).startTime || null,',
         '   navTiming: { ttfb: nav.responseStart, responseEnd: nav.responseEnd, domContentLoaded: nav.domContentLoadedEventEnd, loadEvent: nav.loadEventEnd },',
         '   resources: res });',
