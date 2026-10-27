@@ -43,10 +43,13 @@ import {
   listRecent,
   delFav,
   saveUser,
+  syncAccount,
   itemThumbUrl
 } from '@/composables/useMediaApi'
 import { useMediaTrack } from '@/composables/useMediaTrack'
 import { useAppAuth } from '@/composables/useAppAuth'
+// P5.70：未登录时的「登录」不再是链接，改为在当前位置打开全站登录悬浮窗
+import { useAuthDialog } from '@/composables/useAuthDialog'
 
 /** 本页在埋点里的 pageKey（统一为 /me，与路由一致） */
 const PAGE_KEY = '/me'
@@ -58,6 +61,8 @@ const GRAD_KEY = 'ms.avatar.grad'
 const NOTICE_MS = 2400
 
 const router = useRouter()
+// 登录悬浮窗：本页未登录时点「登录」就地打开，URL 仍是 /me
+const { openAuthDialog } = useAuthDialog()
 const tk = useMediaTrack()
 const auth = useAppAuth()
 
@@ -482,9 +487,19 @@ async function onClaim() {
 
   claiming.value = true
   try {
+    // P5.74：先把本机设备态（播放列表 / 收藏 / 收藏夹 / 最近）并进账号（幂等），
+    // 再走老接口把 media_owner.user_id 绑定到账号 —— 两步都成功才算「认领完成」。
+    const stats = await syncAccount({ silent: true }).catch(() => null)
+    const lists = stats ? (Number(stats.playlistsAdded) || 0) + (Number(stats.playlistsMerged) || 0) : 0
+    const favs = stats ? Number(stats.favoritesAdded) || 0 : 0
     await auth.claimDevice(ownerKey)
-    setClaimTip('已认领本设备的媒体数据', 'success')
-    // 认领后本机收藏 / 浏览已并入账号，重新拉一次媒体数据让 ②③ 反映最新状态
+    setClaimTip(
+      lists > 0 || favs > 0
+        ? `已同步 ${lists} 个列表 / ${favs} 条收藏到账号`
+        : '本机数据已在账号里（合并幂等，无需重复）',
+      'success'
+    )
+    // 合并后重新拉一次媒体数据，让 ②③ 反映最新状态
     load()
   } catch (err) {
     const status = err && err.status
@@ -580,10 +595,16 @@ onUnmounted(() => {
         <p v-else class="me-id__guest">登录后可跨设备同步收藏与浏览记录</p>
       </div>
 
+      <!-- 未登录的动作条：登录就地开悬浮窗（带一句原因），注册仍是独立页（邀请码表单不适合塞进小弹窗） -->
       <div v-if="!loggedIn" class="me-id__actions">
-        <router-link class="me-btn me-btn--primary" :to="{ path: '/login', query: { redirect: '/me' } }">
+        <button
+          class="me-btn me-btn--primary"
+          type="button"
+          data-testid="me-login"
+          @click="openAuthDialog({ reason: '登录后可跨设备同步收藏与浏览记录' })"
+        >
           登录
-        </router-link>
+        </button>
         <router-link class="me-btn" to="/register">注册</router-link>
       </div>
     </header>
@@ -739,7 +760,9 @@ onUnmounted(() => {
         <h2 class="me-sec__h">其它</h2>
 
         <p class="me-sec__note">
-          未登录时在媒体站产生的收藏与浏览记录保存在本机，认领后会合并到当前账号。
+          P5.74 起，登录时本机的播放列表 / 收藏 / 浏览记录会<b>自动</b>并进账号（并弹一次
+          「已同步 X 个列表 / Y 条收藏」），无需手动操作；下面的按钮是给「已经登着、但之后才在本机攒了数据」
+          的场景补一次合并用的，幂等、可重复点。
         </p>
         <button
           class="me-btn me-btn--primary me-claim"

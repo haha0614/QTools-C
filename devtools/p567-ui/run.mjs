@@ -578,9 +578,12 @@ for (const vp of VIEWPORTS) {
       label + ' 层级 背景(0) < 遮罩(1) < 文字(2)',
       JSON.stringify(withBg[0] && withBg[0].z)
     )
+    // P5.72：模糊半径不再写死在 CSS 里，改由「背景模糊」滑块 → 根节点 --pw-bg-blur 决定。
+    // 断言从「写死 blur(6px)」改成「computed filter 与滑块当前值一致」，默认仍是 6px。
+    const blurNow = await evaluate('(function(){var r=document.querySelector(\'[data-role="bg-blur"]\');return r?r.value:null;})()')
     ok(
-      withBg.every((c) => /blur\(12px\)/.test(c.bgStyle.filter) && /saturate\(1\.1\)/.test(c.bgStyle.filter)),
-      label + ' 背景样式 = blur(12px) saturate(1.1) brightness(.9)',
+      withBg.every((c) => new RegExp('blur\\(' + blurNow + 'px\\)').test(c.bgStyle.filter) && /saturate\(1\.1\)/.test(c.bgStyle.filter)),
+      label + ' 背景样式 = blur(' + blurNow + 'px) saturate(1.1) brightness(.9)（P5.72 半径来自滑块）',
       withBg[0] && withBg[0].bgStyle.filter
     )
     ok(

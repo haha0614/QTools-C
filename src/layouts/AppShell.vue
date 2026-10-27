@@ -16,8 +16,13 @@
 
   移动端（<1024px）：无底部 tabbar；顶栏 ☰ 打开全高抽屉（覆盖式 + 半透明遮罩，ESC / 点遮罩关闭，
     打开时锁定 <body> 滚动），抽屉内沿用同一套导航结构（展开态 200px 逻辑）。
-    顶栏右侧只放账号入口（未登录「登录」→ /login，已登录「我的」→ /me）；手机端不提供主题切换
+    顶栏右侧只放账号入口（未登录「登录」→ 打开全局登录悬浮窗，已登录「我的」→ /me）；手机端不提供主题切换
     （抽屉里也没有），主题由 useTheme 跟随系统偏好。
+
+  账号入口（P5.70）：站内「登录」一律**打开全局悬浮窗**，不跳 /login（URL 与滚动位置都不动）。
+    悬浮窗是 components/AuthLoginDialog.vue，在本组件里**只挂一次**（挂在 <body> 下的 Teleport）；
+    任何位置都能用 composables/useAuthDialog.js 的 openAuthDialog() 唤起它。
+    独立路由 /login 保留给深链 / 直接访问，站内入口不再指过去。
 -->
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
@@ -25,11 +30,14 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 // 图标按名显式导入（本项目没有 unplugin-auto-import，模板里不能凭空出现组件名）
 import { House, List, Menu, Moon, Picture, Sunny, User, UserFilled, VideoPlay } from '@element-plus/icons-vue'
 import BrandMark from '@/components/BrandMark.vue'
+// P5.70：全局登录悬浮窗（全站只挂这一次）+ 它的开关单例
+import AuthLoginDialog from '@/components/AuthLoginDialog.vue'
 import { APP_INFO } from '@/utils/constants'
 // P4.3：侧栏选中态的纯判定（首页精确、/media 精确、人物含 /media/person/:id）
 import { isNavActive } from '@/utils/navActive'
 import { useTheme } from '@/composables/useTheme'
 import { useAppAuth } from '@/composables/useAppAuth'
+import { useAuthDialog } from '@/composables/useAuthDialog'
 
 const route = useRoute()
 const router = useRouter()
@@ -37,6 +45,8 @@ const router = useRouter()
 const { isDark, toggleTheme } = useTheme()
 // 登录态：决定底部入口显示「个人中心」还是「登录」
 const { state } = useAppAuth()
+// 登录悬浮窗的开关：任何入口点「登录」都走 openLogin()，不再跳路由
+const { openAuthDialog } = useAuthDialog()
 
 /* ================================================================ 折叠状态 */
 const RAIL_STORAGE_KEY = 'qtools-rail-collapsed' // 本地存储键：'1' 收起 / '0' 展开
@@ -204,20 +214,29 @@ function onNavClick(item, ev) {
   }
 }
 
-// 底部个人入口：已登录进个人中心，未登录进登录页
-const accountItem = computed(() =>
-  state.user
-    ? { to: '/me', label: '个人中心', icon: User }
-    : { to: '/login', label: '登录', icon: User }
+// 底部个人入口：已登录是「个人中心」链接；未登录不是链接，而是一个「打开登录悬浮窗」的按钮
+const accountItem = computed(() => (state.user ? { to: '/me', label: '个人中心', icon: User } : null))
+
+const accountActive = computed(
+  () => Boolean(accountItem.value) && normalizedPath.value === accountItem.value.to
 )
 
-const accountActive = computed(() => normalizedPath.value === accountItem.value.to)
+// 已登录时侧栏在「个人中心」右侧补一个用户名（取昵称优先），登录成功后原地就能看到是谁
+const accountName = computed(() => {
+  const user = state.user || {}
+  return String(user.nickname || user.username || '')
+})
 
-/* ================================================================ 移动端顶栏账号入口 */
-// 未登录 → 登录页并带回跳地址；已在登录页时不再自指，避免登录后跳回自身
-function goLogin() {
-  const redirect = route.fullPath
-  router.push({ path: '/login', query: redirect === '/login' ? {} : { redirect } })
+/* ================================================================ 账号入口（P5.70：一律开弹窗，不跳页） */
+/**
+ * 打开全局登录悬浮窗：URL 不变、当前页面与滚动位置都不动。
+ * 移动端抽屉是覆盖式全高、z-index 也低于弹窗，但仍先收起它：
+ * 弹窗关掉后用户看到的是原页面，而不是一个还开着的抽屉。
+ * 已在 /login 页点它也一样——弹窗就在这一页上打开，不会把自己再路由一次。
+ */
+function openLogin() {
+  if (drawerOpen.value) closeDrawer()
+  openAuthDialog()
 }
 
 // 已登录：没有头像 URL 时退化为昵称/用户名首字（大写），都没有则用「我」
@@ -304,7 +323,15 @@ onBeforeUnmount(() => {
         <span class="qt-topbar__avatar" aria-hidden="true">{{ avatarText }}</span>
         <span>我的</span>
       </RouterLink>
-      <button v-else class="qt-topbar__login" type="button" @click="goLogin">登录</button>
+      <button
+        v-else
+        class="qt-topbar__login"
+        type="button"
+        data-testid="topbar-login"
+        @click="openLogin"
+      >
+        登录
+      </button>
     </header>
 
     <!-- 移动端遮罩：点击关闭抽屉 -->
@@ -371,7 +398,9 @@ onBeforeUnmount(() => {
           <span class="qt-rail__label">GitHub</span>
         </a>
 
+        <!-- 已登录：个人中心；未登录：打开登录悬浮窗（按钮而非链接，URL 不变） -->
         <RouterLink
+          v-if="accountItem"
           class="qt-rail__link"
           :class="{ 'is-active': accountActive }"
           :to="accountItem.to"
@@ -379,7 +408,22 @@ onBeforeUnmount(() => {
         >
           <el-icon class="qt-rail__icon" :size="18"><component :is="accountItem.icon" /></el-icon>
           <span class="qt-rail__label">{{ accountItem.label }}</span>
+          <!-- 用户名：收起态由 .qt-rail__label 的规则一并隐藏，不单独再写一套 -->
+          <span v-if="accountName" class="qt-rail__label qt-rail__user" :title="accountName">
+            {{ accountName }}
+          </span>
         </RouterLink>
+        <button
+          v-else
+          class="qt-rail__link qt-rail__link--button"
+          type="button"
+          title="登录"
+          data-testid="rail-login"
+          @click="openLogin"
+        >
+          <el-icon class="qt-rail__icon" :size="18"><User /></el-icon>
+          <span class="qt-rail__label">登录</span>
+        </button>
       </div>
 
       <!-- 折叠手柄热区：跨在分割线上的 22px 竖直窄条（栏内 12 + 栏外 10），指针进入这里手柄才出现 -->
@@ -427,6 +471,9 @@ onBeforeUnmount(() => {
     <main class="qt-shell__main" :class="{ 'is-bleed': isBleed }">
       <router-view />
     </main>
+
+    <!-- 全局登录悬浮窗：整站只挂这一次（内部 Teleport 到 <body>），任何页面都能唤起 -->
+    <AuthLoginDialog />
   </div>
 </template>
 
@@ -570,6 +617,24 @@ onBeforeUnmount(() => {
 /* 主题切换用的是 <button>，需要抹掉浏览器默认差异 */
 .qt-rail__link--button {
   appearance: none;
+}
+
+/* 已登录时「个人中心」右侧的用户名：靠右、次要色、超长省略（收起态由 .qt-rail__label 隐藏）。
+   主标签不许被挤掉（flex 0 0 auto），空间不够时先压缩用户名——次要信息让位给入口名。 */
+.qt-rail__link > .qt-rail__label:not(.qt-rail__user) {
+  flex: 0 0 auto;
+}
+
+.qt-rail__user {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: auto;
+  max-width: 64px;
+  overflow: hidden;
+  color: var(--qt-text-tertiary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 内联 SVG 图标（Element Plus 没有 GitHub 图标）：与 el-icon 同尺寸、同基线 */

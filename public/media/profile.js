@@ -118,11 +118,21 @@
     try { global.localStorage.setItem(OWNER_KEY, v); } catch (e) { /* 忽略 */ }
   }
 
-  // 组装请求头：始终带 accept，有 owner 时带 X-Ms-Owner
+  /* 站级登录 token（P5.74）：媒体站静态页与 Vue 页同源同 localStorage，登录后这里能读到。
+     有 token 时后端按账号态（u:<id>）读写数据，没登录就还是本设备态。 */
+  var TOKEN_KEY = 'app.token';
+
+  function readToken() {
+    try { return global.localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; }
+  }
+
+  // 组装请求头：始终带 accept；有 owner 时带 X-Ms-Owner；已登录时再带 Authorization
   function userHeaders(extra) {
     var h = extra || {};
     var o = readOwner();
     if (o) h['X-Ms-Owner'] = o;
+    var t = readToken();
+    if (t) h['Authorization'] = 'Bearer ' + t;
     return h;
   }
 

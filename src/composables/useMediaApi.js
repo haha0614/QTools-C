@@ -6,8 +6,9 @@
  *   1. 全部走 src/utils/request.js（baseURL = VITE_API_BASE_URL || '/api'，code !== 200 视为失败）。
  *   2. request.js 返回的是完整响应体；本文件统一解包 AjaxResult：存在数值 code 时，
  *      code === 200 取 data，其它直接抛错（拦截器已 reject，这里只是兜底）；媒体接口返回裸对象时原样返回。
- *   3. 身份走 X-Ms-Owner 请求头（与 profile.js 一致）；响应体里的 ownerKey 首次下发送回写
- *      localStorage['ms.owner']，保证与手写页是同一个 owner。
+ *   3. 身份走两条通道（P5.74）：设备键 X-Ms-Owner（与 profile.js 一致）**始终**发；已登录时再加
+ *      Authorization: Bearer <app.token>，由后端 MediaOwnerService 决定这次请求用账号态（u:<id>）
+ *      还是设备态。响应体里的 ownerKey 恒为设备键，首次下发写回 localStorage['ms.owner']。
  *   4. 读接口默认 silent（失败不弹全局提示，页面自行容错，与手写页的 fetch 行为一致）；
  *      写接口默认非 silent（收藏/浏览记录失败要有反馈），可按调用点覆盖。
  *   5. 不引入任何新的 npm 依赖。
@@ -19,6 +20,8 @@ const API_BASE = (import.meta.env && import.meta.env.VITE_API_BASE_URL) || '/api
 const MEDIA_PREFIX = '/media'
 /** 设备标识键，与 profile.js / useMediaTrack.js 共用 */
 const OWNER_STORE_KEY = 'ms.owner'
+/** 站级登录 token 键（与 api/appAuth.js 的 TOKEN_KEY 同一个 localStorage 键） */
+const TOKEN_STORE_KEY = 'app.token'
 
 /* ------------------------------------------------------------ owner 与解包 */
 
@@ -39,11 +42,27 @@ function writeOwner(v) {
   }
 }
 
-/** 组装请求头：始终带 accept，有 owner 时带 X-Ms-Owner（等价于 profile.js 的 userHeaders） */
+function readToken() {
+  try {
+    return localStorage.getItem(TOKEN_STORE_KEY) || ''
+  } catch {
+    return ''
+  }
+}
+
+/**
+ * 组装请求头：始终带 accept；有设备键时带 X-Ms-Owner；已登录时再带 Authorization
+ *
+ * <p>设备键<b>照旧每次都发</b>：登出后要能立刻回到设备态，服务端也需要它把「设备态数据」
+ * 认出来（P5.74 的首次登录合并就靠这个设备键当来源）。账号态只由 Authorization 决定，
+ * 前端不拼 u:&lt;id&gt;（服务端会按「客户端自称账号」400 拒绝）。</p>
+ */
 function mediaHeaders(extra) {
   const headers = Object.assign({}, extra || {})
   const owner = readOwner()
   if (owner) headers['X-Ms-Owner'] = owner
+  const token = readToken()
+  if (token) headers.Authorization = 'Bearer ' + token
   return headers
 }
 
@@ -169,6 +188,21 @@ export function listRecent(options) {
 export function getMe(options) {
   const opt = options || {}
   return mediaRequest({ url: '/me', silent: opt.silent !== false })
+}
+
+/**
+ * 设备态 → 账号态的数据接管（P5.74，登录成功后调用一次即可）后端：POST /api/media/user/sync
+ *
+ * → { synced, deviceOwner, accountOwner, userId, playlistsMoved, playlistsMerged,
+ *     playlistItemsAdded, favoritesAdded, recentsAdded, filtersMoved }
+ *
+ * 幂等：只补「账号里还缺的」，设备态数据不清空；重复调用时各项统计恒为 0（前端据此不重复 toast）。
+ * 未登录调用回 400（没有目标账号），因此调用点必须已拿到 token。
+ * @param {{silent?:boolean}} [options]
+ */
+export function syncAccount(options) {
+  const opt = options || {}
+  return mediaRequest({ url: '/user/sync', method: 'post', silent: opt.silent !== false })
 }
 
 /** 单片详情（含 tags / actors） 后端：GET /api/media/video/{id} */
@@ -875,6 +909,7 @@ const mediaApi = {
   addRecent,
   listRecent,
   getMe,
+  syncAccount,
   getVideo,
   getAlbum,
   // 媒体库组织（M3）

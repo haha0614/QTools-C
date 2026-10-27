@@ -1,0 +1,372 @@
+{
+  "passed": 102,
+  "failures": [],
+  "facts": {
+    "stops": {
+      "0": {
+        "slider": "0",
+        "valueText": "0px",
+        "rootVar": "0px",
+        "inlineStyle": "--pw-bg-blur: 0px; --pw-mask-l1: 0.96; --pw-mask-l2: 0.94; --pw-mask-l3: 0.78; --pw-mask-d1: 0.95; --pw-mask-d2: 0.92; --pw-mask-d3: 0.86;",
+        "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+        "inset": "0px 0px 0px 0px",
+        "imgBox": [
+          333.25,
+          101.7
+        ],
+        "bgBox": [
+          333.25,
+          101.7
+        ],
+        "cardBox": [
+          335.25,
+          103.7
+        ],
+        "maskLight": [
+          0.96,
+          0.94,
+          0.78
+        ],
+        "maskDarkVars": [
+          "0.95",
+          "0.92",
+          "0.86"
+        ]
+      },
+      "6": {
+        "slider": "6",
+        "valueText": "6px",
+        "rootVar": "6px",
+        "inlineStyle": "--pw-bg-blur: 6px; --pw-mask-l1: 0.93; --pw-mask-l2: 0.88; --pw-mask-l3: 0.62; --pw-mask-d1: 0.9; --pw-mask-d2: 0.82; --pw-mask-d3: 0.66;",
+        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+        "inset": "-9px -9px -9px -9px",
+        "imgBox": [
+          351.25,
+          119.7
+        ],
+        "bgBox": [
+          333.25,
+          101.7
+        ],
+        "cardBox": [
+          335.25,
+          103.7
+        ],
+        "maskLight": [
+          0.93,
+          0.88,
+          0.62
+        ],
+        "maskDarkVars": [
+          "0.9",
+          "0.82",
+          "0.66"
+        ]
+      },
+      "20": {
+        "slider": "20",
+        "valueText": "20px",
+        "rootVar": "20px",
+        "inlineStyle": "--pw-bg-blur: 20px; --pw-mask-l1: 0.93; --pw-mask-l2: 0.88; --pw-mask-l3: 0.62; --pw-mask-d1: 0.9; --pw-mask-d2: 0.82; --pw-mask-d3: 0.66;",
+        "filter": "blur(20px) saturate(1.1) brightness(0.9)",
+        "inset": "-30px -30px -30px -30px",
+        "imgBox": [
+          393.25,
+          161.7
+        ],
+        "bgBox": [
+          333.25,
+          101.7
+        ],
+        "cardBox": [
+          335.25,
+          103.7
+        ],
+        "maskLight": [
+          0.93,
+          0.88,
+          0.62
+        ],
+        "maskDarkVars": [
+          "0.9",
+          "0.82",
+          "0.66"
+        ]
+      }
+    },
+    "default": {
+      "slider": {
+        "value": "6",
+        "min": "0",
+        "max": "20",
+        "step": "1",
+        "aria": "背景模糊度",
+        "type": "range",
+        "rect": {
+          "x": 1447,
+          "y": 24.5,
+          "w": 88,
+          "h": 16,
+          "right": 1535,
+          "bottom": 40.5
+        },
+        "focused": false
+      },
+      "label": {
+        "text": "背景模糊",
+        "display": "block",
+        "rect": {
+          "x": 1391,
+          "y": 22.5,
+          "w": 50,
+          "h": 20,
+          "right": 1441,
+          "bottom": 42.5
+        }
+      },
+      "vars": {
+        "blur": "6px",
+        "l1": "0.93",
+        "l2": "0.88",
+        "l3": "0.62",
+        "d1": "0.9",
+        "d2": "0.82",
+        "d3": "0.66"
+      },
+      "card": {
+        "key": "125",
+        "personId": "125",
+        "kind": "profile",
+        "dataBg": "1",
+        "hasBg": true,
+        "rect": {
+          "x": 192,
+          "y": 63,
+          "w": 335.25,
+          "h": 103.7,
+          "right": 527.25,
+          "bottom": 166.7
+        },
+        "bgRect": {
+          "x": 193,
+          "y": 64,
+          "w": 333.25,
+          "h": 101.7,
+          "right": 526.25,
+          "bottom": 165.7
+        },
+        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+        "inset": "-9px -9px -9px -9px",
+        "imgW": 351.25,
+        "imgH": 119.7,
+        "opacity": "0.7",
+        "maskBg": "linear-gradient(90deg, rgba(255, 255, 255, 0.93) 0%, rgba(255, 255, 255, 0.88) 50%, rgba(255, 255, 255, 0.62) 100%)",
+        "name": {
+          "rect": {
+            "x": 271,
+            "y": 84.5,
+            "w": 243.25,
+            "h": 22.39,
+            "right": 514.25,
+            "bottom": 106.89
+          },
+          "text": "素人",
+          "color": "rgb(48, 49, 51)"
+        },
+        "counts": {
+          "rect": {
+            "x": 271,
+            "y": 109.89,
+            "w": 243.25,
+            "h": 15.52,
+            "right": 514.25,
+            "bottom": 125.41
+          },
+          "text": "159 部视频 · 2 本相册 · 118 张照片",
+          "color": "rgb(48, 49, 51)"
+        },
+        "marked": 0,
+        "imgMarked": 0,
+        "imgComplete": true
+      },
+      "maskAlphas": [
+        0.93,
+        0.88,
+        0.62
+      ]
+    },
+    "reflow": {
+      "steps": 20,
+      "median": 0,
+      "maxDelta": 0,
+      "cards": 13,
+      "wallBefore": {
+        "w": 1377,
+        "h": 450.81
+      },
+      "wallAfter": {
+        "w": 1377,
+        "h": 450.81
+      }
+    },
+    "drag": {
+      "value": "0",
+      "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+      "storage": "0"
+    },
+    "contrast": {
+      "light": {
+        "alphas": [
+          0.96,
+          0.94,
+          0.78
+        ],
+        "cards": 13,
+        "worstName": {
+          "name": "喵小吉 Aeolian-2",
+          "line": "name",
+          "text": "喵小吉 Aeolian-2",
+          "color": "rgb(48, 49, 51)",
+          "samples": 242,
+          "worst": 9.31,
+          "worstBg": [
+            218,
+            218,
+            217
+          ],
+          "best": 12.71
+        },
+        "worstCounts": {
+          "name": "喵小吉 Aeolian-2",
+          "line": "counts",
+          "text": "0 部视频 · 1 本相册 · 48 张照片",
+          "color": "rgb(48, 49, 51)",
+          "samples": 242,
+          "worst": 9.31,
+          "worstBg": [
+            218,
+            218,
+            218
+          ],
+          "best": 12.71
+        }
+      },
+      "dark": {
+        "alphas": [
+          0.95,
+          0.92,
+          0.86
+        ],
+        "cards": 13,
+        "worstName": {
+          "name": "念念",
+          "line": "name",
+          "text": "念念",
+          "color": "rgb(229, 234, 243)",
+          "samples": 242,
+          "worst": 12.54,
+          "worstBg": [
+            38,
+            38,
+            38
+          ],
+          "best": 15.64
+        },
+        "worstCounts": {
+          "name": "小鱼",
+          "line": "counts",
+          "text": "0 部视频 · 1 本相册 · 6 张照片",
+          "color": "rgb(229, 234, 243)",
+          "samples": 242,
+          "worst": 12.37,
+          "worstBg": [
+            39,
+            39,
+            39
+          ],
+          "best": 15.42
+        }
+      },
+      "light20": {
+        "cards": 13,
+        "worstName": {
+          "name": "喵小吉 Aeolian-2",
+          "line": "name",
+          "text": "喵小吉 Aeolian-2",
+          "color": "rgb(48, 49, 51)",
+          "samples": 242,
+          "worst": 7.3,
+          "worstBg": [
+            194,
+            194,
+            193
+          ],
+          "best": 12.06
+        },
+        "worstCounts": {
+          "name": "喵小吉 Aeolian-2",
+          "line": "counts",
+          "text": "0 部视频 · 1 本相册 · 48 张照片",
+          "color": "rgb(48, 49, 51)",
+          "samples": 242,
+          "worst": 7.3,
+          "worstBg": [
+            194,
+            194,
+            193
+          ],
+          "best": 12.06
+        }
+      }
+    },
+    "persistence": {
+      "storage": "13",
+      "sliderValue": "13",
+      "rootVar": "13px",
+      "filter": "blur(13px) saturate(1.1) brightness(0.9)",
+      "inset": "-19.5px -19.5px -19.5px -19.5px",
+      "inlineStyle": "--pw-bg-blur: 13px; --pw-mask-l1: 0.93; --pw-mask-l2: 0.88; --pw-mask-l3: 0.62; --pw-mask-d1: 0.9; --pw-mask-d2: 0.82; --pw-mask-d3: 0.66;"
+    },
+    "persistenceEdge": {
+      "clamped": "20",
+      "reset": "6"
+    },
+    "keyboard": {
+      "start": "6",
+      "afterRight": "7",
+      "afterLeft": "5",
+      "end": "20",
+      "home": "0"
+    },
+    "narrow": {
+      "375": {
+        "sliderW": 76,
+        "labelDisplay": "none",
+        "docScroll": [
+          360,
+          375
+        ],
+        "valueText": "0px"
+      },
+      "640": {
+        "sliderW": 76,
+        "labelDisplay": "none",
+        "docScroll": [
+          625,
+          640
+        ],
+        "valueText": "0px"
+      },
+      "700": {
+        "sliderW": 88,
+        "labelDisplay": "block",
+        "docScroll": [
+          685,
+          700
+        ],
+        "valueText": "0px"
+      }
+    },
+    "exceptions": []
+  }
+}

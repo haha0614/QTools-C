@@ -1,0 +1,123 @@
+后端在线：http://127.0.0.1:8080（/api/media/persons 返回 13 条）
+dev server: http://127.0.0.1:53428
+
+[A] 工具栏滑块（1600 × 亮色）
+  PASS A1 工具栏存在滑块控件
+  PASS A2 range 0–20px 步长 1  — 0–20/1
+  PASS A3 aria-label="背景模糊度"  — 背景模糊度
+  PASS A4 默认值 = 线上现值 6  — 6
+  PASS A5 数值小字显示 6px  — 6px
+  PASS A6 标签文案「背景模糊」  — 背景模糊
+  PASS A7 与「搜索 / 刷新」同一行（中心线差 ≤ 2px）  — Δy=0px
+  PASS A8 控件在工具栏右侧（搜索框之后）  — search.right=1323 slider.x=1447 refresh.x=1331
+  PASS A9 根节点 CSS 变量 --pw-bg-blur = 6px  — 6px
+  PASS A10 有卡片渲染出背景层  — 13/13 张
+  PASS A11 背景 filter = blur(6px) saturate(1.1) brightness(.9)  — blur(6px) saturate(1.1) brightness(0.9)
+  PASS A12 外扩 inset = -9px（6 × 1.5）  — -9px -9px -9px -9px
+  PASS A13 背景尺寸 = 背景盒 + 18px（6 × 3）  — 351.25×119.7 vs 背景盒 333.25×101.7
+  PASS A14 6px 遮罩右侧仍是 P5.69 现值 .62  — [0.93,0.88,0.62]
+
+[B] 0 / 6 / 20 三档：filter + 外扩联动（只改变量，整墙不重排）
+  PASS B0-1 滑块停在 0  — 0
+  PASS B0-2 数值小字 = 0px  — 0px
+  PASS B0-3 根节点 --pw-bg-blur = 0px  — 0px
+  PASS B0-4 每张卡 computed filter = blur(0px) saturate(1.1) brightness(.9)  — blur(0px) saturate(1.1) brightness(0.9)
+  PASS B0-5 外扩 inset = 0px 0px 0px 0px（-1.5 × 0）  — 0px 0px 0px 0px
+  PASS B0-6 背景尺寸 = 背景盒 + 0px  — 333.25×101.7 vs 背景盒 333.25×101.7
+  PASS B0-7 卡片与背景图 DOM 未被重建（拖动只改变量）
+  PASS B0-8 无背景层的卡片不受影响  — 0 张无背景
+  PASS B0-9 亮色遮罩 alpha = 0.96/0.94/0.78  — [0.96,0.94,0.78]
+  PASS B0-11 背景图矩形 ≥ 背景盒（模糊不吃到卡片边，不露边）  — 333.25×101.7 vs 333.25×101.7
+  PASS B6-1 滑块停在 6  — 6
+  PASS B6-2 数值小字 = 6px  — 6px
+  PASS B6-3 根节点 --pw-bg-blur = 6px  — 6px
+  PASS B6-4 每张卡 computed filter = blur(6px) saturate(1.1) brightness(.9)  — blur(6px) saturate(1.1) brightness(0.9)
+  PASS B6-5 外扩 inset = -9px -9px -9px -9px（-1.5 × 6）  — -9px -9px -9px -9px
+  PASS B6-6 背景尺寸 = 背景盒 + 18px  — 351.25×119.7 vs 背景盒 333.25×101.7
+  PASS B6-7 卡片与背景图 DOM 未被重建（拖动只改变量）
+  PASS B6-8 无背景层的卡片不受影响  — 0 张无背景
+  PASS B6-9 亮色遮罩 alpha = 0.93/0.88/0.62  — [0.93,0.88,0.62]
+  PASS B6-10 背景层不透明度仍是 .7（P5.69 未动）  — 0.7
+  PASS B6-11 背景图矩形 ≥ 背景盒（模糊不吃到卡片边，不露边）  — 351.25×119.7 vs 333.25×101.7
+  PASS B20-1 滑块停在 20  — 20
+  PASS B20-2 数值小字 = 20px  — 20px
+  PASS B20-3 根节点 --pw-bg-blur = 20px  — 20px
+  PASS B20-4 每张卡 computed filter = blur(20px) saturate(1.1) brightness(.9)  — blur(20px) saturate(1.1) brightness(0.9)
+  PASS B20-5 外扩 inset = -30px -30px -30px -30px（-1.5 × 20）  — -30px -30px -30px -30px
+  PASS B20-6 背景尺寸 = 背景盒 + 60px  — 393.25×161.7 vs 背景盒 333.25×101.7
+  PASS B20-7 卡片与背景图 DOM 未被重建（拖动只改变量）
+  PASS B20-8 无背景层的卡片不受影响  — 0 张无背景
+  PASS B20-9 亮色遮罩 alpha = 0.93/0.88/0.62  — [0.93,0.88,0.62]
+  PASS B20-11 背景图矩形 ≥ 背景盒（模糊不吃到卡片边，不露边）  — 393.25×161.7 vs 333.25×101.7
+  PASS B12 逐格拖 0→20 全过程中卡片 rect 完全不变（整墙不重排）  — maxDelta=0px / 20 档 / 13 张卡
+  PASS B13 网格容器尺寸不变  — {"w":1377,"h":450.81} → {"w":1377,"h":450.81}
+  PASS B14 真鼠标拖到最左 → 0px 立刻生效  — value=0 filter=blur(0px) saturate(1.1) brightness(0.9)
+
+[C] 0px（纯照片背景）可读性：靠加厚遮罩
+  PASS C light 主题生效
+  PASS C light 0px 遮罩已加厚到 0.96/0.94/0.78  — [0.96,0.94,0.78]
+  PASS C light 另一主题变量同时就绪（切换不重算）  — ["0.95","0.92","0.86"]
+  PASS C light 0px 姓名对比度 ≥ 4.5:1  — 9.31:1（喵小吉 Aeolian-2 @ 底 218,218,217）
+  PASS C light 0px 数量行对比度 ≥ 4.5:1  — 9.31:1（喵小吉 Aeolian-2 @ 底 218,218,218）
+  PASS C dark 主题生效
+  PASS C dark 0px 遮罩已加厚到 0.95/0.92/0.86  — [0.95,0.92,0.86]
+  PASS C dark 另一主题变量同时就绪（切换不重算）  — ["0.96","0.94","0.78"]
+  PASS C dark 0px 姓名对比度 ≥ 4.5:1  — 12.54:1（念念 @ 底 38,38,38）
+  PASS C dark 0px 数量行对比度 ≥ 4.5:1  — 12.37:1（小鱼 @ 底 39,39,39）
+  PASS C light 20px 姓名对比度 ≥ 4.5:1  — 7.3:1（喵小吉 Aeolian-2 @ 底 194,194,193）
+  PASS C light 20px 数量行对比度 ≥ 4.5:1  — 7.3:1（喵小吉 Aeolian-2 @ 底 194,194,193）
+
+[D] 持久化（localStorage ms.person.bgBlur）
+  PASS D1 拖到 13 → localStorage 写入 "13"  — 13
+  PASS D2 刷新后滑块位置保留（13）  — 13
+  PASS D3 刷新后数值小字 13px  — 13px
+  PASS D4 刷新后 localStorage 仍是 "13"  — 13
+  PASS D5 刷新后根节点 --pw-bg-blur = 13px  — 13px
+  PASS D6 刷新后 computed filter = blur(13px)、inset = -19.5px  — blur(13px) saturate(1.1) brightness(0.9) / -19.5px -19.5px -19.5px -19.5px
+  PASS D7 存量越界值 99 → 刷新后夹到 20  — 20
+  PASS D8 清掉键 → 回到默认 6px  — 6 / 6px
+
+[E] 键盘可调（原生 range 自带行为）
+  PASS E1 滑块可获得键盘焦点
+  PASS E2 → 方向键 +1  — 6 → 7
+  PASS E3 ← 方向键 -1（连按两次）  — 7 → 5
+  PASS E4 End 键到上限 20px 且立刻生效  — 20 / blur(20px) saturate(1.1) brightness(0.9)
+  PASS E5 Home 键到下限 0px（不模糊）  — 0 / blur(0px) saturate(1.1) brightness(0.9)
+
+[F] 窄屏：≤640 折叠为「只有滑块 + 数值」
+  PASS F375-1 标签折叠（display:none）  — none
+  PASS F375-2 只留滑块 + 数值  — slider=76px value=0px
+  PASS F375-3 搜索 / 刷新仍在
+  PASS F375-4 三者仍在同一行  — Δy=0.02
+  PASS F375-5 无横向滚动  — 360 ≤ 375+1
+  PASS F375-6 卡片不越界  — 0 张越界
+  PASS F640-1 标签折叠（display:none）  — none
+  PASS F640-2 只留滑块 + 数值  — slider=76px value=0px
+  PASS F640-3 搜索 / 刷新仍在
+  PASS F640-4 三者仍在同一行  — Δy=0.02
+  PASS F640-5 无横向滚动  — 625 ≤ 640+1
+  PASS F640-6 卡片不越界  — 0 张越界
+  PASS F700-1 宽屏标签仍显示  — block
+  PASS F700-5 无横向滚动  — 685 ≤ 700+1
+  PASS F700-6 卡片不越界  — 0 张越界
+
+[G] 无头像的卡片没有背景层，滑块不影响它
+  PASS G0-1 打桩的无头像卡片没有背景层（filter 为 null）  — initial/hasBg=false
+  PASS G0-2 无头像卡片照常渲染（高度 > 0）  — 103.7
+  PASS G0-3 有背景的卡片仍跟随滑块  — 13 张 → blur(0px) saturate(1.1) brightness(0.9)
+  PASS G20-1 打桩的无头像卡片没有背景层（filter 为 null）  — initial/hasBg=false
+  PASS G20-2 无头像卡片照常渲染（高度 > 0）  — 103.7
+  PASS G20-3 有背景的卡片仍跟随滑块  — 13 张 → blur(20px) saturate(1.1) brightness(0.9)
+
+[H] 既有交互：hover / 点卡片跳详情
+  PASS H1 hover 背景仍放大 scale(1.03)  — 1.03
+  PASS H2 hover 时 filter 仍读滑块变量（blur(6px) saturate(1.12)）  — blur(6px) saturate(1.12) brightness(1)
+  PASS H3 transform 过渡仍是 120ms（filter 已退出过渡，见交付说明）  — 0.12s
+  PASS H4 hover「换」按钮仍压在背景之上可点中  — top=true opacity=1
+  PASS H5 点卡片仍跳人物详情  — /media/person/125
+  PASS H6 搜索仍工作（输入后卡片数被过滤）  — 13 → 0
+  PASS H7 刷新按钮点得动且不影响滑块位置  — 6
+
+  PASS I 无未捕获异常 / console.error  — 干净
+=== 截图：E:\111\project\QTools\QTools-C\devtools\p572-ui\out\after
+PASS 102 / FAIL 0

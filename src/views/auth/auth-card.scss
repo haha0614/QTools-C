@@ -126,6 +126,28 @@
   color: var(--qt-text-secondary);
 }
 
+/* 「去注册 / 去登录」在弹窗里是**就地切换**：用 <button> 保持键盘可达，视觉上仍是链接文字 */
+.qt-auth-linkbtn {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--qt-primary);
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  cursor: pointer;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--qt-primary);
+    outline-offset: 2px;
+  }
+}
+
 /* 表单下方「去注册 / 去登录」切换 */
 .qt-auth-switch {
   margin: 16px 0 0;

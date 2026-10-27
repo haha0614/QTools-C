@@ -49,7 +49,23 @@ QTools-C 是 QTools 项目里**面向普通用户**的前端站点，与若依�
 
 - 媒体站不参与打包：`public/` 下的文件在构建时**原样复制**到 `dist/media/`，由后端（`8080` 单端口，`/media/` 路径）或 nginx 直接托管。
 - 三个页面都通过 `/api/media/**`（`app.js` / `photo.js` / `profile.js` / `me.js` 各自顶部的 `API` / `MEDIA` 常量）调后端媒体接口；身份靠请求头 `X-Ms-Owner`（取 `localStorage['ms.owner']`），跨端口 Cookie 不可靠。
+  P5.74 起 `profile.js` 的 `userHeaders()` 在存在 `localStorage['app.token']` 时还会带 `Authorization: Bearer …`，
+  后端据此把该请求归到账号（`u:<appUserId>`）；没有 token 时就是原来的设备态，行为不变。
 - 这三个页面同样不含任何 Vue 运行时依赖，属于「能独立打开就独立可用」的静态资产。
+
+## 媒体站功能文档（在总仓 `docs/` 下）
+
+以下五篇写的是**用户端可见**的媒体站能力，涉及前后端两侧，统一放在总仓 `docs/`：
+
+| 文档 | 与本仓相关的部分 |
+| --- | --- |
+| `docs/本地AI-模型与转写.md` | 简介「自动生成 / 音频转写重生成」按钮背后的本机模型，503 时前端如何回退模板 |
+| `docs/作品简介与内容梗概.md` | `VideoMetaPanel.vue` / `SynopsisBatchDialog.vue` 的素材来源提示、两步确认、停止与撤销 |
+| `docs/人物-资料与头像.md` | 人物墙 `personWall.js`（四级头像回退、chip）、`PersonAvatarDialog.vue`（三种 ref + 裁剪） |
+| `docs/播放列表与播放上下文.md` | `PlaylistFilter.vue` / `PlaylistManageDialog.vue` / `playbackContext.js` 的契约与来源优先级 |
+| `docs/运维脚本与故障处理.md` | 站点起停与 502 排查（本仓 build 产物由 nginx / 后端单端口托管） |
+
+改这几块前先读对应文档的「已知限制」；数字（耗时、请求数、对比度）都是实测值，改代码后请复跑文末的自检命令。
 
 ## 技术栈
 

@@ -46,15 +46,35 @@
 
   P5.67（用户需求）：「卡片背景也用头像，展示面积比头像大」—— 卡片内两层：
     · .pw-bg  同一张头像（**同一个 URL**，浏览器只下载一次）铺满卡片，object-fit: cover、
-      object-position: center 25%（偏上，尽量露出人脸）、blur(12px) saturate(1.1) brightness(.9)。
-      四周再外扩 16px（inset: -16px）——12px 的高斯模糊会从图片边缘往里渗，图若正好压着卡片边，
-      模糊后边上会透出底色；外扩后模糊只吃图片自身像素，卡片内看不到「模糊边缘发白」。
+      object-position: center 25%（偏上，尽量露出人脸）、blur(6px) saturate(1.1) brightness(.9)（P5.69 取整）。
+      四周再外扩 9px（inset: -9px，= 模糊半径 6px 的 1.5 倍）——高斯模糊会从图片边缘往里渗，图若正好
+      压着卡片边，模糊后边上会透出底色；外扩后模糊只吃图片自身像素，卡片内看不到「模糊边缘发白」。
     · .pw-mask 遮罩（亮色白 / 暗色黑，左强右弱），保证文字压在照片上仍可读。
     可读性口径：背景是照片 → 数量行 / 最近更新 / 别名在 has-bg 卡片上从 --fg-dim 提到 --fg
     （--fg-dim 压在照片上最坏只有 2.5–3.9:1，提色后实测最差 5.33:1，见 devtools/p567-ui/REPORT.md）。
     背景与头像用**同一个 URL**，浏览器把两个 img 合并成同一次请求（实测 26 个 img → 后端只收到 13 次）；
     姓名此前继承 .media-scope a 的强调蓝 #409eff（压在卡片上 2.78:1），本轮显式改回 --fg（12.6:1）。
     首字占位 / 头像失败 / 背景自身 onerror 一律不渲染背景层（保持纯色卡片，不出空背景或碎图）。
+
+  P5.69（用户反馈）：「人物卡片背景的模糊度是不是过高了，淡一点」——P5.67 的 blur(12px) 把整张脸糊成
+  一团色块，视觉上压过了卡片主体。两个方向一起收：
+    · 模糊 12px → 6px（外扩随之为模糊半径的 1.5 倍：16px → 9px），轮廓可辨，不再是色块；
+    · 整层 .pw-bg 降不透明度到 .7，背景退成「隐约的人像氛围」，不再抢主体。
+  遮罩没动（左侧 .93/.9、右侧 .62/.66 原值保留）：降不透明度本身就让亮暗两侧的底都往卡片底色
+  --bg-2 收，对文字对比度是纯加分项；而加厚遮罩会把「看得出人像」再压回去。所以可读性靠实测复核，
+  不靠遮罩补。实测三档 × 亮暗最差值见 devtools/p567-ui/out/p569/run.log（同一套像素采样口径）。
+
+  P5.72（用户需求）：「背景模糊度还是太高了，在页面中加一个滑块自己调」——工具栏右侧加一个紧凑滑块
+  （标签「背景模糊」+ range 0–20px 步长 1 + 当前值小字），与搜索 / 刷新同一行，≤640px 只留滑块与数值。
+    · **实时生效**：滑块只写根节点的 CSS 变量 --pw-bg-blur（半径）与 --pw-mask-l1..l3 / -d1..d3（遮罩），
+      .pw-bg img 的 filter 与**外扩量**都读它：inset = -1.5 × 半径、尺寸 = 100% + 3 × 半径 ——
+      任意半径下模糊只吃图片自身像素，卡片边不露底色；0px 时外扩为 0，正好等于卡片尺寸。
+    · **持久化**：localStorage 键 ms.person.bgBlur，默认 6（= P5.69 的线上值）。
+    · **0px = 纯照片背景**：模糊没了就等于把清晰的原始像素重新压回文字底下，遮罩自动**加厚一档**
+      （亮 .96/.94/.78、暗 .95/.92/.86）；半径越大越不需要补偿，6px 起回到现值 .93/.88/.62 / .9/.82/.66
+      并保持不动。阈值 MASK_RAMP = 6：0→6px 是**连续斜坡**（2px 时已退到加强档的 1/3），不是一刀切。
+    · 值域 / 联动 / 持久化的唯一实现在 personBgBlur.js（单测 personBgBlur.test.mjs），页面只挂变量与写回。
+    · 无头像的卡片本来就没有 .pw-bg 层，滑块不影响它们。
 -->
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, reactive, ref, watch } from 'vue'
@@ -69,6 +89,8 @@ import PageToast from './PageToast.vue'
 import { usePageToast } from './usePageToast.js'
 import { useMediaEditPolicy } from '@/composables/useMediaEditPolicy'
 import { clearPersonAvatar, errorText, setPersonAvatar } from './video/personApi'
+// P5.72：背景模糊度滑块 —— 值域 / 遮罩联动 / 持久化的唯一实现（单测 personBgBlur.test.mjs）
+import { blurCssVars, clampBlur, readStoredBlur, saveStoredBlur } from './personBgBlur.js'
 
 const api = useMediaApi()
 const tk = useMediaTrack()
@@ -235,6 +257,27 @@ function bgSrcOf(card) {
 
 function markBgFailed(card) {
   if (card && card.key) bgFailed[String(card.key)] = true
+}
+
+/* --------------------------------------------- P5.72 卡片背景模糊度（用户可调） */
+
+/**
+ * 用户口径：「背景模糊度还是太高了，加一个滑块自己调」。
+ * 规则（值域 0–20 步长 1 / 0px 遮罩加厚 / 键 ms.person.bgBlur / 默认 6）全在 personBgBlur.js，
+ * 页面这里只做两件事：把 blurCssVars(n) 挂到根节点 style、拖动时写回 localStorage。
+ *
+ * 性能：input 只改 bgBlur **一个** ref ——
+ *   · cards(v-for 的数据源) 是独立 computed，不依赖 bgBlur，列表不重算；
+ *   · 下发到 DOM 的只有根节点上的 7 个 CSS 自定义属性 + 数值小字，卡片尺寸不参与计算 → 整墙不重排；
+ *   · Vue 的 patch 本来就在 microtask 里合并（一次 input 一次 patch），浏览器自身也按帧合并
+ *     pointermove，所以不必再叠一层 rAF（叠了反而在后台标签页里被 rAF 节流成「拖了不动」）。
+ */
+const bgBlur = ref(readStoredBlur())
+const bgBlurVars = computed(() => blurCssVars(bgBlur.value))
+
+/** 拖动 / 键盘方向键：夹取到 0–20 的整数并落盘（存储不可用时静默，本次会话照常生效） */
+function onBgBlurInput(event) {
+  bgBlur.value = saveStoredBlur(clampBlur(event && event.target ? event.target.value : bgBlur.value, bgBlur.value))
 }
 
 function openCard(card) {
@@ -433,7 +476,8 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="media-scope person-page" :data-state="uiState">
+  <!-- P5.72：--pw-bg-blur + 6 个遮罩 alpha 挂在根节点上，全页 .pw-bg / .pw-mask 继承（只挂变量，不碰布局） -->
+  <div class="media-scope person-page" :data-state="uiState" :style="bgBlurVars" :data-bg-blur="bgBlur">
     <header class="pp-head">
       <div class="pp-head-left">
         <h1 class="pp-title">人物</h1>
@@ -442,6 +486,23 @@ onBeforeUnmount(() => {
       <div class="pp-head-right">
         <input v-model="keyword" class="pp-search" type="search" placeholder="搜索人物名…" autocomplete="off" />
         <button class="pp-btn" type="button" :disabled="loading" @click="load">刷新</button>
+        <!-- P5.72：背景模糊度 —— 0–20px 步长 1，拖动实时生效（只改 CSS 变量），值写 localStorage -->
+        <div class="pp-blur" data-role="bg-blur-field">
+          <label class="pp-blur-label" for="pp-bg-blur">背景模糊</label>
+          <input
+            id="pp-bg-blur"
+            class="pp-blur-range"
+            type="range"
+            min="0"
+            max="20"
+            step="1"
+            :value="bgBlur"
+            aria-label="背景模糊度"
+            data-role="bg-blur"
+            @input="onBgBlurInput"
+          />
+          <span class="pp-blur-val" data-role="bg-blur-value">{{ bgBlur }}px</span>
+        </div>
       </div>
     </header>
 
@@ -612,6 +673,50 @@ onBeforeUnmount(() => {
   cursor: default;
 }
 
+/* ------------------------------------------------ P5.72 背景模糊度滑块（工具栏右侧） */
+/* 紧凑一行三件套：标签 + 滑块 + 数值。flex: 0 1 auto 让它随行宽收缩，不把搜索框挤出容器。 */
+.pp-blur {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.pp-blur-label {
+  font-size: 12.5px;
+  color: var(--fg-dim);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* 原生 range：只定尺寸与强调色，轨道 / 滑块交给浏览器（键盘 ←→ / Home / End 自带行为） */
+.pp-blur-range {
+  width: 88px;
+  min-width: 0;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--accent);
+  background: transparent;
+  cursor: pointer;
+}
+
+.pp-blur-range:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 999px;
+}
+
+/* 数值小字（如 6px）：定宽防止「0px ↔ 20px」抖动把后面的元素推来推去 */
+.pp-blur-val {
+  min-width: 28px;
+  text-align: right;
+  font-size: 11.5px;
+  color: var(--fg-dim);
+  font-variant-numeric: tabular-nums;
+}
+
 .pp-state {
   margin: 32px 0;
   padding: 18px;
@@ -681,7 +786,7 @@ onBeforeUnmount(() => {
 
 /* ------------------------------------------------ P5.67 卡片背景层（头像铺满） */
 
-/* 底层：整卡铺满的模糊人像。inset 负值外扩 16px —— 见文件头 P5.67 注释（避免模糊边缘透底） */
+/* 底层：整卡铺满的模糊人像。inset 负值外扩 9px —— 见文件头 P5.69 注释（避免模糊边缘透底） */
 .pw-bg {
   position: absolute;
   inset: 0;
@@ -689,18 +794,29 @@ onBeforeUnmount(() => {
   overflow: hidden;
   border-radius: inherit;
   pointer-events: none;
+  /* P5.69：整层降不透明度 —— 背景从「主体」退成「隐约的人像氛围」。
+     0.7 与上面 blur(6px) 叠加后：轮廓还能辨认（人像不再是色块），但整片亮度/对比都往卡片底色
+     --bg-2 收，压在照片上的文字反而更干净（亮色往近白收、暗色往近黑收，两侧都是对比度加分）。 */
+  opacity: 0.7;
 }
 
 .pw-bg img {
   position: absolute;
-  inset: -16px;
-  width: calc(100% + 32px);
-  height: calc(100% + 32px);
+  /* P5.72：**外扩量随模糊半径联动** = 半径 × 1.5（默认 6px → 9px，与 P5.69 的实测值完全一致；
+     拖到 0px 时外扩 = 0，图片正好等于卡片尺寸）。高斯模糊会从图片自身边缘往里渗，
+     图若压着卡片边，模糊后边上会透出卡片底色（「一圈发白的模糊边」）；外扩后模糊只吃图片
+     自身的像素，任意半径下卡片内都不露边。宽度同步 100% + 3 × 半径，cover 的裁切比例不变。 */
+  inset: calc(var(--pw-bg-blur, 6px) * -1.5);
+  width: calc(100% + var(--pw-bg-blur, 6px) * 3);
+  height: calc(100% + var(--pw-bg-blur, 6px) * 3);
   /* center 25%：人像竖图里脸通常在偏上 1/4，cover 按这个锚点裁，尽量露出人脸 */
   object-fit: cover;
   object-position: center 25%;
-  filter: blur(12px) saturate(1.1) brightness(0.9);
-  transition: transform 0.12s ease, filter 0.12s ease;
+  /* P5.69 的 6px 现在是**默认值**（滑块初值）；实际半径来自根节点 --pw-bg-blur（P5.72） */
+  filter: blur(var(--pw-bg-blur, 6px)) saturate(1.1) brightness(0.9);
+  /* P5.72：filter 退出 0.12s 过渡 —— 拖滑块必须**立刻**看到半径变化，
+     带过渡时每一档都要 120ms 才到位（且途中读到的 computed filter 是插值）。transform 仍过渡。 */
+  transition: transform 0.12s ease;
 }
 
 /* hover：背景轻轻放大 + 提亮（120ms）。缩放锚在中心，卡片边框由 .pw-card 的 overflow 裁住；
@@ -708,7 +824,8 @@ onBeforeUnmount(() => {
 .pw-card:hover .pw-bg img,
 .pw-card:focus-visible .pw-bg img {
   transform: scale(1.03);
-  filter: blur(12px) saturate(1.12) brightness(1);
+  /* P5.72：半径照样读滑块变量，只把 saturate / brightness 提一档 */
+  filter: blur(var(--pw-bg-blur, 6px)) saturate(1.12) brightness(1);
 }
 
 /* 遮罩：左强右弱 —— 左侧是头像 + 名字（要最清楚），右侧只留人像氛围。
@@ -722,20 +839,22 @@ onBeforeUnmount(() => {
   z-index: 1;
   pointer-events: none;
   border-radius: inherit;
+  /* P5.72：三个停靠点的 alpha 改由根节点变量给 —— 0px（纯照片）时自动加厚到 .96/.94/.78，
+     6px 起回到 P5.69 的 .93/.88/.62。只换 alpha、不动渐变几何，所以拖动时遮罩不会左右跳。 */
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.93) 0%,
-    rgba(255, 255, 255, 0.88) 50%,
-    rgba(255, 255, 255, 0.62) 100%
+    rgba(255, 255, 255, var(--pw-mask-l1, 0.93)) 0%,
+    rgba(255, 255, 255, var(--pw-mask-l2, 0.88)) 50%,
+    rgba(255, 255, 255, var(--pw-mask-l3, 0.62)) 100%
   );
 }
 
 html.dark .pw-mask {
   background: linear-gradient(
     90deg,
-    rgba(18, 18, 18, 0.9) 0%,
-    rgba(18, 18, 18, 0.82) 46%,
-    rgba(18, 18, 18, 0.66) 100%
+    rgba(18, 18, 18, var(--pw-mask-d1, 0.9)) 0%,
+    rgba(18, 18, 18, var(--pw-mask-d2, 0.82)) 46%,
+    rgba(18, 18, 18, var(--pw-mask-d3, 0.66)) 100%
   );
 }
 
@@ -971,6 +1090,18 @@ html.dark .pw-mask {
 
   .pw-counts {
     font-size: 11px;
+  }
+}
+
+/* P5.72：≤640px「折叠」—— 标签收起，只留滑块与数值，仍与搜索 / 刷新同一行。
+   不给滑块设 min-width：窄屏下它随行宽收缩（flex 0 1 auto），宁可变短也不让页面横向滚动。 */
+@media (max-width: 640px) {
+  .pp-blur-label {
+    display: none;
+  }
+
+  .pp-blur-range {
+    width: 76px;
   }
 }
 

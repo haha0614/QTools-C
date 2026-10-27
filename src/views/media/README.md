@@ -47,6 +47,9 @@ onMounted(async () => {
    `POST {API}/toolVisit/add`，body `{ toolId: 4 }`（媒体站在 tool_info 里的 id）。
 3. **ownerKey**：`localStorage['ms.owner']` → 同名 cookie → `''`。数据接口另外用 `X-Ms-Owner` 请求头识别身份，
    响应体下发的 `ownerKey` 要回写 localStorage（`useMediaApi` 已自动做）。
+   **P5.74**：`useMediaApi` 的 `mediaHeaders()` 在已登录（`localStorage['app.token']` 有值）时还会带
+   `Authorization: Bearer <token>`，后端据此把数据归到账号（`u:<appUserId>`）；设备键照旧每次都发，
+   登出即回到设备态。登录成功后 `AuthLoginForm` 会自动调 `POST /api/media/user/sync` 做一次幂等合并。
 4. **page_view 去重**：同一 `pageKey` 在本次文档会话内只报一次（手写页是整页加载一次）；`targetKey` 取页面路径。
 5. **play 按播放器会话去重**：`openPlaySession` 开会话，`trackPlayStart` 只报本会话第一次 `play`；
    换源 / 切清晰度不经过会话，不会重复计数。
