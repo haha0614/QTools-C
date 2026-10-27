@@ -135,6 +135,24 @@
       （= color-mix(--fg 78%, --fg-dim)），亮暗实测均 ≥10:1；.pw-recent 的 opacity .85 也一并去掉
       （半透明字会把对比度按透明度打折）。
     实测见 devtools/p583-ui/REPORT.md（13 张卡 × 三档视口 × 亮暗的对比度表 + 零重叠断言）。
+
+  P5.84（用户需求）：「人物卡片背景恢复为**整卡背景图 + 左糊右清渐变**」——
+  用户原话：「你老纠结文字可读性干什么，先按照我的意思做不行吗，如果看不清我自然会让你优化的」。
+  对比度在本页**不再是设计约束**：只作为 INFO 记录（实测数值见 devtools/p584-ui/REPORT.md），
+  不作验收门槛、不据此改设计。
+    · 形态回到「整卡背景图 + 文字压在上面」：.pw-bg 是 inset: 0 的铺满层，里面**同一张原图两层**：
+      底层清晰原图（.pw-bg-sharp）；上层同一张原图 blur(var(--pw-bg-blur)) saturate(1.1) brightness(.9)
+      + mask-image: linear-gradient(to right, #000 0%, #000 45%, transparent var(--pw-blur-fade-end, 70%))
+      （.pw-bg-blur）—— 左端糊、45% 起往右淡出模糊层，70% 之后只剩底层清晰图。
+      两层同 src、同 transform（同一组 CSS 变量），rect 逐像素一致 —— 本版唯一的硬断言。
+    · 几何沿用 personBgImage.layoutCrop（基准 = .pw-bg 的 padding-box）：imgW = bgW × 0.44 / cropW
+      （**不为了盖满而放大**）、imgH = imgW × natH / natW、tx = bgW × 0.76 − imgW × cx、
+      ty = bgH × 0.5 − imgH × cy。图片盖不满卡片的区域用**拾色底**（personTone 采样，P5.77 链路恢复）填充。
+    · 文字：正常渲染在图片之上（avatar-wrap / body 都是 z-index: 2），颜色用默认主题色
+      （--fg / --fg-dim），**不加 text-shadow、不加任何 scrim / 渐变层 / 垫底、不做自适应字色**。
+    · 滑块 0–20（键 ms.person.bgBlur）不变，只改 --pw-bg-blur；渐变终点用 --pw-blur-fade-end（默认 70%）。
+    · 作废（P5.83 的分区形态）：.pw-main 文字区、面板 flex: 0 0 40%、border-left 边界线、panelMagnify()、
+      「文字 .right < 面板 .left」零重叠断言、P5.83 的 --pw-fg-2 提色。
 -->
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, reactive, ref, watch } from 'vue'
@@ -151,9 +169,10 @@ import { useMediaEditPolicy } from '@/composables/useMediaEditPolicy'
 import { clearPersonAvatar, errorText, setPersonAvatar } from './video/personApi'
 // P5.72：背景模糊度滑块 —— 值域 / 遮罩联动 / 持久化的唯一实现（单测 personBgBlur.test.mjs）
 import { blurCssVars, clampBlur, readStoredBlur, saveStoredBlur } from './personBgBlur.js'
-// P5.78/P5.83：右侧图片面板 = 整张原图，裁剪块中心落在面板 76%/50% —— 纯几何（单测 personBgImage.test.mjs）
-// （P5.83：personTone.js 的拾色 / 自适应字色在本页已无调用方，文件保留不动，只解除本页引用）
+// P5.84：整卡原图（清晰层 + 模糊层）—— 裁剪块中心落在整卡 76% / 50%，倍率固定 0.44（单测 personBgImage.test.mjs）
 import { layoutCrop, originalSrc, parseCrop } from './personBgImage.js'
+// P5.84：图片盖不满卡片的区域 = 从同一张图拾到的颜色（采样 / 缓存 / 落地色的唯一实现在 personTone.js）
+import { parseColor, readToneCache, rgbCss, sampleTone, toneCacheKey, toneFill, writeToneCache } from './personTone.js'
 
 const api = useMediaApi()
 const tk = useMediaTrack()
@@ -294,6 +313,10 @@ function avatarSrcOf(card) {
 onUpdated(() => observeFrameCards())
 watch(cards, () => {
   nextTick(observeFrameCards)
+  // P5.84：数据晚到 / 搜索过滤后，新出现的卡片也要排队拾色（已采过的命中 toneRaw，不重复）
+  nextTick(() => queueTones(cards.value))
+  // P5.84：详情晚到会让头像换一张 crop（背景 src 不变 → @load 不再触发），几何必须重算
+  nextTick(refreshBgGeom)
 })
 
 function markAvatarFailed(card) {
@@ -322,72 +345,69 @@ function bgSrcOf(card) {
   return originalSrc(avatarSrcOf(card))
 }
 
-/* --------------------------- P5.83 图片面板几何：让「裁成头像的那块」落在面板 76% / 50% */
+/* --------------------------------- P5.84 整卡背景几何：裁剪块中心落在整卡 76% / 50% */
 
 /**
- * 容器从「整张卡片」换成「右侧图片面板」—— 几何算法（personBgImage.layoutCrop）一字未改，
- * 只是喂给它的 bgW/bgH 变成面板尺寸，于是 TARGET_X = 0.76 / TARGET_Y = 0.5 自动变成
- * 「面板宽 76% / 面板高 50%」。
- * 用 clientWidth/clientHeight 而不是 rect 宽高：图片是面板的绝对定位子元素，left/top: 0 的原点
- * 是面板的**padding-box**，而面板有 1px 左边框 —— 用 rect 会白差这 1px（实测目标 ±1px）。
+ * 容器回到**整张卡片**（.pw-bg 是 inset: 0 的铺满层）—— 几何算法 personBgImage.layoutCrop 一字未改：
+ *   imgW = bgW × 0.44 / cropW（只按裁剪块宽度定倍，**不为了盖满而放大**）
+ *   imgH = imgW × natH / natW
+ *   tx   = bgW × 0.76 − imgW × cx        ty = bgH × 0.5 − imgH × cy
+ * 图片盖不满卡片的区域由拾色底（personTone）填充，不做任何放大去覆盖。
+ * 用 clientWidth/clientHeight 而不是 rect 宽高：两层图都是 .pw-bg 的绝对定位子元素，left/top: 0 的原点
+ * 是 .pw-bg 的 **padding-box**（.pw-bg 自身没有边框，两者数值相同，口径按 padding-box 写死）。
  */
 const bgGeom = reactive({})
 const bgGeomMemo = new Map()
 let wallResizeObserver = null
 
-/** 缓存键 = 原图 src + 面板 padding-box 尺寸（面板宽高变了才重算） */
-function bgGeomKey(img) {
-  const panel = img && img.parentElement
-  if (!panel) return ''
-  return (img.currentSrc || img.src || '') + '#' + Math.round(panel.clientWidth) + 'x' + Math.round(panel.clientHeight)
+/** 卡片当前的 crop 参数（ref 优先，退化到头像 URL）；没有就是整图 */
+function bgCropOf(card) {
+  return parseCrop(card && card.avatar && card.avatar.ref) || parseCrop(card && card.avatar && card.avatar.url)
 }
-
-/** 裁剪块中心在面板内的目标位（与 personBgImage.TARGET_X / TARGET_Y 一致） */
-const PANEL_FX = 0.76
-const PANEL_FY = 0.5
 
 /**
- * 面板内「铺满且不留空条」的倍率（等价 object-fit: cover，但不引入第二套几何）：
- * layoutCrop 的 tx/ty 是按「裁剪块中心钉在 76% / 50%」反算的，与倍率**无关** ——
- * 所以只要倍率够大、让图片盖满面板，裁剪块中心就仍然落在 76% / 50%（实测 Δ = 0px），
- * 面板也不会在左/右留下空条（只抬倍率、不动锚点）。
- * 盖满所需的两个约束，取较大者：
- *   · 横向：图片左端到裁剪中心的距离 ≥ 76% 面板宽、右端 ≥ 24% 面板宽；
- *   · 纵向：同理，裁剪中心上下各占 50%。
- * 下限仍是 P5.82 的 0.44（裁剪块至少占面板 44% 宽），上限 4 倍防止退化的 crop 把图放到糊。
+ * 缓存键 = 原图 src + **crop** + .pw-bg 的 padding-box 尺寸。
+ * crop 必须进键：背景 src 是 originalSrc(头像 URL)（去掉了 crop 参数），换头像时若只有 crop 变，
+ * src 不变 —— 只用 src 当键会命中旧几何（实测踩过：详情晚到后头像换了一张 crop，
+ * 图片按旧 crop 定位，裁剪中心偏出 76%）。详见 devtools/p584-ui/REPORT.md 的 C3 一节。
  */
-function panelMagnify(natW, natH, panelW, panelH, crop) {
-  const c = crop && crop.w > 0 ? crop : { x: 0, y: 0, w: 1, h: 1 }
-  const cx = Math.min(1, Math.max(0, c.x + c.w / 2))
-  const cy = Math.min(1, Math.max(0, c.y + c.h / 2))
-  const spanX = Math.max(PANEL_FX / Math.max(cx, 0.05), (1 - PANEL_FX) / Math.max(1 - cx, 0.05))
-  const spanY = Math.max(PANEL_FY / Math.max(cy, 0.05), (1 - PANEL_FY) / Math.max(1 - cy, 0.05))
-  const need = Math.max(spanX, (spanY * panelH * natW) / (panelW * natH))
-  return Math.min(4, Math.max(0.44, c.w * need))
+function bgGeomKey(img, crop) {
+  const bg = img && img.parentElement
+  if (!bg) return ''
+  const ck = crop ? [crop.x, crop.y, crop.w, crop.h].join(':') : 'full'
+  return (img.currentSrc || img.src || '') + '|' + ck + '#' + Math.round(bg.clientWidth) + 'x' + Math.round(bg.clientHeight)
 }
 
-/** 图片 load 后算一次：倍率取「盖满面板」→ 把裁剪中心挪到面板 76% / 50% */
+/**
+ * 清晰层 @load 后算一次：两层同 src、同 transform（同一组 CSS 变量），算一次两层同时到位。
+ * 详情晚到（头像从相册封面升级成显式头像 → crop 变了）时 src 不变、@load 不会再触发，
+ * 所以 watch(cards) 里还会调一次 refreshBgGeom()。
+ */
 function computeBgGeom(card, img) {
   if (!card || !img || !img.naturalWidth || !img.naturalHeight) return
-  const panel = img.parentElement
-  if (!panel) return
-  const key = bgGeomKey(img)
+  const bg = img.parentElement
+  if (!bg) return
+  const crop = bgCropOf(card)
+  const key = bgGeomKey(img, crop)
   if (!key) return
   let out = bgGeomMemo.get(key)
   if (!out) {
-    const crop = parseCrop(card.avatar && card.avatar.ref) || parseCrop(card.avatar && card.avatar.url)
-    out = layoutCrop({
-      natW: img.naturalWidth,
-      natH: img.naturalHeight,
-      bgW: panel.clientWidth,
-      bgH: panel.clientHeight,
-      crop,
-      magnify: panelMagnify(img.naturalWidth, img.naturalHeight, panel.clientWidth, panel.clientHeight, crop)
-    })
+    out = layoutCrop({ natW: img.naturalWidth, natH: img.naturalHeight, bgW: bg.clientWidth, bgH: bg.clientHeight, crop })
     if (!out) return
     bgGeomMemo.set(key, out)
   }
   bgGeom[String(card.key)] = out
+}
+
+/** 重扫整墙：尺寸变了（ResizeObserver）或卡片数据变了（crop / URL）都走这里 */
+function refreshBgGeom() {
+  if (!wallRef.value) return
+  wallRef.value.querySelectorAll('.pw-card.has-bg').forEach((node) => {
+    const key = node.getAttribute('data-card-key')
+    const card = cards.value.find((c) => String(c.key) === String(key))
+    const img = node.querySelector('.pw-bg-sharp')
+    if (card && img) computeBgGeom(card, img)
+  })
 }
 
 /** 只给实测脚本看：'imgW,imgH,tx,ty,cropX,cropY'（面板内坐标系，px） */
@@ -406,28 +426,142 @@ function markBgFailed(card) {
   if (card && card.key) bgFailed[String(card.key)] = true
 }
 
-/** P5.83：卡片 / 图片面板尺寸变了都要重算面板几何（用户明确要求 ResizeObserver） */
+/* ------------------------------- P5.84 卡片底色 = 从同一张图拾到的颜色（P5.77 链路恢复） */
+
+/**
+ * 图片按 0.44 倍宽铺在卡片上，**盖不满整卡**（用户口径：不够就用拾色填充，不放大）。
+ * 这里从同一张头像原图采样出印象色，落到卡片 background-color：露出来的那条边不是纯灰白，
+ * 而是这张图自己的色调，能和图片边缘接上。
+ *
+ * 采样规则（8×8 网格均值 / 缓存键 / 落地色）全在 personTone.js，单测 personTone.test.mjs。
+ * 页面只负责：什么时候采（空闲、限并发 2）、采完挂到卡片的 --pw-tone、主题切换时重算落地色。
+ * 采样不在首帧的关键路径上：requestIdleCallback（没有就 setTimeout 0）逐张算。
+ * 缓存键是 **toneCacheKey(card)**（头像来源 kind:ref，不是卡片 id）—— 详情请求晚到会把头像
+ * 从「相册封面」升级成「显式头像 / 视频帧」，URL 一变键就变，不会拿旧图的颜色刷新卡。
+ */
+const toneRaw = reactive({})
+/** 同一个键 → 落地色 'rgb(…)'（按当前主题算好的拾色，不参与任何对比度约束） */
+const toneFillCss = reactive({})
+/** 采样队列与在飞计数（并发 2：别和缩略图抢主线程） */
+const toneQueue = []
+const tonePending = new Set()
+let toneInFlight = 0
+let toneDisposed = false
+let themeObserver = null
+
+const toneCache = readToneCache(typeof localStorage === 'undefined' ? null : localStorage)
+
+/** 读当前主题的卡片底色（--bg-2）：放一个探针元素让浏览器自己解析变量，页面不硬编码色值 */
+let toneBgProbe = null
+function themeBgRgb() {
+  if (!toneBgProbe) {
+    toneBgProbe = document.createElement('div')
+    toneBgProbe.setAttribute('data-role', 'tone-bg-probe')
+    toneBgProbe.style.cssText = 'position:absolute;left:-9999px;top:0;width:1px;height:1px;background:var(--bg-2)'
+    // --bg-2 是 .media-scope 的局部变量：探针必须挂进页面，挂 body 上读到的是空值
+    const host = document.querySelector('.person-page') || document.body
+    host.appendChild(toneBgProbe)
+  }
+  return parseColor(getComputedStyle(toneBgProbe).backgroundColor) || [255, 255, 255]
+}
+
+function currentTheme() {
+  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+}
+
+/** 用原始采样色重算落地色（主题切换后重跑一遍） */
+function applyTone(cacheKey) {
+  const raw = toneRaw[cacheKey]
+  if (!raw) return
+  toneFillCss[cacheKey] = toneFill(raw, themeBgRgb(), currentTheme()) || ''
+}
+
+function applyAllTones() {
+  for (const k of Object.keys(toneRaw)) applyTone(k)
+}
+
+function toneStyleOf(card) {
+  const key = card ? toneCacheKey(card) : ''
+  const css = key && toneFillCss[key]
+  if (!css) return null
+  const raw = toneRaw[key]
+  // --pw-tone = 落地色（卡片 background-color）；--pw-tone-raw = 原始采样色（只给实测脚本对照）
+  return raw ? { '--pw-tone': css, '--pw-tone-raw': rgbCss(raw) } : { '--pw-tone': css }
+}
+
+/** 落地色（'rgb(…)'）：卡片 background-color 用它；空串 = 还没采到 / 采样失败 → 退回 --bg-2 */
+function toneOf(card) {
+  return (card && toneFillCss[toneCacheKey(card)]) || ''
+}
+
+const idle = (fn) =>
+  typeof requestIdleCallback === 'function' ? requestIdleCallback(fn, { timeout: 500 }) : setTimeout(fn, 0)
+
+function pumpTones() {
+  if (toneDisposed) return
+  while (toneInFlight < 2 && toneQueue.length) {
+    const job = toneQueue.shift()
+    toneInFlight++
+    sampleTone(job.url).then((tone) => {
+      toneInFlight--
+      tonePending.delete(job.cacheKey)
+      if (tone) {
+        toneRaw[job.cacheKey] = tone
+        toneCache[job.cacheKey] = tone
+        applyTone(job.cacheKey)
+        writeToneCache(toneCache, typeof localStorage === 'undefined' ? null : localStorage)
+      }
+      if (toneQueue.length) idle(pumpTones)
+    })
+  }
+}
+
+/** 给「有背景层、还没采样过」的卡片排队（同一张图只排一次；命中缓存直接落地） */
+function queueTones(list) {
+  if (toneDisposed) return
+  let queued = false
+  for (const c of list || []) {
+    if (!c || !c.key) continue
+    const cacheKey = toneCacheKey(c)
+    if (!cacheKey || toneRaw[cacheKey] || tonePending.has(cacheKey)) continue
+    const url = bgSrcOf(c)
+    if (!url) continue
+    if (toneCache[cacheKey]) {
+      toneRaw[cacheKey] = toneCache[cacheKey]
+      applyTone(cacheKey)
+      continue
+    }
+    tonePending.add(cacheKey)
+    toneQueue.push({ url, cacheKey })
+    queued = true
+  }
+  if (queued) idle(pumpTones)
+}
+
+/** P5.84：卡片尺寸变了要重算背景几何（两层共用同一组 CSS 变量，只算一次） */
 function ensureWallObserver() {
   if (typeof ResizeObserver !== 'function' || !wallRef.value || wallResizeObserver) return
-  wallResizeObserver = new ResizeObserver(() => {
-    if (!wallRef.value) return
-    wallRef.value.querySelectorAll('.pw-card.has-bg').forEach((node) => {
-      const key = node.getAttribute('data-card-key')
-      const card = cards.value.find((c) => String(c.key) === String(key))
-      const img = node.querySelector('.pw-bg-img')
-      if (card && img) computeBgGeom(card, img)
-    })
-  })
+  wallResizeObserver = new ResizeObserver(() => refreshBgGeom())
   wallResizeObserver.observe(wallRef.value)
 }
 
 onMounted(() => {
   ensureWallObserver()
+  queueTones(cards.value)
+  if (typeof MutationObserver === 'function') {
+    themeObserver = new MutationObserver(applyAllTones)
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] })
+  }
 })
 
 onBeforeUnmount(() => {
+  toneDisposed = true
   if (wallResizeObserver) wallResizeObserver.disconnect()
   wallResizeObserver = null
+  if (themeObserver) themeObserver.disconnect()
+  themeObserver = null
+  if (toneBgProbe && toneBgProbe.parentNode) toneBgProbe.parentNode.removeChild(toneBgProbe)
+  toneBgProbe = null
 })
 
 /* --------------------------------------------- P5.72 卡片背景模糊度（用户可调） */
@@ -690,15 +824,15 @@ onBeforeUnmount(() => {
     </p>
 
     <div v-else class="pp-wall" ref="wallRef">
-      <!-- data-avatar = 头像来源（profile / album / video / initial），真浏览器实测据此断言命中率 -->
       <a
         v-for="c in cards"
         :key="c.key"
         class="pw-card"
-        :class="{ 'has-bg': !!bgSrcOf(c) }"
-        :style="bgGeomStyleOf(c)"
+        :class="{ 'has-bg': !!bgSrcOf(c), 'has-tone': !!toneOf(c) }"
+        :style="[toneStyleOf(c), bgGeomStyleOf(c)]"
         :data-bg-geom="bgGeomOf(c)"
         :data-bg="bgSrcOf(c) ? '1' : '0'"
+        :data-tone="toneOf(c)"
         :href="'#/media/person/' + encodeURIComponent(c.id !== '' && c.id != null ? c.id : c.name)"
         :data-person-id="c.id"
         :data-avatar="c.avatar.kind"
@@ -706,58 +840,66 @@ onBeforeUnmount(() => {
         :data-frame-inview="c.avatar.kind === 'frame' ? (frameInView[String(c.key)] ? '1' : '0') : ''"
         @click.prevent="openCard(c)"
       >
-        <!-- P5.83：左文右图**分区**（不是叠加）—— 文字区 .pw-main 与右侧图片面板 .pw-bg 是兄弟节点，
-             文字永远不在图片之上，对比度由纯卡片底色天然保证；遮罩 / 自适应字色 / 垫底全部作废。 -->
-        <span class="pw-main" data-role="pw-main">
-            <span class="pw-avatar-wrap">
-              <span class="pw-avatar">
-                <img
-                  v-if="avatarSrcOf(c) && !avatarFailed[c.key]"
-                  :src="avatarSrcOf(c)"
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  @error="markAvatarFailed(c)"
-                />
-                <template v-else>{{ c.initial }}</template>
-              </span>
-              <!-- P5.48：hover 头像才出现的小「换」按钮；off / local 档整块不渲染 -->
-              <button
-                v-if="canChangeAvatar(c)"
-                class="pw-change"
-                type="button"
-                title="换头像"
-                data-role="avatar-change"
-                @click.stop.prevent="openAvatarDialog(c)"
-              >
-                换
-              </button>
-            </span>
-            <span class="pw-body">
-              <span class="pw-name" :title="c.alias ? c.name + '（' + c.alias + '）' : c.name">
-                {{ c.name }}<i v-if="c.alias" class="pw-alias">（{{ c.alias }}）</i>
-              </span>
-              <span v-if="c.counts" class="pw-counts">{{ c.counts }}</span>
-              <span v-if="c.chips.length" class="pw-chips">
-                <span v-for="chip in c.chips" :key="chip" class="pw-chip" :title="chip">{{ chip }}</span>
-              </span>
-              <span v-if="c.recent" class="pw-recent">{{ c.recent }}</span>
-            </span>
-          </span>
-          <!-- P5.83 右侧竖向图片面板：原图（去 crop 参数）+ 单层 filter，自己是一个 flex 列，
-               宽度 40% 卡宽、高度撑满卡片内高、右缘贴卡片右缘（唯一的一层图，模糊/清晰共用）。 -->
-          <span v-if="bgSrcOf(c)" class="pw-bg" data-role="bg-panel" aria-hidden="true">
+        <!-- P5.84：整卡背景层 = **同一张原图两层**。底层清晰（.pw-bg-sharp）；上层同一张原图
+             加 blur + 横向 mask 渐隐（.pw-bg-blur）—— 左端糊、45% 起往右淡出、70% 之后只剩清晰图。
+             两层同 src / 同 transform，rect 逐像素一致。 -->
+        <span v-if="bgSrcOf(c)" class="pw-bg" data-role="pw-bg" aria-hidden="true">
+          <img
+            class="pw-bg-img pw-bg-sharp"
+            data-role="pw-bg-sharp"
+            :src="bgSrcOf(c)"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            @load="computeBgGeom(c, $event.target)"
+            @error="markBgFailed(c)"
+          />
+          <img
+            class="pw-bg-img pw-bg-blur"
+            data-role="pw-bg-blur"
+            :src="bgSrcOf(c)"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            @error="markBgFailed(c)"
+          />
+        </span>
+        <!-- 文字直接压在图片上（z-index: 2），默认主题色，没有遮罩 / 垫底 / text-shadow -->
+        <span class="pw-avatar-wrap">
+          <span class="pw-avatar">
             <img
-              class="pw-bg-img"
-              :src="bgSrcOf(c)"
+              v-if="avatarSrcOf(c) && !avatarFailed[c.key]"
+              :src="avatarSrcOf(c)"
               alt=""
               loading="lazy"
               decoding="async"
-              @load="computeBgGeom(c, $event.target)"
-              @error="markBgFailed(c)"
+              @error="markAvatarFailed(c)"
             />
+            <template v-else>{{ c.initial }}</template>
           </span>
-        </a>
+          <!-- P5.48：hover 头像才出现的小「换」按钮；off / local 档整块不渲染 -->
+          <button
+            v-if="canChangeAvatar(c)"
+            class="pw-change"
+            type="button"
+            title="换头像"
+            data-role="avatar-change"
+            @click.stop.prevent="openAvatarDialog(c)"
+          >
+            换
+          </button>
+        </span>
+        <span class="pw-body">
+          <span class="pw-name" :title="c.alias ? c.name + '（' + c.alias + '）' : c.name">
+            {{ c.name }}<i v-if="c.alias" class="pw-alias">（{{ c.alias }}）</i>
+          </span>
+          <span v-if="c.counts" class="pw-counts">{{ c.counts }}</span>
+          <span v-if="c.chips.length" class="pw-chips">
+            <span v-for="chip in c.chips" :key="chip" class="pw-chip" :title="chip">{{ chip }}</span>
+          </span>
+          <span v-if="c.recent" class="pw-recent">{{ c.recent }}</span>
+        </span>
+      </a>
     </div>
 
     <!-- P5.48 换头像弹层（整页一个实例，不放进 v-for：卡片 hover 的 transform 会让 fixed 定位漂移） -->
@@ -934,20 +1076,19 @@ onBeforeUnmount(() => {
 }
 
 .pw-card {
-  /* P5.83：卡片是「左文右图」的横向 flex 容器；文字区 .pw-main 与图片面板 .pw-bg 是**兄弟节点**，
-     所以文字不可能压到图片上 —— 可读性靠这条结构，不靠遮罩。overflow: hidden 负责圆角裁切。 */
-  /* 次级文字（数量 / chip / 最近 / 别名）：从 --fg 向 --fg-dim 只让 22%，实测亮暗都远高于 7:1 */
-  --pw-fg-2: color-mix(in srgb, var(--fg) 78%, var(--fg-dim));
+  /* P5.84：文字重新压在图片上 —— 卡片是定位容器，.pw-bg（z-index: 0）铺满整卡，
+     文字（.pw-avatar-wrap / .pw-body，都是 z-index: 2）在它上面。
+     **没有遮罩 / 垫底 / 自适应字色 / text-shadow**：用户明确要求文字直接压在图片上。 */
   position: relative;
   overflow: hidden;
   isolation: isolate;
   display: flex;
-  align-items: stretch;
+  align-items: center;
+  gap: 10px;
   height: 100%;
-  /* P5.60：卡片回到紧凑高度（P5.55 的 108 → 84）—— 加宽后数量行只有一行、chip 也基本一行，
-     84 只是下限（内容更高时由内容撑、由 grid-auto-rows: 1fr 统一拉平）。 */
+  /* P5.60：卡片紧凑高度（84 是下限，内容更高时由 grid-auto-rows: 1fr 统一拉平） */
   min-height: 84px;
-  padding: 0;
+  padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius, 10px);
   background: var(--bg-2);
@@ -961,50 +1102,59 @@ onBeforeUnmount(() => {
   border-color: var(--line-2);
 }
 
-/* 文字区：纯卡片底色（--bg-2），内边距从卡片搬到这一层，好让右侧面板贴住卡片右缘 */
-.pw-main {
-  position: relative;
-  z-index: 2;
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+/* P5.84：拾色底 —— 图片盖不满卡片的区域用这张图自己的颜色填（personTone 采样）。
+   采样还没回来 / 采样失败时没有 has-tone，卡片退回 --bg-2。 */
+.pw-card.has-tone {
+  background-color: var(--pw-tone, var(--bg-2));
 }
 
-/* ------------------------------------------------ P5.83 右侧竖向图片面板 */
+/* -------------------------------------- P5.84 整卡背景层（同一张原图 × 2） */
+
+/* 铺满整卡（inset: 0 相对卡片的 padding-box）+ overflow: hidden：两张图按几何变量定位，
+   超出卡片的部分在这里被裁掉，不会撑出滚动条。 */
 .pw-bg {
-  position: relative;
-  z-index: 1;
-  flex: 0 0 40%;
-  align-self: stretch;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   overflow: hidden;
-  background: var(--bg-3);
-  /* 面板与文字区之间的边界：1px 实线（不是渐变）—— 边界的像素位置才是确定的，
-     实测能断言「文字.right < 面板.left」，渐变则没有可断言的边。 */
-  border-left: 1px solid var(--line);
-  border-top-left-radius: 3px;
-  border-bottom-left-radius: 3px;
+  border-radius: inherit;
   pointer-events: none;
 }
 
+/* 两层共用同一组几何变量（由 layoutCrop 算好挂在卡片上），
+   所以两层 rect 逐像素一致 —— 本版唯一的硬断言。 */
 .pw-bg-img {
   position: absolute;
   left: 0;
   top: 0;
   width: var(--pw-img-w, auto);
-  height: var(--pw-img-h, 100%);
+  height: var(--pw-img-h, auto);
   max-width: none;
   transform: translate(var(--pw-img-tx, 0px), var(--pw-img-ty, 0px));
-  /* P5.83：只有一层图（P5.80 的「清晰层 + 模糊层」双图作废）—— 模糊滑块直接作用于这一层 */
-  filter: blur(var(--pw-bg-blur, 6px)) saturate(1.1) brightness(0.95);
   transition: transform 0.12s ease;
 }
 
+/* 上层：同一张原图 + 模糊 + 横向 mask 渐隐（左糊右清）。
+   mask 0–45% 全不透明（只看得到模糊图）→ 70%（--pw-blur-fade-end）渐隐到透明（露出底层清晰图）。
+   brightness(.9) 沿用 P5.69 的口径：模糊层比清晰层暗一档。 */
+.pw-bg-blur {
+  filter: blur(var(--pw-bg-blur, 6px)) saturate(1.1) brightness(0.9);
+  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 45%, transparent var(--pw-blur-fade-end, 70%));
+  mask-image: linear-gradient(to right, #000 0%, #000 45%, transparent var(--pw-blur-fade-end, 70%));
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+/* hover：两层一起放大 3%（同一 transform，rect 仍然一致），模糊层顺手提一档饱和 / 亮度 */
 .pw-card:hover .pw-bg-img,
 .pw-card:focus-visible .pw-bg-img {
   transform: translate(var(--pw-img-tx, 0px), var(--pw-img-ty, 0px)) scale(1.03);
+}
+
+.pw-card:hover .pw-bg-blur,
+.pw-card:focus-visible .pw-bg-blur {
   filter: blur(var(--pw-bg-blur, 6px)) saturate(1.12) brightness(1);
 }
 
@@ -1106,13 +1256,13 @@ onBeforeUnmount(() => {
   font-style: normal;
   font-size: 12px;
   font-weight: 400;
-  color: var(--pw-fg-2);
+  color: var(--fg-dim);
 }
 
 .pw-counts {
   font-size: 11.5px;
   line-height: 1.35;
-  color: var(--pw-fg-2);
+  color: var(--fg-dim);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   overflow: hidden;
@@ -1135,7 +1285,7 @@ onBeforeUnmount(() => {
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--bg-3);
-  color: var(--pw-fg-2);
+  color: var(--fg-dim);
   font-size: 10.5px;
   line-height: 16px;
   white-space: nowrap;
@@ -1145,7 +1295,7 @@ onBeforeUnmount(() => {
 
 .pw-recent {
   font-size: 10.5px;
-  color: var(--pw-fg-2);
+  color: var(--fg-dim);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1159,7 +1309,7 @@ onBeforeUnmount(() => {
     width: 140px;
   }
 
-  .pw-main {
+  .pw-card {
     gap: 8px;
     padding: 9px 10px;
   }

@@ -1,0 +1,5849 @@
+{
+  "passed": 33,
+  "failures": [],
+  "facts": {
+    "cardCount": 13,
+    "rectDelta": [
+      {
+        "key": "125",
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0
+      },
+      {
+        "key": "122",
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0
+      },
+      {
+        "key": "124",
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0
+      },
+      {
+        "key": "123",
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0
+      },
+      {
+        "key": "119",
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0
+      },
+      {
+        "key": "115",
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0
+      },
+      {
+        "key": "111",
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0
+      },
+      {
+        "key": "117",
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0
+      },
+      {
+        "key": "114",
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0
+      },
+      {
+        "key": "116",
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0
+      },
+      {
+        "key": "118",
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0
+      },
+      {
+        "key": "120",
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0
+      },
+      {
+        "key": "112",
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0
+      }
+    ],
+    "geometry": [
+      {
+        "key": "125",
+        "bgW": 333,
+        "bgH": 102,
+        "imgW": 244.2,
+        "imgH": 434.68,
+        "wantW": 244.2,
+        "dW": 0,
+        "cx": 253.08,
+        "wantCx": 253.08,
+        "dCx": 0,
+        "cy": 51,
+        "wantCy": 51,
+        "dCy": 0,
+        "rectDx": 0,
+        "rectDy": 0,
+        "rectDw": -0.01,
+        "rectDh": -0.01,
+        "natW": 400,
+        "natH": 712,
+        "coversW": false,
+        "coversH": true
+      },
+      {
+        "key": "122",
+        "bgW": 333,
+        "bgH": 102,
+        "imgW": 434.13,
+        "imgH": 244.2,
+        "wantW": 434.13,
+        "dW": 0,
+        "cx": 253.08,
+        "wantCx": 253.08,
+        "dCx": 0,
+        "cy": 51,
+        "wantCy": 51,
+        "dCy": 0,
+        "rectDx": 0,
+        "rectDy": 0,
+        "rectDw": -0.01,
+        "rectDh": -0.01,
+        "natW": 480,
+        "natH": 270,
+        "coversW": false,
+        "coversH": true
+      },
+      {
+        "key": "124",
+        "bgW": 333,
+        "bgH": 102,
+        "imgW": 491.84,
+        "imgH": 276.66,
+        "wantW": 491.84,
+        "dW": 0,
+        "cx": 253.08,
+        "wantCx": 253.08,
+        "dCx": 0,
+        "cy": 51,
+        "wantCy": 51,
+        "dCy": 0,
+        "rectDx": 0,
+        "rectDy": 0,
+        "rectDw": -0.01,
+        "rectDh": 0,
+        "natW": 480,
+        "natH": 270,
+        "coversW": false,
+        "coversH": true
+      },
+      {
+        "key": "123",
+        "bgW": 333,
+        "bgH": 102,
+        "imgW": 434.13,
+        "imgH": 244.2,
+        "wantW": 434.13,
+        "dW": 0,
+        "cx": 253.08,
+        "wantCx": 253.08,
+        "dCx": 0,
+        "cy": 51,
+        "wantCy": 51,
+        "dCy": 0,
+        "rectDx": 0,
+        "rectDy": 0,
+        "rectDw": 0,
+        "rectDh": -0.01,
+        "natW": 480,
+        "natH": 270,
+        "coversW": false,
+        "coversH": true
+      },
+      {
+        "key": "119",
+        "bgW": 333,
+        "bgH": 102,
+        "imgW": 534.75,
+        "imgH": 401.06,
+        "wantW": 534.74,
+        "dW": 0,
+        "cx": 253.08,
+        "wantCx": 253.08,
+        "dCx": 0,
+        "cy": 51,
+        "wantCy": 51,
+        "dCy": 0,
+        "rectDx": 0,
+        "rectDy": 0,
+        "rectDw": -0.01,
+        "rectDh": -0.01,
+        "natW": 400,
+        "natH": 300,
+        "coversW": false,
+        "coversH": true
+      },
+      {
+        "key": "115",
+        "bgW": 333,
+        "bgH": 102,
+        "imgW": 201.35,
+        "imgH": 302.02,
+        "wantW": 201.35,
+        "dW": 0,
+        "cx": 253.08,
+        "wantCx": 253.08,
+        "dCx": 0,
+        "cy": 51,
+        "wantCy": 51,
+        "dCy": 0,
+        "rectDx": 0,
+        "rectDy": 0,
+        "rectDw": -0.01,
+        "rectDh": 0,
+        "natW": 400,
+        "natH": 600,
+        "coversW": false,
+        "coversH": true
+      },
+      {
+        "key": "111",
+        "bgW": 333,
+        "bgH": 102,
+        "imgW": 350.69,
+        "imgH": 526.04,
+        "wantW": 350.69,
+        "dW": 0,
+        "cx": 253.08,
+        "wantCx": 253.08,
+        "dCx": 0,
+        "cy": 51,
+        "wantCy": 51,
+        "dCy": 0,
+        "rectDx": 0,
+        "rectDy": 0,
+        "rectDw": 0,
+        "rectDh": -0.01,
+        "natW": 400,
+        "natH": 600,
+        "coversW": false,
+        "coversH": true
+      },
+      {
+        "key": "117",
+        "bgW": 333,
+        "bgH": 102,
+        "imgW": 764.72,
+        "imgH": 432.07,
+        "wantW": 764.72,
+        "dW": 0,
+        "cx": 253.08,
+        "wantCx": 253.08,
+        "dCx": 0,
+        "cy": 51,
+        "wantCy": 51,
+        "dCy": 0,
+        "rectDx": 0,
+        "rectDy": 0,
+        "rectDw": -0.02,
+        "rectDh": -0.01,
+        "natW": 400,
+        "natH": 226,
+        "coversW": true,
+        "coversH": true
+      },
+      {
+        "key": "114",
+        "bgW": 333,
+        "bgH": 102,
+        "imgW": 366.3,
+        "imgH": 243.59,
+        "wantW": 366.3,
+        "dW": 0,
+        "cx": 253.08,
+        "wantCx": 253.08,
+        "dCx": 0,
+        "cy": 51,
+        "wantCy": 51,
+        "dCy": 0,
+        "rectDx": 0,
+        "rectDy": 0,
+        "rectDw": 0,
+        "rectDh": -0.01,
+        "natW": 400,
+        "natH": 266,
+        "coversW": false,
+        "coversH": true
+      },
+      {
+        "key": "116",
+        "bgW": 333,
+        "bgH": 102,
+        "imgW": 146.52,
+        "imgH": 82.78,
+        "wantW": null,
+        "dW": null,
+        "cx": 253.08,
+        "wantCx": 253.08,
+        "dCx": 0,
+        "cy": 50.99,
+        "wantCy": 51,
+        "dCy": -0.01,
+        "rectDx": 0,
+        "rectDy": -0.01,
+        "rectDw": 0,
+        "rectDh": 0,
+        "natW": 400,
+        "natH": 226,
+        "coversW": false,
+        "coversH": false
+      },
+      {
+        "key": "118",
+        "bgW": 333,
+        "bgH": 102,
+        "imgW": 727.51,
+        "imgH": 545.63,
+        "wantW": 727.51,
+        "dW": 0,
+        "cx": 253.08,
+        "wantCx": 253.08,
+        "dCx": 0,
+        "cy": 51,
+        "wantCy": 51,
+        "dCy": 0,
+        "rectDx": 0,
+        "rectDy": 0,
+        "rectDw": -0.01,
+        "rectDh": 0,
+        "natW": 400,
+        "natH": 300,
+        "coversW": true,
+        "coversH": true
+      },
+      {
+        "key": "120",
+        "bgW": 333,
+        "bgH": 102,
+        "imgW": 430.56,
+        "imgH": 286.32,
+        "wantW": 430.56,
+        "dW": 0,
+        "cx": 253.08,
+        "wantCx": 253.08,
+        "dCx": 0,
+        "cy": 51,
+        "wantCy": 51,
+        "dCy": 0,
+        "rectDx": 0,
+        "rectDy": 0,
+        "rectDw": -0.01,
+        "rectDh": -0.01,
+        "natW": 400,
+        "natH": 266,
+        "coversW": false,
+        "coversH": true
+      },
+      {
+        "key": "112",
+        "bgW": 333,
+        "bgH": 102,
+        "imgW": 244.2,
+        "imgH": 326.01,
+        "wantW": 244.2,
+        "dW": 0,
+        "cx": 253.08,
+        "wantCx": 253.08,
+        "dCx": 0,
+        "cy": 51,
+        "wantCy": 51,
+        "dCy": 0,
+        "rectDx": 0,
+        "rectDy": 0,
+        "rectDw": -0.01,
+        "rectDh": -0.01,
+        "natW": 400,
+        "natH": 534,
+        "coversW": false,
+        "coversH": true
+      }
+    ],
+    "cover": {
+      "coversW": 2,
+      "coversAll": 2,
+      "total": 13
+    },
+    "blur": [
+      {
+        "v": 0,
+        "sharp": "none",
+        "blur": "blur(0px) saturate(1.1) brightness(0.9)",
+        "root": "0px",
+        "fade": "",
+        "stored": "0"
+      },
+      {
+        "v": 6,
+        "sharp": "none",
+        "blur": "blur(6px) saturate(1.1) brightness(0.9)",
+        "root": "6px",
+        "fade": "",
+        "stored": "6"
+      },
+      {
+        "v": 20,
+        "sharp": "none",
+        "blur": "blur(20px) saturate(1.1) brightness(0.9)",
+        "root": "20px",
+        "fade": "",
+        "stored": "20"
+      }
+    ],
+    "mask": "linear-gradient(to right, rgb(0, 0, 0) 0%, rgb(0, 0, 0) 45%, rgba(0, 0, 0, 0) 70%)",
+    "fadeVar": "",
+    "residue": [
+      {
+        "key": "117",
+        "flat": "195,190,187",
+        "hits": 0,
+        "total": 1865,
+        "share": 0
+      },
+      {
+        "key": "118",
+        "flat": "203,189,176",
+        "hits": 0,
+        "total": 1865,
+        "share": 0
+      }
+    ],
+    "contrast": {
+      "configs": 18,
+      "instances": 598,
+      "min": 1,
+      "minClean": 1.41,
+      "worst": {
+        "cfg": "1200-light-blur0",
+        "key": "111",
+        "tag": "name",
+        "color": "rgb(48, 49, 51)",
+        "behind": "80,36,36",
+        "ratio": 1,
+        "ratioClean": 2.63
+      },
+      "rows": [
+        {
+          "cfg": "1600-light-blur6",
+          "key": "125",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "146,152,147",
+          "ratio": 4.42,
+          "ratioClean": 7.04
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "122",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "101,80,82",
+          "ratio": 1.75,
+          "ratioClean": 2.42
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "124",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "71,54,58",
+          "ratio": 1.15,
+          "ratioClean": 1.84
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "123",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "101,108,91",
+          "ratio": 2.39,
+          "ratioClean": 3
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "119",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "130,105,88",
+          "ratio": 2.55,
+          "ratioClean": 4.24
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "115",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "116,101,87",
+          "ratio": 2.32,
+          "ratioClean": 3.92
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "111",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "86,42,39",
+          "ratio": 1.09,
+          "ratioClean": 2.04
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "117",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "137,120,118",
+          "ratio": 3.11,
+          "ratioClean": 4.47
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "114",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "107,115,112",
+          "ratio": 2.67,
+          "ratioClean": 2.91
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "116",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "193,191,191",
+          "ratio": 7.11,
+          "ratioClean": 7.11
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "118",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "133,111,92",
+          "ratio": 2.74,
+          "ratioClean": 4.85
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "120",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "189,190,193",
+          "ratio": 7.01,
+          "ratioClean": 7.98
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "112",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "164,175,204",
+          "ratio": 5.94,
+          "ratioClean": 6.22
+        },
+        {
+          "cfg": "1600-light-blur0",
+          "key": "125",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "150,152,144",
+          "ratio": 4.46,
+          "ratioClean": 7.09
+        },
+        {
+          "cfg": "1600-light-blur0",
+          "key": "122",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "99,79,80",
+          "ratio": 1.71,
+          "ratioClean": 2.68
+        },
+        {
+          "cfg": "1600-light-blur0",
+          "key": "124",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "69,54,59",
+          "ratio": 1.14,
+          "ratioClean": 1.91
+        },
+        {
+          "cfg": "1600-light-blur0",
+          "key": "123",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "99,108,85",
+          "ratio": 2.36,
+          "ratioClean": 2.84
+        },
+        {
+          "cfg": "1600-light-blur0",
+          "key": "119",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "140,119,97",
+          "ratio": 3.05,
+          "ratioClean": 4.78
+        },
+        {
+          "cfg": "1600-light-blur0",
+          "key": "115",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "115,98,78",
+          "ratio": 2.22,
+          "ratioClean": 5.32
+        },
+        {
+          "cfg": "1600-light-blur0",
+          "key": "111",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "80,37,36",
+          "ratio": 1.01,
+          "ratioClean": 2.58
+        },
+        {
+          "cfg": "1600-light-blur0",
+          "key": "117",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "138,120,118",
+          "ratio": 3.12,
+          "ratioClean": 4.47
+        },
+        {
+          "cfg": "1600-light-blur0",
+          "key": "114",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "111,116,116",
+          "ratio": 2.74,
+          "ratioClean": 2.92
+        },
+        {
+          "cfg": "1600-light-blur0",
+          "key": "116",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "193,191,191",
+          "ratio": 7.11,
+          "ratioClean": 7.11
+        },
+        {
+          "cfg": "1600-light-blur0",
+          "key": "118",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "144,122,99",
+          "ratio": 3.19,
+          "ratioClean": 4.85
+        },
+        {
+          "cfg": "1600-light-blur0",
+          "key": "120",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "188,186,189",
+          "ratio": 6.76,
+          "ratioClean": 8.02
+        },
+        {
+          "cfg": "1600-light-blur0",
+          "key": "112",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "167,174,203",
+          "ratio": 5.93,
+          "ratioClean": 6.33
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "125",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "145,152,147",
+          "ratio": 4.41,
+          "ratioClean": 7.03
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "122",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "101,80,82",
+          "ratio": 1.75,
+          "ratioClean": 2.37
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "124",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "71,54,58",
+          "ratio": 1.15,
+          "ratioClean": 1.85
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "123",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "101,108,91",
+          "ratio": 2.39,
+          "ratioClean": 3
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "119",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "130,105,88",
+          "ratio": 2.55,
+          "ratioClean": 4.24
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "115",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "115,101,86",
+          "ratio": 2.31,
+          "ratioClean": 3.85
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "111",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "86,42,39",
+          "ratio": 1.09,
+          "ratioClean": 2.03
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "117",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "137,120,118",
+          "ratio": 3.11,
+          "ratioClean": 4.47
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "114",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "107,115,112",
+          "ratio": 2.67,
+          "ratioClean": 2.91
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "116",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "193,191,191",
+          "ratio": 7.11,
+          "ratioClean": 7.11
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "118",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "133,111,92",
+          "ratio": 2.74,
+          "ratioClean": 4.85
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "120",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "189,189,192",
+          "ratio": 6.95,
+          "ratioClean": 7.98
+        },
+        {
+          "cfg": "1600-light-blur6",
+          "key": "112",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "164,175,204",
+          "ratio": 5.94,
+          "ratioClean": 6.2
+        },
+        {
+          "cfg": "1600-light-blur20",
+          "key": "125",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "151,156,149",
+          "ratio": 4.65,
+          "ratioClean": 6.49
+        },
+        {
+          "cfg": "1600-light-blur20",
+          "key": "122",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "111,94,96",
+          "ratio": 2.14,
+          "ratioClean": 2.3
+        },
+        {
+          "cfg": "1600-light-blur20",
+          "key": "124",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "71,51,55",
+          "ratio": 1.11,
+          "ratioClean": 1.95
+        },
+        {
+          "cfg": "1600-light-blur20",
+          "key": "123",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "99,107,93",
+          "ratio": 2.35,
+          "ratioClean": 2.72
+        },
+        {
+          "cfg": "1600-light-blur20",
+          "key": "119",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "117,103,94",
+          "ratio": 2.39,
+          "ratioClean": 3.09
+        },
+        {
+          "cfg": "1600-light-blur20",
+          "key": "115",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "108,95,81",
+          "ratio": 2.1,
+          "ratioClean": 2.27
+        },
+        {
+          "cfg": "1600-light-blur20",
+          "key": "111",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "102,41,38",
+          "ratio": 1.18,
+          "ratioClean": 1.71
+        },
+        {
+          "cfg": "1600-light-blur20",
+          "key": "117",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "137,120,118",
+          "ratio": 3.11,
+          "ratioClean": 4.43
+        },
+        {
+          "cfg": "1600-light-blur20",
+          "key": "114",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "104,105,106",
+          "ratio": 2.37,
+          "ratioClean": 2.51
+        },
+        {
+          "cfg": "1600-light-blur20",
+          "key": "116",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "193,191,191",
+          "ratio": 7.11,
+          "ratioClean": 7.11
+        },
+        {
+          "cfg": "1600-light-blur20",
+          "key": "118",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "138,114,93",
+          "ratio": 2.88,
+          "ratioClean": 4.74
+        },
+        {
+          "cfg": "1600-light-blur20",
+          "key": "120",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "186,181,188",
+          "ratio": 6.46,
+          "ratioClean": 7.68
+        },
+        {
+          "cfg": "1600-light-blur20",
+          "key": "112",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "163,175,197",
+          "ratio": 5.89,
+          "ratioClean": 6.01
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "125",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "72,68,66",
+          "ratio": 7.98,
+          "ratioClean": 9.25
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "125",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "147,140,133",
+          "ratio": 1.36,
+          "ratioClean": 3.26
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "125",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "133,120,116",
+          "ratio": 1.75,
+          "ratioClean": 2.62
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "122",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "101,80,81",
+          "ratio": 6.17,
+          "ratioClean": 6.27
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "122",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "147,135,138",
+          "ratio": 1.42,
+          "ratioClean": 3.12
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "122",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "122",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "122",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "122",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "164,162,174",
+          "ratio": 1.03,
+          "ratioClean": 2.47
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "124",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "75,55,61",
+          "ratio": 9.09,
+          "ratioClean": 9.22
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "124",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "112,79,80",
+          "ratio": 2.95,
+          "ratioClean": 3.51
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "124",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "124",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "124",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "124",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "72,51,47",
+          "ratio": 4.81,
+          "ratioClean": 4.93
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "123",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "110,127,96",
+          "ratio": 3.57,
+          "ratioClean": 3.73
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "123",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "123,127,104",
+          "ratio": 1.7,
+          "ratioClean": 2.22
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "123",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "123",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "123",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "123",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "93,94,79",
+          "ratio": 2.71,
+          "ratioClean": 3.04
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "119",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "122,91,65",
+          "ratio": 5.12,
+          "ratioClean": 5.36
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "119",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "112,98,88",
+          "ratio": 2.41,
+          "ratioClean": 3.91
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "119",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "114,107,101",
+          "ratio": 2.15,
+          "ratioClean": 2.9
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "115",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "65,59,52",
+          "ratio": 9.16,
+          "ratioClean": 9.16
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "115",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "89,74,57",
+          "ratio": 3.5,
+          "ratioClean": 4.53
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "115",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "115",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "65,59,52",
+          "ratio": 4.53,
+          "ratioClean": 4.56
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "111",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "81,38,37",
+          "ratio": 10.52,
+          "ratioClean": 10.74
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "111",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "84,49,50",
+          "ratio": 4.63,
+          "ratioClean": 5.77
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "111",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "111",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "82,25,23",
+          "ratio": 5.7,
+          "ratioClean": 5.87
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "117",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "148,135,134",
+          "ratio": 2.87,
+          "ratioClean": 3.26
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "117",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "145,148,152",
+          "ratio": 1.25,
+          "ratioClean": 2.61
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "117",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "147,137,148",
+          "ratio": 1.38,
+          "ratioClean": 1.59
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "114",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "107,114,111",
+          "ratio": 4.08,
+          "ratioClean": 4.15
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "114",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "120,113,118",
+          "ratio": 1.95,
+          "ratioClean": 2.25
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "114",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "114",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "132,134,136",
+          "ratio": 1.5,
+          "ratioClean": 2.78
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "116",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "68,65,68",
+          "ratio": 8.34,
+          "ratioClean": 9.24
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "116",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "124,125,125",
+          "ratio": 1.69,
+          "ratioClean": 3.57
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "116",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "89,90,89",
+          "ratio": 2.84,
+          "ratioClean": 4.58
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "118",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "160,137,106",
+          "ratio": 2.77,
+          "ratioClean": 5.54
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "118",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "164,145,115",
+          "ratio": 1.25,
+          "ratioClean": 3.09
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "118",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "166,135,102",
+          "ratio": 1.37,
+          "ratioClean": 2.31
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "120",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "194,198,200",
+          "ratio": 1.43,
+          "ratioClean": 4.4
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "120",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "181,177,185",
+          "ratio": 1.16,
+          "ratioClean": 1.47
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "120",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "187,193,193",
+          "ratio": 1.34,
+          "ratioClean": 1.63
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "112",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "146,147,171",
+          "ratio": 2.49,
+          "ratioClean": 2.71
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "112",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "152,142,162",
+          "ratio": 1.28,
+          "ratioClean": 1.91
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "112",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur0",
+          "key": "112",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "161,144,157",
+          "ratio": 1.23,
+          "ratioClean": 1.84
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "125",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "78,71,66",
+          "ratio": 7.55,
+          "ratioClean": 9.02
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "125",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "141,130,125",
+          "ratio": 1.53,
+          "ratioClean": 2.91
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "125",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "134,117,112",
+          "ratio": 1.8,
+          "ratioClean": 2.4
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "122",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "103,82,83",
+          "ratio": 5.98,
+          "ratioClean": 6.07
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "122",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "147,136,141",
+          "ratio": 1.4,
+          "ratioClean": 3.08
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "122",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "122",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "122",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "122",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "161,156,166",
+          "ratio": 1.1,
+          "ratioClean": 3.44
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "124",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "78,55,60",
+          "ratio": 8.99,
+          "ratioClean": 9.1
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "124",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "103,73,80",
+          "ratio": 3.26,
+          "ratioClean": 3.72
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "124",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "124",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "124",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "124",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "76,52,49",
+          "ratio": 4.67,
+          "ratioClean": 4.82
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "123",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "107,128,99",
+          "ratio": 3.56,
+          "ratioClean": 3.58
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "123",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "119,124,104",
+          "ratio": 1.77,
+          "ratioClean": 2.08
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "123",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "123",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "123",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "123",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "85,94,77",
+          "ratio": 2.78,
+          "ratioClean": 3.08
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "119",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "111,89,71",
+          "ratio": 5.44,
+          "ratioClean": 5.72
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "119",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "107,90,77",
+          "ratio": 2.7,
+          "ratioClean": 3.1
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "119",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "114,105,98",
+          "ratio": 2.2,
+          "ratioClean": 2.78
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "115",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "79,70,55",
+          "ratio": 7.68,
+          "ratioClean": 8.61
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "115",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "90,78,65",
+          "ratio": 3.31,
+          "ratioClean": 4.53
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "115",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "115",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "65,59,52",
+          "ratio": 4.53,
+          "ratioClean": 4.53
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "111",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "86,43,40",
+          "ratio": 9.82,
+          "ratioClean": 9.91
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "111",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "86,49,50",
+          "ratio": 4.58,
+          "ratioClean": 5.72
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "111",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "111",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "91,40,39",
+          "ratio": 4.85,
+          "ratioClean": 5.14
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "117",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "148,136,134",
+          "ratio": 2.84,
+          "ratioClean": 3.26
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "117",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "145,148,152",
+          "ratio": 1.25,
+          "ratioClean": 2.54
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "117",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "147,138,149",
+          "ratio": 1.37,
+          "ratioClean": 1.57
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "114",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "105,111,108",
+          "ratio": 4.25,
+          "ratioClean": 4.37
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "114",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "118,112,116",
+          "ratio": 1.98,
+          "ratioClean": 2.28
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "114",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "114",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "128,123,124",
+          "ratio": 1.71,
+          "ratioClean": 2.17
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "116",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "81,80,83",
+          "ratio": 6.63,
+          "ratioClean": 8.17
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "116",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "115,114,118",
+          "ratio": 1.96,
+          "ratioClean": 2.7
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "116",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "96,96,96",
+          "ratio": 2.58,
+          "ratioClean": 3.91
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "118",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "156,130,103",
+          "ratio": 3,
+          "ratioClean": 5.03
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "118",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "163,143,115",
+          "ratio": 1.28,
+          "ratioClean": 3.02
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "118",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "165,129,98",
+          "ratio": 1.46,
+          "ratioClean": 2.28
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "120",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "194,201,202",
+          "ratio": 1.39,
+          "ratioClean": 4.76
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "120",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "176,176,181",
+          "ratio": 1.13,
+          "ratioClean": 1.46
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "120",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "183,188,191",
+          "ratio": 1.27,
+          "ratioClean": 1.49
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "112",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "146,148,172",
+          "ratio": 2.47,
+          "ratioClean": 2.64
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "112",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "151,142,161",
+          "ratio": 1.29,
+          "ratioClean": 1.87
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "112",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur6",
+          "key": "112",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "160,140,153",
+          "ratio": 1.28,
+          "ratioClean": 1.71
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "125",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "101,93,89",
+          "ratio": 5.33,
+          "ratioClean": 5.59
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "125",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "136,131,130",
+          "ratio": 1.53,
+          "ratioClean": 2.49
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "125",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "128,112,106",
+          "ratio": 1.94,
+          "ratioClean": 2.08
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "122",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "115,97,99",
+          "ratio": 4.81,
+          "ratioClean": 4.93
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "122",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "137,123,128",
+          "ratio": 1.65,
+          "ratioClean": 2.28
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "122",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "122",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "122",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "122",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "158,149,158",
+          "ratio": 1.19,
+          "ratioClean": 2.42
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "124",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "77,53,56",
+          "ratio": 9.24,
+          "ratioClean": 9.37
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "124",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "100,68,70",
+          "ratio": 3.51,
+          "ratioClean": 3.86
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "124",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "124",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "124",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "124",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "89,61,59",
+          "ratio": 4,
+          "ratioClean": 4.12
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "123",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "103,126,96",
+          "ratio": 3.68,
+          "ratioClean": 3.73
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "123",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "109,123,97",
+          "ratio": 1.85,
+          "ratioClean": 2.26
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "123",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "123",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "123",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "123",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "85,88,73",
+          "ratio": 2.99,
+          "ratioClean": 3.48
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "119",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "110,93,84",
+          "ratio": 5.18,
+          "ratioClean": 5.28
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "119",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "116,99,89",
+          "ratio": 2.35,
+          "ratioClean": 2.53
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "119",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "121,107,98",
+          "ratio": 2.11,
+          "ratioClean": 2.2
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "115",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "98,87,70",
+          "ratio": 5.85,
+          "ratioClean": 6.58
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "115",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "105,91,79",
+          "ratio": 2.68,
+          "ratioClean": 3.66
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "115",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "115",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "80,69,55",
+          "ratio": 3.83,
+          "ratioClean": 4.09
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "111",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "100,41,38",
+          "ratio": 9.22,
+          "ratioClean": 9.22
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "111",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "100,59,57",
+          "ratio": 3.87,
+          "ratioClean": 4.5
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "111",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "111",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "111,58,55",
+          "ratio": 3.69,
+          "ratioClean": 3.97
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "117",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "148,135,134",
+          "ratio": 2.87,
+          "ratioClean": 3.27
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "117",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "145,148,151",
+          "ratio": 1.25,
+          "ratioClean": 2.51
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "117",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "147,139,148",
+          "ratio": 1.35,
+          "ratioClean": 1.57
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "114",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "101,103,103",
+          "ratio": 4.71,
+          "ratioClean": 4.81
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "114",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "109,110,111",
+          "ratio": 2.1,
+          "ratioClean": 2.29
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "114",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "114",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "128,118,120",
+          "ratio": 1.8,
+          "ratioClean": 1.86
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "116",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "97,94,99",
+          "ratio": 5.29,
+          "ratioClean": 5.84
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "116",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "112,110,115",
+          "ratio": 2.07,
+          "ratioClean": 2.49
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "116",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "101,101,101",
+          "ratio": 2.39,
+          "ratioClean": 3.16
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "118",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "154,128,99",
+          "ratio": 3.08,
+          "ratioClean": 3.71
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "118",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "158,131,103",
+          "ratio": 1.46,
+          "ratioClean": 2.91
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "118",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "159,118,90",
+          "ratio": 1.65,
+          "ratioClean": 2.13
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "120",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "193,199,201",
+          "ratio": 1.42,
+          "ratioClean": 4.31
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "120",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "170,170,176",
+          "ratio": 1.05,
+          "ratioClean": 1.41
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "120",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "176,178,182",
+          "ratio": 1.15,
+          "ratioClean": 1.48
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "112",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "153,156,178",
+          "ratio": 2.24,
+          "ratioClean": 2.4
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "112",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "155,149,166",
+          "ratio": 1.19,
+          "ratioClean": 3.37
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "112",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1600-dark-blur20",
+          "key": "112",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "157,142,156",
+          "ratio": 1.27,
+          "ratioClean": 3.33
+        },
+        {
+          "cfg": "1200-light-blur0",
+          "key": "125",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "141,132,126",
+          "ratio": 3.56,
+          "ratioClean": 7.06
+        },
+        {
+          "cfg": "1200-light-blur0",
+          "key": "122",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "98,77,79",
+          "ratio": 1.67,
+          "ratioClean": 2.34
+        },
+        {
+          "cfg": "1200-light-blur0",
+          "key": "124",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "69,54,59",
+          "ratio": 1.14,
+          "ratioClean": 1.91
+        },
+        {
+          "cfg": "1200-light-blur0",
+          "key": "123",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "98,107,83",
+          "ratio": 2.32,
+          "ratioClean": 2.81
+        },
+        {
+          "cfg": "1200-light-blur0",
+          "key": "119",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "139,119,96",
+          "ratio": 3.04,
+          "ratioClean": 4.74
+        },
+        {
+          "cfg": "1200-light-blur0",
+          "key": "115",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "108,94,75",
+          "ratio": 2.07,
+          "ratioClean": 5.1
+        },
+        {
+          "cfg": "1200-light-blur0",
+          "key": "111",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "80,36,36",
+          "ratio": 1,
+          "ratioClean": 2.63
+        },
+        {
+          "cfg": "1200-light-blur0",
+          "key": "117",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "137,119,117",
+          "ratio": 3.07,
+          "ratioClean": 4.34
+        },
+        {
+          "cfg": "1200-light-blur0",
+          "key": "114",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "109,116,115",
+          "ratio": 2.73,
+          "ratioClean": 2.86
+        },
+        {
+          "cfg": "1200-light-blur0",
+          "key": "116",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "193,191,191",
+          "ratio": 7.11,
+          "ratioClean": 7.11
+        },
+        {
+          "cfg": "1200-light-blur0",
+          "key": "118",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "137,118,95",
+          "ratio": 2.99,
+          "ratioClean": 4.81
+        },
+        {
+          "cfg": "1200-light-blur0",
+          "key": "120",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "186,181,186",
+          "ratio": 6.45,
+          "ratioClean": 8.03
+        },
+        {
+          "cfg": "1200-light-blur0",
+          "key": "112",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "165,171,201",
+          "ratio": 5.75,
+          "ratioClean": 6.28
+        },
+        {
+          "cfg": "1200-light-blur6",
+          "key": "125",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "139,143,141",
+          "ratio": 3.98,
+          "ratioClean": 7
+        },
+        {
+          "cfg": "1200-light-blur6",
+          "key": "122",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "100,80,81",
+          "ratio": 1.74,
+          "ratioClean": 2.18
+        },
+        {
+          "cfg": "1200-light-blur6",
+          "key": "124",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "70,53,57",
+          "ratio": 1.13,
+          "ratioClean": 1.95
+        },
+        {
+          "cfg": "1200-light-blur6",
+          "key": "123",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "99,108,90",
+          "ratio": 2.37,
+          "ratioClean": 2.96
+        },
+        {
+          "cfg": "1200-light-blur6",
+          "key": "119",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "128,105,88",
+          "ratio": 2.53,
+          "ratioClean": 4.17
+        },
+        {
+          "cfg": "1200-light-blur6",
+          "key": "115",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "109,97,82",
+          "ratio": 2.16,
+          "ratioClean": 3.67
+        },
+        {
+          "cfg": "1200-light-blur6",
+          "key": "111",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "84,42,40",
+          "ratio": 1.08,
+          "ratioClean": 1.96
+        },
+        {
+          "cfg": "1200-light-blur6",
+          "key": "117",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "137,119,117",
+          "ratio": 3.07,
+          "ratioClean": 4.34
+        },
+        {
+          "cfg": "1200-light-blur6",
+          "key": "114",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "106,114,111",
+          "ratio": 2.63,
+          "ratioClean": 2.85
+        },
+        {
+          "cfg": "1200-light-blur6",
+          "key": "116",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "193,191,191",
+          "ratio": 7.11,
+          "ratioClean": 7.11
+        },
+        {
+          "cfg": "1200-light-blur6",
+          "key": "118",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "129,108,88",
+          "ratio": 2.62,
+          "ratioClean": 4.84
+        },
+        {
+          "cfg": "1200-light-blur6",
+          "key": "120",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "186,180,188",
+          "ratio": 6.41,
+          "ratioClean": 7.98
+        },
+        {
+          "cfg": "1200-light-blur6",
+          "key": "112",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "163,173,204",
+          "ratio": 5.83,
+          "ratioClean": 6.14
+        },
+        {
+          "cfg": "1200-light-blur20",
+          "key": "125",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "146,151,146",
+          "ratio": 4.38,
+          "ratioClean": 6.29
+        },
+        {
+          "cfg": "1200-light-blur20",
+          "key": "122",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "111,93,96",
+          "ratio": 2.11,
+          "ratioClean": 2.24
+        },
+        {
+          "cfg": "1200-light-blur20",
+          "key": "124",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "69,51,54",
+          "ratio": 1.1,
+          "ratioClean": 2.06
+        },
+        {
+          "cfg": "1200-light-blur20",
+          "key": "123",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "99,106,91",
+          "ratio": 2.32,
+          "ratioClean": 2.68
+        },
+        {
+          "cfg": "1200-light-blur20",
+          "key": "119",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "117,103,94",
+          "ratio": 2.39,
+          "ratioClean": 2.94
+        },
+        {
+          "cfg": "1200-light-blur20",
+          "key": "115",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "105,93,79",
+          "ratio": 2.03,
+          "ratioClean": 2.2
+        },
+        {
+          "cfg": "1200-light-blur20",
+          "key": "111",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "100,40,37",
+          "ratio": 1.16,
+          "ratioClean": 1.64
+        },
+        {
+          "cfg": "1200-light-blur20",
+          "key": "117",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "136,118,117",
+          "ratio": 3.04,
+          "ratioClean": 4.29
+        },
+        {
+          "cfg": "1200-light-blur20",
+          "key": "114",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "104,105,105",
+          "ratio": 2.36,
+          "ratioClean": 2.43
+        },
+        {
+          "cfg": "1200-light-blur20",
+          "key": "116",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "193,191,191",
+          "ratio": 7.11,
+          "ratioClean": 7.11
+        },
+        {
+          "cfg": "1200-light-blur20",
+          "key": "118",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "134,111,88",
+          "ratio": 2.75,
+          "ratioClean": 4.63
+        },
+        {
+          "cfg": "1200-light-blur20",
+          "key": "120",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "176,170,177",
+          "ratio": 5.72,
+          "ratioClean": 7.61
+        },
+        {
+          "cfg": "1200-light-blur20",
+          "key": "112",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "162,172,195",
+          "ratio": 5.72,
+          "ratioClean": 5.89
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "125",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "73,71,67",
+          "ratio": 7.68,
+          "ratioClean": 9.25
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "125",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "151,141,140",
+          "ratio": 1.32,
+          "ratioClean": 3.36
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "125",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "135,118,115",
+          "ratio": 1.77,
+          "ratioClean": 2.59
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "122",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "101,79,81",
+          "ratio": 6.23,
+          "ratioClean": 6.34
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "122",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "145,132,136",
+          "ratio": 1.47,
+          "ratioClean": 3.27
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "122",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "122",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "122",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "122",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "165,165,174",
+          "ratio": 1,
+          "ratioClean": 2.14
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "124",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "74,55,61",
+          "ratio": 9.13,
+          "ratioClean": 9.21
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "124",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "109,75,78",
+          "ratio": 3.11,
+          "ratioClean": 3.77
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "124",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "124",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "124",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "124",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "78,55,56",
+          "ratio": 4.47,
+          "ratioClean": 4.76
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "123",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "110,126,97",
+          "ratio": 3.61,
+          "ratioClean": 3.82
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "123",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "125,129,107",
+          "ratio": 1.65,
+          "ratioClean": 2.21
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "123",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "123",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "123",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "123",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "89,91,78",
+          "ratio": 2.84,
+          "ratioClean": 3.15
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "119",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "124,96,67",
+          "ratio": 4.82,
+          "ratioClean": 5.09
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "119",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "117,103,98",
+          "ratio": 2.22,
+          "ratioClean": 3.42
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "119",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "115,109,102",
+          "ratio": 2.1,
+          "ratioClean": 2.93
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "115",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "65,59,52",
+          "ratio": 9.16,
+          "ratioClean": 9.16
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "115",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "84,68,52",
+          "ratio": 3.82,
+          "ratioClean": 4.53
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "115",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "115",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "65,59,52",
+          "ratio": 4.53,
+          "ratioClean": 4.63
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "111",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "80,38,37",
+          "ratio": 10.57,
+          "ratioClean": 10.74
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "111",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "86,49,50",
+          "ratio": 4.58,
+          "ratioClean": 5.77
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "111",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "111",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "83,25,24",
+          "ratio": 5.67,
+          "ratioClean": 5.84
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "117",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "150,137,134",
+          "ratio": 2.8,
+          "ratioClean": 3.23
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "117",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "147,150,157",
+          "ratio": 1.22,
+          "ratioClean": 2.76
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "117",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "156,136,147",
+          "ratio": 1.36,
+          "ratioClean": 1.48
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "114",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "108,114,112",
+          "ratio": 4.07,
+          "ratioClean": 4.13
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "114",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "121,113,119",
+          "ratio": 1.94,
+          "ratioClean": 2.22
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "114",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "114",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "135,137,137",
+          "ratio": 1.44,
+          "ratioClean": 2.81
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "116",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "72,69,71",
+          "ratio": 7.84,
+          "ratioClean": 9.24
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "116",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "123,125,128",
+          "ratio": 1.69,
+          "ratioClean": 3.26
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "116",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "93,94,92",
+          "ratio": 2.67,
+          "ratioClean": 4.58
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "118",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "160,137,106",
+          "ratio": 2.77,
+          "ratioClean": 5.77
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "118",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "164,148,117",
+          "ratio": 1.22,
+          "ratioClean": 3.15
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "118",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "165,132,99",
+          "ratio": 1.42,
+          "ratioClean": 2.39
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "120",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "195,199,201",
+          "ratio": 1.41,
+          "ratioClean": 5.02
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "120",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "181,176,184",
+          "ratio": 1.15,
+          "ratioClean": 1.49
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "120",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "186,187,192",
+          "ratio": 1.27,
+          "ratioClean": 1.58
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "112",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "147,147,172",
+          "ratio": 2.48,
+          "ratioClean": 2.71
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "112",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "153,146,165",
+          "ratio": 1.23,
+          "ratioClean": 1.87
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "112",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur0",
+          "key": "112",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "160,143,156",
+          "ratio": 1.25,
+          "ratioClean": 1.86
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "125",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "81,74,69",
+          "ratio": 7.2,
+          "ratioClean": 8.9
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "125",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "144,133,132",
+          "ratio": 1.47,
+          "ratioClean": 2.84
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "125",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "135,116,113",
+          "ratio": 1.81,
+          "ratioClean": 2.38
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "122",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "102,81,82",
+          "ratio": 6.07,
+          "ratioClean": 6.16
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "122",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "145,130,134",
+          "ratio": 1.5,
+          "ratioClean": 3.08
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "122",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "122",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "122",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "122",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "162,157,167",
+          "ratio": 1.09,
+          "ratioClean": 3.34
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "124",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "76,55,60",
+          "ratio": 9.06,
+          "ratioClean": 9.15
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "124",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "102,72,78",
+          "ratio": 3.31,
+          "ratioClean": 3.96
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "124",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "124",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "124",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "124",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "82,56,53",
+          "ratio": 4.36,
+          "ratioClean": 4.52
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "123",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "106,128,99",
+          "ratio": 3.56,
+          "ratioClean": 3.58
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "123",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "120,123,105",
+          "ratio": 1.78,
+          "ratioClean": 2.1
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "123",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "123",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "123",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "123",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "84,91,75",
+          "ratio": 2.9,
+          "ratioClean": 3.16
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "119",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "111,92,74",
+          "ratio": 5.26,
+          "ratioClean": 5.51
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "119",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "112,95,81",
+          "ratio": 2.5,
+          "ratioClean": 2.96
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "119",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "116,107,100",
+          "ratio": 2.14,
+          "ratioClean": 2.72
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "115",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "79,71,56",
+          "ratio": 7.59,
+          "ratioClean": 8.51
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "115",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "89,75,63",
+          "ratio": 3.44,
+          "ratioClean": 4.53
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "115",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "115",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "65,59,52",
+          "ratio": 4.53,
+          "ratioClean": 4.53
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "111",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "86,43,40",
+          "ratio": 9.82,
+          "ratioClean": 9.82
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "111",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "86,55,55",
+          "ratio": 4.31,
+          "ratioClean": 5.72
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "111",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "111",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "95,49,45",
+          "ratio": 4.39,
+          "ratioClean": 4.96
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "117",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "150,137,135",
+          "ratio": 2.79,
+          "ratioClean": 3.23
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "117",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "146,149,157",
+          "ratio": 1.23,
+          "ratioClean": 2.76
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "117",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "156,138,150",
+          "ratio": 1.33,
+          "ratioClean": 1.48
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "114",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "105,112,109",
+          "ratio": 4.2,
+          "ratioClean": 4.3
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "114",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "119,113,118",
+          "ratio": 1.95,
+          "ratioClean": 2.28
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "114",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "114",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "129,123,124",
+          "ratio": 1.7,
+          "ratioClean": 2.14
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "116",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "85,83,86",
+          "ratio": 6.31,
+          "ratioClean": 7.71
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "116",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "115,115,119",
+          "ratio": 1.94,
+          "ratioClean": 2.53
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "116",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "99,99,97",
+          "ratio": 2.47,
+          "ratioClean": 3.75
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "118",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "155,130,102",
+          "ratio": 3.01,
+          "ratioClean": 5.13
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "118",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "163,145,116",
+          "ratio": 1.26,
+          "ratioClean": 3.02
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "118",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "164,125,94",
+          "ratio": 1.52,
+          "ratioClean": 2.34
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "120",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "195,202,203",
+          "ratio": 1.38,
+          "ratioClean": 5.17
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "120",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "175,173,180",
+          "ratio": 1.1,
+          "ratioClean": 1.46
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "120",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "182,181,187",
+          "ratio": 1.2,
+          "ratioClean": 1.49
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "112",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "147,150,174",
+          "ratio": 2.41,
+          "ratioClean": 2.64
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "112",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "151,146,164",
+          "ratio": 1.24,
+          "ratioClean": 1.82
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "112",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur6",
+          "key": "112",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "159,139,153",
+          "ratio": 1.3,
+          "ratioClean": 1.73
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "125",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "104,97,95",
+          "ratio": 5.02,
+          "ratioClean": 5.26
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "125",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "137,131,131",
+          "ratio": 1.53,
+          "ratioClean": 2.46
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "125",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "127,112,105",
+          "ratio": 1.95,
+          "ratioClean": 2.08
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "122",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "115,96,99",
+          "ratio": 4.86,
+          "ratioClean": 4.95
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "122",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "134,119,124",
+          "ratio": 1.74,
+          "ratioClean": 2.27
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "122",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "122",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "122",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "122",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "159,149,157",
+          "ratio": 1.19,
+          "ratioClean": 2.39
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "124",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "76,52,56",
+          "ratio": 9.37,
+          "ratioClean": 9.46
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "124",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "99,67,69",
+          "ratio": 3.56,
+          "ratioClean": 4.03
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "124",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "124",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "124",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "124",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "92,64,61",
+          "ratio": 3.82,
+          "ratioClean": 3.94
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "123",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "103,126,96",
+          "ratio": 3.68,
+          "ratioClean": 3.72
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "123",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "111,124,97",
+          "ratio": 1.82,
+          "ratioClean": 2.23
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "123",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "123",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "123",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "123",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "84,85,72",
+          "ratio": 3.11,
+          "ratioClean": 3.53
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "119",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "111,96,86",
+          "ratio": 4.99,
+          "ratioClean": 5.09
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "119",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "118,100,90",
+          "ratio": 2.3,
+          "ratioClean": 2.45
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "119",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "123,109,99",
+          "ratio": 2.05,
+          "ratioClean": 2.14
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "115",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "97,86,70",
+          "ratio": 5.94,
+          "ratioClean": 6.63
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "115",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "104,92,79",
+          "ratio": 2.67,
+          "ratioClean": 3.83
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "115",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "115",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "81,70,55",
+          "ratio": 3.78,
+          "ratioClean": 3.97
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "111",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "99,41,38",
+          "ratio": 9.27,
+          "ratioClean": 9.33
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "111",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "108,67,63",
+          "ratio": 3.43,
+          "ratioClean": 4.44
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "111",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "111",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "118,66,62",
+          "ratio": 3.29,
+          "ratioClean": 3.66
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "117",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "150,137,134",
+          "ratio": 2.8,
+          "ratioClean": 3.27
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "117",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "146,149,157",
+          "ratio": 1.23,
+          "ratioClean": 2.75
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "117",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "155,139,148",
+          "ratio": 1.32,
+          "ratioClean": 1.48
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "114",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "101,103,103",
+          "ratio": 4.71,
+          "ratioClean": 4.79
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "114",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "109,110,112",
+          "ratio": 2.09,
+          "ratioClean": 2.25
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "114",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "114",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "129,119,120",
+          "ratio": 1.78,
+          "ratioClean": 1.85
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "116",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "98,95,99",
+          "ratio": 5.21,
+          "ratioClean": 5.74
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "116",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "114,114,117",
+          "ratio": 1.97,
+          "ratioClean": 2.42
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "116",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "101,102,102",
+          "ratio": 2.36,
+          "ratioClean": 3.12
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "118",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "154,126,98",
+          "ratio": 3.14,
+          "ratioClean": 3.77
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "118",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "159,134,108",
+          "ratio": 1.41,
+          "ratioClean": 3.02
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "118",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "158,116,88",
+          "ratio": 1.69,
+          "ratioClean": 2.14
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "120",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "193,199,201",
+          "ratio": 1.42,
+          "ratioClean": 4.31
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "120",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "166,169,175",
+          "ratio": 1.03,
+          "ratioClean": 1.43
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "120",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "173,175,179",
+          "ratio": 1.11,
+          "ratioClean": 1.48
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "112",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "153,157,179",
+          "ratio": 2.22,
+          "ratioClean": 2.37
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "112",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "156,153,168",
+          "ratio": 1.14,
+          "ratioClean": 2.76
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "112",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "1200-dark-blur20",
+          "key": "112",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "157,142,157",
+          "ratio": 1.27,
+          "ratioClean": 2.79
+        },
+        {
+          "cfg": "375-light-blur0",
+          "key": "125",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "158,162,154",
+          "ratio": 5.02,
+          "ratioClean": 7.09
+        },
+        {
+          "cfg": "375-light-blur0",
+          "key": "122",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "101,79,81",
+          "ratio": 1.73,
+          "ratioClean": 2.96
+        },
+        {
+          "cfg": "375-light-blur0",
+          "key": "124",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "70,54,59",
+          "ratio": 1.15,
+          "ratioClean": 1.89
+        },
+        {
+          "cfg": "375-light-blur0",
+          "key": "123",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "100,108,85",
+          "ratio": 2.37,
+          "ratioClean": 2.88
+        },
+        {
+          "cfg": "375-light-blur0",
+          "key": "119",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "145,127,109",
+          "ratio": 3.39,
+          "ratioClean": 4.78
+        },
+        {
+          "cfg": "375-light-blur0",
+          "key": "115",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "124,106,91",
+          "ratio": 2.52,
+          "ratioClean": 5.57
+        },
+        {
+          "cfg": "375-light-blur0",
+          "key": "111",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur0",
+          "key": "117",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur0",
+          "key": "114",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur0",
+          "key": "116",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur0",
+          "key": "118",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur0",
+          "key": "120",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur0",
+          "key": "112",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur6",
+          "key": "125",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "154,160,154",
+          "ratio": 4.88,
+          "ratioClean": 7.09
+        },
+        {
+          "cfg": "375-light-blur6",
+          "key": "122",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "102,82,83",
+          "ratio": 1.8,
+          "ratioClean": 2.65
+        },
+        {
+          "cfg": "375-light-blur6",
+          "key": "124",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "72,54,57",
+          "ratio": 1.15,
+          "ratioClean": 1.85
+        },
+        {
+          "cfg": "375-light-blur6",
+          "key": "123",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "102,111,92",
+          "ratio": 2.48,
+          "ratioClean": 3.03
+        },
+        {
+          "cfg": "375-light-blur6",
+          "key": "119",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "133,109,96",
+          "ratio": 2.7,
+          "ratioClean": 4.39
+        },
+        {
+          "cfg": "375-light-blur6",
+          "key": "115",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "121,106,92",
+          "ratio": 2.5,
+          "ratioClean": 4.03
+        },
+        {
+          "cfg": "375-light-blur6",
+          "key": "111",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur6",
+          "key": "117",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur6",
+          "key": "114",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur6",
+          "key": "116",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur6",
+          "key": "118",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur6",
+          "key": "120",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur6",
+          "key": "112",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur20",
+          "key": "125",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "157,162,157",
+          "ratio": 5.02,
+          "ratioClean": 6.84
+        },
+        {
+          "cfg": "375-light-blur20",
+          "key": "122",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "113,96,99",
+          "ratio": 2.2,
+          "ratioClean": 2.34
+        },
+        {
+          "cfg": "375-light-blur20",
+          "key": "124",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "73,51,56",
+          "ratio": 1.12,
+          "ratioClean": 1.93
+        },
+        {
+          "cfg": "375-light-blur20",
+          "key": "123",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "99,108,94",
+          "ratio": 2.38,
+          "ratioClean": 2.77
+        },
+        {
+          "cfg": "375-light-blur20",
+          "key": "119",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "121,107,98",
+          "ratio": 2.54,
+          "ratioClean": 3.27
+        },
+        {
+          "cfg": "375-light-blur20",
+          "key": "115",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "109,96,82",
+          "ratio": 2.14,
+          "ratioClean": 2.3
+        },
+        {
+          "cfg": "375-light-blur20",
+          "key": "111",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur20",
+          "key": "117",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur20",
+          "key": "114",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur20",
+          "key": "116",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur20",
+          "key": "118",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur20",
+          "key": "120",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-light-blur20",
+          "key": "112",
+          "tag": "name",
+          "color": "rgb(48, 49, 51)",
+          "behind": "245,247,250",
+          "ratio": 12.13,
+          "ratioClean": 12.13
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "125",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "65,61,59",
+          "ratio": 8.9,
+          "ratioClean": 9.25
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "125",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "142,136,128",
+          "ratio": 1.44,
+          "ratioClean": 3.33
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "125",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "128,114,112",
+          "ratio": 1.89,
+          "ratioClean": 2.79
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "122",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "102,81,82",
+          "ratio": 6.07,
+          "ratioClean": 6.17
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "122",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "147,134,138",
+          "ratio": 1.43,
+          "ratioClean": 3.07
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "122",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "122",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "122",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "122",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "163,160,173",
+          "ratio": 1.05,
+          "ratioClean": 2.82
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "124",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "79,55,61",
+          "ratio": 8.94,
+          "ratioClean": 9.06
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "124",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "110,78,79",
+          "ratio": 3.01,
+          "ratioClean": 3.56
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "124",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "124",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "124",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "124",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "73,51,46",
+          "ratio": 4.8,
+          "ratioClean": 4.88
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "123",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "111,129,96",
+          "ratio": 3.49,
+          "ratioClean": 3.6
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "123",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "119,125,103",
+          "ratio": 1.75,
+          "ratioClean": 2.29
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "123",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "123",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "123",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "123",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "94,97,81",
+          "ratio": 2.61,
+          "ratioClean": 2.96
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "119",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "114,84,58",
+          "ratio": 5.71,
+          "ratioClean": 6.03
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "119",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "105,90,79",
+          "ratio": 2.71,
+          "ratioClean": 4.5
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "119",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "112,104,98",
+          "ratio": 2.24,
+          "ratioClean": 3.19
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "115",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "65,59,52",
+          "ratio": 9.16,
+          "ratioClean": 9.16
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "115",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "84,67,54",
+          "ratio": 3.86,
+          "ratioClean": 4.53
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "115",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "115",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "65,59,52",
+          "ratio": 4.53,
+          "ratioClean": 4.53
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "111",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "111",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "111",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "111",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "117",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "117",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "117",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "114",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "114",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "114",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "114",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "116",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "116",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "116",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "118",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "118",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "118",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "120",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "120",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "120",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "112",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "112",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "112",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur0",
+          "key": "112",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "125",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "68,64,62",
+          "ratio": 8.49,
+          "ratioClean": 9.25
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "125",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "140,129,120",
+          "ratio": 1.56,
+          "ratioClean": 2.87
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "125",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "130,114,110",
+          "ratio": 1.88,
+          "ratioClean": 2.56
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "122",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "106,86,87",
+          "ratio": 5.64,
+          "ratioClean": 5.91
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "122",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "148,135,140",
+          "ratio": 1.41,
+          "ratioClean": 3.02
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "122",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "122",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "122",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "122",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "162,155,165",
+          "ratio": 1.11,
+          "ratioClean": 3.59
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "124",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "80,55,60",
+          "ratio": 8.91,
+          "ratioClean": 8.99
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "124",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "103,73,78",
+          "ratio": 3.26,
+          "ratioClean": 3.67
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "124",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "124",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "124",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "124",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "75,51,48",
+          "ratio": 4.75,
+          "ratioClean": 4.93
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "123",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "108,130,99",
+          "ratio": 3.47,
+          "ratioClean": 3.52
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "123",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "116,122,102",
+          "ratio": 1.83,
+          "ratioClean": 2.08
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "123",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "123",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "123",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "123",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "87,97,80",
+          "ratio": 2.67,
+          "ratioClean": 2.99
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "119",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "103,83,65",
+          "ratio": 6.02,
+          "ratioClean": 6.33
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "119",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "103,86,74",
+          "ratio": 2.87,
+          "ratioClean": 3.24
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "119",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "113,103,96",
+          "ratio": 2.26,
+          "ratioClean": 2.96
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "115",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "74,65,52",
+          "ratio": 8.3,
+          "ratioClean": 9.02
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "115",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "87,74,62",
+          "ratio": 3.51,
+          "ratioClean": 4.53
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "115",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "115",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "65,59,52",
+          "ratio": 4.53,
+          "ratioClean": 4.53
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "111",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "111",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "111",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "111",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "117",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "117",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "117",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "114",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "114",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "114",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "114",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "116",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "116",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "116",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "118",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "118",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "118",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "120",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "120",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "120",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "112",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "112",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "112",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur6",
+          "key": "112",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "125",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "94,85,80",
+          "ratio": 6.02,
+          "ratioClean": 6.14
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "125",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "131,122,122",
+          "ratio": 1.71,
+          "ratioClean": 2.79
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "125",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "126,111,105",
+          "ratio": 1.97,
+          "ratioClean": 2.11
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "122",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "117,99,102",
+          "ratio": 4.66,
+          "ratioClean": 4.73
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "122",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "139,123,127",
+          "ratio": 1.64,
+          "ratioClean": 2.22
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "122",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "122",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "122",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "122",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "159,150,158",
+          "ratio": 1.18,
+          "ratioClean": 2.47
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "124",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "80,53,56",
+          "ratio": 9.12,
+          "ratioClean": 9.25
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "124",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "97,66,67",
+          "ratio": 3.64,
+          "ratioClean": 3.95
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "124",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "124",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "124",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "124",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "87,59,57",
+          "ratio": 4.12,
+          "ratioClean": 4.22
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "123",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "102,126,96",
+          "ratio": 3.69,
+          "ratioClean": 3.69
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "123",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "107,123,97",
+          "ratio": 1.86,
+          "ratioClean": 2.2
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "123",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "123",
+          "tag": "chip2",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "123",
+          "tag": "chip3",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "123",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "86,95,78",
+          "ratio": 2.74,
+          "ratioClean": 3.16
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "119",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "106,91,82",
+          "ratio": 5.38,
+          "ratioClean": 5.47
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "119",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "114,96,87",
+          "ratio": 2.44,
+          "ratioClean": 2.61
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "119",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "120,107,98",
+          "ratio": 2.11,
+          "ratioClean": 2.21
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "115",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "95,82,63",
+          "ratio": 6.29,
+          "ratioClean": 7.5
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "115",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "103,91,79",
+          "ratio": 2.7,
+          "ratioClean": 3.6
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "115",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "38,39,39",
+          "ratio": 6.15,
+          "ratioClean": 6.15
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "115",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "78,67,54",
+          "ratio": 3.95,
+          "ratioClean": 4.15
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "111",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "111",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "111",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "111",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "117",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "117",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "117",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "114",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "114",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "114",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "114",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "116",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "116",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "116",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "118",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "118",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "118",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "120",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "120",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "120",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "112",
+          "tag": "name",
+          "color": "rgb(229, 234, 243)",
+          "behind": "20,20,20",
+          "ratio": 15.26,
+          "ratioClean": 15.26
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "112",
+          "tag": "counts",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "112",
+          "tag": "chip1",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        },
+        {
+          "cfg": "375-dark-blur20",
+          "key": "112",
+          "tag": "recent",
+          "color": "rgb(163, 166, 173)",
+          "behind": "20,20,20",
+          "ratio": 7.56,
+          "ratioClean": 7.56
+        }
+      ]
+    }
+  }
+}
