@@ -100,17 +100,21 @@ async function onLoginSuccess() {
 }
 
 /**
- * 注册成功：doRegister 会尝试自动登录。
- *   登录成功（返回体带 token，或补登录成功）→ 直接关弹窗，侧栏立即出现用户名；
- *   只建了账号没登进来 → 留在弹窗里切回登录表单，并提示「注册成功，请登录」。
+ * 注册成功（P5.79 审核制）
+ *   pending=true（当前后端的常态）：**不自动登录**，切回登录表单并提示「注册成功，等待站长审核后可登录」；
+ *   autoLoggedIn=true（后端将来若关掉审核、注册直接给 token）：直接关弹窗，侧栏立即出现用户名；
+ *   其它（建了账号但没登进来）：切回登录表单提示「注册成功，请登录」。
  */
 async function onRegisterSuccess(payload) {
   if (payload && payload.autoLoggedIn) {
     await onLoginSuccess()
     return
   }
-  notice.value = '注册成功，请登录'
+  // 顺序很重要：switchMode 会清空 notice，所以先切表单、再写提示
   await switchMode('login')
+  notice.value = payload && payload.pending
+    ? (payload.message || '注册成功，等待站长审核后可登录')
+    : '注册成功，请登录'
 }
 
 watch(visible, async (open) => {

@@ -13,6 +13,9 @@ import { getToolList } from '@/api/tool.js' // GET /toolInfo/list，返回工具
 import { APP_INFO } from '@/utils/constants' // 站点信息常量（名称、版权等）
 import * as ElementPlusIcons from '@element-plus/icons-vue' // 按名字动态取图标组件
 import BrandMark from '@/components/BrandMark.vue' // 品牌图形（与左栏 / 顶栏同源），hero 标题前那一枚
+// P5.77：工具分「离线可用 / 在线服务」，以及后端可用的兜底状态
+import { isOfflineRoute, isOfflineTool, splitToolsBySection, toolBadgeText } from '@/utils/serviceCatalog'
+import { useBackendHealth } from '@/composables/useBackendHealth'
 
 // ========== 常量 ==========
 // 最近使用的持久化键与上限
@@ -80,11 +83,14 @@ const FALLBACK_TOOLS = [
 
 // ========== 响应式状态 ==========
 const router = useRouter()
-const toolList = ref([]) // 归一化后的卡片列表：{ id, name, desc, route, icon, sort, external, category }
+// 后端可用性单例：offline 时在线服务的卡片要点不动，离线工具的卡片照常能进
+const { isOffline: backendOffline } = useBackendHealth()
+const toolList = ref([]) // 归一化后的卡片列表：{ id, name, desc, route, icon, sort, external, category, offline }
 const loading = ref(true) // 加载中：渲染骨架占位
 const loadError = ref(false) // 加载失败：渲染提示条
 const keyword = ref('') // 搜索关键词
 const category = ref('all') // 当前分类
+
 const recentTools = ref([]) // 最近使用：{ id, name, route }
 const toolsSection = ref(null) // 工具索引区，供 Hero 主按钮平滑滚动
 
@@ -111,7 +117,9 @@ const normalizeTool = (item) => ({
   sort: item.sort,
   // 后台显式标了 external，或 route 本身就是静态页 / 外站地址
   external: !!item.external || isStaticRoute(item.toolRoute),
-  category: resolveCategory(item)
+  category: resolveCategory(item),
+  // P5.77：离线可用 = 路由命中前端白名单（纯浏览器运算，后端挂掉也能用）
+  offline: isOfflineTool({ route: item.toolRoute })
 })
 
 // 接口数据即完整列表（按 sort 升序），媒体站等静态页入口也由后台下发
@@ -148,7 +156,7 @@ const fetchTools = async () => {
 }
 
 // ========== 过滤 ==========
-// 本地过滤：分类 + 关键词（匹配名称 / 描述 / 路由）
+// 本地过滤：分类 + 关键词（匹配名称 / 描述 / 路由）；离线 / 在线的拆分交给下面的分区
 const filteredTools = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
   return toolList.value.filter((tool) => {
@@ -159,6 +167,11 @@ const filteredTools = computed(() => {
     )
   })
 })
+
+// ========== 分区（P5.77 二期） ==========
+// 两个固定分区：离线工具在前、在线服务在后；空区自动不渲染（例如只有离线工具时只出一区）。
+// 分区只做「拆」，分类 / 关键词过滤仍在 filteredTools 里，两区共用同一份结果。
+const sections = computed(() => splitToolsBySection(filteredTools.value))
 
 // ========== 最近使用 ==========
 // 读取：localStorage 里存的是接口风格字段 { id, toolName, toolRoute }，这里转成视图字段
@@ -197,9 +210,19 @@ const rememberTool = (tool) => {
 }
 
 // ========== 交互 ==========
+// 在线服务 + 后端 offline：卡片 / 最近使用项禁用（离线工具永远不锁）
+const isToolLocked = (tool) => Boolean(tool) && !tool.offline && backendOffline.value
+const isRouteLocked = (route) => !isOfflineRoute(route) && backendOffline.value
+// 禁用态的统一提示（与侧栏、占位页同一句话）
+const LOCKED_HINT = '后端服务暂不可用'
+// 卡片徽标：离线「离线 · 数据不上传」；在线不再标「需后端」，只有掉线时显示「暂不可用」（空串=不渲染）
+const badgeOf = (tool) => toolBadgeText(tool, isToolLocked(tool))
+
 // 点击卡片 / 最近使用项：external 或静态页整页跳转，其余走 vue-router
 const goTool = (tool) => {
   if (!tool || !tool.route) return
+  // 锁住的在线服务：点了也不动，说明由 title 与徽标给出
+  if (isToolLocked(tool)) return
   rememberTool(tool)
   if (tool.external || isStaticRoute(tool.route)) window.location.href = tool.route
   else router.push(tool.route)
@@ -274,7 +297,13 @@ onMounted(() => {
 
       <div class="hero__actions">
         <el-button type="primary" class="hero__btn" @click="scrollToTools">开始使用 ↓</el-button>
-        <el-button class="hero__btn" @click="goMedia">媒体站 →</el-button>
+        <!-- 媒体站是纯在线服务：后端不可用时按钮禁用（点进去也只会是占位页） -->
+        <el-button
+          class="hero__btn"
+          :disabled="backendOffline"
+          :title="backendOffline ? LOCKED_HINT : ''"
+          @click="goMedia"
+        >媒体站 →</el-button>
       </div>
     </section>
 
@@ -310,19 +339,22 @@ onMounted(() => {
         />
       </div>
 
-      <!-- 分类 chips -->
-      <div class="chips" role="group" aria-label="工具分类">
-        <button
-          v-for="item in CATEGORIES"
-          :key="item.key"
-          type="button"
-          class="chip"
-          :class="{ 'chip--active': category === item.key }"
-          :aria-pressed="category === item.key"
-          @click="category = item.key"
-        >
-          {{ item.label }}
-        </button>
+      <!-- 分类 chips（可用性的三档筛选已取消：改由下面两个固定分区承担） -->
+      <div class="filter-row">
+        <span class="filter-row__label">分类</span>
+        <div class="chips" role="group" aria-label="工具分类">
+          <button
+            v-for="item in CATEGORIES"
+            :key="item.key"
+            type="button"
+            class="chip"
+            :class="{ 'chip--active': category === item.key }"
+            :aria-pressed="category === item.key"
+            @click="category = item.key"
+          >
+            {{ item.label }}
+          </button>
+        </div>
       </div>
 
       <!-- 最近使用：无记录时整块隐藏 -->
@@ -334,6 +366,9 @@ onMounted(() => {
             :key="item.route"
             type="button"
             class="recent__item"
+            :class="{ 'is-disabled': isRouteLocked(item.route) }"
+            :disabled="isRouteLocked(item.route)"
+            :title="isRouteLocked(item.route) ? LOCKED_HINT : undefined"
             @click="goTool(item)"
           >
             {{ item.name }}
@@ -341,9 +376,9 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- 接口失败提示：下方仍渲染兜底数据 -->
+      <!-- 接口失败提示：下方仍渲染兜底数据；后端整体 offline 时不重复刷这条（顶部提示条已说明） -->
       <el-alert
-        v-if="loadError"
+        v-if="loadError && !backendOffline"
         class="tools__alert"
         type="warning"
         title="工具加载失败，已展示默认入口"
@@ -356,25 +391,56 @@ onMounted(() => {
         <el-skeleton v-for="n in 4" :key="n" class="tool-skeleton" :rows="2" animated />
       </div>
 
-      <!-- 卡片网格：宽屏 4 列 / <1400 三列 / <900 两列 / <640 单列 -->
-      <div v-else-if="filteredTools.length" class="tool-grid">
-        <a
-          v-for="tool in filteredTools"
-          :key="tool.id"
-          class="tool-card"
-          :href="tool.route || '#'"
-          @click.prevent="goTool(tool)"
+      <!-- 两个固定分区：离线工具在上、在线服务在下；空区不渲染（分类 / 关键词过滤后为空也整区消失） -->
+      <template v-else-if="sections.length">
+        <section
+          v-for="section in sections"
+          :key="section.key"
+          class="tool-section"
+          :data-section="section.key"
         >
-          <span class="tool-card__icon">
-            <component :is="iconComp(tool.icon)" v-if="iconComp(tool.icon)" />
-            <span v-else-if="isSvgIcon(tool.icon)" class="tool-card__svg" v-html="tool.icon"></span>
-            <span v-else class="tool-card__initial">{{ initialOf(tool.name) }}</span>
-          </span>
-          <span class="tool-card__name">{{ tool.name }}</span>
-          <span class="tool-card__desc">{{ tool.desc || '暂无描述' }}</span>
-          <span class="tool-card__tag">本地运算</span>
-        </a>
-      </div>
+          <div class="tool-section__head">
+            <div class="tool-section__text">
+              <h3 class="tool-section__title">{{ section.title }}</h3>
+              <p class="tool-section__sub">{{ section.subtitle }}</p>
+            </div>
+            <span class="tool-section__count">{{ section.tools.length }} 个</span>
+          </div>
+
+          <!-- 卡片网格：宽屏 4 列 / <1400 三列 / <900 两列 / <640 单列 -->
+          <div class="tool-grid">
+            <!-- 卡片：离线工具永远可点（后端挂了也能进），在线服务在后端 offline 时禁用 -->
+            <a
+              v-for="tool in section.tools"
+              :key="tool.id"
+              class="tool-card"
+              :class="{ 'is-locked': isToolLocked(tool) }"
+              :href="isToolLocked(tool) ? undefined : tool.route || '#'"
+              :aria-disabled="isToolLocked(tool) ? 'true' : undefined"
+              :title="isToolLocked(tool) ? LOCKED_HINT : undefined"
+              :data-offline="tool.offline ? '1' : '0'"
+              @click.prevent="goTool(tool)"
+            >
+              <span class="tool-card__icon">
+                <component :is="iconComp(tool.icon)" v-if="iconComp(tool.icon)" />
+                <span v-else-if="isSvgIcon(tool.icon)" class="tool-card__svg" v-html="tool.icon"></span>
+                <span v-else class="tool-card__initial">{{ initialOf(tool.name) }}</span>
+              </span>
+              <span class="tool-card__name">{{ tool.name }}</span>
+              <span class="tool-card__desc">{{ tool.desc || '暂无描述' }}</span>
+              <!-- 徽标：离线工具才有「离线 · 数据不上传」；在线工具平时不标注，掉线时才显示「暂不可用」 -->
+              <span
+                v-if="badgeOf(tool)"
+                class="tool-card__tag"
+                :class="{ 'tool-card__tag--offline': tool.offline, 'is-locked': isToolLocked(tool) }"
+              >
+                <span class="tool-card__dot" aria-hidden="true"></span>
+                {{ badgeOf(tool) }}
+              </span>
+            </a>
+          </div>
+        </section>
+      </template>
 
       <!-- 无匹配：空态 -->
       <p v-else class="tools__empty">没有匹配的工具，换个关键词或分类试试</p>
@@ -635,12 +701,26 @@ onMounted(() => {
   }
 }
 
+/* 筛选行（P5.77）：左侧 12px 小标签 + 右侧 chips，可用性与分类各一行 */
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+
+  &__label {
+    flex: none;
+    font-size: 12px;
+    color: var(--qt-text-tertiary, var(--qt-text-secondary));
+  }
+}
+
 /* 分类 chips */
 .chips {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 12px;
 }
 
 .chip {
@@ -699,6 +779,61 @@ onMounted(() => {
       border-color: var(--qt-primary);
       color: var(--qt-primary);
     }
+
+    /* 后端不可用时的在线服务入口：灰掉、点不动 */
+    &.is-disabled {
+      color: var(--qt-text-tertiary);
+      cursor: not-allowed;
+
+      &:hover {
+        border-color: var(--qt-border);
+        color: var(--qt-text-tertiary);
+      }
+    }
+  }
+}
+
+/* ---------- 分区（P5.77 二期）：离线工具在上、在线服务在下 ---------- */
+.tool-section {
+  margin-top: 18px;
+
+  /* 两区之间留一条分隔线：一眼能看出「离线一组、在线一组」 */
+  & + & {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--qt-border);
+  }
+
+  &__head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--qt-text-primary);
+  }
+
+  &__sub {
+    margin: 4px 0 0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--qt-text-secondary);
+  }
+
+  &__count {
+    flex: none;
+    font-size: 12px;
+    color: var(--qt-text-secondary);
+  }
+
+  /* 分区内的网格紧跟在标题下面，不再吃全局的 18px 上间距 */
+  .tool-grid {
+    margin-top: 12px;
   }
 }
 
@@ -739,6 +874,17 @@ onMounted(() => {
   &:focus-visible {
     outline: 2px solid var(--qt-primary);
     outline-offset: 2px;
+  }
+
+  /* 在线服务 + 后端 offline：整卡灰掉、不可点；hover 也不再抬升 */
+  &.is-locked {
+    opacity: 0.6;
+    cursor: not-allowed;
+
+    &:hover {
+      border-color: var(--qt-border);
+      transform: none;
+    }
   }
 
   &__icon {
@@ -782,7 +928,11 @@ onMounted(() => {
     color: var(--qt-text-secondary);
   }
 
+  /* 徽标（P5.77）：离线 = 绿点「离线 · 数据不上传」；在线 = 「需后端」；在线服务挂掉 = 警告色「暂不可用」 */
   &__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     align-self: flex-start;
     margin-top: auto;
     padding: 2px 8px;
@@ -790,6 +940,24 @@ onMounted(() => {
     border-radius: 999px;
     font-size: 11px;
     color: var(--qt-text-secondary);
+
+    &--offline {
+      color: var(--qt-success);
+    }
+
+    /* 在线服务只在掉线时出现徽标，用警告色说明「暂不可用」 */
+    &.is-locked {
+      color: var(--qt-warning);
+    }
+  }
+
+  /* 徽标前的状态点：颜色跟随徽标文字（currentColor），不另写一套色值 */
+  &__dot {
+    flex: none;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: currentColor;
   }
 }
 

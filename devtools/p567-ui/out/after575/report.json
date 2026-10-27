@@ -1,0 +1,777 @@
+{
+  "passed": 120,
+  "failures": [],
+  "facts": {
+    "runs": [
+      {
+        "label": "1600/light",
+        "cards": 13,
+        "withBg": 13,
+        "noBg": 0,
+        "worstAll": 8.1,
+        "worstName": {
+          "name": "喵小吉 Aeolian-2",
+          "line": "name",
+          "text": "喵小吉 Aeolian-2",
+          "hasBg": true,
+          "color": "rgb(48, 49, 51)",
+          "textRgb": [
+            48,
+            49,
+            51
+          ],
+          "rect": {
+            "x": 618.25,
+            "y": 189.7,
+            "w": 167.47,
+            "h": 22.39,
+            "right": 785.72,
+            "bottom": 212.09
+          },
+          "samples": 166,
+          "dropped": 0,
+          "worst": 8.1,
+          "worstBg": [
+            204,
+            204,
+            203
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                204,
+                204,
+                203
+              ],
+              "ratio": 8.1
+            },
+            {
+              "rgb": [
+                204,
+                204,
+                203
+              ],
+              "ratio": 8.1
+            },
+            {
+              "rgb": [
+                204,
+                204,
+                203
+              ],
+              "ratio": 8.1
+            }
+          ]
+        },
+        "worstCounts": {
+          "name": "喵小吉 Aeolian-2",
+          "line": "counts",
+          "text": "0 部视频 · 1 本相册 · 48 张照片",
+          "hasBg": true,
+          "color": "rgb(48, 49, 51)",
+          "textRgb": [
+            48,
+            49,
+            51
+          ],
+          "rect": {
+            "x": 618.25,
+            "y": 215.09,
+            "w": 167.47,
+            "h": 15.52,
+            "right": 785.72,
+            "bottom": 230.61
+          },
+          "samples": 166,
+          "dropped": 0,
+          "worst": 8.1,
+          "worstBg": [
+            204,
+            204,
+            203
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                204,
+                204,
+                203
+              ],
+              "ratio": 8.1
+            },
+            {
+              "rgb": [
+                204,
+                204,
+                203
+              ],
+              "ratio": 8.1
+            },
+            {
+              "rgb": [
+                204,
+                204,
+                203
+              ],
+              "ratio": 8.1
+            }
+          ]
+        },
+        "heights": [
+          103.7,
+          103.7
+        ],
+        "docOverflow": [
+          1585,
+          1600
+        ]
+      },
+      {
+        "label": "1600/dark",
+        "cards": 13,
+        "withBg": 13,
+        "noBg": 0,
+        "worstAll": 8.5,
+        "worstName": {
+          "name": "念念",
+          "line": "name",
+          "text": "念念",
+          "hasBg": true,
+          "color": "rgb(229, 234, 243)",
+          "textRgb": [
+            229,
+            234,
+            243
+          ],
+          "rect": {
+            "x": 965.5,
+            "y": 189.7,
+            "w": 196.69,
+            "h": 22.39,
+            "right": 1162.19,
+            "bottom": 212.09
+          },
+          "samples": 196,
+          "dropped": 0,
+          "worst": 8.6,
+          "worstBg": [
+            64,
+            64,
+            63
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                64,
+                64,
+                63
+              ],
+              "ratio": 8.6
+            },
+            {
+              "rgb": [
+                64,
+                64,
+                63
+              ],
+              "ratio": 8.6
+            },
+            {
+              "rgb": [
+                64,
+                64,
+                63
+              ],
+              "ratio": 8.6
+            }
+          ]
+        },
+        "worstCounts": {
+          "name": "念念",
+          "line": "counts",
+          "text": "0 部视频 · 144 本相册 · 9017 张照片",
+          "hasBg": true,
+          "color": "rgb(229, 234, 243)",
+          "textRgb": [
+            229,
+            234,
+            243
+          ],
+          "rect": {
+            "x": 965.5,
+            "y": 215.09,
+            "w": 196.69,
+            "h": 15.52,
+            "right": 1162.19,
+            "bottom": 230.61
+          },
+          "samples": 196,
+          "dropped": 0,
+          "worst": 8.5,
+          "worstBg": [
+            64,
+            65,
+            63
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                64,
+                65,
+                63
+              ],
+              "ratio": 8.5
+            },
+            {
+              "rgb": [
+                64,
+                65,
+                63
+              ],
+              "ratio": 8.5
+            },
+            {
+              "rgb": [
+                64,
+                65,
+                63
+              ],
+              "ratio": 8.5
+            }
+          ]
+        },
+        "heights": [
+          103.7,
+          103.7
+        ],
+        "docOverflow": [
+          1585,
+          1600
+        ]
+      },
+      {
+        "label": "1200/light",
+        "cards": 13,
+        "withBg": 13,
+        "noBg": 0,
+        "worstAll": 8.08,
+        "worstName": {
+          "name": "喵小吉 Aeolian-2",
+          "line": "name",
+          "text": "喵小吉 Aeolian-2",
+          "hasBg": true,
+          "color": "rgb(48, 49, 51)",
+          "textRgb": [
+            48,
+            49,
+            51
+          ],
+          "rect": {
+            "x": 930.33,
+            "y": 189.7,
+            "w": 167.47,
+            "h": 22.39,
+            "right": 1097.8,
+            "bottom": 212.09
+          },
+          "samples": 166,
+          "dropped": 0,
+          "worst": 8.08,
+          "worstBg": [
+            203,
+            204,
+            202
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                203,
+                204,
+                202
+              ],
+              "ratio": 8.08
+            },
+            {
+              "rgb": [
+                203,
+                204,
+                202
+              ],
+              "ratio": 8.08
+            },
+            {
+              "rgb": [
+                204,
+                204,
+                203
+              ],
+              "ratio": 8.1
+            }
+          ]
+        },
+        "worstCounts": {
+          "name": "喵小吉 Aeolian-2",
+          "line": "counts",
+          "text": "0 部视频 · 1 本相册 · 48 张照片",
+          "hasBg": true,
+          "color": "rgb(48, 49, 51)",
+          "textRgb": [
+            48,
+            49,
+            51
+          ],
+          "rect": {
+            "x": 930.33,
+            "y": 215.09,
+            "w": 167.47,
+            "h": 15.52,
+            "right": 1097.8,
+            "bottom": 230.61
+          },
+          "samples": 166,
+          "dropped": 0,
+          "worst": 8.08,
+          "worstBg": [
+            203,
+            204,
+            202
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                203,
+                204,
+                202
+              ],
+              "ratio": 8.08
+            },
+            {
+              "rgb": [
+                203,
+                204,
+                202
+              ],
+              "ratio": 8.08
+            },
+            {
+              "rgb": [
+                204,
+                204,
+                203
+              ],
+              "ratio": 8.1
+            }
+          ]
+        },
+        "heights": [
+          103.7,
+          103.7
+        ],
+        "docOverflow": [
+          1185,
+          1200
+        ]
+      },
+      {
+        "label": "1200/dark",
+        "cards": 13,
+        "withBg": 13,
+        "noBg": 0,
+        "worstAll": 8.51,
+        "worstName": {
+          "name": "念念",
+          "line": "name",
+          "text": "念念",
+          "hasBg": true,
+          "color": "rgb(229, 234, 243)",
+          "textRgb": [
+            229,
+            234,
+            243
+          ],
+          "rect": {
+            "x": 271,
+            "y": 305.41,
+            "w": 196.69,
+            "h": 22.39,
+            "right": 467.69,
+            "bottom": 327.8
+          },
+          "samples": 196,
+          "dropped": 0,
+          "worst": 8.6,
+          "worstBg": [
+            64,
+            64,
+            63
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                64,
+                64,
+                63
+              ],
+              "ratio": 8.6
+            },
+            {
+              "rgb": [
+                64,
+                64,
+                63
+              ],
+              "ratio": 8.6
+            },
+            {
+              "rgb": [
+                64,
+                64,
+                63
+              ],
+              "ratio": 8.6
+            }
+          ]
+        },
+        "worstCounts": {
+          "name": "念念",
+          "line": "counts",
+          "text": "0 部视频 · 144 本相册 · 9017 张照片",
+          "hasBg": true,
+          "color": "rgb(229, 234, 243)",
+          "textRgb": [
+            229,
+            234,
+            243
+          ],
+          "rect": {
+            "x": 271,
+            "y": 330.8,
+            "w": 196.69,
+            "h": 15.52,
+            "right": 467.69,
+            "bottom": 346.31
+          },
+          "samples": 196,
+          "dropped": 0,
+          "worst": 8.51,
+          "worstBg": [
+            64,
+            65,
+            62
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                64,
+                65,
+                62
+              ],
+              "ratio": 8.51
+            },
+            {
+              "rgb": [
+                64,
+                65,
+                62
+              ],
+              "ratio": 8.51
+            },
+            {
+              "rgb": [
+                64,
+                65,
+                62
+              ],
+              "ratio": 8.51
+            }
+          ]
+        },
+        "heights": [
+          103.7,
+          103.7
+        ],
+        "docOverflow": [
+          1185,
+          1200
+        ]
+      },
+      {
+        "label": "375/light",
+        "cards": 13,
+        "withBg": 13,
+        "noBg": 0,
+        "worstAll": 8.19,
+        "worstName": {
+          "name": "梨霜儿",
+          "line": "name",
+          "text": "梨霜儿",
+          "hasBg": true,
+          "color": "rgb(48, 49, 51)",
+          "textRgb": [
+            48,
+            49,
+            51
+          ],
+          "rect": {
+            "x": 75,
+            "y": 611.63,
+            "w": 153.27,
+            "h": 22.39,
+            "right": 228.27,
+            "bottom": 634.02
+          },
+          "samples": 152,
+          "dropped": 0,
+          "worst": 8.19,
+          "worstBg": [
+            205,
+            205,
+            205
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                205,
+                205,
+                205
+              ],
+              "ratio": 8.19
+            },
+            {
+              "rgb": [
+                205,
+                205,
+                205
+              ],
+              "ratio": 8.19
+            },
+            {
+              "rgb": [
+                205,
+                205,
+                205
+              ],
+              "ratio": 8.19
+            }
+          ]
+        },
+        "worstCounts": {
+          "name": "素人",
+          "line": "counts",
+          "text": "159 部视频 · 2 本相册 · 118 张照片",
+          "hasBg": true,
+          "color": "rgb(48, 49, 51)",
+          "textRgb": [
+            48,
+            49,
+            51
+          ],
+          "rect": {
+            "x": 75,
+            "y": 200.89,
+            "w": 181.11,
+            "h": 14.84,
+            "right": 256.11,
+            "bottom": 215.73
+          },
+          "samples": 180,
+          "dropped": 0,
+          "worst": 8.19,
+          "worstBg": [
+            205,
+            205,
+            205
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                205,
+                205,
+                205
+              ],
+              "ratio": 8.19
+            },
+            {
+              "rgb": [
+                205,
+                205,
+                205
+              ],
+              "ratio": 8.19
+            },
+            {
+              "rgb": [
+                205,
+                205,
+                205
+              ],
+              "ratio": 8.19
+            }
+          ]
+        },
+        "heights": [
+          101.03,
+          101.03
+        ],
+        "docOverflow": [
+          360,
+          375
+        ]
+      },
+      {
+        "label": "375/dark",
+        "cards": 13,
+        "withBg": 13,
+        "noBg": 0,
+        "worstAll": 9.55,
+        "worstName": {
+          "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+          "line": "name",
+          "text": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+          "hasBg": true,
+          "color": "rgb(229, 234, 243)",
+          "textRgb": [
+            229,
+            234,
+            243
+          ],
+          "rect": {
+            "x": 75,
+            "y": 492.09,
+            "w": 258,
+            "h": 22.39,
+            "right": 333,
+            "bottom": 514.48
+          },
+          "samples": 258,
+          "dropped": 0,
+          "worst": 10.38,
+          "worstBg": [
+            57,
+            50,
+            50
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                57,
+                50,
+                50
+              ],
+              "ratio": 10.38
+            },
+            {
+              "rgb": [
+                57,
+                50,
+                50
+              ],
+              "ratio": 10.38
+            },
+            {
+              "rgb": [
+                57,
+                50,
+                49
+              ],
+              "ratio": 10.39
+            }
+          ]
+        },
+        "worstCounts": {
+          "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+          "line": "counts",
+          "text": "1 部视频 · 0 本相册 · 0 张照片",
+          "hasBg": true,
+          "color": "rgb(229, 234, 243)",
+          "textRgb": [
+            229,
+            234,
+            243
+          ],
+          "rect": {
+            "x": 75,
+            "y": 517.48,
+            "w": 258,
+            "h": 14.84,
+            "right": 333,
+            "bottom": 532.33
+          },
+          "samples": 258,
+          "dropped": 0,
+          "worst": 9.55,
+          "worstBg": [
+            53,
+            58,
+            60
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                53,
+                58,
+                60
+              ],
+              "ratio": 9.55
+            },
+            {
+              "rgb": [
+                53,
+                58,
+                60
+              ],
+              "ratio": 9.55
+            },
+            {
+              "rgb": [
+                54,
+                57,
+                59
+              ],
+              "ratio": 9.64
+            }
+          ]
+        },
+        "heights": [
+          101.03,
+          101.03
+        ],
+        "docOverflow": [
+          360,
+          375
+        ]
+      }
+    ],
+    "network": {
+      "domImageElements": 26,
+      "avatarUrlsInDom": 26,
+      "backendThumbRequests": 13,
+      "uniqueThumbUrls": 13,
+      "duplicates": [],
+      "sample": {
+        "viewport": "1600/light",
+        "person": "素人",
+        "avatarSrc": "/api/media/thumb/p/a159/0000?crop=0.2111,0.1875,0.6000,0.3375",
+        "backgroundSrc": "/api/media/thumb/p/a159/0000?crop=0.2111,0.1875,0.6000,0.3375",
+        "equal": true
+      },
+      "proxyAllHits": 39,
+      "resourceEntries": 18,
+      "firstHits": [
+        "/api/media/track",
+        "/api/toolVisit/add",
+        "/api/media/edit-policy",
+        "/api/media/index",
+        "/api/media/persons",
+        "/api/media/person/125",
+        "/api/media/person/122",
+        "/api/media/person/124",
+        "/api/media/person/123",
+        "/api/media/person/111",
+        "/api/media/person/112",
+        "/api/media/thumb/p/a158/0000"
+      ]
+    },
+    "exceptions": []
+  }
+}

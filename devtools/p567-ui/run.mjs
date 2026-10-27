@@ -492,7 +492,7 @@ function scanCards() {
         avatarText: avBox ? (avBox.textContent || '').trim() : '',
         card: { rect: rect(c), overflow: cs.overflow, borderRadius: cs.borderRadius, position: cs.position, backgroundImage: cs.backgroundImage },
         z: { bg: bg ? getComputedStyle(bg).zIndex : null, mask: mask ? getComputedStyle(mask).zIndex : null, body: (function () { var b = c.querySelector('.pw-body'); return b ? getComputedStyle(b).zIndex : null })() },
-        bgStyle: bgImg ? { filter: getComputedStyle(bgImg).filter, objectPosition: getComputedStyle(bgImg).objectPosition, transform: getComputedStyle(bgImg).transform, transition: getComputedStyle(bgImg).transitionDuration } : null,
+        bgStyle: bgImg ? { filter: getComputedStyle(bgImg).filter, objectPosition: getComputedStyle(bgImg).objectPosition, objectFit: getComputedStyle(bgImg).objectFit, transform: getComputedStyle(bgImg).transform, transition: getComputedStyle(bgImg).transitionDuration } : null,
         maskStyle: mask ? { background: getComputedStyle(mask).backgroundImage } : null,
         name: nameEl ? { rect: rect(nameEl), text: (nameEl.textContent || '').trim(), color: getComputedStyle(nameEl).color } : null,
         counts: countsEl ? { rect: rect(countsEl), text: (countsEl.textContent || '').trim(), color: getComputedStyle(countsEl).color, sw: countsEl.scrollWidth, cw: countsEl.clientWidth, whiteSpace: getComputedStyle(countsEl).whiteSpace, h: rect(countsEl).h, lh: parseFloat(getComputedStyle(countsEl).lineHeight) } : null,
@@ -568,14 +568,17 @@ for (const vp of VIEWPORTS) {
       g.cards.every((c) => c.dataBg === (c.hasBg ? '1' : '0')),
       label + ' data-bg 与 .pw-bg 存在性一致'
     )
-    ok(g.cards.every((c) => c.maskCount === c.bgCount), label + ' 遮罩层与背景层同生同灭（mask=' + g.cards[0].maskCount + '）')
+    // P5.76：.pw-mask 遮罩层整块删除 —— 旧断言「遮罩与背景同生同灭」作废，改成「全页 0 个遮罩元素」，
+    // 只要有人把遮罩加回来就会红（性质更强的断言，不是放宽）。
+    ok(g.cards.every((c) => c.maskCount === 0), label + ' 全页没有 .pw-mask 遮罩层（P5.76 删除）', 'mask=' + g.cards[0].maskCount)
     ok(
       g.cards.every((c) => c.card.overflow === 'hidden'),
       label + ' 卡片 overflow:hidden（背景不溢出圆角）'
     )
+    // P5.76：中间的遮罩层（z=1）删除 → 层级只剩 背景(0) < 文字(2)
     ok(
-      withBg.every((c) => c.z.bg === '0' && c.z.mask === '1' && c.z.body === '2'),
-      label + ' 层级 背景(0) < 遮罩(1) < 文字(2)',
+      withBg.every((c) => c.z.bg === '0' && c.z.mask === null && c.z.body === '2'),
+      label + ' 层级 背景(0) < 文字(2)（遮罩层已删除）',
       JSON.stringify(withBg[0] && withBg[0].z)
     )
     // P5.72：模糊半径不再写死在 CSS 里，改由「背景模糊」滑块 → 根节点 --pw-bg-blur 决定。
@@ -586,10 +589,12 @@ for (const vp of VIEWPORTS) {
       label + ' 背景样式 = blur(' + blurNow + 'px) saturate(1.1) brightness(.9)（P5.72 半径来自滑块）',
       withBg[0] && withBg[0].bgStyle.filter
     )
+    // P5.76：定位方式从「cover 铺满卡片、按 center 25% 裁」改成「按卡片高度等比缩放 + 右对齐」，
+    // 旧的 object-position: center 25% 断言随 cover 一起作废；新的等价断言是「右对齐 + contain 不裁」。
     ok(
-      withBg.every((c) => /^(50%|center) 25%$/.test(c.bgStyle.objectPosition)),
-      label + ' 背景 object-position: center 25%（露脸）',
-      withBg[0] && withBg[0].bgStyle.objectPosition
+      withBg.every((c) => /(right center|100% 50%)$/.test(c.bgStyle.objectPosition) && c.bgStyle.objectFit === 'contain'),
+      label + ' 背景 object-position: right center + object-fit: contain（P5.76 右对齐不裁）',
+      withBg[0] && withBg[0].bgStyle.objectPosition + ' / ' + withBg[0].bgStyle.objectFit
     )
     ok(
       g.cards.every((c) => !c.hasBg || c.personId === '' || c.counts === null || true) && withBg.every((c) => c.kind !== 'initial'),

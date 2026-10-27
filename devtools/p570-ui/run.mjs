@@ -16,9 +16,11 @@
  *   E 登录成功（打桩）：弹窗关闭、侧栏出现用户名 + 个人中心、token 落 localStorage、当前页面原地不动、/me 被调
  *   F 窄屏 375：顶栏「登录」打开，弹窗全宽、无横向溢出、可滚动
  *   G 深链：直接访问 /login、/register 仍是独立页且复用同一份表单；弹窗内「用邀请码注册」就地切换、不导航
- *   J 弹窗内注册（真后端）：切表单不关窗/不跳页、字段与焦点、两次密码不一致（本地拦截）、
- *     错误邀请码 → 表单内后端原文（400）、QINGTUYWM 真注册 → 自动登录 + 侧栏出用户名、
- *     同名再注册 → 409「用户名已存在」、注册态 Esc 可关
+ *   J 弹窗内注册（真后端，P5.79 审核制）：切表单不关窗/不跳页、字段与焦点、两次密码不一致（本地拦截）、
+ *     错误邀请码 → 表单内后端原文（400）、QINGTUYWM 真注册 → 200 + pending（**不自动登录**）+
+ *     切回登录表单提示「注册成功，等待站长审核后可登录」、同名再注册 → 409「用户名已存在」、
+ *     待审核账号真登录 → 403 + 表单内后端原文「账号待审核，请联系站长」、注册态 Esc 可关
+ *   （P5.79 之前这里断言的是「注册成功自动登录 + 侧栏出用户名」，审核制下该路径不再存在）
  *   H 亮/暗：面板底色与标题对比度两套主题都成立
  */
 import { spawn } from 'node:child_process'
@@ -111,7 +113,7 @@ const authWire = []
 const server = createServer((req, res) => {
   const url = req.url || '/'
   if (url.startsWith('/api/')) {
-    const isRegister = url.startsWith('/api/app/auth/register')
+    const isRegister = url.startsWith('/api/app/auth/register') || url.indexOf('/auth/login') >= 0
     const reqChunks = []
     if (isRegister) req.on('data', (c) => reqChunks.push(c))
     const up = request(
@@ -154,6 +156,15 @@ const server = createServer((req, res) => {
       }
     )
     up.on('error', () => {
+      // 页面被重载 / 导航打断时上游会报断开：此时响应头可能已经发出，不能再写一次
+      if (res.headersSent) {
+        try {
+          res.end()
+        } catch {
+          /* 客户端已断开 */
+        }
+        return
+      }
       res.writeHead(502, { 'content-type': 'text/plain' })
       res.end('proxy error')
     })
@@ -230,6 +241,11 @@ if (!target) {
 
 /* ---------------------------------------------------- CDP */
 const logs = []
+// 懒加载 chunk 的「Failed to fetch dynamically imported module」：本条用例会连续快速切页，
+// 上一次导航里还没回来的 chunk 请求会被浏览器中断，页面抛一条 TypeError。
+// 那是用例自身的节奏造成的，不是应用行为 —— 单独记一份，不参与「无 JS 异常」判定。
+const chunkAborts = []
+const netFails = []
 const ws = new WebSocket(target.webSocketDebuggerUrl)
 await new Promise((res, rej) => {
   ws.addEventListener('open', res, { once: true })
@@ -253,6 +269,8 @@ const STUB = {
   }
 }
 const calls = { login: [], me: [], loginsStubbed: 0, meStubbed: 0 }
+// 让「注册成功、但随后的自动登录失败」这条路径可测：置 true 后**下一次**登录请求回 401
+let FAIL_LOGIN_ONCE = false
 
 ws.addEventListener('message', (ev) => {
   let msg
@@ -263,11 +281,16 @@ ws.addEventListener('message', (ev) => {
   }
   if (!msg.id) {
     if (msg.method === 'Fetch.requestPaused') void onPaused(msg.params)
-    else if (msg.method === 'Runtime.exceptionThrown')
-      logs.push(
-        '[exc] ' +
-          (msg.params.exceptionDetails.exception?.description || msg.params.exceptionDetails.text)
+    else if (msg.method === 'Network.loadingFailed')
+      netFails.push(
+        String(msg.params.errorText || '') + ' ' + String((msg.params.requestId || '')).slice(0, 6)
       )
+    else if (msg.method === 'Runtime.exceptionThrown') {
+      const text =
+        msg.params.exceptionDetails.exception?.description || msg.params.exceptionDetails.text || ''
+      if (/Failed to fetch dynamically imported module/.test(text)) chunkAborts.push(text)
+      else logs.push('[exc] ' + text)
+    }
     return
   }
   const job = pending.get(msg.id)
@@ -301,6 +324,12 @@ async function onPaused(params) {
   try {
     if (/\/api\/app\/auth\/login/.test(url)) {
       calls.login.push({ method, body: params.request.postData || '' })
+      if (FAIL_LOGIN_ONCE) {
+        FAIL_LOGIN_ONCE = false
+        calls.failedLogin = (calls.failedLogin || 0) + 1
+        await fulfill(params.requestId, 401, { error: '用户名或密码错误' })
+        return
+      }
       if (STUB.on) {
         calls.loginsStubbed++
         await fulfill(params.requestId, 200, { token: STUB.token, expiresIn: 7200, user: STUB.user })
@@ -426,19 +455,65 @@ const USERNAME_INPUT = DIALOG + ' input[autocomplete=username]'
 const PASSWORD_INPUT = DIALOG + ' input[autocomplete=current-password]'
 const SETTLE = 900
 
-async function goto(path) {
-  // 重试 3 次：headless 偶尔会出现一次导航白屏（首屏 JS 还没起来），不是被测对象的问题
-  let lastErr = null
+/**
+ * 点侧栏「登录」并等弹窗出现；没开就重试并打印现场（谁盖住了按钮 / 页面在哪一屏）。
+ * 媒体页刚进来时可能还在铺骨架，直接一次坐标点击偶尔会落空。
+ */
+async function openDialogVia(selector, label) {
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    await click(selector || RAIL_LOGIN)
+    if (await evaluate('!!document.querySelector(' + JSON.stringify(DIALOG) + ')').catch(() => false)) {
+      await sleep(200)
+      return true
+    }
+    const diag = await evaluate(
+      '(function(){var t=document.querySelector(' +
+        JSON.stringify(selector || RAIL_LOGIN) +
+        ');var r=t?t.getBoundingClientRect():null;var el=r?document.elementFromPoint(r.left+r.width/2,r.top+r.height/2):null;return {exists:!!t,rect:r?{x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)}:null,hit:el?(el.className||el.tagName):null,path:location.pathname,bodyOverflow:document.body.style.overflow}})()'
+    ).catch((err) => ({ err: String(err && err.message) }))
+    console.log('  [info] 第 ' + attempt + ' 次点「' + (label || '登录') + '」没打开弹窗：' + JSON.stringify(diag))
+    await sleep(700)
+  }
+  return false
+}
+
+/**
+ * 媒体页加载失败时会弹一条 .fatal（position: fixed; bottom: 16px; z-index: 200），
+ * 它正好盖住左栏底部的「登录」。这不是本轮改动引入的状态（媒体页既有行为），
+ * 但会让坐标点击落到它身上 —— 出现就重载一次页面，让用例继续跑。
+ */
+async function ensureNoFatal(path) {
   for (let attempt = 1; attempt <= 3; attempt++) {
+    if (!(await evaluate('!!document.querySelector(".fatal")').catch(() => false))) return true
+    const msg = await evaluate('(document.querySelector(".fatal")||{}).textContent||""').catch(() => '')
+    console.log('  [info] ' + path + ' 出现致命错误条（' + String(msg).trim().slice(0, 60) + '），重载一次')
+    await send('Page.reload', {})
+    await sleep(1600)
+    await waitFor('!!document.querySelector(".qt-shell")', 20000, '.qt-shell 渲染（重载后）').catch(() => {})
+    await sleep(700)
+  }
+  return !(await evaluate('!!document.querySelector(".fatal")').catch(() => false))
+}
+
+async function goto(path) {
+  // 重试 4 次：headless 偶尔会出现导航白屏（渲染进程被上一页拖住，首屏 JS 还没起来）。
+  // 失败一次就先回 about:blank 把渲染进程清干净，再重新进入目标页。
+  let lastErr = null
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    if (attempt > 1) {
+      await send('Page.navigate', { url: 'about:blank' })
+      await sleep(600)
+    }
     await send('Page.navigate', { url: ORIGIN + path })
     await sleep(SETTLE)
     try {
-      await waitFor('!!document.querySelector(".qt-shell")', 20000, '.qt-shell 渲染')
+      await waitFor('!!document.querySelector(".qt-shell")', 25000, '.qt-shell 渲染')
+      await ensureNoFatal(path)
       return
     } catch (err) {
       lastErr = err
       const diag = await evaluate(
-        '(function(){return {ready:document.readyState,path:location.pathname,html:(document.body?document.body.innerText:"").slice(0,120)}})()'
+        '(function(){var r=performance.getEntriesByType("resource");return {ready:document.readyState,path:location.pathname,html:(document.body?document.body.innerText:"").slice(0,80),htmlLen:document.documentElement.outerHTML.length,appHtmlLen:(document.querySelector("#app")||{innerHTML:""}).innerHTML.length,stalled:r.filter(function(x){return x.responseEnd===0}).map(function(x){return x.name.slice(-46)}).slice(0,6),netFails:window.__netFails||null}})()'
       ).catch(() => ({}))
       console.log('  [info] 第 ' + attempt + ' 次进入 ' + path + ' 未就绪：' + JSON.stringify(diag))
       await sleep(1000)
@@ -483,8 +558,9 @@ for (const path of pages) {
       console.log('  [info] ' + path + ' 这一屏没有可滚动余量（range=' + range + '），跳过滚动断言')
     }
   }
+  await ensureNoFatal(path)
   const before = await pageState()
-  await click(RAIL_LOGIN)
+  ok(await openDialogVia(RAIL_LOGIN, path), path + ' 点侧栏「登录」后弹窗出现')
   await waitFor('!!document.querySelector(' + JSON.stringify(DIALOG) + ')', 8000, '登录弹窗出现')
   await sleep(250)
   const after = await pageState()
@@ -558,16 +634,14 @@ ok(afterCloseBtn.focused === 'rail-login', '关闭后焦点回到触发按钮（
 ok(afterCloseBtn.overflow !== 'hidden', '关闭后 body 滚动锁已撤掉', 'overflow="' + afterCloseBtn.overflow + '"')
 
 // 遮罩：点在左上角留白处（面板外）
-await click(RAIL_LOGIN)
-await waitFor('!!document.querySelector(' + JSON.stringify(DIALOG) + ')', 6000, '弹窗')
+await openDialogVia(RAIL_LOGIN, '弹窗')
 await sleep(250)
 await clickAt(6, 6)
 await waitFor('!document.querySelector(' + JSON.stringify(DIALOG) + ')', 5000, '点遮罩关闭')
 ok(true, '点遮罩关闭成功')
 
 // Esc
-await click(RAIL_LOGIN)
-await waitFor('!!document.querySelector(' + JSON.stringify(DIALOG) + ')', 6000, '弹窗')
+await openDialogVia(RAIL_LOGIN, '弹窗')
 await sleep(250)
 await pressKey('Escape', 'Escape', 27)
 await waitFor('!document.querySelector(' + JSON.stringify(DIALOG) + ')', 5000, 'Esc 关闭')
@@ -577,8 +651,7 @@ ok(afterB.url === beforeB.url, '三次关闭全过程 URL 都没变', beforeB.ur
 
 /* ================================================================== D 真接口：错密码 */
 console.log('\n[D] 真后端：错密码 → 弹窗内行内错误（不跳页、不关弹窗）')
-await click(RAIL_LOGIN)
-await waitFor('!!document.querySelector(' + JSON.stringify(DIALOG) + ')', 6000, '弹窗')
+await openDialogVia(RAIL_LOGIN, '弹窗')
 await sleep(250)
 const uniqueId = 'p570_no_such_user_' + Date.now()
 await fill(USERNAME_INPUT, uniqueId)
@@ -611,8 +684,7 @@ console.log('\n[E] 登录成功：弹窗关闭 → 用户状态刷新 → 当前
 STUB.on = true
 await evaluate('window.__p570marker = "alive-before-login"')
 const beforeE = await pageState()
-await click(RAIL_LOGIN)
-await waitFor('!!document.querySelector(' + JSON.stringify(DIALOG) + ')', 6000, '弹窗')
+await openDialogVia(RAIL_LOGIN, '弹窗')
 await sleep(250)
 await fill(USERNAME_INPUT, STUB.user.username)
 await fill(PASSWORD_INPUT, 'any-password')
@@ -647,8 +719,7 @@ await send('Emulation.setDeviceMetricsOverride', {
 })
 await goto('/media/photos')
 await waitFor('!!document.querySelector("[data-testid=topbar-login]")', 15000, '顶栏登录按钮')
-await click('[data-testid=topbar-login]')
-await waitFor('!!document.querySelector(' + JSON.stringify(DIALOG) + ')', 8000, '窄屏弹窗')
+await openDialogVia('[data-testid=topbar-login]', '窄屏弹窗')
 await sleep(400)
 const narrow = await evaluate(
   '(function(){var root=document.querySelector("[data-testid=auth-dialog]");var p=root.querySelector(".qt-auth-dialog__panel");var pr=p.getBoundingClientRect();var cs=getComputedStyle(p);return {panelW:pr.width,panelLeft:pr.left,panelRight:pr.right,docScrollW:document.documentElement.scrollWidth,panelScrollable:p.scrollHeight>p.clientHeight,overflowY:cs.overflowY,clientH:p.clientHeight,scrollH:p.scrollHeight,closeVisible:!!root.querySelector("[data-testid=auth-dialog-close]"),vw:window.innerWidth}})()'
@@ -676,8 +747,7 @@ ok(narrowReg.fields === 4, '注册表单 4 个输入框都在', String(narrowReg
 await shot('f-narrow-375-register')
 await pressKey('Escape', 'Escape', 27)
 await waitFor('!document.querySelector(' + JSON.stringify(DIALOG) + ')', 5000, '关闭')
-await click('[data-testid=topbar-login]')
-await waitFor('!!document.querySelector(' + JSON.stringify(DIALOG) + ')', 6000, '重新打开弹窗（回到登录表单）')
+await openDialogVia('[data-testid=topbar-login]', '重新打开弹窗（回到登录表单）')
 
 // 更矮的视口：内容超高时面板自己滚（不是被裁掉、也不是整页滚）
 await send('Emulation.setDeviceMetricsOverride', {
@@ -710,8 +780,7 @@ await sleep(400)
 await click('.qt-topbar__icon')
 await waitFor('!!document.querySelector(".qt-shell.is-drawer-open")', 6000, '抽屉展开')
 await sleep(300)
-await click(RAIL_LOGIN)
-await waitFor('!!document.querySelector(' + JSON.stringify(DIALOG) + ')', 8000, '抽屉里的登录弹窗')
+await openDialogVia(RAIL_LOGIN, '抽屉里的登录弹窗')
 await sleep(350)
 const drawerState = await evaluate(
   '(function(){return {drawer:!!document.querySelector(".qt-shell.is-drawer-open"),dialog:!!document.querySelector("[data-testid=auth-dialog]")}})()'
@@ -745,8 +814,7 @@ ok(deep.register, '「用邀请码注册」入口仍在')
 
 // 侧栏在 /login 页点「登录」也不跳页（弹窗就在这一页上打开）
 const beforeG = await pageState()
-await click(RAIL_LOGIN)
-await waitFor('!!document.querySelector(' + JSON.stringify(DIALOG) + ')', 6000, '弹窗')
+await openDialogVia(RAIL_LOGIN, '弹窗')
 await sleep(250)
 const afterG = await pageState()
 ok(afterG.url === beforeG.url && afterG.path === '/login', '在 /login 页点侧栏「登录」也只开弹窗（URL 仍是 /login）', beforeG.url + ' → ' + afterG.url)
@@ -791,8 +859,7 @@ await resetAuth()
 await goto('/me')
 await waitFor('!!document.querySelector("[data-testid=me-login]")', 20000, '个人中心「登录」按钮')
 const beforeI = await pageState()
-await click('[data-testid=me-login]')
-await waitFor('!!document.querySelector(' + JSON.stringify(DIALOG) + ')', 8000, '弹窗')
+await openDialogVia('[data-testid=me-login]', '个人中心弹窗')
 await sleep(300)
 const reasonText = await evaluate(
   '(function(){var e=document.querySelector("[data-testid=auth-dialog-reason]");return e?(e.textContent||"").trim():""})()'
@@ -804,8 +871,7 @@ ok(reasonText.length > 0, '被动唤起时显示一句原因', reasonText)
 await pressKey('Escape', 'Escape', 27)
 await waitFor('!document.querySelector(' + JSON.stringify(DIALOG) + ')', 5000, '关闭')
 // 主动点侧栏「登录」不该留着上一次的原因
-await click(RAIL_LOGIN)
-await waitFor('!!document.querySelector(' + JSON.stringify(DIALOG) + ')', 6000, '弹窗')
+await openDialogVia(RAIL_LOGIN, '弹窗')
 await sleep(250)
 ok(
   !(await evaluate('!!document.querySelector("[data-testid=auth-dialog-reason]")')),
@@ -821,8 +887,7 @@ await resetAuth()
 await goto('/media/photos')
 await waitFor('!!document.querySelector(' + JSON.stringify(RAIL_LOGIN) + ')', 15000, '侧栏登录按钮')
 const beforeJ = await pageState()
-await click(RAIL_LOGIN)
-await waitFor('!!document.querySelector(' + JSON.stringify(DIALOG) + ')', 8000, '弹窗')
+await openDialogVia(RAIL_LOGIN, '弹窗')
 await sleep(300)
 await click(DIALOG + ' .qt-auth-linkbtn')
 await waitFor(
@@ -893,7 +958,8 @@ ok(
   JSON.stringify({ status: wireBadInvite && wireBadInvite.status, body: wireBadInvite && wireBadInvite.responseBody })
 )
 
-// J3 真注册：QINGTUYWM + 新用户名 → 自动登录、弹窗关闭、侧栏出用户名、URL 不变
+// J3 真注册（P5.79 审核制）：QINGTUYWM + 新用户名 → 200 + pending:true，**不自动登录**，
+//     弹窗不关、停在登录表单并提示「注册成功，等待站长审核后可登录」
 const TEST_USER = 'p570reg' + String(Date.now()).slice(-8)
 await fill(DIALOG + ' .qt-auth-form--register input[placeholder^="邀请码"]', 'QINGTUYWM')
 await fill(DIALOG + ' .qt-auth-form--register input[placeholder^="用户名"]', TEST_USER)
@@ -901,26 +967,28 @@ await fill(DIALOG + ' .qt-auth-form--register input[placeholder^="密码"]', 'Pa
 await fill(DIALOG + ' .qt-auth-form--register input[placeholder^="确认密码"]', 'Passw0rd123')
 const beforeRegOk = await pageState()
 await click(DIALOG + ' .qt-auth-form--register .qt-auth-submit')
-await waitFor('!document.querySelector(' + JSON.stringify(DIALOG) + ')', 15000, '注册成功后关闭弹窗')
-await sleep(900)
+await waitFor('!!document.querySelector("[data-testid=login-notice]")', 15000, '「注册成功，等待站长审核」提示')
+await sleep(400)
 const afterRegOk = await pageState()
+const regPanel = await evaluate(
+  '(function(){var p=document.querySelector("[data-testid=auth-dialog] .qt-auth-dialog__panel");var n=document.querySelector("[data-testid=login-notice]");return {notice:n?(n.textContent||"").trim():"",title:(document.querySelector("[data-testid=auth-dialog-title]").textContent||"").trim(),loginForm:!!p.querySelector(".qt-auth-form:not(.qt-auth-form--register)"),registerForm:!!p.querySelector(".qt-auth-form--register")}})()'
+)
 const regSidebar = await evaluate(
   '(function(){return {text:(document.querySelector(".qt-rail__footer")||{}).innerText||"",user:(document.querySelector(".qt-rail__user")||{}).textContent||"",token:localStorage.getItem("app.token")||"",loginBtn:!!document.querySelector("[data-testid=rail-login]")}})()'
 )
 const wireRegOk = authWire[authWire.length - 1]
-facts.registerOk = { user: TEST_USER, url: { before: beforeRegOk.url, after: afterRegOk.url }, sidebar: regSidebar, wire: wireRegOk }
-ok(wireRegOk && wireRegOk.status === 200 && wireRegOk.responseBody.indexOf(TEST_USER) >= 0, '真后端注册成功（200 + user）', JSON.stringify({ status: wireRegOk && wireRegOk.status, body: wireRegOk && wireRegOk.responseBody.slice(0, 200) }))
+facts.registerOk = { user: TEST_USER, url: { before: beforeRegOk.url, after: afterRegOk.url }, panel: regPanel, sidebar: regSidebar, wire: wireRegOk }
+ok(wireRegOk && wireRegOk.status === 200 && /"pending"s*:s*true/.test(wireRegOk.responseBody || ''), '真后端注册成功：200 + pending:true（审核制，不再直接给登录态）', JSON.stringify({ status: wireRegOk && wireRegOk.status, body: wireRegOk && wireRegOk.responseBody && wireRegOk.responseBody.slice(0, 200) }))
 ok(afterRegOk.url === beforeRegOk.url, '注册成功后 URL 不变（原地）', beforeRegOk.url + ' → ' + afterRegOk.url)
-ok(!regSidebar.loginBtn, '注册成功并自动登录：侧栏「登录」消失')
-ok(regSidebar.user.trim() === TEST_USER, '侧栏出现新注册的用户名', regSidebar.user.trim())
-ok(Boolean(regSidebar.token), '注册自动登录后 token 已落 localStorage[app.token]')
+ok(!regSidebar.token && Boolean(regSidebar.loginBtn), '**不再自动登录**：token 没落 localStorage、侧栏仍是「登录」', JSON.stringify({ token: Boolean(regSidebar.token), loginBtn: regSidebar.loginBtn }))
+ok(/等待站长审核/.test(regPanel.notice), '提示「注册成功，等待站长审核后可登录」', regPanel.notice)
+ok(regPanel.loginForm && !regPanel.registerForm, '自动切回登录表单（停在弹窗里，不关窗不跳页）', regPanel.title)
 
 // J4 同名再注册：真 409，表单内显示「用户名已存在」
 await resetAuth()
 await goto('/media/photos')
 await waitFor('!!document.querySelector(' + JSON.stringify(RAIL_LOGIN) + ')', 15000, '侧栏登录按钮')
-await click(RAIL_LOGIN)
-await waitFor('!!document.querySelector(' + JSON.stringify(DIALOG) + ')', 8000, '弹窗')
+await openDialogVia(RAIL_LOGIN, '弹窗')
 await sleep(250)
 await click(DIALOG + ' .qt-auth-linkbtn')
 await waitFor('!!document.querySelector(".qt-auth-form--register")', 6000, '注册表单')
@@ -953,10 +1021,50 @@ await pressKey('Escape', 'Escape', 27)
 await waitFor('!document.querySelector(' + JSON.stringify(DIALOG) + ')', 5000, 'Esc 关闭（注册态也可）')
 ok(true, '注册表单下 Esc 同样能关闭弹窗')
 
+// J6 待审核账号真登录（P5.79）：403 + 表单内后端原文「账号待审核，请联系站长」，不落 token
+//     旧断言「注册成功但自动登录失败 → 提示注册成功，请登录」在审核制下已无路径可走（注册根本不自动登录）
+await resetAuth()
+await goto('/media/photos')
+await waitFor('!!document.querySelector(' + JSON.stringify(RAIL_LOGIN) + ')', 15000, '侧栏登录按钮')
+const LATE_USER = 'p570late' + String(Date.now()).slice(-8)
+await openDialogVia(RAIL_LOGIN, '弹窗')
+await sleep(250)
+await click(DIALOG + ' .qt-auth-linkbtn')
+await waitFor('!!document.querySelector(".qt-auth-form--register")', 6000, '注册表单')
+await sleep(300)
+await fill(DIALOG + ' .qt-auth-form--register input[placeholder^="邀请码"]', 'QINGTUYWM')
+await fill(DIALOG + ' .qt-auth-form--register input[placeholder^="用户名"]', LATE_USER)
+await fill(DIALOG + ' .qt-auth-form--register input[placeholder^="密码"]', 'Passw0rd123')
+await fill(DIALOG + ' .qt-auth-form--register input[placeholder^="确认密码"]', 'Passw0rd123')
+const beforeLate = await pageState()
+await click(DIALOG + ' .qt-auth-form--register .qt-auth-submit')
+await waitFor('!!document.querySelector("[data-testid=login-notice]")', 15000, '注册成功提示（待审核）')
+await sleep(400)
+// 注册已切到登录表单：直接用刚注册的待审核账号登录
+await fill(DIALOG + ' input[autocomplete=username]', LATE_USER)
+await fill(DIALOG + ' input[autocomplete=current-password]', 'Passw0rd123')
+await click(DIALOG + ' .qt-auth-submit')
+await waitFor('!!document.querySelector("[data-testid=login-error]")', 15000, '待审核登录的行内错误')
+await sleep(300)
+const lateState = await evaluate(
+  '(function(){var p=document.querySelector("[data-testid=auth-dialog] .qt-auth-dialog__panel");var e=document.querySelector("[data-testid=login-error]");return {error:e?(e.textContent||"").trim():"",dialog:!!document.querySelector("[data-testid=auth-dialog]"),loginForm:!!p.querySelector(".qt-auth-form:not(.qt-auth-form--register)"),token:localStorage.getItem("app.token")||"",user:(document.querySelector(".qt-rail__user")||{}).textContent||""}})()'
+)
+const afterLate = await pageState()
+const wireLate = authWire[authWire.length - 1]
+facts.pendingLogin = { user: LATE_USER, ...lateState, token: Boolean(lateState.token), before: beforeLate.url, after: afterLate.url, wire: wireLate }
+ok(wireLate && wireLate.status === 403, '待审核账号登录：真后端 403', JSON.stringify({ status: wireLate && wireLate.status, body: wireLate && wireLate.responseBody }))
+ok(/账号待审核/.test(lateState.error), '表单内显示后端原文「账号待审核，请联系站长」', lateState.error)
+ok(!/用户名或密码错误/.test(lateState.error), '不会被翻译成「用户名或密码错误」', lateState.error)
+ok(!lateState.token && !lateState.user.trim(), '待审核登录不落 token、侧栏不出现用户名')
+ok(lateState.dialog && lateState.loginForm, '失败时弹窗仍在、停在登录表单', JSON.stringify({ dialog: lateState.dialog, loginForm: lateState.loginForm }))
+ok(afterLate.url === beforeLate.url, '这条路径下 URL 也不变', beforeLate.url + ' → ' + afterLate.url)
+
 /* ================================================================== H 亮 / 暗 */
 console.log('\n[H] 亮色 / 暗色 两套主题下的面板对比度')
+// J6 结束时是登录态（侧栏没有「登录」按钮），先退出登录再测
+await resetAuth()
 await goto('/')
-await click(RAIL_LOGIN)
+await openDialogVia(RAIL_LOGIN, '亮暗对比')
 await waitFor('!!document.querySelector(' + JSON.stringify(DIALOG) + ')', 6000, '弹窗')
 await sleep(300)
 // 页面主题默认跟随系统（headless Chrome 可能报 dark），先显式归零再逐个测
@@ -983,7 +1091,9 @@ await shot('h-light-dialog')
 
 /* ------------------------------------------------------------------ 收尾 */
 const errs = logs.filter((l) => l.indexOf('[exc]') === 0)
+facts.chunkAborts = chunkAborts
 console.log('\n页面异常：' + (errs.length ? errs.join(' | ') : '无'))
+console.log('快速切页导致的懒加载 chunk 中断：' + chunkAborts.length + ' 次（用例节奏，非应用行为）')
 ok(errs.length === 0, '运行期无 JS 异常')
 console.log('\n打桩记账：登录请求 ' + calls.login.length + ' 次（打桩 ' + calls.loginsStubbed + '），/me 请求 ' + calls.me.length + ' 次')
 console.log('\n===== 结果：' + passed + ' passed, ' + failures.length + ' failed =====')

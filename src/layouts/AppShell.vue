@@ -32,12 +32,17 @@ import { House, List, Menu, Moon, Picture, Sunny, User, UserFilled, VideoPlay } 
 import BrandMark from '@/components/BrandMark.vue'
 // P5.70：全局登录悬浮窗（全站只挂这一次）+ 它的开关单例
 import AuthLoginDialog from '@/components/AuthLoginDialog.vue'
+// P5.77：后端不可用兜底 —— 顶部提示条 + 在线服务页的占位页
+import BackendBanner from '@/components/BackendBanner.vue'
+import BackendOfflinePage from '@/components/BackendOfflinePage.vue'
 import { APP_INFO } from '@/utils/constants'
 // P4.3：侧栏选中态的纯判定（首页精确、/media 精确、人物含 /media/person/:id）
 import { isNavActive } from '@/utils/navActive'
 import { useTheme } from '@/composables/useTheme'
 import { useAppAuth } from '@/composables/useAppAuth'
 import { useAuthDialog } from '@/composables/useAuthDialog'
+// P5.77：后端可用性探测（模块级单例，全站共享 online/degraded/offline）
+import { useBackendHealth } from '@/composables/useBackendHealth'
 
 const route = useRoute()
 const router = useRouter()
@@ -47,6 +52,23 @@ const { isDark, toggleTheme } = useTheme()
 const { state } = useAppAuth()
 // 登录悬浮窗的开关：任何入口点「登录」都走 openLogin()，不再跳路由
 const { openAuthDialog } = useAuthDialog()
+
+/* ================================================================ 后端可用性（P5.77） */
+// 探测在 AppShell 启动一次（全站唯一外壳）：页面隐藏时暂停，回到前台补探，恢复后入口自动解锁。
+// 解构出来的都是 ref：在模板里直接写 backendStatus / backendOffline 即可（setup 顶层 ref 自动解包）。
+const {
+  status: backendStatus,
+  checking: backendProbing,
+  isOffline: backendOffline,
+  bannerVisible: backendBannerVisible,
+  dismissBanner,
+  retryNow,
+  start: startBackendProbe
+} = useBackendHealth()
+startBackendProbe()
+
+// 禁用态的统一提示文案（在线服务入口的 title / 占位页共用）
+const LOCKED_HINT = '后端服务暂不可用'
 
 /* ================================================================ 折叠状态 */
 const RAIL_STORAGE_KEY = 'qtools-rail-collapsed' // 本地存储键：'1' 收起 / '0' 展开
@@ -169,12 +191,13 @@ const NAV_GROUPS = [
   },
   {
     title: '媒体',
+    // online: true —— 这些入口的数据全部来自后端，后端 offline 时整项禁用（P5.77）
     items: [
       // P4.3：/media 只做精确匹配（exact），否则它会把 /media/photos、/media/persons 一起点亮
-      { to: '/media', label: '视频库', icon: VideoPlay, exact: true },
-      { to: '/media/photos', label: '图片站', icon: Picture },
+      { to: '/media', label: '视频库', icon: VideoPlay, exact: true, online: true },
+      { to: '/media/photos', label: '图片站', icon: Picture, online: true },
       // 人物墙（P3-B）：/media/person/:id 也走这条高亮（P4.3 起由 also 显式声明，不再靠 /media 前缀兜底）
-      { to: '/media/persons', label: '人物', icon: UserFilled, also: ['/media/person'] },
+      { to: '/media/persons', label: '人物', icon: UserFilled, also: ['/media/person'], online: true },
       // 播放列表（P5.46）：不再是独立页面，改为「展开/聚焦筛选」的动作项 ——
       // 在视频库就直接打开播放列表下拉，不在就跳过去再打开（item.action 让它在任何路径都不高亮）
 
@@ -197,6 +220,14 @@ function isActive(item) {
 }
 
 /**
+ * 在线服务入口是否禁用（P5.77）：只有 offline 才禁用。
+ * degraded（仅失败 1 次）仍然放行 —— 网络抖一下就锁死入口很烦人，连续 2 次失败才算真挂。
+ */
+function isNavLocked(item) {
+  return Boolean(item && item.online) && backendOffline.value
+}
+
+/**
  * 动作项点击（P5.46）：item.action = 'playlist-filter' → 视频库打开播放列表筛选下拉。
  * 为什么不直接 RouterLink 到 /media：那样只是「回到视频库」，不会把下拉弹出来，
  * 用户还得自己再点一次。这里带一次性参数 ?plf=<token>，视频库消费后立刻从地址栏抹掉；
@@ -215,7 +246,10 @@ function onNavClick(item, ev) {
 }
 
 // 底部个人入口：已登录是「个人中心」链接；未登录不是链接，而是一个「打开登录悬浮窗」的按钮
-const accountItem = computed(() => (state.user ? { to: '/me', label: '个人中心', icon: User } : null))
+// online: true —— 个人中心的数据（收藏 / 身份）来自后端，后端不可用时同样禁用
+const accountItem = computed(() =>
+  state.user ? { to: '/me', label: '个人中心', icon: User, online: true } : null
+)
 
 const accountActive = computed(
   () => Boolean(accountItem.value) && normalizedPath.value === accountItem.value.to
@@ -254,6 +288,16 @@ const showPageTitle = computed(() => Boolean(pageTitle.value) && pageTitle.value
 /* ================================================================ 内容区 */
 // 媒体页需要贴边全宽：由路由 meta.bleed 取消内容区左右留白
 const isBleed = computed(() => Boolean(route.meta && route.meta.bleed))
+
+// 当前路由是否需要后端在线（router meta.online：媒体站四页 / 个人中心 / 登录 / 注册）
+const routeNeedsBackend = computed(() => Boolean(route.meta && route.meta.online))
+// offline 且当前就在在线页 → 用占位页替代页面内容（不白屏、不刷一屏接口报错）
+const showOfflinePage = computed(() => routeNeedsBackend.value && backendOffline.value)
+
+// 占位页的「回到首页」：首页与全部工具页都是离线可用的
+function goHome() {
+  router.push('/')
+}
 
 /* ================================================================ #tools 锚点滚动 */
 // 路由 scrollBehavior 只回顶部；首页工具索引要等接口数据渲染完成后才能定位，
@@ -299,6 +343,7 @@ onBeforeUnmount(() => {
   <div
     class="qt-shell"
     :class="{ 'is-collapsed': railCollapsed, 'is-drawer-open': drawerOpen, 'is-bleed-page': isBleed }"
+    :data-backend-status="backendStatus"
   >
     <!-- 移动端紧凑条（桌面 display: none）：☰ + 站点名 + 当前页标题 + 登录/我的 -->
     <header class="qt-topbar">
@@ -349,19 +394,35 @@ onBeforeUnmount(() => {
         <div v-for="group in NAV_GROUPS" :key="group.title" class="qt-rail__group">
           <!-- 分组标题：小号灰字，收起态隐藏 -->
           <p class="qt-rail__group-title">{{ group.title }}</p>
-          <RouterLink
-            v-for="item in group.items"
-            :key="item.to + (item.action || '')"
-            class="qt-rail__link"
-            :class="{ 'is-active': isActive(item) }"
-            :to="item.to"
-            :title="item.label"
-            :data-nav-action="item.action || undefined"
-            @click="onNavClick(item, $event)"
-          >
-            <el-icon class="qt-rail__icon" :size="18"><component :is="item.icon" /></el-icon>
-            <span class="qt-rail__label">{{ item.label }}</span>
-          </RouterLink>
+          <template v-for="item in group.items" :key="item.to + (item.action || '')">
+            <!-- 在线服务 + 后端 offline：渲染成真正的 <button disabled>（没有 href，键盘也进不去），
+                 title 给出原因；图标与文字位置保持不变，解锁时不会跳动 -->
+            <button
+              v-if="isNavLocked(item)"
+              type="button"
+              class="qt-rail__link qt-rail__link--button is-disabled"
+              :class="{ 'is-active': isActive(item) }"
+              disabled
+              aria-disabled="true"
+              :title="LOCKED_HINT"
+              :data-nav-locked="item.to"
+            >
+              <el-icon class="qt-rail__icon" :size="18"><component :is="item.icon" /></el-icon>
+              <span class="qt-rail__label">{{ item.label }}</span>
+            </button>
+            <RouterLink
+              v-else
+              class="qt-rail__link"
+              :class="{ 'is-active': isActive(item) }"
+              :to="item.to"
+              :title="item.label"
+              :data-nav-action="item.action || undefined"
+              @click="onNavClick(item, $event)"
+            >
+              <el-icon class="qt-rail__icon" :size="18"><component :is="item.icon" /></el-icon>
+              <span class="qt-rail__label">{{ item.label }}</span>
+            </RouterLink>
+          </template>
         </div>
       </nav>
 
@@ -399,8 +460,24 @@ onBeforeUnmount(() => {
         </a>
 
         <!-- 已登录：个人中心；未登录：打开登录悬浮窗（按钮而非链接，URL 不变） -->
+        <!-- 已登录但后端不可用：个人中心同样是在线服务，降级成禁用按钮 -->
+        <button
+          v-if="accountItem && isNavLocked(accountItem)"
+          class="qt-rail__link qt-rail__link--button is-disabled"
+          type="button"
+          disabled
+          aria-disabled="true"
+          :title="LOCKED_HINT"
+          data-nav-locked="/me"
+        >
+          <el-icon class="qt-rail__icon" :size="18"><User /></el-icon>
+          <span class="qt-rail__label">{{ accountItem.label }}</span>
+          <span v-if="accountName" class="qt-rail__label qt-rail__user" :title="accountName">
+            {{ accountName }}
+          </span>
+        </button>
         <RouterLink
-          v-if="accountItem"
+          v-else-if="accountItem"
           class="qt-rail__link"
           :class="{ 'is-active': accountActive }"
           :to="accountItem.to"
@@ -413,13 +490,26 @@ onBeforeUnmount(() => {
             {{ accountName }}
           </span>
         </RouterLink>
+        <!-- 未登录：登录要打后端接口（POST /api/appAuth/...），后端不可用时同样禁用 -->
         <button
-          v-else
+          v-else-if="!backendOffline"
           class="qt-rail__link qt-rail__link--button"
           type="button"
           title="登录"
           data-testid="rail-login"
           @click="openLogin"
+        >
+          <el-icon class="qt-rail__icon" :size="18"><User /></el-icon>
+          <span class="qt-rail__label">登录</span>
+        </button>
+        <button
+          v-else
+          class="qt-rail__link qt-rail__link--button is-disabled"
+          type="button"
+          disabled
+          aria-disabled="true"
+          :title="LOCKED_HINT"
+          data-nav-locked="/login"
         >
           <el-icon class="qt-rail__icon" :size="18"><User /></el-icon>
           <span class="qt-rail__label">登录</span>
@@ -469,7 +559,23 @@ onBeforeUnmount(() => {
 
     <!-- 内容区：全站唯一的 <router-view /> -->
     <main class="qt-shell__main" :class="{ 'is-bleed': isBleed }">
-      <router-view />
+      <!-- P5.77：后端不可用提示条（可关闭；恢复后随状态自动消失，重新掉线会再出现） -->
+      <BackendBanner
+        v-if="backendBannerVisible"
+        class="qt-shell__banner"
+        :probing="backendProbing"
+        @retry="retryNow"
+        @close="dismissBanner"
+      />
+      <!-- 当前就在在线服务页且后端 offline：占位页替代页面本身（说明 + 重试 + 回首页） -->
+      <BackendOfflinePage
+        v-if="showOfflinePage"
+        :title="pageTitle"
+        :probing="backendProbing"
+        @retry="retryNow"
+        @home="goHome"
+      />
+      <router-view v-else />
     </main>
 
     <!-- 全局登录悬浮窗：整站只挂这一次（内部 Teleport 到 <body>），任何页面都能唤起 -->
@@ -619,6 +725,26 @@ onBeforeUnmount(() => {
   appearance: none;
 }
 
+/* 在线服务入口的禁用态（P5.77）：灰、不可点，但位置 / 图标 / 选中竖条都保留，
+   解锁时只是颜色回正，布局不跳动。禁用由真正的 disabled 属性保证，这里只负责观感。 */
+.qt-rail__link.is-disabled {
+  color: var(--qt-text-tertiary);
+  cursor: not-allowed;
+
+  &:hover {
+    background-color: transparent;
+    color: var(--qt-text-tertiary);
+  }
+
+  &.is-active {
+    color: var(--qt-text-tertiary);
+  }
+
+  &.is-active::before {
+    background-color: var(--qt-text-tertiary);
+  }
+}
+
 /* 已登录时「个人中心」右侧的用户名：靠右、次要色、超长省略（收起态由 .qt-rail__label 隐藏）。
    主标签不许被挤掉（flex 0 0 auto），空间不够时先压缩用户名——次要信息让位给入口名。 */
 .qt-rail__link > .qt-rail__label:not(.qt-rail__user) {
@@ -744,6 +870,17 @@ onBeforeUnmount(() => {
 /* 媒体页（meta.bleed）：四边归零、完全贴边，内部间距由媒体页自己管 */
 .qt-shell__main.is-bleed {
   padding: 0;
+}
+
+/* 后端提示条与离线占位页：常规页靠内容区自身留白，贴边页（bleed）要自己补左右留白，
+   否则会顶到视口边缘（这两个元素是子组件的根节点，用 :deep 才能命中） */
+.qt-shell__banner {
+  margin-bottom: 12px;
+}
+
+.qt-shell__main.is-bleed > :deep(.qt-shell__banner),
+.qt-shell__main.is-bleed > :deep(.qt-offline-page) {
+  margin: 12px var(--qt-shell-pad, 16px) 0;
 }
 
 /* ---------------------------------------------------------------- 桌面（≥1024px）：折叠态 */

@@ -1,0 +1,1505 @@
+{
+  "passed": 69,
+  "failures": [],
+  "facts": {
+    "shot-w1600-light-b0": {
+      "tag": "w1600-light-b0",
+      "theme": "light",
+      "vw": 1600,
+      "dark": false,
+      "blurVar": "0px",
+      "valueText": "0px",
+      "cards": 13,
+      "withBg": 13,
+      "card": {
+        "card": [
+          335.25,
+          103.7
+        ],
+        "cardRight": 527.25,
+        "img": [
+          57.3,
+          101.7
+        ],
+        "imgX": 468.7,
+        "imgRight": 525.99,
+        "css": {
+          "position": "absolute",
+          "top": "0px",
+          "right": "275.953px",
+          "height": "101.703px",
+          "width": "57.2969px",
+          "maxWidth": "none",
+          "objectFit": "contain",
+          "objectPosition": "0% 50%",
+          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+          "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+        },
+        "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+        "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+      }
+    },
+    "shot-w1600-light-b6": {
+      "tag": "w1600-light-b6",
+      "theme": "light",
+      "vw": 1600,
+      "dark": false,
+      "blurVar": "6px",
+      "valueText": "6px",
+      "cards": 13,
+      "withBg": 13,
+      "card": {
+        "card": [
+          335.25,
+          103.7
+        ],
+        "cardRight": 527.25,
+        "img": [
+          57.3,
+          101.7
+        ],
+        "imgX": 468.7,
+        "imgRight": 525.99,
+        "css": {
+          "position": "absolute",
+          "top": "0px",
+          "right": "275.953px",
+          "height": "101.703px",
+          "width": "57.2969px",
+          "maxWidth": "none",
+          "objectFit": "contain",
+          "objectPosition": "0% 50%",
+          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+          "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+        },
+        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+        "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+      }
+    },
+    "shot-w1200-light-b0": {
+      "tag": "w1200-light-b0",
+      "theme": "light",
+      "vw": 1200,
+      "dark": false,
+      "blurVar": "0px",
+      "valueText": "0px",
+      "cards": 13,
+      "withBg": 13,
+      "card": {
+        "card": [
+          317.67,
+          103.7
+        ],
+        "cardRight": 839.33,
+        "img": [
+          181.33,
+          101.7
+        ],
+        "imgX": 683.11,
+        "imgRight": 864.44,
+        "css": {
+          "position": "absolute",
+          "top": "0px",
+          "right": "134.344px",
+          "height": "101.703px",
+          "width": "181.328px",
+          "maxWidth": "none",
+          "objectFit": "contain",
+          "objectPosition": "0% 50%",
+          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+          "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+        },
+        "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+        "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+      }
+    },
+    "shot-w1200-light-b6": {
+      "tag": "w1200-light-b6",
+      "theme": "light",
+      "vw": 1200,
+      "dark": false,
+      "blurVar": "6px",
+      "valueText": "6px",
+      "cards": 13,
+      "withBg": 13,
+      "card": {
+        "card": [
+          317.67,
+          103.7
+        ],
+        "cardRight": 839.33,
+        "img": [
+          181.33,
+          101.7
+        ],
+        "imgX": 683.11,
+        "imgRight": 864.44,
+        "css": {
+          "position": "absolute",
+          "top": "0px",
+          "right": "134.344px",
+          "height": "101.703px",
+          "width": "181.328px",
+          "maxWidth": "none",
+          "objectFit": "contain",
+          "objectPosition": "0% 50%",
+          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+          "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+        },
+        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+        "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+      }
+    },
+    "shot-w375-light-b0": {
+      "tag": "w375-light-b0",
+      "theme": "light",
+      "vw": 375,
+      "dark": false,
+      "blurVar": "0px",
+      "valueText": "0px",
+      "cards": 13,
+      "withBg": 13,
+      "card": {
+        "card": [
+          328,
+          101.03
+        ],
+        "cardRight": 344,
+        "img": [
+          55.61,
+          99.03
+        ],
+        "imgX": 287.38,
+        "imgRight": 342.99,
+        "css": {
+          "position": "absolute",
+          "top": "0px",
+          "right": "270.391px",
+          "height": "99.0312px",
+          "width": "55.6094px",
+          "maxWidth": "none",
+          "objectFit": "contain",
+          "objectPosition": "0% 50%",
+          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+          "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+        },
+        "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+        "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+      }
+    },
+    "shot-w375-light-b6": {
+      "tag": "w375-light-b6",
+      "theme": "light",
+      "vw": 375,
+      "dark": false,
+      "blurVar": "6px",
+      "valueText": "6px",
+      "cards": 13,
+      "withBg": 13,
+      "card": {
+        "card": [
+          328,
+          101.03
+        ],
+        "cardRight": 344,
+        "img": [
+          55.61,
+          99.03
+        ],
+        "imgX": 287.38,
+        "imgRight": 342.99,
+        "css": {
+          "position": "absolute",
+          "top": "0px",
+          "right": "270.391px",
+          "height": "99.0312px",
+          "width": "55.6094px",
+          "maxWidth": "none",
+          "objectFit": "contain",
+          "objectPosition": "0% 50%",
+          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+          "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+        },
+        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+        "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+      }
+    },
+    "shot-w1600-dark-b0": {
+      "tag": "w1600-dark-b0",
+      "theme": "dark",
+      "vw": 1600,
+      "dark": true,
+      "blurVar": "0px",
+      "valueText": "0px",
+      "cards": 13,
+      "withBg": 13,
+      "card": {
+        "card": [
+          335.25,
+          103.7
+        ],
+        "cardRight": 527.25,
+        "img": [
+          57.3,
+          101.7
+        ],
+        "imgX": 468.7,
+        "imgRight": 525.99,
+        "css": {
+          "position": "absolute",
+          "top": "0px",
+          "right": "275.953px",
+          "height": "101.703px",
+          "width": "57.2969px",
+          "maxWidth": "none",
+          "objectFit": "contain",
+          "objectPosition": "0% 50%",
+          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+          "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+        },
+        "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+        "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
+      }
+    },
+    "shot-w1600-dark-b6": {
+      "tag": "w1600-dark-b6",
+      "theme": "dark",
+      "vw": 1600,
+      "dark": true,
+      "blurVar": "6px",
+      "valueText": "6px",
+      "cards": 13,
+      "withBg": 13,
+      "card": {
+        "card": [
+          335.25,
+          103.7
+        ],
+        "cardRight": 527.25,
+        "img": [
+          57.3,
+          101.7
+        ],
+        "imgX": 468.7,
+        "imgRight": 525.99,
+        "css": {
+          "position": "absolute",
+          "top": "0px",
+          "right": "275.953px",
+          "height": "101.703px",
+          "width": "57.2969px",
+          "maxWidth": "none",
+          "objectFit": "contain",
+          "objectPosition": "0% 50%",
+          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+          "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+        },
+        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+        "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
+      }
+    },
+    "shot-w1200-dark-b0": {
+      "tag": "w1200-dark-b0",
+      "theme": "dark",
+      "vw": 1200,
+      "dark": true,
+      "blurVar": "0px",
+      "valueText": "0px",
+      "cards": 13,
+      "withBg": 13,
+      "card": {
+        "card": [
+          317.67,
+          103.7
+        ],
+        "cardRight": 839.33,
+        "img": [
+          181.33,
+          101.7
+        ],
+        "imgX": 683.11,
+        "imgRight": 864.44,
+        "css": {
+          "position": "absolute",
+          "top": "0px",
+          "right": "134.344px",
+          "height": "101.703px",
+          "width": "181.328px",
+          "maxWidth": "none",
+          "objectFit": "contain",
+          "objectPosition": "0% 50%",
+          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+          "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+        },
+        "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+        "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
+      }
+    },
+    "shot-w1200-dark-b6": {
+      "tag": "w1200-dark-b6",
+      "theme": "dark",
+      "vw": 1200,
+      "dark": true,
+      "blurVar": "6px",
+      "valueText": "6px",
+      "cards": 13,
+      "withBg": 13,
+      "card": {
+        "card": [
+          317.67,
+          103.7
+        ],
+        "cardRight": 839.33,
+        "img": [
+          181.33,
+          101.7
+        ],
+        "imgX": 683.11,
+        "imgRight": 864.44,
+        "css": {
+          "position": "absolute",
+          "top": "0px",
+          "right": "134.344px",
+          "height": "101.703px",
+          "width": "181.328px",
+          "maxWidth": "none",
+          "objectFit": "contain",
+          "objectPosition": "0% 50%",
+          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+          "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+        },
+        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+        "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
+      }
+    },
+    "shot-w375-dark-b0": {
+      "tag": "w375-dark-b0",
+      "theme": "dark",
+      "vw": 375,
+      "dark": true,
+      "blurVar": "0px",
+      "valueText": "0px",
+      "cards": 13,
+      "withBg": 13,
+      "card": {
+        "card": [
+          328,
+          101.03
+        ],
+        "cardRight": 344,
+        "img": [
+          55.61,
+          99.03
+        ],
+        "imgX": 287.38,
+        "imgRight": 342.99,
+        "css": {
+          "position": "absolute",
+          "top": "0px",
+          "right": "270.391px",
+          "height": "99.0312px",
+          "width": "55.6094px",
+          "maxWidth": "none",
+          "objectFit": "contain",
+          "objectPosition": "0% 50%",
+          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+          "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+        },
+        "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+        "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
+      }
+    },
+    "shot-w375-dark-b6": {
+      "tag": "w375-dark-b6",
+      "theme": "dark",
+      "vw": 375,
+      "dark": true,
+      "blurVar": "6px",
+      "valueText": "6px",
+      "cards": 13,
+      "withBg": 13,
+      "card": {
+        "card": [
+          328,
+          101.03
+        ],
+        "cardRight": 344,
+        "img": [
+          55.61,
+          99.03
+        ],
+        "imgX": 287.38,
+        "imgRight": 342.99,
+        "css": {
+          "position": "absolute",
+          "top": "0px",
+          "right": "270.391px",
+          "height": "99.0312px",
+          "width": "55.6094px",
+          "maxWidth": "none",
+          "objectFit": "contain",
+          "objectPosition": "0% 50%",
+          "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+          "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+        },
+        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+        "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
+      }
+    },
+    "table": [
+      {
+        "tag": "w1600-light-b0",
+        "theme": "light",
+        "vw": 1600,
+        "dark": false,
+        "blurVar": "0px",
+        "valueText": "0px",
+        "cards": 13,
+        "withBg": 13,
+        "card": {
+          "card": [
+            335.25,
+            103.7
+          ],
+          "cardRight": 527.25,
+          "img": [
+            57.3,
+            101.7
+          ],
+          "imgX": 468.7,
+          "imgRight": 525.99,
+          "css": {
+            "position": "absolute",
+            "top": "0px",
+            "right": "275.953px",
+            "height": "101.703px",
+            "width": "57.2969px",
+            "maxWidth": "none",
+            "objectFit": "contain",
+            "objectPosition": "0% 50%",
+            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+            "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+          },
+          "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+          "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+        }
+      },
+      {
+        "tag": "w1600-light-b6",
+        "theme": "light",
+        "vw": 1600,
+        "dark": false,
+        "blurVar": "6px",
+        "valueText": "6px",
+        "cards": 13,
+        "withBg": 13,
+        "card": {
+          "card": [
+            335.25,
+            103.7
+          ],
+          "cardRight": 527.25,
+          "img": [
+            57.3,
+            101.7
+          ],
+          "imgX": 468.7,
+          "imgRight": 525.99,
+          "css": {
+            "position": "absolute",
+            "top": "0px",
+            "right": "275.953px",
+            "height": "101.703px",
+            "width": "57.2969px",
+            "maxWidth": "none",
+            "objectFit": "contain",
+            "objectPosition": "0% 50%",
+            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+            "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+          },
+          "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+          "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+        }
+      },
+      {
+        "tag": "w1200-light-b0",
+        "theme": "light",
+        "vw": 1200,
+        "dark": false,
+        "blurVar": "0px",
+        "valueText": "0px",
+        "cards": 13,
+        "withBg": 13,
+        "card": {
+          "card": [
+            317.67,
+            103.7
+          ],
+          "cardRight": 839.33,
+          "img": [
+            181.33,
+            101.7
+          ],
+          "imgX": 683.11,
+          "imgRight": 864.44,
+          "css": {
+            "position": "absolute",
+            "top": "0px",
+            "right": "134.344px",
+            "height": "101.703px",
+            "width": "181.328px",
+            "maxWidth": "none",
+            "objectFit": "contain",
+            "objectPosition": "0% 50%",
+            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+            "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+          },
+          "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+          "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+        }
+      },
+      {
+        "tag": "w1200-light-b6",
+        "theme": "light",
+        "vw": 1200,
+        "dark": false,
+        "blurVar": "6px",
+        "valueText": "6px",
+        "cards": 13,
+        "withBg": 13,
+        "card": {
+          "card": [
+            317.67,
+            103.7
+          ],
+          "cardRight": 839.33,
+          "img": [
+            181.33,
+            101.7
+          ],
+          "imgX": 683.11,
+          "imgRight": 864.44,
+          "css": {
+            "position": "absolute",
+            "top": "0px",
+            "right": "134.344px",
+            "height": "101.703px",
+            "width": "181.328px",
+            "maxWidth": "none",
+            "objectFit": "contain",
+            "objectPosition": "0% 50%",
+            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+            "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+          },
+          "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+          "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+        }
+      },
+      {
+        "tag": "w375-light-b0",
+        "theme": "light",
+        "vw": 375,
+        "dark": false,
+        "blurVar": "0px",
+        "valueText": "0px",
+        "cards": 13,
+        "withBg": 13,
+        "card": {
+          "card": [
+            328,
+            101.03
+          ],
+          "cardRight": 344,
+          "img": [
+            55.61,
+            99.03
+          ],
+          "imgX": 287.38,
+          "imgRight": 342.99,
+          "css": {
+            "position": "absolute",
+            "top": "0px",
+            "right": "270.391px",
+            "height": "99.0312px",
+            "width": "55.6094px",
+            "maxWidth": "none",
+            "objectFit": "contain",
+            "objectPosition": "0% 50%",
+            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+            "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+          },
+          "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+          "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+        }
+      },
+      {
+        "tag": "w375-light-b6",
+        "theme": "light",
+        "vw": 375,
+        "dark": false,
+        "blurVar": "6px",
+        "valueText": "6px",
+        "cards": 13,
+        "withBg": 13,
+        "card": {
+          "card": [
+            328,
+            101.03
+          ],
+          "cardRight": 344,
+          "img": [
+            55.61,
+            99.03
+          ],
+          "imgX": 287.38,
+          "imgRight": 342.99,
+          "css": {
+            "position": "absolute",
+            "top": "0px",
+            "right": "270.391px",
+            "height": "99.0312px",
+            "width": "55.6094px",
+            "maxWidth": "none",
+            "objectFit": "contain",
+            "objectPosition": "0% 50%",
+            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+            "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+          },
+          "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+          "shadow": "rgba(255, 255, 255, 0.95) 0px 1px 3px"
+        }
+      },
+      {
+        "tag": "w1600-dark-b0",
+        "theme": "dark",
+        "vw": 1600,
+        "dark": true,
+        "blurVar": "0px",
+        "valueText": "0px",
+        "cards": 13,
+        "withBg": 13,
+        "card": {
+          "card": [
+            335.25,
+            103.7
+          ],
+          "cardRight": 527.25,
+          "img": [
+            57.3,
+            101.7
+          ],
+          "imgX": 468.7,
+          "imgRight": 525.99,
+          "css": {
+            "position": "absolute",
+            "top": "0px",
+            "right": "275.953px",
+            "height": "101.703px",
+            "width": "57.2969px",
+            "maxWidth": "none",
+            "objectFit": "contain",
+            "objectPosition": "0% 50%",
+            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+            "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+          },
+          "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+          "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
+        }
+      },
+      {
+        "tag": "w1600-dark-b6",
+        "theme": "dark",
+        "vw": 1600,
+        "dark": true,
+        "blurVar": "6px",
+        "valueText": "6px",
+        "cards": 13,
+        "withBg": 13,
+        "card": {
+          "card": [
+            335.25,
+            103.7
+          ],
+          "cardRight": 527.25,
+          "img": [
+            57.3,
+            101.7
+          ],
+          "imgX": 468.7,
+          "imgRight": 525.99,
+          "css": {
+            "position": "absolute",
+            "top": "0px",
+            "right": "275.953px",
+            "height": "101.703px",
+            "width": "57.2969px",
+            "maxWidth": "none",
+            "objectFit": "contain",
+            "objectPosition": "0% 50%",
+            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+            "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+          },
+          "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+          "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
+        }
+      },
+      {
+        "tag": "w1200-dark-b0",
+        "theme": "dark",
+        "vw": 1200,
+        "dark": true,
+        "blurVar": "0px",
+        "valueText": "0px",
+        "cards": 13,
+        "withBg": 13,
+        "card": {
+          "card": [
+            317.67,
+            103.7
+          ],
+          "cardRight": 839.33,
+          "img": [
+            181.33,
+            101.7
+          ],
+          "imgX": 683.11,
+          "imgRight": 864.44,
+          "css": {
+            "position": "absolute",
+            "top": "0px",
+            "right": "134.344px",
+            "height": "101.703px",
+            "width": "181.328px",
+            "maxWidth": "none",
+            "objectFit": "contain",
+            "objectPosition": "0% 50%",
+            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+            "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+          },
+          "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+          "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
+        }
+      },
+      {
+        "tag": "w1200-dark-b6",
+        "theme": "dark",
+        "vw": 1200,
+        "dark": true,
+        "blurVar": "6px",
+        "valueText": "6px",
+        "cards": 13,
+        "withBg": 13,
+        "card": {
+          "card": [
+            317.67,
+            103.7
+          ],
+          "cardRight": 839.33,
+          "img": [
+            181.33,
+            101.7
+          ],
+          "imgX": 683.11,
+          "imgRight": 864.44,
+          "css": {
+            "position": "absolute",
+            "top": "0px",
+            "right": "134.344px",
+            "height": "101.703px",
+            "width": "181.328px",
+            "maxWidth": "none",
+            "objectFit": "contain",
+            "objectPosition": "0% 50%",
+            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+            "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+          },
+          "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+          "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
+        }
+      },
+      {
+        "tag": "w375-dark-b0",
+        "theme": "dark",
+        "vw": 375,
+        "dark": true,
+        "blurVar": "0px",
+        "valueText": "0px",
+        "cards": 13,
+        "withBg": 13,
+        "card": {
+          "card": [
+            328,
+            101.03
+          ],
+          "cardRight": 344,
+          "img": [
+            55.61,
+            99.03
+          ],
+          "imgX": 287.38,
+          "imgRight": 342.99,
+          "css": {
+            "position": "absolute",
+            "top": "0px",
+            "right": "270.391px",
+            "height": "99.0312px",
+            "width": "55.6094px",
+            "maxWidth": "none",
+            "objectFit": "contain",
+            "objectPosition": "0% 50%",
+            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+            "filter": "blur(0px) saturate(1.1) brightness(0.9)"
+          },
+          "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+          "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
+        }
+      },
+      {
+        "tag": "w375-dark-b6",
+        "theme": "dark",
+        "vw": 375,
+        "dark": true,
+        "blurVar": "6px",
+        "valueText": "6px",
+        "cards": 13,
+        "withBg": 13,
+        "card": {
+          "card": [
+            328,
+            101.03
+          ],
+          "cardRight": 344,
+          "img": [
+            55.61,
+            99.03
+          ],
+          "imgX": 287.38,
+          "imgRight": 342.99,
+          "css": {
+            "position": "absolute",
+            "top": "0px",
+            "right": "270.391px",
+            "height": "99.0312px",
+            "width": "55.6094px",
+            "maxWidth": "none",
+            "objectFit": "contain",
+            "objectPosition": "0% 50%",
+            "maskImage": "linear-gradient(to right, rgba(0, 0, 0, 0) 0px, rgb(0, 0, 0) 40px)",
+            "filter": "blur(6px) saturate(1.1) brightness(0.9)"
+          },
+          "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+          "shadow": "rgba(0, 0, 0, 0.85) 0px 1px 4px"
+        }
+      }
+    ],
+    "contrast-light-1600": {
+      "cards": 13,
+      "nameW": {
+        "name": "是小逗逗",
+        "line": "name",
+        "samples": 136,
+        "color": "rgb(48, 49, 51)",
+        "worst": 4.68,
+        "worstBg": [
+          159,
+          154,
+          151
+        ],
+        "best": 7.05
+      },
+      "countW": {
+        "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+        "line": "counts",
+        "samples": 136,
+        "color": "rgb(48, 49, 51)",
+        "worst": 4.7,
+        "worstBg": [
+          160,
+          154,
+          154
+        ],
+        "best": 7.07
+      }
+    },
+    "contrast-light-1200": {
+      "cards": 13,
+      "nameW": {
+        "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+        "line": "name",
+        "samples": 124,
+        "color": "rgb(48, 49, 51)",
+        "worst": 4.7,
+        "worstBg": [
+          160,
+          154,
+          154
+        ],
+        "best": 7.05
+      },
+      "countW": {
+        "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+        "line": "counts",
+        "samples": 124,
+        "color": "rgb(48, 49, 51)",
+        "worst": 4.7,
+        "worstBg": [
+          160,
+          154,
+          154
+        ],
+        "best": 7.07
+      }
+    },
+    "contrast-light-375": {
+      "cards": 6,
+      "nameW": {
+        "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+        "line": "name",
+        "samples": 152,
+        "color": "rgb(48, 49, 51)",
+        "worst": 4.64,
+        "worstBg": [
+          159,
+          153,
+          153
+        ],
+        "best": 7.07
+      },
+      "countW": {
+        "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+        "line": "counts",
+        "samples": 152,
+        "color": "rgb(48, 49, 51)",
+        "worst": 4.59,
+        "worstBg": [
+          158,
+          152,
+          152
+        ],
+        "best": 7.07
+      }
+    },
+    "contrast-dark-1600": {
+      "cards": 13,
+      "nameW": {
+        "name": "玥儿玥er",
+        "line": "name",
+        "samples": 136,
+        "color": "rgb(229, 234, 243)",
+        "worst": 5.82,
+        "worstBg": [
+          87,
+          89,
+          92
+        ],
+        "best": 9.18
+      },
+      "countW": {
+        "name": "玥儿玥er",
+        "line": "counts",
+        "samples": 136,
+        "color": "rgb(229, 234, 243)",
+        "worst": 5.75,
+        "worstBg": [
+          87,
+          90,
+          93
+        ],
+        "best": 9.16
+      }
+    },
+    "contrast-dark-1200": {
+      "cards": 13,
+      "nameW": {
+        "name": "玥儿玥er",
+        "line": "name",
+        "samples": 124,
+        "color": "rgb(229, 234, 243)",
+        "worst": 5.4,
+        "worstBg": [
+          91,
+          94,
+          97
+        ],
+        "best": 9.18
+      },
+      "countW": {
+        "name": "玥儿玥er",
+        "line": "counts",
+        "samples": 124,
+        "color": "rgb(229, 234, 243)",
+        "worst": 5.35,
+        "worstBg": [
+          91,
+          95,
+          97
+        ],
+        "best": 9.16
+      }
+    },
+    "contrast-dark-375": {
+      "cards": 6,
+      "nameW": {
+        "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+        "line": "name",
+        "samples": 152,
+        "color": "rgb(229, 234, 243)",
+        "worst": 7.3,
+        "worstBg": [
+          67,
+          77,
+          67
+        ],
+        "best": 9.2
+      },
+      "countW": {
+        "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+        "line": "counts",
+        "samples": 152,
+        "color": "rgb(229, 234, 243)",
+        "worst": 7.43,
+        "worstBg": [
+          65,
+          76,
+          68
+        ],
+        "best": 9.2
+      }
+    },
+    "contrast": [
+      {
+        "theme": "light",
+        "w": 1600,
+        "nameW": {
+          "name": "是小逗逗",
+          "line": "name",
+          "samples": 136,
+          "color": "rgb(48, 49, 51)",
+          "worst": 4.68,
+          "worstBg": [
+            159,
+            154,
+            151
+          ],
+          "best": 7.05
+        },
+        "countW": {
+          "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+          "line": "counts",
+          "samples": 136,
+          "color": "rgb(48, 49, 51)",
+          "worst": 4.7,
+          "worstBg": [
+            160,
+            154,
+            154
+          ],
+          "best": 7.07
+        },
+        "cards": 13
+      },
+      {
+        "theme": "light",
+        "w": 1200,
+        "nameW": {
+          "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+          "line": "name",
+          "samples": 124,
+          "color": "rgb(48, 49, 51)",
+          "worst": 4.7,
+          "worstBg": [
+            160,
+            154,
+            154
+          ],
+          "best": 7.05
+        },
+        "countW": {
+          "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+          "line": "counts",
+          "samples": 124,
+          "color": "rgb(48, 49, 51)",
+          "worst": 4.7,
+          "worstBg": [
+            160,
+            154,
+            154
+          ],
+          "best": 7.07
+        },
+        "cards": 13
+      },
+      {
+        "theme": "light",
+        "w": 375,
+        "nameW": {
+          "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+          "line": "name",
+          "samples": 152,
+          "color": "rgb(48, 49, 51)",
+          "worst": 4.64,
+          "worstBg": [
+            159,
+            153,
+            153
+          ],
+          "best": 7.07
+        },
+        "countW": {
+          "name": "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+          "line": "counts",
+          "samples": 152,
+          "color": "rgb(48, 49, 51)",
+          "worst": 4.59,
+          "worstBg": [
+            158,
+            152,
+            152
+          ],
+          "best": 7.07
+        },
+        "cards": 6
+      },
+      {
+        "theme": "dark",
+        "w": 1600,
+        "nameW": {
+          "name": "玥儿玥er",
+          "line": "name",
+          "samples": 136,
+          "color": "rgb(229, 234, 243)",
+          "worst": 5.82,
+          "worstBg": [
+            87,
+            89,
+            92
+          ],
+          "best": 9.18
+        },
+        "countW": {
+          "name": "玥儿玥er",
+          "line": "counts",
+          "samples": 136,
+          "color": "rgb(229, 234, 243)",
+          "worst": 5.75,
+          "worstBg": [
+            87,
+            90,
+            93
+          ],
+          "best": 9.16
+        },
+        "cards": 13
+      },
+      {
+        "theme": "dark",
+        "w": 1200,
+        "nameW": {
+          "name": "玥儿玥er",
+          "line": "name",
+          "samples": 124,
+          "color": "rgb(229, 234, 243)",
+          "worst": 5.4,
+          "worstBg": [
+            91,
+            94,
+            97
+          ],
+          "best": 9.18
+        },
+        "countW": {
+          "name": "玥儿玥er",
+          "line": "counts",
+          "samples": 124,
+          "color": "rgb(229, 234, 243)",
+          "worst": 5.35,
+          "worstBg": [
+            91,
+            95,
+            97
+          ],
+          "best": 9.16
+        },
+        "cards": 13
+      },
+      {
+        "theme": "dark",
+        "w": 375,
+        "nameW": {
+          "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+          "line": "name",
+          "samples": 152,
+          "color": "rgb(229, 234, 243)",
+          "worst": 7.3,
+          "worstBg": [
+            67,
+            77,
+            67
+          ],
+          "best": 9.2
+        },
+        "countW": {
+          "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+          "line": "counts",
+          "samples": 152,
+          "color": "rgb(229, 234, 243)",
+          "worst": 7.43,
+          "worstBg": [
+            65,
+            76,
+            68
+          ],
+          "best": 9.2
+        },
+        "cards": 6
+      }
+    ],
+    "fade": {
+      "card": "synthetic-solid",
+      "grayJump": 6,
+      "zoneCols": 63,
+      "leftMean": [
+        190.56,
+        188.69,
+        185.04
+      ],
+      "tone": "rgb(193, 191, 187)",
+      "distToTone": 3.89,
+      "distToBg2": 3.89
+    },
+    "longtext-light": {
+      "theme": "light",
+      "nameRect": {
+        "x": 271,
+        "y": 84.5,
+        "w": 137.98,
+        "h": 22.39,
+        "right": 408.98,
+        "bottom": 106.89
+      },
+      "bodyRect": {
+        "x": 271,
+        "y": 84.5,
+        "w": 137.98,
+        "h": 60.7,
+        "right": 408.98,
+        "bottom": 145.2
+      },
+      "imgRect": {
+        "x": 468.7,
+        "y": 64,
+        "w": 57.3,
+        "h": 101.7,
+        "right": 525.99,
+        "bottom": 165.7
+      },
+      "cardRect": {
+        "x": 192,
+        "y": 63,
+        "w": 335.25,
+        "h": 103.7,
+        "right": 527.25,
+        "bottom": 166.7
+      },
+      "nameInBody": true,
+      "name": {
+        "text": "长文案压测人物姓名超长版本一二三四五",
+        "color": "rgb(48, 49, 51)",
+        "samples": 136,
+        "worst": 7.04,
+        "worstBg": [
+          193,
+          190,
+          187
+        ],
+        "rect": {
+          "x": 271,
+          "y": 84.5,
+          "w": 137.98,
+          "h": 22.39,
+          "right": 408.98,
+          "bottom": 106.89
+        }
+      },
+      "counts": {
+        "text": "159 部视频 · 2 本相册 · ",
+        "color": "rgb(48, 49, 51)",
+        "samples": 136,
+        "worst": 7.02,
+        "worstBg": [
+          192,
+          190,
+          187
+        ],
+        "rect": {
+          "x": 271,
+          "y": 109.89,
+          "w": 137.98,
+          "h": 15.52,
+          "right": 408.98,
+          "bottom": 125.41
+        }
+      }
+    },
+    "longtext-dark": {
+      "theme": "dark",
+      "nameRect": {
+        "x": 271,
+        "y": 84.5,
+        "w": 137.98,
+        "h": 22.39,
+        "right": 408.98,
+        "bottom": 106.89
+      },
+      "bodyRect": {
+        "x": 271,
+        "y": 84.5,
+        "w": 137.98,
+        "h": 60.7,
+        "right": 408.98,
+        "bottom": 145.2
+      },
+      "imgRect": {
+        "x": 468.7,
+        "y": 64,
+        "w": 57.3,
+        "h": 101.7,
+        "right": 525.99,
+        "bottom": 165.7
+      },
+      "cardRect": {
+        "x": 192,
+        "y": 63,
+        "w": 335.25,
+        "h": 103.7,
+        "right": 527.25,
+        "bottom": 166.7
+      },
+      "nameInBody": true,
+      "name": {
+        "text": "长文案压测人物姓名超长版本一二三四五",
+        "color": "rgb(229, 234, 243)",
+        "samples": 136,
+        "worst": 9.14,
+        "worstBg": [
+          60,
+          60,
+          60
+        ],
+        "rect": {
+          "x": 271,
+          "y": 84.5,
+          "w": 137.98,
+          "h": 22.39,
+          "right": 408.98,
+          "bottom": 106.89
+        }
+      },
+      "counts": {
+        "text": "159 部视频 · 2 本相册 · ",
+        "color": "rgb(229, 234, 243)",
+        "samples": 136,
+        "worst": 9.14,
+        "worstBg": [
+          60,
+          60,
+          60
+        ],
+        "rect": {
+          "x": 271,
+          "y": 109.89,
+          "w": 137.98,
+          "h": 15.52,
+          "right": 408.98,
+          "bottom": 125.41
+        }
+      }
+    },
+    "toneRecalc": [
+      {
+        "raw": "159,155,149",
+        "recomputed": "159,155,149",
+        "fill": "rgb(193, 191, 187)",
+        "bg": "rgb(193, 191, 187)"
+      },
+      {
+        "raw": "168,159,167",
+        "recomputed": "168,159,167",
+        "fill": "rgb(196, 189, 195)",
+        "bg": "rgb(196, 189, 195)"
+      },
+      {
+        "raw": "69,54,55",
+        "recomputed": "69,54,55",
+        "fill": "rgb(194, 190, 190)",
+        "bg": "rgb(194, 190, 190)"
+      }
+    ],
+    "toneLight": [
+      {
+        "v": "rgb(193, 191, 187)",
+        "l": 0.522,
+        "bg": "rgb(193, 191, 187)"
+      },
+      {
+        "v": "rgb(196, 189, 195)",
+        "l": 0.521,
+        "bg": "rgb(196, 189, 195)"
+      },
+      {
+        "v": "rgb(194, 190, 190)",
+        "l": 0.52,
+        "bg": "rgb(194, 190, 190)"
+      },
+      {
+        "v": "rgb(187, 193, 188)",
+        "l": 0.523,
+        "bg": "rgb(187, 193, 188)"
+      },
+      {
+        "v": "rgb(199, 190, 182)",
+        "l": 0.523,
+        "bg": "rgb(199, 190, 182)"
+      },
+      {
+        "v": "rgb(195, 191, 185)",
+        "l": 0.524,
+        "bg": "rgb(195, 191, 185)"
+      }
+    ],
+    "toneDark": [
+      {
+        "fill": "rgb(60, 59, 59)",
+        "raw": "159,155,149"
+      },
+      {
+        "fill": "rgb(61, 59, 62)",
+        "raw": "168,159,167"
+      },
+      {
+        "fill": "rgb(69, 54, 55)",
+        "raw": "69,54,55"
+      },
+      {
+        "fill": "rgb(56, 61, 58)",
+        "raw": "115,126,117"
+      },
+      {
+        "fill": "rgb(63, 59, 57)",
+        "raw": "156,140,127"
+      },
+      {
+        "fill": "rgb(65, 59, 52)",
+        "raw": "95,84,69"
+      }
+    ],
+    "tonePerf": {
+      "firstVisitMs": 1316.5999999940395,
+      "cachedVisitMs": 1367.300000011921,
+      "cache": {
+        "bytes": 1830,
+        "keys": 26
+      }
+    }
+  }
+}

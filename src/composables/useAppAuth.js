@@ -88,18 +88,35 @@ async function doLogin(identifier, password) {
 }
 
 /**
- * 注册（邀请码模式）成功后自动登录
- * 后端注册接口只保证返回 { user }；若某个版本同时返回了 token 就直接用，否则用刚填的账号再登录一次。
+ * 注册（邀请码模式）
+ *
+ * P5.79 起后端是「审核制」：注册成功返回 { user, pending:true, message }，**没有 token**。
+ * 因此这里不再自动登录——待审核账号登录必然 403，硬登一次只会把「注册成功」变成一条红色错误。
+ * 是否自动登录由响应里的 pending 决定，前端不写死：万一以后关掉审核（后端不再回 pending），
+ * 旧行为（自动登录）自动恢复。
+ *
  * @param {{username:string,password:string,nickname:string,inviteCode:string}} payload
+ * @returns {Promise<object>} 后端注册响应（pending=true 表示等待审核）
  */
 async function doRegister(payload) {
   state.loading = true
   try {
     const res = await appAuthApi.register(payload)
+    if (res && res.pending) {
+      // 待审核：不建登录态（不写 token、不写 user），等站长审核通过后再登录
+      return res
+    }
     if (res && res.token) {
       applySession(res)
     } else {
-      await doLogin(payload.username, payload.password)
+      try {
+        await doLogin(payload.username, payload.password)
+      } catch (loginErr) {
+        // 账号已经建好了，只是随后的自动登录没成功：把这件事标在错误上，
+        // 让调用方提示「注册成功，请登录」，而不是把登录失败当成注册失败
+        if (loginErr && typeof loginErr === 'object') loginErr.registerSucceeded = true
+        throw loginErr
+      }
     }
     // 注册与登录都没带回 user 时才补一次 /me；失败不影响注册结果（仅缺昵称显示）
     if (!state.user && res && res.user) {

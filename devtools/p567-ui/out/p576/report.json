@@ -1,0 +1,777 @@
+{
+  "passed": 120,
+  "failures": [],
+  "facts": {
+    "runs": [
+      {
+        "label": "1600/light",
+        "cards": 13,
+        "withBg": 13,
+        "noBg": 0,
+        "worstAll": 4.68,
+        "worstName": {
+          "name": "桜井宁宁",
+          "line": "name",
+          "text": "桜井宁宁",
+          "hasBg": true,
+          "color": "rgb(48, 49, 51)",
+          "textRgb": [
+            48,
+            49,
+            51
+          ],
+          "rect": {
+            "x": 945.5,
+            "y": 315.91,
+            "w": 227.97,
+            "h": 22.39,
+            "right": 1173.47,
+            "bottom": 338.3
+          },
+          "samples": 226,
+          "dropped": 0,
+          "worst": 4.68,
+          "worstBg": [
+            165,
+            153,
+            143
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                165,
+                153,
+                143
+              ],
+              "ratio": 4.68
+            },
+            {
+              "rgb": [
+                166,
+                154,
+                145
+              ],
+              "ratio": 4.74
+            },
+            {
+              "rgb": [
+                169,
+                156,
+                147
+              ],
+              "ratio": 4.88
+            }
+          ]
+        },
+        "worstCounts": {
+          "name": "玥儿玥er",
+          "line": "counts",
+          "text": "0 部视频 · 1 本相册 · 14 张照片",
+          "hasBg": true,
+          "color": "rgb(48, 49, 51)",
+          "textRgb": [
+            48,
+            49,
+            51
+          ],
+          "rect": {
+            "x": 1292.75,
+            "y": 341.3,
+            "w": 227.97,
+            "h": 15.52,
+            "right": 1520.72,
+            "bottom": 356.81
+          },
+          "samples": 226,
+          "dropped": 0,
+          "worst": 5.11,
+          "worstBg": [
+            165,
+            161,
+            164
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                165,
+                161,
+                164
+              ],
+              "ratio": 5.11
+            },
+            {
+              "rgb": [
+                166,
+                161,
+                164
+              ],
+              "ratio": 5.12
+            },
+            {
+              "rgb": [
+                166,
+                161,
+                164
+              ],
+              "ratio": 5.12
+            }
+          ]
+        },
+        "heights": [
+          103.7,
+          103.7
+        ],
+        "docOverflow": [
+          1585,
+          1600
+        ]
+      },
+      {
+        "label": "1600/dark",
+        "cards": 13,
+        "withBg": 13,
+        "noBg": 0,
+        "worstAll": 5.89,
+        "worstName": {
+          "name": "念念",
+          "line": "name",
+          "text": "念念",
+          "hasBg": true,
+          "color": "rgb(229, 234, 243)",
+          "textRgb": [
+            229,
+            234,
+            243
+          ],
+          "rect": {
+            "x": 945.5,
+            "y": 189.7,
+            "w": 227.97,
+            "h": 22.39,
+            "right": 1173.47,
+            "bottom": 212.09
+          },
+          "samples": 226,
+          "dropped": 0,
+          "worst": 6.67,
+          "worstBg": [
+            100,
+            74,
+            70
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                100,
+                74,
+                70
+              ],
+              "ratio": 6.67
+            },
+            {
+              "rgb": [
+                100,
+                73,
+                70
+              ],
+              "ratio": 6.73
+            },
+            {
+              "rgb": [
+                99,
+                73,
+                70
+              ],
+              "ratio": 6.76
+            }
+          ]
+        },
+        "worstCounts": {
+          "name": "娜娜（nana）",
+          "line": "counts",
+          "text": "14 部视频 · 0 本相册 · 0 张照片",
+          "hasBg": true,
+          "color": "rgb(229, 234, 243)",
+          "textRgb": [
+            229,
+            234,
+            243
+          ],
+          "rect": {
+            "x": 598.25,
+            "y": 99.39,
+            "w": 227.97,
+            "h": 15.52,
+            "right": 826.22,
+            "bottom": 114.91
+          },
+          "samples": 226,
+          "dropped": 0,
+          "worst": 5.89,
+          "worstBg": [
+            91,
+            87,
+            90
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                91,
+                87,
+                90
+              ],
+              "ratio": 5.89
+            },
+            {
+              "rgb": [
+                89,
+                85,
+                90
+              ],
+              "ratio": 6.06
+            },
+            {
+              "rgb": [
+                88,
+                84,
+                87
+              ],
+              "ratio": 6.17
+            }
+          ]
+        },
+        "heights": [
+          103.7,
+          103.7
+        ],
+        "docOverflow": [
+          1585,
+          1600
+        ]
+      },
+      {
+        "label": "1200/light",
+        "cards": 13,
+        "withBg": 13,
+        "noBg": 0,
+        "worstAll": 4.61,
+        "worstName": {
+          "name": "桜井宁宁",
+          "line": "name",
+          "text": "桜井宁宁",
+          "hasBg": true,
+          "color": "rgb(48, 49, 51)",
+          "textRgb": [
+            48,
+            49,
+            51
+          ],
+          "rect": {
+            "x": 580.66,
+            "y": 431.61,
+            "w": 212.84,
+            "h": 22.39,
+            "right": 793.5,
+            "bottom": 454
+          },
+          "samples": 212,
+          "dropped": 0,
+          "worst": 4.61,
+          "worstBg": [
+            163,
+            152,
+            142
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                163,
+                152,
+                142
+              ],
+              "ratio": 4.61
+            },
+            {
+              "rgb": [
+                165,
+                153,
+                144
+              ],
+              "ratio": 4.69
+            },
+            {
+              "rgb": [
+                167,
+                154,
+                145
+              ],
+              "ratio": 4.76
+            }
+          ]
+        },
+        "worstCounts": {
+          "name": "桜井宁宁",
+          "line": "counts",
+          "text": "0 部视频 · 1 本相册 · 6 张照片",
+          "hasBg": true,
+          "color": "rgb(48, 49, 51)",
+          "textRgb": [
+            48,
+            49,
+            51
+          ],
+          "rect": {
+            "x": 580.66,
+            "y": 457,
+            "w": 212.84,
+            "h": 15.52,
+            "right": 793.5,
+            "bottom": 472.52
+          },
+          "samples": 212,
+          "dropped": 0,
+          "worst": 4.96,
+          "worstBg": [
+            172,
+            157,
+            146
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                172,
+                157,
+                146
+              ],
+              "ratio": 4.96
+            },
+            {
+              "rgb": [
+                175,
+                160,
+                149
+              ],
+              "ratio": 5.14
+            },
+            {
+              "rgb": [
+                177,
+                161,
+                151
+              ],
+              "ratio": 5.22
+            }
+          ]
+        },
+        "heights": [
+          103.7,
+          103.7
+        ],
+        "docOverflow": [
+          1185,
+          1200
+        ]
+      },
+      {
+        "label": "1200/dark",
+        "cards": 13,
+        "withBg": 13,
+        "noBg": 0,
+        "worstAll": 5.88,
+        "worstName": {
+          "name": "Machi马吉",
+          "line": "name",
+          "text": "Machi马吉",
+          "hasBg": true,
+          "color": "rgb(229, 234, 243)",
+          "textRgb": [
+            229,
+            234,
+            243
+          ],
+          "rect": {
+            "x": 251,
+            "y": 536.81,
+            "w": 212.83,
+            "h": 22.39,
+            "right": 463.83,
+            "bottom": 559.2
+          },
+          "samples": 212,
+          "dropped": 0,
+          "worst": 6.5,
+          "worstBg": [
+            81,
+            81,
+            90
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                81,
+                81,
+                90
+              ],
+              "ratio": 6.5
+            },
+            {
+              "rgb": [
+                79,
+                79,
+                88
+              ],
+              "ratio": 6.71
+            },
+            {
+              "rgb": [
+                78,
+                76,
+                86
+              ],
+              "ratio": 6.98
+            }
+          ]
+        },
+        "worstCounts": {
+          "name": "娜娜（nana）",
+          "line": "counts",
+          "text": "14 部视频 · 0 本相册 · 0 张照片",
+          "hasBg": true,
+          "color": "rgb(229, 234, 243)",
+          "textRgb": [
+            229,
+            234,
+            243
+          ],
+          "rect": {
+            "x": 580.66,
+            "y": 99.39,
+            "w": 212.84,
+            "h": 15.52,
+            "right": 793.5,
+            "bottom": 114.91
+          },
+          "samples": 212,
+          "dropped": 0,
+          "worst": 5.88,
+          "worstBg": [
+            91,
+            87,
+            91
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                91,
+                87,
+                91
+              ],
+              "ratio": 5.88
+            },
+            {
+              "rgb": [
+                90,
+                86,
+                90
+              ],
+              "ratio": 5.97
+            },
+            {
+              "rgb": [
+                90,
+                85,
+                89
+              ],
+              "ratio": 6.04
+            }
+          ]
+        },
+        "heights": [
+          103.7,
+          103.7
+        ],
+        "docOverflow": [
+          1185,
+          1200
+        ]
+      },
+      {
+        "label": "375/light",
+        "cards": 13,
+        "withBg": 13,
+        "noBg": 0,
+        "worstAll": 4.64,
+        "worstName": {
+          "name": "素人",
+          "line": "name",
+          "text": "素人",
+          "hasBg": true,
+          "color": "rgb(48, 49, 51)",
+          "textRgb": [
+            48,
+            49,
+            51
+          ],
+          "rect": {
+            "x": 71,
+            "y": 175.5,
+            "w": 227.17,
+            "h": 22.39,
+            "right": 298.17,
+            "bottom": 197.89
+          },
+          "samples": 226,
+          "dropped": 0,
+          "worst": 4.64,
+          "worstBg": [
+            156,
+            154,
+            152
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                156,
+                154,
+                152
+              ],
+              "ratio": 4.64
+            },
+            {
+              "rgb": [
+                158,
+                156,
+                153
+              ],
+              "ratio": 4.76
+            },
+            {
+              "rgb": [
+                159,
+                157,
+                155
+              ],
+              "ratio": 4.82
+            }
+          ]
+        },
+        "worstCounts": {
+          "name": "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+          "line": "counts",
+          "text": "1 部视频 · 0 本相册 · 0 张照片",
+          "hasBg": true,
+          "color": "rgb(48, 49, 51)",
+          "textRgb": [
+            48,
+            49,
+            51
+          ],
+          "rect": {
+            "x": 71,
+            "y": 517.48,
+            "w": 227.17,
+            "h": 14.84,
+            "right": 298.17,
+            "bottom": 532.33
+          },
+          "samples": 226,
+          "dropped": 0,
+          "worst": 5.04,
+          "worstBg": [
+            169,
+            159,
+            157
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                169,
+                159,
+                157
+              ],
+              "ratio": 5.04
+            },
+            {
+              "rgb": [
+                171,
+                161,
+                158
+              ],
+              "ratio": 5.16
+            },
+            {
+              "rgb": [
+                171,
+                162,
+                160
+              ],
+              "ratio": 5.21
+            }
+          ]
+        },
+        "heights": [
+          101.03,
+          101.03
+        ],
+        "docOverflow": [
+          360,
+          375
+        ]
+      },
+      {
+        "label": "375/dark",
+        "cards": 13,
+        "withBg": 13,
+        "noBg": 0,
+        "worstAll": 5.88,
+        "worstName": {
+          "name": "喵小吉 Aeolian-2",
+          "line": "name",
+          "text": "喵小吉 Aeolian-2",
+          "hasBg": true,
+          "color": "rgb(229, 234, 243)",
+          "textRgb": [
+            229,
+            234,
+            243
+          ],
+          "rect": {
+            "x": 71,
+            "y": 710.16,
+            "w": 227.17,
+            "h": 22.39,
+            "right": 298.17,
+            "bottom": 732.55
+          },
+          "samples": 226,
+          "dropped": 0,
+          "worst": 6.98,
+          "worstBg": [
+            84,
+            76,
+            67
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                84,
+                76,
+                67
+              ],
+              "ratio": 6.98
+            },
+            {
+              "rgb": [
+                84,
+                76,
+                67
+              ],
+              "ratio": 6.98
+            },
+            {
+              "rgb": [
+                83,
+                76,
+                67
+              ],
+              "ratio": 7.01
+            }
+          ]
+        },
+        "worstCounts": {
+          "name": "娜娜（nana）",
+          "line": "counts",
+          "text": "14 部视频 · 0 本相册 · 0 张照片",
+          "hasBg": true,
+          "color": "rgb(229, 234, 243)",
+          "textRgb": [
+            229,
+            234,
+            243
+          ],
+          "rect": {
+            "x": 71,
+            "y": 299.42,
+            "w": 227.17,
+            "h": 14.84,
+            "right": 298.17,
+            "bottom": 314.27
+          },
+          "samples": 226,
+          "dropped": 0,
+          "worst": 5.88,
+          "worstBg": [
+            91,
+            87,
+            91
+          ],
+          "worst3": [
+            {
+              "rgb": [
+                91,
+                87,
+                91
+              ],
+              "ratio": 5.88
+            },
+            {
+              "rgb": [
+                91,
+                86,
+                90
+              ],
+              "ratio": 5.95
+            },
+            {
+              "rgb": [
+                89,
+                85,
+                89
+              ],
+              "ratio": 6.06
+            }
+          ]
+        },
+        "heights": [
+          101.03,
+          101.03
+        ],
+        "docOverflow": [
+          360,
+          375
+        ]
+      }
+    ],
+    "network": {
+      "domImageElements": 26,
+      "avatarUrlsInDom": 26,
+      "backendThumbRequests": 13,
+      "uniqueThumbUrls": 13,
+      "duplicates": [],
+      "sample": {
+        "viewport": "1600/light",
+        "person": "素人",
+        "avatarSrc": "/api/media/thumb/p/a159/0000?crop=0.2111,0.1875,0.6000,0.3375",
+        "backgroundSrc": "/api/media/thumb/p/a159/0000?crop=0.2111,0.1875,0.6000,0.3375",
+        "equal": true
+      },
+      "proxyAllHits": 42,
+      "resourceEntries": 20,
+      "firstHits": [
+        "/api/toolInfo/list",
+        "/api/media/track",
+        "/api/toolVisit/add",
+        "/api/media/edit-policy",
+        "/api/media/index",
+        "/api/media/persons",
+        "/api/media/person/125",
+        "/api/media/person/122",
+        "/api/media/person/124",
+        "/api/media/person/123",
+        "/api/media/person/111",
+        "/api/media/person/112"
+      ]
+    },
+    "exceptions": []
+  }
+}

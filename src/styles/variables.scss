@@ -37,6 +37,15 @@
   --qt-primary-hover: #66b1ff;
   /* 实心按钮文字色：配合深一档主色底色使用，对比度 ≥4.5:1 */
   --qt-on-primary: #ffffff;
+  /* ---------- 状态色（P5.77：后端不可用提示条 / 离线占位页 / 工具徽标） ---------- */
+  /* 警告色：提示条图标点、描边、文字（取自 Element Plus warning，与 el-alert 观感一致） */
+  --qt-warning: #b88230;
+  /* 警告浅底：提示条与占位页徽标的背景，亮色下不刺眼 */
+  --qt-warning-bg: #fdf6ec;
+  /* 警告描边：浅底上的边界线 */
+  --qt-warning-border: #f5dab1;
+  /* 成功色：离线工具的「数据不上传」徽标点 */
+  --qt-success: #4e9a3f;
 
   /* ---------- 圆角 ---------- */
   /* 小圆角：标签、输入框内小元素 */
@@ -97,6 +106,11 @@ html.dark {
   --qt-primary-hover: #66b1ff;
   /* 暗色实心按钮文字色：深色底上仍用白字，对比度 ≥4.5:1 */
   --qt-on-primary: #ffffff;
+  /* 暗色状态色：文字提亮、底色压暗，保证深色底上仍可读 */
+  --qt-warning: #e6a23c;
+  --qt-warning-bg: rgba(230, 162, 60, 0.12);
+  --qt-warning-border: rgba(230, 162, 60, 0.38);
+  --qt-success: #7bc86a;
   /* 暗色卡片阴影：深色背景需要更重的投影才看得见 */
   --qt-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
   /* 暗色浮层阴影：抽屉/下拉的深投影 */

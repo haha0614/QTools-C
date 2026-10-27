@@ -12,7 +12,8 @@
  *           与搜索 / 刷新**同一行**；默认 6px；背景层 computed filter / inset / 尺寸都是变量值
  *   B 联动：拖到 0 / 6 / 20 三档，computed filter = blur(Npx)、inset = -1.5N、尺寸 = 卡片 + 3N，
  *           三档整墙卡片 rect 完全一致（只改变量不重排）；三档各截一张亮色图 + 单卡特写
- *   C 可读性：0 档（纯照片）亮 / 暗像素采样 + WCAG —— 姓名 / 数量行 ≥ 4.5:1（靠 0 档加厚遮罩）
+ *   C 可读性：0 档（纯照片）亮 / 暗像素采样 + WCAG —— 姓名 / 数量行 ≥ 4.5:1
+ *           （P5.75 起靠「左区压暗 + 文字块半透明垫底」，不再是 0 档整体加厚遮罩）
  *   D 持久化：设 13 → 刷新 → 滑块位置、localStorage、computed 三者都回到 13
  *   E 键盘：聚焦滑块后 ← → / Home / End 可调（原生 range 自带行为）
  *   F 窄屏：≤640 折叠为「只有滑块 + 数值」（标签隐藏），搜索 / 刷新仍在且同一行；375 无横向滚动
@@ -426,8 +427,8 @@ function probePage() {
     rootVars: cs
       ? {
           blur: css('--pw-bg-blur'),
-          l1: css('--pw-mask-l1'), l2: css('--pw-mask-l2'), l3: css('--pw-mask-l3'),
-          d1: css('--pw-mask-d1'), d2: css('--pw-mask-d2'), d3: css('--pw-mask-d3')
+          l1: css('--pw-mask-l1'), l2: css('--pw-mask-l2'),
+          d1: css('--pw-mask-d1'), d2: css('--pw-mask-d2')
         }
       : null,
     inlineStyle: page ? (page.getAttribute('style') || '') : '',
@@ -585,11 +586,24 @@ if (!(await evaluate('!!document.querySelector(".pw-card")'))) {
   ok(withBg.length > 0, 'A10 有卡片渲染出背景层', withBg.length + '/' + g.cards.length + ' 张')
   ok(withBg.every((c) => /blur\(6px\)/.test(c.filter) && /saturate\(1\.1\)/.test(c.filter) && /brightness\(0\.9\)/.test(c.filter)),
     'A11 背景 filter = blur(6px) saturate(1.1) brightness(.9)', withBg[0] && withBg[0].filter)
-  ok(withBg.every((c) => c.inset === '-9px -9px -9px -9px'), 'A12 外扩 inset = -9px（6 × 1.5）', withBg[0] && withBg[0].inset)
-  ok(withBg.every((c) => Math.abs(c.imgW - (c.bgRect.w + 18)) < 1 && Math.abs(c.imgH - (c.bgRect.h + 18)) < 1),
-    'A13 背景尺寸 = 背景盒 + 18px（6 × 3）', withBg[0] ? withBg[0].imgW + '×' + withBg[0].imgH + ' vs 背景盒 ' + withBg[0].bgRect.w + '×' + withBg[0].bgRect.h : '')
+  // ---- P5.76：盒模型换了，下面两条旧断言（外扩 inset = -1.5 × 半径、尺寸 = 卡片 + 3 × 半径）**作废**。
+  //   作废理由：外扩存在的唯一目的是「cover 铺满卡片时别让模糊从被裁的边往里渗」；P5.76 把背景图改成
+  //   「按卡片高度等比缩放 + 右对齐 + 左缘 mask 渐隐」，图片不再被裁到卡片尺寸，也就没有「被裁的边」
+  //   要兜 —— 外扩连同一个 calc 一起从 CSS 删除。新盒模型是：inset 0 / height 100% / width 32% / contain。
+  ok(withBg.every((c) => /^0px 0px/.test(String(c.inset))), 'A12 背景图不再外扩（inset 上/右 = 0px，P5.76 旧断言作废）', withBg[0] && withBg[0].inset)
+  ok(withBg.every((c) => Math.abs(c.imgH - c.bgRect.h) < 1 && Math.abs(c.imgW - c.bgRect.w * 0.32) < 1.5),
+    'A13 背景图 = 卡片内高 × 32% 宽（P5.76 固定盒，旧「卡片 + 18px」断言作废）', withBg[0] ? withBg[0].imgW + '×' + withBg[0].imgH + ' vs 背景盒 ' + withBg[0].bgRect.w + '×' + withBg[0].bgRect.h : '')
+  // 遮罩断言按「此刻 CSS 里到底有没有遮罩层」自适应：
+  //   P5.72 三点线性（3 停靠点）→ P5.75 横向分区（4 停靠点：0/45/62/100%）→ P5.76 遮罩层整块删除。
+  // 只在遮罩存在时断言它的形状，删掉了就打印 INFO —— 遮罩是设计变量，不该让「滑块/外扩/持久化」的
+  // 回归测试跟着红。
   const al = maskAlphas(withBg[0].maskBg)
-  ok(al.length === 3 && String(al[2].a) === '0.62', 'A14 6px 遮罩右侧仍是 P5.69 现值 .62', JSON.stringify(al.map((x) => x.a)))
+  if (!al.length) {
+    console.log('  INFO A14 当前 CSS 没有 .pw-mask 遮罩层（P5.76 起背景靠图片右对齐 + 左缘渐隐），跳过遮罩形状断言')
+  } else {
+    ok(al.length === 4 && String(al[0].a) === '0.94' && String(al[3].a) === '0.13',
+      'A14 6px 遮罩：左区 .94 / 右区 .13（P5.75 分区公式在 6px 的插值）', JSON.stringify(al.map((x) => x.a)))
+  }
   facts.default = { slider: s, label: g.label, vars: g.rootVars, card: withBg[0], maskAlphas: al.map((x) => x.a) }
 }
 
@@ -606,27 +620,37 @@ console.log('[B] 0 / 6 / 20 三档：filter + 外扩联动（只改变量，整�
     const g = await evaluate(PROBE)
     const withBg = g.cards.filter((c) => c.hasBg)
     const noBg = g.cards.filter((c) => !c.hasBg)
-    const wantInset = r2(-1.5 * v) + 'px ' + r2(-1.5 * v) + 'px ' + r2(-1.5 * v) + 'px ' + r2(-1.5 * v) + 'px'
-    const insetOk = withBg.every((c) => c.inset === wantInset)
-    const sizeOk = withBg.every((c) => Math.abs(c.imgW - (c.bgRect.w + 3 * v)) < 1 && Math.abs(c.imgH - (c.bgRect.h + 3 * v)) < 1)
+    // P5.76：旧断言「inset = -1.5 × 半径」「尺寸 = 卡片 + 3 × 半径」随外扩一起作废（理由见 A12/A13）。
+    // 新断言的方向相反：几何**与半径无关** —— 拖动滑块只该改 filter，不该动盒模型。
+    const wantInset = '0px 0px auto auto'
+    const insetOk = withBg.every((c) => /^0px 0px/.test(String(c.inset)))
+    const sizeOk = withBg.every((c) => Math.abs(c.imgH - c.bgRect.h) < 1 && Math.abs(c.imgW - c.bgRect.w * 0.32) < 1.5)
     const filterOk = withBg.every((c) => String(c.filter).indexOf('blur(' + v + 'px)') === 0)
     ok(g.slider.value === String(v), 'B' + v + '-1 滑块停在 ' + v, g.slider.value)
     ok(g.valueText === v + 'px', 'B' + v + '-2 数值小字 = ' + v + 'px', String(g.valueText))
     ok(g.rootVars.blur === v + 'px', 'B' + v + '-3 根节点 --pw-bg-blur = ' + v + 'px', g.rootVars.blur)
     ok(filterOk, 'B' + v + '-4 每张卡 computed filter = blur(' + v + 'px) saturate(1.1) brightness(.9)', withBg[0].filter)
-    ok(insetOk, 'B' + v + '-5 外扩 inset = ' + wantInset + '（-1.5 × ' + v + '）', withBg[0].inset)
-    ok(sizeOk, 'B' + v + '-6 背景尺寸 = 背景盒 + ' + 3 * v + 'px', withBg[0].imgW + '×' + withBg[0].imgH + ' vs 背景盒 ' + withBg[0].bgRect.w + '×' + withBg[0].bgRect.h)
+    ok(insetOk, 'B' + v + '-5 无外扩：inset 与半径无关，恒为 0 0 auto auto（P5.76）', withBg[0].inset)
+    ok(sizeOk, 'B' + v + '-6 背景图尺寸与半径无关：高 = 卡片内高、宽 = 32%（P5.76 固定盒）', withBg[0].imgW + '×' + withBg[0].imgH + ' vs 背景盒 ' + withBg[0].bgRect.w + '×' + withBg[0].bgRect.h)
     ok(withBg.every((c) => c.marked === 1 && c.imgMarked === 1), 'B' + v + '-7 卡片与背景图 DOM 未被重建（拖动只改变量）')
     ok(noBg.length === 0 || noBg.every((c) => c.filter === null), 'B' + v + '-8 无背景层的卡片不受影响', noBg.length + ' 张无背景')
 
+    // P5.75：左区恒定 .94、右区 = .10 + .10 × (v / 20)；遮罩层不存在（P5.76）时整组跳过
     const al = maskAlphas(withBg[0].maskBg)
-    const want = v === 0 ? ['0.96', '0.94', '0.78'] : ['0.93', '0.88', '0.62']
-    ok(al.length === 3 && want.every((x, i) => Math.abs(al[i].a - Number(x)) < 0.011), 'B' + v + '-9 亮色遮罩 alpha = ' + want.join('/'), JSON.stringify(al.map((x) => x.a)))
-    if (v === 6) ok(withBg.every((c) => c.opacity === '0.7'), 'B6-10 背景层不透明度仍是 .7（P5.69 未动）', withBg[0].opacity)
+    if (al.length) {
+      const wantRight = 0.1 + 0.1 * (v / 20)
+      const want = [0.94, 0.94, wantRight, wantRight]
+      ok(al.length === 4 && want.every((x, i) => Math.abs(al[i].a - x) < 0.011), 'B' + v + '-9 亮色遮罩 alpha = 左 ' + want[0] + ' / 右 ' + r3(wantRight), JSON.stringify(al.map((x) => x.a)))
+    } else if (v === 0) {
+      console.log('  INFO B*-9 当前 CSS 没有 .pw-mask 遮罩层，三档的遮罩 alpha 断言跳过')
+    }
+    // P5.76：.pw-bg 的整层不透明度（P5.69 的 .7 / P5.75 的 0px→1 联动）删除，照片按原亮度呈现。
+    if (v === 6) ok(withBg.every((c) => c.opacity === '1'), 'B6-10 背景层不透明度 = 1（P5.76 删除 .7 压暗；旧断言作废）', withBg[0].opacity)
 
-    // 任意半径都不露边：背景图的矩形必须完全盖住卡片内容盒
-    const coverOk = withBg.every((c) => c.imgW >= c.bgRect.w - 0.5 && c.imgH >= c.bgRect.h - 0.5)
-    ok(coverOk, 'B' + v + '-11 背景图矩形 ≥ 背景盒（模糊不吃到卡片边，不露边）', withBg[0] ? withBg[0].imgW + '×' + withBg[0].imgH + ' vs ' + withBg[0].bgRect.w + '×' + withBg[0].bgRect.h : '')
+    // P5.76：旧断言「背景图矩形 ≥ 背景盒（cover 不露边）」作废 —— 新设计里图片本来就比卡片窄
+    // （只占右侧 32%），它必须 ≤ 背景盒，否则就是溢出到卡片外了。
+    const coverOk = withBg.every((c) => c.imgW <= c.bgRect.w + 0.5 && Math.abs(c.imgH - c.bgRect.h) < 1)
+    ok(coverOk, 'B' + v + '-11 背景图严格落在背景盒内（宽 32%、高贴合，P5.76 旧 cover 断言作废）', withBg[0] ? withBg[0].imgW + '×' + withBg[0].imgH + ' vs ' + withBg[0].bgRect.w + '×' + withBg[0].bgRect.h : '')
 
     facts.stops[v] = {
       slider: g.slider.value,
@@ -639,7 +663,7 @@ console.log('[B] 0 / 6 / 20 三档：filter + 外扩联动（只改变量，整�
       bgBox: [withBg[0].bgRect.w, withBg[0].bgRect.h],
       cardBox: [withBg[0].rect.w, withBg[0].rect.h],
       maskLight: al.map((x) => x.a),
-      maskDarkVars: [g.rootVars.d1, g.rootVars.d2, g.rootVars.d3]
+      maskDarkVars: [g.rootVars.d1, g.rootVars.d2]
     }
     await shot('p572-blur-' + v + '-light')
     if (withBg[0]) await clipShotAndSave(withBg[0].rect, 'p572-card-' + v + '-light')
@@ -696,10 +720,15 @@ for (const theme of ['light', 'dark']) {
   await setBlur(0)
   const g = await evaluate(PROBE)
   const withBg = g.cards.filter((c) => c.hasBg)
+  // P5.75：0px 不再「整体加厚」，改成左区压暗 + 右区最透（.10 亮 / .15 暗）；P5.76 起遮罩层整块删除
   const al = maskAlphas(withBg[0].maskBg)
-  const want = theme === 'light' ? ['0.96', '0.94', '0.78'] : ['0.95', '0.92', '0.86']
-  ok(al.length === 3 && want.every((x, i) => Math.abs(al[i].a - Number(x)) < 0.011), 'C ' + theme + ' 0px 遮罩已加厚到 ' + want.join('/'), JSON.stringify(al.map((x) => x.a)))
-  const darkVars = theme === 'light' ? [g.rootVars.d1, g.rootVars.d2, g.rootVars.d3] : [g.rootVars.l1, g.rootVars.l2, g.rootVars.l3]
+  if (!al.length) {
+    console.log('  INFO C ' + theme + ' 当前 CSS 没有 .pw-mask 遮罩层，0px 遮罩断言跳过（可读性仍按像素实测）')
+  } else {
+    const want = theme === 'light' ? ['0.94', '0.94', '0.1', '0.1'] : ['0.92', '0.92', '0.15', '0.15']
+    ok(al.length === 4 && want.every((x, i) => Math.abs(al[i].a - Number(x)) < 0.011), 'C ' + theme + ' 0px 分区遮罩 = 左 ' + want[0] + ' / 右 ' + want[2], JSON.stringify(al.map((x) => x.a)))
+  }
+  const darkVars = theme === 'light' ? [g.rootVars.d1, g.rootVars.d2] : [g.rootVars.l1, g.rootVars.l2]
   ok(true, 'C ' + theme + ' 另一主题变量同时就绪（切换不重算）', JSON.stringify(darkVars))
   const res = await measureContrast(g, 'C ' + theme + ' 0px')
   facts.contrast[theme] = { alphas: al.map((x) => x.a), ...res }
@@ -732,8 +761,10 @@ console.log('[D] 持久化（localStorage ms.person.bgBlur）')
   ok(g.valueText === '13px', 'D3 刷新后数值小字 13px', String(g.valueText))
   ok(g.storage === '13', 'D4 刷新后 localStorage 仍是 "13"', String(g.storage))
   ok(g.rootVars.blur === '13px', 'D5 刷新后根节点 --pw-bg-blur = 13px', g.rootVars.blur)
-  ok(withBg.every((c) => /blur\(13px\)/.test(c.filter) && c.inset === '-19.5px -19.5px -19.5px -19.5px'),
-    'D6 刷新后 computed filter = blur(13px)、inset = -19.5px', withBg[0].filter + ' / ' + withBg[0].inset)
+  // P5.76：外扩已删除 —— 旧断言「inset = -19.5px」作废；这里只断言 filter 读的是持久化的 13px，
+  // 并且确认图片贴住背景盒（top/right = 0）而不是靠负 inset 外扩。
+  ok(withBg.every((c) => /blur\(13px\)/.test(c.filter) && /^0px 0px/.test(String(c.inset))),
+    'D6 刷新后 computed filter = blur(13px)、无外扩（P5.76 旧 inset 断言作废）', withBg[0].filter + ' / ' + withBg[0].inset)
   await shot('p572-persist-13')
   facts.persistence = {
     storage: g.storage,

@@ -20,6 +20,12 @@ const redirectTarget = computed(() => {
   return typeof target === 'string' && target.startsWith('/') && !target.startsWith('//') ? target : '/'
 })
 
+// 从注册页跳过来时带的一句提示（P5.79：注册成功后要等站长审核）——只取字符串且限长，防注入
+const pageNotice = computed(() => {
+  const value = route.query.notice
+  return typeof value === 'string' ? value.slice(0, 60) : ''
+})
+
 // 弹窗登录成功是「原地关闭」，页面登录成功才是「跳走」——差别只在这里
 function onSuccess() {
   router.replace(redirectTarget.value)
@@ -35,7 +41,12 @@ function goRegister() {
   <main class="qt-auth-page">
     <div class="qt-auth-card">
       <h1 class="qt-auth-title">登录</h1>
-      <AuthLoginForm switch-href="/register" @success="onSuccess" @switch-register="goRegister" />
+      <AuthLoginForm
+        :notice="pageNotice"
+        switch-href="/register"
+        @success="onSuccess"
+        @switch-register="goRegister"
+      />
     </div>
   </main>
 </template>

@@ -63,13 +63,14 @@ const routes = [
         path: 'media',
         name: 'MediaVideo',
         component: () => import('../views/media/VideoPage.vue'),
-        meta: { title: '媒体站 · 视频库', bleed: true }
+        // meta.online：该页数据全部来自后端，后端不可用时由 AppShell 渲染离线占位页（P5.77）
+        meta: { title: '媒体站 · 视频库', bleed: true, online: true }
       },
       {
         path: 'media/photos',
         name: 'MediaPhotos',
         component: () => import('../views/media/PhotosPage.vue'),
-        meta: { title: '媒体站 · 图片站', bleed: true }
+        meta: { title: '媒体站 · 图片站', bleed: true, online: true }
       },
       // 人物（P3-B）：人物墙 + 人物详情（该人物的视频 / 相册网格）。
       // 两条都标 bleed：人物墙是整幅网格，与视频库 / 图片站同一套贴边规则。
@@ -77,13 +78,13 @@ const routes = [
         path: 'media/persons',
         name: 'MediaPersons',
         component: () => import('../views/media/PersonsPage.vue'),
-        meta: { title: '媒体站 · 人物', bleed: true }
+        meta: { title: '媒体站 · 人物', bleed: true, online: true }
       },
       {
         path: 'media/person/:id',
         name: 'MediaPersonDetail',
         component: () => import('../views/media/PersonDetailPage.vue'),
-        meta: { title: '媒体站 · 人物详情', bleed: true }
+        meta: { title: '媒体站 · 人物详情', bleed: true, online: true }
       },
       // 播放列表（P5.46）：独占页面取消 —— 它降级成视频库筛选条上的一个维度。
       // 旧地址保留为**重定向**（书签 / 外部链接不留死链）：跳到视频库并打开播放列表筛选下拉；
@@ -109,7 +110,7 @@ const routes = [
         name: 'Me',
         component: () => import('../views/media/MePage.vue'),
         // 媒体站身份是 ms.owner（由页面自己带 X-Ms-Owner），与 app.token 无关，故不加 requiresAuth
-        meta: { title: '个人中心', bleed: true }
+        meta: { title: '个人中心', bleed: true, online: true }
       },
 
       // ---------- 用户端账号（站级：独立于若依后台） ----------
@@ -117,13 +118,13 @@ const routes = [
         path: 'login',
         name: 'Login',
         component: () => import('../views/auth/Login.vue'),
-        meta: { title: '登录' }
+        meta: { title: '登录', online: true }
       },
       {
         path: 'register',
         name: 'Register',
         component: () => import('../views/auth/Register.vue'),
-        meta: { title: '注册' }
+        meta: { title: '注册', online: true }
       },
       // 旧的账号页已并入个人中心 /me：保留重定向，书签与页内旧链接不失效
       { path: 'account', redirect: '/me' }

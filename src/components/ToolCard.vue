@@ -8,10 +8,14 @@
   主题：颜色一律取 --qt-* 变量，禁止硬编码颜色。
 -->
 <script setup>
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import * as ElementPlusIcons from '@element-plus/icons-vue'
+// P5.77：徽标文案与后端可用性是全站同一套口径
+import { toolBadgeText } from '@/utils/serviceCatalog'
+import { useBackendHealth } from '@/composables/useBackendHealth'
 
-// tool: { id, name, desc, route, icon, category, external }
+// tool: { id, name, desc, route, icon, category, external, offline }
 const props = defineProps({
   tool: {
     type: Object,
@@ -20,6 +24,10 @@ const props = defineProps({
 })
 
 const router = useRouter()
+// 后端可用性单例：offline 时在线服务卡片禁用，离线工具卡片照常可点
+const { isOffline: backendOffline } = useBackendHealth()
+const locked = computed(() => !props.tool.offline && backendOffline.value)
+const badge = computed(() => toolBadgeText(props.tool, locked.value))
 
 // 非 Vue Router 管理的地址（外站 URL 或 *.html 静态页，如 /media/index.html）需要整页跳转
 const isStaticRoute = (route) => !!route && (/^https?:\/\//i.test(route) || /\.html?(?:$|[?#])/i.test(route))
@@ -53,8 +61,9 @@ const rememberTool = () => {
   }
 }
 
-// 整卡点击：静态页 / 外站整页跳转，其余交给 vue-router
+// 整卡点击：静态页 / 外站整页跳转，其余交给 vue-router；锁住的在线服务点了不动
 const go = () => {
+  if (locked.value) return
   const { route, external } = props.tool
   if (!route) return
   rememberTool()
@@ -66,7 +75,11 @@ const go = () => {
 <template>
   <a
     class="tool-card"
-    :href="tool.route || '#'"
+    :class="{ 'is-locked': locked }"
+    :href="locked ? undefined : tool.route || '#'"
+    :aria-disabled="locked ? 'true' : undefined"
+    :title="locked ? '后端服务暂不可用' : undefined"
+    :data-offline="tool.offline ? '1' : '0'"
     @click.prevent="go"
   >
     <span class="tool-card__icon">
@@ -76,7 +89,15 @@ const go = () => {
     </span>
     <span class="tool-card__name">{{ tool.name }}</span>
     <span class="tool-card__desc">{{ tool.desc || '暂无描述' }}</span>
-    <span class="tool-card__tag">本地运算</span>
+    <!-- 徽标：离线工具才有「离线 · 数据不上传」；在线工具平时不标注，掉线时才显示「暂不可用」 -->
+    <span
+      v-if="badge"
+      class="tool-card__tag"
+      :class="{ 'tool-card__tag--offline': tool.offline, 'is-locked': locked }"
+    >
+      <span class="tool-card__dot" aria-hidden="true"></span>
+      {{ badge }}
+    </span>
   </a>
 </template>
 
@@ -102,6 +123,17 @@ const go = () => {
   &:focus-visible {
     outline: 2px solid var(--qt-primary);
     outline-offset: 2px;
+  }
+
+  /* 在线服务 + 后端 offline：灰掉、不可点、hover 不抬升 */
+  &.is-locked {
+    opacity: 0.6;
+    cursor: not-allowed;
+
+    &:hover {
+      border-color: var(--qt-border);
+      transform: none;
+    }
   }
 
   &__icon {
@@ -145,7 +177,11 @@ const go = () => {
     color: var(--qt-text-secondary);
   }
 
+  /* 徽标：离线 = 绿点「离线 · 数据不上传」；在线 = 「需后端」；挂掉 = 警告色 */
   &__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     align-self: flex-start;
     margin-top: auto;
     padding: 2px 8px;
@@ -153,6 +189,23 @@ const go = () => {
     border-radius: 999px;
     font-size: 11px;
     color: var(--qt-text-secondary);
+
+    &--offline {
+      color: var(--qt-success);
+    }
+
+    /* 在线服务只在掉线时出现徽标，用警告色说明「暂不可用」 */
+    &.is-locked {
+      color: var(--qt-warning);
+    }
+  }
+
+  &__dot {
+    flex: none;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: currentColor;
   }
 }
 </style>

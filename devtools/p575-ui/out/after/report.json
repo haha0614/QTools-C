@@ -1,0 +1,548 @@
+{
+  "passed": 75,
+  "failures": [],
+  "facts": {
+    "structure": {
+      "stops": [
+        {
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "a": 0.94,
+          "at": 0
+        },
+        {
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "a": 0.94,
+          "at": 45
+        },
+        {
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "a": 0.13,
+          "at": 62
+        },
+        {
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "a": 0.13,
+          "at": 100
+        }
+      ],
+      "rootVars": {
+        "blur": "6px",
+        "op": "0.7",
+        "l1": "0.94",
+        "l2": "0.13",
+        "d1": "0.92",
+        "d2": "0.18"
+      },
+      "bodyBg": "color(srgb 1 1 1 / 0.65)",
+      "bodyShadow": "rgba(255, 255, 255, 0.9) 0px 1px 2px",
+      "bodyW": 185.94,
+      "cardW": 335.25
+    },
+    "table": {
+      "light0": {
+        "theme": "light",
+        "blur": 0,
+        "stops": [
+          {
+            "at": 0,
+            "a": 0.94
+          },
+          {
+            "at": 45,
+            "a": 0.94
+          },
+          {
+            "at": 62,
+            "a": 0.1
+          },
+          {
+            "at": 100,
+            "a": 0.1
+          }
+        ],
+        "at": {
+          "left": 0.94,
+          "mid": 0.545,
+          "right": 0.1
+        },
+        "rootVar": "0.1",
+        "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+        "inset": "0px 0px 0px 0px",
+        "bgOpacity": "1",
+        "opVar": "1"
+      },
+      "light6": {
+        "theme": "light",
+        "blur": 6,
+        "stops": [
+          {
+            "at": 0,
+            "a": 0.94
+          },
+          {
+            "at": 45,
+            "a": 0.94
+          },
+          {
+            "at": 62,
+            "a": 0.13
+          },
+          {
+            "at": 100,
+            "a": 0.13
+          }
+        ],
+        "at": {
+          "left": 0.94,
+          "mid": 0.559,
+          "right": 0.13
+        },
+        "rootVar": "0.13",
+        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+        "inset": "-9px -9px -9px -9px",
+        "bgOpacity": "0.7",
+        "opVar": "0.7"
+      },
+      "light20": {
+        "theme": "light",
+        "blur": 20,
+        "stops": [
+          {
+            "at": 0,
+            "a": 0.94
+          },
+          {
+            "at": 45,
+            "a": 0.94
+          },
+          {
+            "at": 62,
+            "a": 0.2
+          },
+          {
+            "at": 100,
+            "a": 0.2
+          }
+        ],
+        "at": {
+          "left": 0.94,
+          "mid": 0.592,
+          "right": 0.2
+        },
+        "rootVar": "0.2",
+        "filter": "blur(20px) saturate(1.1) brightness(0.9)",
+        "inset": "-30px -30px -30px -30px",
+        "bgOpacity": "0.7",
+        "opVar": "0.7"
+      },
+      "dark0": {
+        "theme": "dark",
+        "blur": 0,
+        "stops": [
+          {
+            "at": 0,
+            "a": 0.92
+          },
+          {
+            "at": 45,
+            "a": 0.92
+          },
+          {
+            "at": 62,
+            "a": 0.15
+          },
+          {
+            "at": 100,
+            "a": 0.15
+          }
+        ],
+        "at": {
+          "left": 0.92,
+          "mid": 0.558,
+          "right": 0.15
+        },
+        "rootVar": "0.15",
+        "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+        "inset": "0px 0px 0px 0px",
+        "bgOpacity": "1",
+        "opVar": "1"
+      },
+      "dark6": {
+        "theme": "dark",
+        "blur": 6,
+        "stops": [
+          {
+            "at": 0,
+            "a": 0.92
+          },
+          {
+            "at": 45,
+            "a": 0.92
+          },
+          {
+            "at": 62,
+            "a": 0.18
+          },
+          {
+            "at": 100,
+            "a": 0.18
+          }
+        ],
+        "at": {
+          "left": 0.92,
+          "mid": 0.572,
+          "right": 0.18
+        },
+        "rootVar": "0.18",
+        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+        "inset": "-9px -9px -9px -9px",
+        "bgOpacity": "0.7",
+        "opVar": "0.7"
+      },
+      "dark20": {
+        "theme": "dark",
+        "blur": 20,
+        "stops": [
+          {
+            "at": 0,
+            "a": 0.92
+          },
+          {
+            "at": 45,
+            "a": 0.92
+          },
+          {
+            "at": 62,
+            "a": 0.25
+          },
+          {
+            "at": 100,
+            "a": 0.25
+          }
+        ],
+        "at": {
+          "left": 0.92,
+          "mid": 0.605,
+          "right": 0.25
+        },
+        "rootVar": "0.25",
+        "filter": "blur(20px) saturate(1.1) brightness(0.9)",
+        "inset": "-30px -30px -30px -30px",
+        "bgOpacity": "0.7",
+        "opVar": "0.7"
+      }
+    },
+    "contrast": {
+      "light0": {
+        "cards": 13,
+        "nameW": {
+          "name": "念念",
+          "line": "name",
+          "samples": 178,
+          "color": "rgb(48, 49, 51)",
+          "worst": 5.94,
+          "worstBg": [
+            175,
+            175,
+            175
+          ],
+          "best": 12.91
+        },
+        "countW": {
+          "name": "念念",
+          "line": "counts",
+          "samples": 178,
+          "color": "rgb(48, 49, 51)",
+          "worst": 5.94,
+          "worstBg": [
+            175,
+            175,
+            175
+          ],
+          "best": 12.91
+        },
+        "measured": 26
+      },
+      "light6": {
+        "cards": 13,
+        "nameW": {
+          "name": "桜井宁宁",
+          "line": "name",
+          "samples": 148,
+          "color": "rgb(48, 49, 51)",
+          "worst": 8.14,
+          "worstBg": [
+            206,
+            204,
+            203
+          ],
+          "best": 12.82
+        },
+        "countW": {
+          "name": "桜井宁宁",
+          "line": "counts",
+          "samples": 148,
+          "color": "rgb(48, 49, 51)",
+          "worst": 8.14,
+          "worstBg": [
+            206,
+            204,
+            203
+          ],
+          "best": 12.8
+        },
+        "measured": 26
+      },
+      "light20": {
+        "cards": 13,
+        "nameW": {
+          "name": "素人",
+          "line": "name",
+          "samples": 172,
+          "color": "rgb(48, 49, 51)",
+          "worst": 8.61,
+          "worstBg": [
+            210,
+            210,
+            210
+          ],
+          "best": 12.8
+        },
+        "countW": {
+          "name": "素人",
+          "line": "counts",
+          "samples": 172,
+          "color": "rgb(48, 49, 51)",
+          "worst": 8.54,
+          "worstBg": [
+            210,
+            209,
+            209
+          ],
+          "best": 12.71
+        },
+        "measured": 26
+      },
+      "dark0": {
+        "cards": 13,
+        "nameW": {
+          "name": "念念",
+          "line": "name",
+          "samples": 178,
+          "color": "rgb(229, 234, 243)",
+          "worst": 6.31,
+          "worstBg": [
+            83,
+            84,
+            81
+          ],
+          "best": 15.15
+        },
+        "countW": {
+          "name": "念念",
+          "line": "counts",
+          "samples": 178,
+          "color": "rgb(229, 234, 243)",
+          "worst": 6.38,
+          "worstBg": [
+            83,
+            83,
+            82
+          ],
+          "best": 15.15
+        },
+        "measured": 26
+      },
+      "dark6": {
+        "cards": 13,
+        "nameW": {
+          "name": "念念",
+          "line": "name",
+          "samples": 178,
+          "color": "rgb(229, 234, 243)",
+          "worst": 8.6,
+          "worstBg": [
+            64,
+            64,
+            63
+          ],
+          "best": 14.21
+        },
+        "countW": {
+          "name": "念念",
+          "line": "counts",
+          "samples": 178,
+          "color": "rgb(229, 234, 243)",
+          "worst": 8.5,
+          "worstBg": [
+            64,
+            65,
+            63
+          ],
+          "best": 14.15
+        },
+        "measured": 26
+      },
+      "dark20": {
+        "cards": 13,
+        "nameW": {
+          "name": "念念",
+          "line": "name",
+          "samples": 178,
+          "color": "rgb(229, 234, 243)",
+          "worst": 9.47,
+          "worstBg": [
+            57,
+            58,
+            56
+          ],
+          "best": 14.12
+        },
+        "countW": {
+          "name": "念念",
+          "line": "counts",
+          "samples": 178,
+          "color": "rgb(229, 234, 243)",
+          "worst": 9.16,
+          "worstBg": [
+            60,
+            60,
+            58
+          ],
+          "best": 13.96
+        },
+        "measured": 26
+      }
+    },
+    "photoBand": {
+      "light0": {
+        "n": 3360,
+        "detail": 0.006,
+        "sd": 0.122,
+        "meanChroma": 6.09,
+        "distBg": 255.88,
+        "meanRgb": [
+          108.52,
+          109.47,
+          103.92
+        ],
+        "x0": 454.94,
+        "x1": 524.25
+      },
+      "light6": {
+        "n": 3360,
+        "detail": 0.005,
+        "sd": 0.13,
+        "meanChroma": 3.62,
+        "distBg": 185.56,
+        "meanRgb": [
+          148.74,
+          149.07,
+          145.85
+        ],
+        "x0": 454.94,
+        "x1": 524.25
+      },
+      "light20": {
+        "n": 3360,
+        "detail": 0.004,
+        "sd": 0.078,
+        "meanChroma": 2.27,
+        "distBg": 189.93,
+        "meanRgb": [
+          146.1,
+          145.91,
+          144.04
+        ],
+        "x0": 454.94,
+        "x1": 524.25
+      },
+      "lightold0": {
+        "n": 3360,
+        "detail": 0.003,
+        "sd": 0.059,
+        "meanChroma": 1.05,
+        "distBg": 43.96,
+        "meanRgb": [
+          229.81,
+          230.02,
+          229.05
+        ],
+        "x0": 454.94,
+        "x1": 524.25
+      },
+      "dark0": {
+        "n": 3360,
+        "detail": 0.004,
+        "sd": 0.08,
+        "meanChroma": 5.77,
+        "distBg": 91.32,
+        "meanRgb": [
+          80.91,
+          81.84,
+          76.57
+        ],
+        "x0": 454.94,
+        "x1": 524.25
+      },
+      "dark6": {
+        "n": 3360,
+        "detail": 0.002,
+        "sd": 0.039,
+        "meanChroma": 3.33,
+        "distBg": 50.79,
+        "meanRgb": [
+          57.06,
+          57.38,
+          54.43
+        ],
+        "x0": 454.94,
+        "x1": 524.25
+      },
+      "dark20": {
+        "n": 3360,
+        "detail": 0.001,
+        "sd": 0.016,
+        "meanChroma": 1.98,
+        "distBg": 23.99,
+        "meanRgb": [
+          41.25,
+          41.19,
+          39.57
+        ],
+        "x0": 454.94,
+        "x1": 524.25
+      },
+      "darkold0": {
+        "n": 3360,
+        "detail": 0,
+        "sd": 0.003,
+        "meanChroma": 0.66,
+        "distBg": 8.71,
+        "meanRgb": [
+          25.88,
+          25.95,
+          25.35
+        ],
+        "x0": 454.94,
+        "x1": 524.25
+      }
+    }
+  }
+}

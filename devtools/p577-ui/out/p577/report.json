@@ -1,0 +1,311 @@
+{
+  "passed": 80,
+  "failures": [
+    "放开打桩后自动回到 online（无需刷新） -> 20079ms（offline 探测间隔 15s）",
+    "恢复时只弹一次「在线服务已恢复」",
+    "恢复后提示条自动消失",
+    "恢复后侧栏在线入口自动解锁",
+    "媒体站卡片恢复可点（href 回来了）"
+  ],
+  "facts": {
+    "lastStubbed": "FAILED http://127.0.0.1:52919/api/toolInfo/list",
+    "normal": {
+      "status": "online",
+      "banner": false,
+      "lockedNav": 0,
+      "navText": [
+        "首页",
+        "全部工具",
+        "视频库",
+        "图片站",
+        "人物"
+      ],
+      "loginLocked": false,
+      "cards": 4
+    },
+    "sectionsNormal": [
+      {
+        "key": "offline",
+        "title": "🟢 离线工具 · 数据不上传",
+        "sub": "纯浏览器运算，后端不可用时也能用",
+        "count": "3 个",
+        "cards": 3
+      },
+      {
+        "key": "online",
+        "title": "在线服务",
+        "sub": "需要后端在线才能使用",
+        "count": "1 个",
+        "cards": 1
+      }
+    ],
+    "badgesNormal": [
+      {
+        "name": "JSON格式化工具",
+        "tag": "离线 · 数据不上传",
+        "offline": "1",
+        "locked": false,
+        "href": "/tool/json"
+      },
+      {
+        "name": "文本字数统计",
+        "tag": "离线 · 数据不上传",
+        "offline": "1",
+        "locked": false,
+        "href": "/tool/text-count"
+      },
+      {
+        "name": "随机密码生成",
+        "tag": "离线 · 数据不上传",
+        "offline": "1",
+        "locked": false,
+        "href": "/tool/pwd-gen"
+      },
+      {
+        "name": "媒体站",
+        "tag": "",
+        "offline": "0",
+        "locked": false,
+        "href": "/media"
+      }
+    ],
+    "mediaNormal": {
+      "placeholder": false,
+      "scope": true,
+      "status": "online",
+      "banner": false
+    },
+    "offlineTimeline": {
+      "degraded": [
+        {
+          "at": 0,
+          "status": "degraded"
+        }
+      ],
+      "offline": [
+        {
+          "at": 1,
+          "status": "degraded"
+        },
+        {
+          "at": 3117,
+          "status": "offline"
+        }
+      ],
+      "toOfflineMs": 3117
+    },
+    "offline": {
+      "status": "offline",
+      "banner": {
+        "text": "部分在线服务暂不可用，离线工具仍可使用 重试 ✕",
+        "role": "status",
+        "close": true
+      },
+      "locked": [
+        {
+          "route": "/media",
+          "tag": "BUTTON",
+          "cls": "qt-rail__link qt-rail__link--button is-disabled",
+          "disabledAttr": true,
+          "disabledProp": true,
+          "ariaDisabled": "true",
+          "title": "后端服务暂不可用",
+          "text": "视频库"
+        },
+        {
+          "route": "/media/photos",
+          "tag": "BUTTON",
+          "cls": "qt-rail__link qt-rail__link--button is-disabled",
+          "disabledAttr": true,
+          "disabledProp": true,
+          "ariaDisabled": "true",
+          "title": "后端服务暂不可用",
+          "text": "图片站"
+        },
+        {
+          "route": "/media/persons",
+          "tag": "BUTTON",
+          "cls": "qt-rail__link qt-rail__link--button is-disabled",
+          "disabledAttr": true,
+          "disabledProp": true,
+          "ariaDisabled": "true",
+          "title": "后端服务暂不可用",
+          "text": "人物"
+        },
+        {
+          "route": "/login",
+          "tag": "BUTTON",
+          "cls": "qt-rail__link qt-rail__link--button is-disabled",
+          "disabledAttr": true,
+          "disabledProp": true,
+          "ariaDisabled": "true",
+          "title": "后端服务暂不可用",
+          "text": "登录"
+        }
+      ],
+      "railLinksEnabled": [
+        "首页",
+        "全部工具"
+      ],
+      "cards": 4
+    },
+    "badgesOffline": [
+      {
+        "name": "JSON格式化工具",
+        "tag": "离线 · 数据不上传",
+        "offline": "1",
+        "locked": false,
+        "href": "/tool/json"
+      },
+      {
+        "name": "文本字数统计",
+        "tag": "离线 · 数据不上传",
+        "offline": "1",
+        "locked": false,
+        "href": "/tool/text-count"
+      },
+      {
+        "name": "随机密码生成",
+        "tag": "离线 · 数据不上传",
+        "offline": "1",
+        "locked": false,
+        "href": "/tool/pwd-gen"
+      },
+      {
+        "name": "媒体站",
+        "tag": "暂不可用",
+        "offline": "0",
+        "locked": true,
+        "href": null
+      }
+    ],
+    "mediaOffline": {
+      "placeholder": true,
+      "text": "在线服务 媒体站 · 视频库需要后端服务 后端服务暂不可用，这个页面的数据（视频库、图片站、人物、账号等）都来自服务器，因此暂时打不开。 离线工具不受影响：JSON 格式化、文本字数统计、随机密码生成仍在浏览器本地运行，数据不上传。 重试 回到首页",
+      "bodyText": "青兔工具箱 工具 首页 全部工具 媒体 视频库 图片站 人物 暗色模式 GitHub 登录 部分在线服务暂不可用，离线工具仍可使用 重试 ✕ 在线服务 媒体站 · 视频库需要后端服务 后端服务暂不可用，这个页面的数据（视频库、图片站、人物、账号等）都来自服务器，因此暂时打不开。 离线工具不受影响：JSON 格式化、文本字数统计、随机密码生成仍在浏览器本地运行，数据不上传。 重试 回到首页",
+      "status": "offline",
+      "buttons": [
+        "重试",
+        "回到首页"
+      ]
+    },
+    "offlineJson": {
+      "output": "{\n  \"a\": 1,\n  \"b\": [\n    1,\n    2,\n    {\n      \"c\": true\n    }\n  ],\n  \"d\": \"青兔\"\n}",
+      "error": "",
+      "status": "offline"
+    },
+    "recoverMs": 20079,
+    "recoverTimeline": [
+      {
+        "at": 0,
+        "status": "offline"
+      }
+    ],
+    "afterRecover": {
+      "status": "offline",
+      "banner": true,
+      "lockedNav": 4,
+      "hrefs": [
+        true,
+        true,
+        true,
+        false
+      ]
+    },
+    "sectionsAfterRecover": [
+      {
+        "key": "offline",
+        "title": "🟢 离线工具 · 数据不上传",
+        "sub": "纯浏览器运算，后端不可用时也能用",
+        "count": "3 个",
+        "cards": 3
+      },
+      {
+        "key": "online",
+        "title": "在线服务",
+        "sub": "需要后端在线才能使用",
+        "count": "1 个",
+        "cards": 1
+      }
+    ],
+    "mediaOnlySections": [
+      {
+        "key": "online",
+        "title": "在线服务",
+        "sub": "需要后端在线才能使用",
+        "count": "1 个",
+        "cards": 1
+      }
+    ],
+    "toolsPage": {
+      "sections": [
+        {
+          "key": "offline",
+          "title": "🟢 离线工具 · 数据不上传",
+          "sub": "纯浏览器运算，后端不可用时也能用",
+          "count": "3 个",
+          "cards": 3
+        },
+        {
+          "key": "online",
+          "title": "在线服务",
+          "sub": "需要后端在线才能使用",
+          "count": "1 个",
+          "cards": 1
+        }
+      ],
+      "cards": 4,
+      "tags": [
+        "1:离线 · 数据不上传",
+        "1:离线 · 数据不上传",
+        "1:离线 · 数据不上传",
+        "0:"
+      ],
+      "chips": [
+        "全部",
+        "文本",
+        "编码",
+        "生成",
+        "安全",
+        "媒体"
+      ]
+    },
+    "narrow": {
+      "banner": true,
+      "w": 328,
+      "right": 344,
+      "viewport": 375,
+      "topbarH": 48,
+      "locked": 4,
+      "scrollW": 360
+    },
+    "consoleErrors": [
+      {
+        "t": 1793071994132,
+        "kind": "error",
+        "text": "[Home] 工具列表加载失败： AxiosError: Network Error at XMLHttpRequest.handleError (http://127.0.0.1:52919/node_modules/.vite/deps/axios.js?v=d763dbdd:2365:19)"
+      },
+      {
+        "t": 1793072013647,
+        "kind": "error",
+        "text": "[Home] 工具列表加载失败： AxiosError: Network Error at XMLHttpRequest.handleError (http://127.0.0.1:52919/node_modules/.vite/deps/axios.js?v=d763dbdd:2365:19)"
+      },
+      {
+        "t": 1793072042937,
+        "kind": "error",
+        "text": "[Home] 工具列表加载失败： AxiosError: Network Error at XMLHttpRequest.handleError (http://127.0.0.1:52919/node_modules/.vite/deps/axios.js?v=d763dbdd:2365:19)"
+      },
+      {
+        "t": 1793072048160,
+        "kind": "error",
+        "text": "[Home] 工具列表加载失败： AxiosError: Network Error at XMLHttpRequest.handleError (http://127.0.0.1:52919/node_modules/.vite/deps/axios.js?v=d763dbdd:2365:19)"
+      },
+      {
+        "t": 1793072052744,
+        "kind": "error",
+        "text": "[Home] 工具列表加载失败： AxiosError: Network Error at XMLHttpRequest.handleError (http://127.0.0.1:52919/node_modules/.vite/deps/axios.js?v=d763dbdd:2365:19)"
+      }
+    ],
+    "stubCount": 33
+  }
+}

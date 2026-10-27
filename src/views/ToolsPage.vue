@@ -11,6 +11,9 @@ import { ref, computed, onMounted } from 'vue'
 import { Filter, Search } from '@element-plus/icons-vue' // QTools-C 未装自动导入，图标显式引入
 import { getToolList } from '@/api/tool.js' // GET /toolInfo/list，返回工具数组
 import ToolCard from '@/components/ToolCard.vue'
+// P5.77：离线 / 在线分区（与首页同一套文案与判定）
+import { isOfflineTool, splitToolsBySection } from '@/utils/serviceCatalog'
+import { useBackendHealth } from '@/composables/useBackendHealth'
 
 // ========== 常量 ==========
 // 分类 chips：key 与 normalizeTool 计算出的 category 对应
@@ -75,6 +78,8 @@ const FALLBACK_TOOLS = [
 const toolList = ref([]) // 归一化后的列表：{ id, name, desc, route, icon, sort, external, category }
 const loading = ref(true) // 加载中：渲染骨架占位
 const loadError = ref(false) // 加载失败：渲染提示条
+// 后端可用性单例：offline 时在线服务卡片由 ToolCard 自己禁用
+const { isOffline: backendOffline } = useBackendHealth()
 const keyword = ref('') // 搜索关键词
 const category = ref('all') // 当前分类
 const sortBy = ref('recent') // 当前排序
@@ -102,7 +107,9 @@ const normalizeTool = (item) => ({
   icon: item.icon,
   sort: item.sort,
   external: !!item.external || isStaticRoute(item.toolRoute),
-  category: resolveCategory(item)
+  category: resolveCategory(item),
+  // 离线可用 = 路由命中前端白名单（纯浏览器运算，后端挂掉也能用）
+  offline: isOfflineTool({ route: item.toolRoute })
 })
 
 const normalizeList = (list) => list.map(normalizeTool).sort((a, b) => (a.sort || 0) - (b.sort || 0))
@@ -154,6 +161,9 @@ const countText = computed(() =>
     ? `${filteredTools.value.length} / ${toolList.value.length} 个工具`
     : `共 ${toolList.value.length} 个工具`
 )
+
+// 两个固定分区：离线工具在前、在线服务在后；空区不渲染（与首页同一函数，文案不各写一套）
+const sections = computed(() => splitToolsBySection(filteredTools.value))
 
 const resetFilters = () => {
   keyword.value = ''
@@ -220,9 +230,9 @@ onMounted(fetchTools)
       </div>
     </div>
 
-    <!-- 接口失败提示：下方仍渲染兜底数据 -->
+    <!-- 接口失败提示：下方仍渲染兜底数据；后端整体 offline 时不重复刷这条（顶部提示条已说明） -->
     <el-alert
-      v-if="loadError"
+      v-if="loadError && !backendOffline"
       class="tools-page__alert"
       type="warning"
       title="工具加载失败，已展示默认入口"
@@ -235,10 +245,27 @@ onMounted(fetchTools)
       <el-skeleton v-for="n in 4" :key="n" class="tool-skeleton" :rows="2" animated />
     </div>
 
-    <!-- ===== 4. 卡片网格 ===== -->
-    <div v-else-if="filteredTools.length" class="tool-grid">
-      <ToolCard v-for="tool in filteredTools" :key="tool.id" :tool="tool" />
-    </div>
+    <!-- ===== 4. 两个固定分区：离线工具在上、在线服务在下（空区不渲染） ===== -->
+    <template v-else-if="sections.length">
+      <section
+        v-for="section in sections"
+        :key="section.key"
+        class="tool-section"
+        :data-section="section.key"
+      >
+        <div class="tool-section__head">
+          <div class="tool-section__text">
+            <h3 class="tool-section__title">{{ section.title }}</h3>
+            <p class="tool-section__sub">{{ section.subtitle }}</p>
+          </div>
+          <span class="tool-section__count">{{ section.tools.length }} 个</span>
+        </div>
+
+        <div class="tool-grid">
+          <ToolCard v-for="tool in section.tools" :key="tool.id" :tool="tool" />
+        </div>
+      </section>
+    </template>
 
     <!-- ===== 5. 空态 ===== -->
     <div v-else class="state">
@@ -330,9 +357,12 @@ onMounted(fetchTools)
   &__chips {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 8px;
     min-width: 0;
   }
+
+
 
   &__actions {
     display: flex;
@@ -450,6 +480,50 @@ onMounted(fetchTools)
 /* 失败提示 */
 .tools-page__alert {
   margin-top: 16px;
+}
+
+/* ---------- 4. 分区（P5.77 二期）：离线工具在上、在线服务在下 ---------- */
+.tool-section {
+  margin-top: var(--qt-space-4, 16px);
+
+  /* 两区之间一条分隔线：一眼看出「离线一组、在线一组」 */
+  & + & {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--qt-border);
+  }
+
+  &__head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--qt-text-primary);
+  }
+
+  &__sub {
+    margin: 4px 0 0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--qt-text-secondary);
+  }
+
+  &__count {
+    flex: none;
+    font-size: 12px;
+    color: var(--qt-text-secondary);
+  }
+
+  /* 分区内的网格紧跟在标题下面 */
+  .tool-grid {
+    margin-top: 12px;
+  }
 }
 
 /* ---------- 3/4. 卡片网格：≥1400 四列，随宽度降级 3 / 2 / 1 列 ---------- */

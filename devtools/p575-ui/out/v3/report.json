@@ -1,0 +1,551 @@
+{
+  "passed": 69,
+  "failures": [
+    "D light 0px 右侧细节是旧取值的 ≥2.5 倍（照片真的露出来了） -> 0.007 vs 旧 0.004（×1.75）",
+    "D light 0px 右侧比 20px 更锐（模糊真的生效） -> 0.007 vs 0.005"
+  ],
+  "facts": {
+    "structure": {
+      "stops": [
+        {
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "a": 0.94,
+          "at": 0
+        },
+        {
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "a": 0.94,
+          "at": 45
+        },
+        {
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "a": 0.13,
+          "at": 62
+        },
+        {
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "a": 0.13,
+          "at": 100
+        }
+      ],
+      "rootVars": {
+        "blur": "6px",
+        "op": "0.7",
+        "l1": "0.94",
+        "l2": "0.13",
+        "d1": "0.92",
+        "d2": "0.18"
+      },
+      "bodyBg": "color(srgb 1 1 1 / 0.65)",
+      "bodyShadow": "rgba(255, 255, 255, 0.9) 0px 1px 2px",
+      "bodyW": 194.83,
+      "cardW": 335.25
+    },
+    "table": {
+      "light0": {
+        "theme": "light",
+        "blur": 0,
+        "stops": [
+          {
+            "at": 0,
+            "a": 0.94
+          },
+          {
+            "at": 45,
+            "a": 0.94
+          },
+          {
+            "at": 62,
+            "a": 0.1
+          },
+          {
+            "at": 100,
+            "a": 0.1
+          }
+        ],
+        "at": {
+          "left": 0.94,
+          "mid": 0.545,
+          "right": 0.1
+        },
+        "rootVar": "0.1",
+        "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+        "inset": "0px 0px 0px 0px",
+        "bgOpacity": "1",
+        "opVar": "1"
+      },
+      "light6": {
+        "theme": "light",
+        "blur": 6,
+        "stops": [
+          {
+            "at": 0,
+            "a": 0.94
+          },
+          {
+            "at": 45,
+            "a": 0.94
+          },
+          {
+            "at": 62,
+            "a": 0.13
+          },
+          {
+            "at": 100,
+            "a": 0.13
+          }
+        ],
+        "at": {
+          "left": 0.94,
+          "mid": 0.559,
+          "right": 0.13
+        },
+        "rootVar": "0.13",
+        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+        "inset": "-9px -9px -9px -9px",
+        "bgOpacity": "0.7",
+        "opVar": "0.7"
+      },
+      "light20": {
+        "theme": "light",
+        "blur": 20,
+        "stops": [
+          {
+            "at": 0,
+            "a": 0.94
+          },
+          {
+            "at": 45,
+            "a": 0.94
+          },
+          {
+            "at": 62,
+            "a": 0.2
+          },
+          {
+            "at": 100,
+            "a": 0.2
+          }
+        ],
+        "at": {
+          "left": 0.94,
+          "mid": 0.592,
+          "right": 0.2
+        },
+        "rootVar": "0.2",
+        "filter": "blur(20px) saturate(1.1) brightness(0.9)",
+        "inset": "-30px -30px -30px -30px",
+        "bgOpacity": "0.7",
+        "opVar": "0.7"
+      },
+      "dark0": {
+        "theme": "dark",
+        "blur": 0,
+        "stops": [
+          {
+            "at": 0,
+            "a": 0.92
+          },
+          {
+            "at": 45,
+            "a": 0.92
+          },
+          {
+            "at": 62,
+            "a": 0.15
+          },
+          {
+            "at": 100,
+            "a": 0.15
+          }
+        ],
+        "at": {
+          "left": 0.92,
+          "mid": 0.558,
+          "right": 0.15
+        },
+        "rootVar": "0.15",
+        "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+        "inset": "0px 0px 0px 0px",
+        "bgOpacity": "1",
+        "opVar": "1"
+      },
+      "dark6": {
+        "theme": "dark",
+        "blur": 6,
+        "stops": [
+          {
+            "at": 0,
+            "a": 0.92
+          },
+          {
+            "at": 45,
+            "a": 0.92
+          },
+          {
+            "at": 62,
+            "a": 0.18
+          },
+          {
+            "at": 100,
+            "a": 0.18
+          }
+        ],
+        "at": {
+          "left": 0.92,
+          "mid": 0.572,
+          "right": 0.18
+        },
+        "rootVar": "0.18",
+        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+        "inset": "-9px -9px -9px -9px",
+        "bgOpacity": "0.7",
+        "opVar": "0.7"
+      },
+      "dark20": {
+        "theme": "dark",
+        "blur": 20,
+        "stops": [
+          {
+            "at": 0,
+            "a": 0.92
+          },
+          {
+            "at": 45,
+            "a": 0.92
+          },
+          {
+            "at": 62,
+            "a": 0.25
+          },
+          {
+            "at": 100,
+            "a": 0.25
+          }
+        ],
+        "at": {
+          "left": 0.92,
+          "mid": 0.605,
+          "right": 0.25
+        },
+        "rootVar": "0.25",
+        "filter": "blur(20px) saturate(1.1) brightness(0.9)",
+        "inset": "-30px -30px -30px -30px",
+        "bgOpacity": "0.7",
+        "opVar": "0.7"
+      }
+    },
+    "contrast": {
+      "light0": {
+        "cards": 13,
+        "nameW": {
+          "name": "念念",
+          "line": "name",
+          "samples": 196,
+          "color": "rgb(48, 49, 51)",
+          "worst": 5.94,
+          "worstBg": [
+            175,
+            175,
+            175
+          ],
+          "best": 12.91
+        },
+        "countW": {
+          "name": "念念",
+          "line": "counts",
+          "samples": 196,
+          "color": "rgb(48, 49, 51)",
+          "worst": 5.94,
+          "worstBg": [
+            175,
+            175,
+            175
+          ],
+          "best": 12.91
+        },
+        "measured": 26
+      },
+      "light6": {
+        "cards": 13,
+        "nameW": {
+          "name": "喵小吉 Aeolian-2",
+          "line": "name",
+          "samples": 166,
+          "color": "rgb(48, 49, 51)",
+          "worst": 8.1,
+          "worstBg": [
+            204,
+            204,
+            203
+          ],
+          "best": 12.91
+        },
+        "countW": {
+          "name": "喵小吉 Aeolian-2",
+          "line": "counts",
+          "samples": 166,
+          "color": "rgb(48, 49, 51)",
+          "worst": 8.1,
+          "worstBg": [
+            204,
+            204,
+            203
+          ],
+          "best": 12.91
+        },
+        "measured": 26
+      },
+      "light20": {
+        "cards": 13,
+        "nameW": {
+          "name": "素人",
+          "line": "name",
+          "samples": 188,
+          "color": "rgb(48, 49, 51)",
+          "worst": 8.61,
+          "worstBg": [
+            210,
+            210,
+            210
+          ],
+          "best": 12.8
+        },
+        "countW": {
+          "name": "素人",
+          "line": "counts",
+          "samples": 188,
+          "color": "rgb(48, 49, 51)",
+          "worst": 8.54,
+          "worstBg": [
+            210,
+            209,
+            209
+          ],
+          "best": 12.71
+        },
+        "measured": 26
+      },
+      "dark0": {
+        "cards": 13,
+        "nameW": {
+          "name": "念念",
+          "line": "name",
+          "samples": 196,
+          "color": "rgb(229, 234, 243)",
+          "worst": 6.31,
+          "worstBg": [
+            83,
+            84,
+            81
+          ],
+          "best": 15.15
+        },
+        "countW": {
+          "name": "念念",
+          "line": "counts",
+          "samples": 196,
+          "color": "rgb(229, 234, 243)",
+          "worst": 6.38,
+          "worstBg": [
+            83,
+            83,
+            82
+          ],
+          "best": 15.15
+        },
+        "measured": 26
+      },
+      "dark6": {
+        "cards": 13,
+        "nameW": {
+          "name": "念念",
+          "line": "name",
+          "samples": 196,
+          "color": "rgb(229, 234, 243)",
+          "worst": 8.6,
+          "worstBg": [
+            64,
+            64,
+            63
+          ],
+          "best": 14.21
+        },
+        "countW": {
+          "name": "念念",
+          "line": "counts",
+          "samples": 196,
+          "color": "rgb(229, 234, 243)",
+          "worst": 8.5,
+          "worstBg": [
+            64,
+            65,
+            63
+          ],
+          "best": 14.15
+        },
+        "measured": 26
+      },
+      "dark20": {
+        "cards": 13,
+        "nameW": {
+          "name": "念念",
+          "line": "name",
+          "samples": 196,
+          "color": "rgb(229, 234, 243)",
+          "worst": 9.15,
+          "worstBg": [
+            60,
+            60,
+            59
+          ],
+          "best": 14.12
+        },
+        "countW": {
+          "name": "念念",
+          "line": "counts",
+          "samples": 196,
+          "color": "rgb(229, 234, 243)",
+          "worst": 9.02,
+          "worstBg": [
+            61,
+            61,
+            59
+          ],
+          "best": 13.96
+        },
+        "measured": 26
+      }
+    },
+    "photoBand": {
+      "light0": {
+        "n": 2592,
+        "detail": 0.007,
+        "sd": 0.105,
+        "meanChroma": 7.06,
+        "distBg": 229.73,
+        "meanRgb": [
+          123.63,
+          125.18,
+          118.42
+        ],
+        "x0": 470.34,
+        "x1": 524.25
+      },
+      "light6": {
+        "n": 2592,
+        "detail": 0.006,
+        "sd": 0.118,
+        "meanChroma": 4.1,
+        "distBg": 170.89,
+        "meanRgb": [
+          157.2,
+          157.87,
+          154.02
+        ],
+        "x0": 470.34,
+        "x1": 524.25
+      },
+      "light20": {
+        "n": 2592,
+        "detail": 0.005,
+        "sd": 0.073,
+        "meanChroma": 2.46,
+        "distBg": 182.52,
+        "meanRgb": [
+          150.36,
+          150.38,
+          148.15
+        ],
+        "x0": 470.34,
+        "x1": 524.25
+      },
+      "lightold0": {
+        "n": 2592,
+        "detail": 0.004,
+        "sd": 0.047,
+        "meanChroma": 1.23,
+        "distBg": 39.52,
+        "meanRgb": [
+          232.38,
+          232.69,
+          231.51
+        ],
+        "x0": 470.34,
+        "x1": 524.25
+      },
+      "dark0": {
+        "n": 2592,
+        "detail": 0.005,
+        "sd": 0.07,
+        "meanChroma": 6.7,
+        "distBg": 111.89,
+        "meanRgb": [
+          95.04,
+          96.52,
+          90.1
+        ],
+        "x0": 470.34,
+        "x1": 524.25
+      },
+      "dark6": {
+        "n": 2592,
+        "detail": 0.002,
+        "sd": 0.036,
+        "meanChroma": 3.85,
+        "distBg": 60.79,
+        "meanRgb": [
+          64.83,
+          65.41,
+          61.81
+        ],
+        "x0": 470.34,
+        "x1": 524.25
+      },
+      "dark20": {
+        "n": 2592,
+        "detail": 0.001,
+        "sd": 0.015,
+        "meanChroma": 2.15,
+        "distBg": 27.2,
+        "meanRgb": [
+          45.15,
+          45.25,
+          43.34
+        ],
+        "x0": 470.34,
+        "x1": 524.25
+      },
+      "darkold0": {
+        "n": 2592,
+        "detail": 0,
+        "sd": 0.002,
+        "meanChroma": 0.76,
+        "distBg": 6.22,
+        "meanRgb": [
+          27.45,
+          27.59,
+          26.85
+        ],
+        "x0": 470.34,
+        "x1": 524.25
+      }
+    }
+  }
+}

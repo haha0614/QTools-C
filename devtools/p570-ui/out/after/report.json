@@ -1,8 +1,6 @@
 {
-  "passed": 88,
-  "failures": [
-    "切到注册表单后 URL 不变 -> /media/photos → /media/photos#s=photos-asc&p=name-desc"
-  ],
+  "passed": 101,
+  "failures": [],
   "facts": {
     "scrollDiag_": {
       "skipped": true,
@@ -15,8 +13,8 @@
       "scrollAfter": 0
     },
     "url__media": {
-      "before": "/media#sort=res-desc",
-      "after": "/media#sort=res-desc",
+      "before": "/media#sort=progress",
+      "after": "/media#sort=progress",
       "scrollBefore": 0,
       "scrollAfter": 0
     },
@@ -27,8 +25,8 @@
       "railPos": "fixed"
     },
     "url__media_photos": {
-      "before": "/media/photos#s=bytes-desc&p=name-desc",
-      "after": "/media/photos#s=bytes-desc&p=name-desc",
+      "before": "/media/photos#s=title-asc&p=albums-desc",
+      "after": "/media/photos#s=title-asc&p=albums-desc",
       "scrollBefore": 400,
       "scrollAfter": 400
     },
@@ -55,18 +53,19 @@
       "from": "qt-auth-linkbtn"
     },
     "realLogin401": {
-      "identifier": "p570_no_such_user_1793067058557",
+      "identifier": "p570_no_such_user_1793070223836",
       "text": "用户名或密码错误",
       "calls": [
         {
           "method": "POST",
-          "body": "{\"identifier\":\"p570_no_such_user_1793067058557\",\"password\":\"wrong-password-123\"}"
+          "body": "{\"identifier\":\"p570_no_such_user_1793070223836\",\"password\":\"wrong-password-123\"}"
         }
       ]
     },
     "successAfter": {
       "state": {
-        "url": "/media/photos#s=photos-desc&p=albums-desc",
+        "url": "/media/photos#s=title-desc&p=albums-desc",
+        "urlNoHash": "/media/photos",
         "path": "/media/photos",
         "scrollY": 0,
         "marker": "alive-before-login"
@@ -147,8 +146,8 @@
         "确认密码"
       ],
       "focused": "邀请码（由站长提供）",
-      "before": "/media/photos",
-      "after": "/media/photos#s=photos-asc&p=name-desc"
+      "before": "/media/photos#s=bytes-desc&p=albums-desc",
+      "after": "/media/photos#s=bytes-desc&p=albums-desc"
     },
     "passwordMismatch": {
       "regInputs": [
@@ -184,29 +183,29 @@
       }
     },
     "registerOk": {
-      "user": "p570reg67094851",
+      "user": "p570reg70290879",
       "url": {
-        "before": "/media/photos#s=photos-asc&p=name-desc",
-        "after": "/media/photos#s=photos-asc&p=name-desc"
+        "before": "/media/photos#s=bytes-desc&p=albums-desc",
+        "after": "/media/photos#s=bytes-desc&p=albums-desc"
       },
       "sidebar": {
-        "text": "暗色模式\nGitHub\n个人中心\np570reg67094851",
-        "user": "p570reg67094851",
-        "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5IiwianRpIjoiYWRkNTg4YTUtZTc0OS00ZWZmLTk5Y2UtZWYxNWE5ODkwNzQ2IiwiaXNzIjoicXRvb2xzLWFwcCIsInNjb3BlIjoiYXBwIiwiaWF0IjoxNzkzMDY3MDk1LCJleHAiOjE3OTM2NzE4OTV9.fr_cr54e4oTG_18GXQZlIDfXPN2w7Uv9E1mP5VjKEqQ",
+        "text": "暗色模式\nGitHub\n个人中心\np570reg70290879",
+        "user": "p570reg70290879",
+        "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxOCIsImp0aSI6IjY1M2QzNjQ3LWIwYmEtNDcxMS1iZGU3LTZjZDA5YWRmZDJkMCIsImlzcyI6InF0b29scy1hcHAiLCJzY29wZSI6ImFwcCIsImlhdCI6MTc5MzA3MDI5MSwiZXhwIjoxNzkzNjc1MDkxfQ.PJKY4n8pwOKn41sSFjhXApFXPcLhhLEOmGEfEKkljaQ",
         "loginBtn": false
       },
       "wire": {
-        "url": "/api/app/auth/register",
-        "requestBody": "{\"username\":\"p570reg67094851\",\"password\":\"Passw0rd123\",\"inviteCode\":\"QINGTUYWM\"}",
+        "url": "/api/app/auth/login",
+        "requestBody": "{\"identifier\":\"p570reg70290879\",\"password\":\"Passw0rd123\"}",
         "status": 200,
-        "responseBody": "{\"user\":{\"id\":9,\"username\":\"p570reg67094851\",\"nickname\":\"p570reg67094851\",\"avatar\":null}}"
+        "responseBody": "{\"token\":\"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxOCIsImp0aSI6IjY1M2QzNjQ3LWIwYmEtNDcxMS1iZGU3LTZjZDA5YWRmZDJkMCIsImlzcyI6InF0b29scy1hcHAiLCJzY29wZSI6ImFwcCIsImlhdCI6MTc5MzA3MDI5MSwiZXhwIjoxNzkzNjc1MDkxfQ.PJKY4n8pwOKn41sSFjhXApFXPcLhhLEOmGEfEKkljaQ\",\"expiresIn\":604800,\"user\":{\"id\":18,\"username\":\"p570reg70290879\",\"nickname\":\"p570reg70290879\",\"avatar\":null}}"
       }
     },
     "duplicate": {
       "text": "用户名已存在",
       "wire": {
         "url": "/api/app/auth/register",
-        "requestBody": "{\"username\":\"p570reg67094851\",\"password\":\"Passw0rd123\",\"inviteCode\":\"QINGTUYWM\"}",
+        "requestBody": "{\"username\":\"p570reg70290879\",\"password\":\"Passw0rd123\",\"inviteCode\":\"QINGTUYWM\"}",
         "status": 409,
         "responseBody": "{\"error\":\"用户名已存在\"}"
       }
@@ -215,6 +214,22 @@
       "title": "登录",
       "focused": "username",
       "url": "/media/photos"
+    },
+    "lateLogin": {
+      "user": "p570late70327907",
+      "notice": "注册成功，请登录",
+      "title": "登录",
+      "loginForm": true,
+      "registerForm": false,
+      "errorShown": false,
+      "focused": "username",
+      "before": "/media/photos#s=title-asc&p=name-asc",
+      "after": "/media/photos#s=title-asc&p=name-asc",
+      "failedLogin": 1
+    },
+    "lateLoginAfter": {
+      "user": "p570late70327907",
+      "token": true
     },
     "themes": {
       "light": {
@@ -229,6 +244,7 @@
         "titleRatio": 13.01,
         "inputRatio": 10.47
       }
-    }
+    },
+    "chunkAborts": []
   }
 }

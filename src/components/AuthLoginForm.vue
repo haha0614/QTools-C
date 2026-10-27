@@ -44,6 +44,9 @@ const errorTextOf = (err) => {
   // kind === 'filter'：请求被 Spring Security 拦下（M5 接口尚未接管该路径），
   // 此时不是「密码错」，直接展示后端说明，避免误导用户
   if (status === 401) return err && err.kind === 'filter' ? '接口未就绪：' + (err.message || '') : '用户名或密码错误'
+  // 403 = 账号审核状态问题（P5.79）：后端给的是「账号待审核，请联系站长」/「注册未通过审核：<原因>」，
+  // 一律显示后端原文，绝不能翻译成「密码错误」——用户会一直重试一个根本不会成功的密码
+  if (status === 403) return (err && err.message) || '账号当前无法登录，请联系站长'
   if (status === 429) return '尝试过于频繁，请 10 分钟后再试'
   if (status === 400 || status === 409) return (err && err.message) || '登录失败，请检查输入'
   if (status === 0) return '网络异常，请稍后重试'

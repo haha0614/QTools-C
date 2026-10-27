@@ -6,15 +6,25 @@
         昵称随时可以在个人中心 /me 里改，注册环节少一个可以填错的地方。
   邀请码：由站长提供（不写死在前端）；当前后端为 invite 模式，无效 / 用尽都会回
         {"error":"邀请码无效或已用尽"} + 400，用户名重复回 {"error":"用户名已存在"} + 409。
+  审核（P5.79）：注册不再自动登录。后端注册接口回 { user, pending:true, message:"注册成功，等待站长审核" }
+                且**不下发 token**，因此宿主一律切回登录表单并提示「注册成功，等待站长审核后可登录」。
+  邀请码说明气泡：邀请码输入框右侧感叹号，hover / 键盘 focus / 触屏点击都能展开，
+                内含「邀请码需向站长申请；注册后还需管理员审核通过才能登录」+ 站长邮箱与微信二维码**占位**
+                （占位符不含任何真实个人信息，替换时只改 <script> 里的常量与 svg 资源）。
   emit：
-    success      —— 注册成功；参数 { autoLoggedIn }。doRegister 内部会尝试自动登录，
-                    false 表示「账号建好了但没登进来」，宿主应切回登录表单并提示「注册成功，请登录」
+    success      —— 注册成功；参数 { autoLoggedIn, pending, message }。
+                    pending=true 表示「账号建好了、等审核」，宿主应切回登录表单并提示 message
     switch-login —— 点了「去登录」（页面宿主跳/开登录，弹窗宿主就地切换，由宿主决定）
   暴露：focusFirstInput() —— 焦点进第一个输入框（邀请码），弹窗切换表单时用
 -->
 <script setup>
 import { ref, reactive } from 'vue'
 import { useAppAuth } from '@/composables/useAppAuth'
+import wechatQrPlaceholder from '@/assets/placeholder-wechat-qr.svg'
+
+/** 站长联系方式（占位，上线前替换成真实邮箱；二维码先放占位图，不放真实个人信息） */
+const CONTACT_EMAIL = 'your-mail@example.com'
+const REGISTER_PENDING_TIP = '注册成功，等待站长审核后可登录'
 
 defineProps({
   /** 顶部成功提示（如「注册成功，请登录」），空串不渲染 */
@@ -31,6 +41,27 @@ const form = reactive({ inviteCode: '', username: '', password: '', confirmPassw
 // 行内错误文案（服务端错误的统一出口；字段错误由 el-form 自己显示）
 const errorMsg = ref('')
 const submitting = ref(false)
+
+// ---------- 邀请码说明气泡（hover / focus / 触屏点击三通道） ----------
+const tipOpen = ref(false)
+// 点击展开后「钉住」：鼠标移开也不收，移开视线才能读完二维码
+let tipPinned = false
+const openTip = () => {
+  tipOpen.value = true
+}
+const closeTip = () => {
+  if (!tipPinned) tipOpen.value = false
+}
+const toggleTip = () => {
+  tipPinned = !tipPinned
+  tipOpen.value = tipPinned
+}
+const onTipFocusOut = (event) => {
+  // 焦点移到气泡内部（例如点邮箱链接）时不收起
+  const next = event && event.relatedTarget
+  if (next && typeof next.closest === 'function' && next.closest('.qt-invite-tip')) return
+  if (!tipPinned) tipOpen.value = false
+}
 
 // ---------- 校验规则（与原注册页完全一致） ----------
 const validateUsername = (rule, value, callback) => {
@@ -89,7 +120,7 @@ const onSubmit = async () => {
   const username = form.username.trim()
   try {
     // 不传 nickname：后端留空即用用户名兜底（nickname NOT NULL，服务端已处理）
-    await doRegister({
+    const res = await doRegister({
       username,
       password: form.password,
       inviteCode: form.inviteCode.trim()
@@ -97,8 +128,19 @@ const onSubmit = async () => {
     // 明文密码用完就清掉：弹窗会被反复打开，也不该把密码留在输入框里
     form.password = ''
     form.confirmPassword = ''
-    emit('success', { autoLoggedIn: Boolean(state.token) })
+    emit('success', {
+      autoLoggedIn: Boolean(state.token),
+      pending: Boolean(res && res.pending),
+      message: (res && res.message) || REGISTER_PENDING_TIP
+    })
   } catch (err) {
+    // 账号建好了、只是自动登录没成功：不是注册失败，交给宿主提示「注册成功，请登录」
+    if (err && err.registerSucceeded) {
+      form.password = ''
+      form.confirmPassword = ''
+      emit('success', { autoLoggedIn: false })
+      return
+    }
     errorMsg.value = errorTextOf(err)
   } finally {
     submitting.value = false
@@ -117,7 +159,9 @@ defineExpose({ focusFirstInput })
 
 <template>
   <div class="qt-auth-form qt-auth-form--register">
-    <p class="qt-auth-subtitle">当前为邀请码注册：邀请码由站长提供，昵称注册后可在个人中心修改。</p>
+    <p class="qt-auth-subtitle">
+      当前为邀请码注册：邀请码由站长提供；注册后需站长审核通过才能登录，昵称注册后可在个人中心修改。
+    </p>
 
     <!-- 上一个动作的提示（如「注册成功，请登录」） -->
     <p v-if="notice" class="qt-auth-tip qt-auth-tip--success" data-testid="register-notice">
@@ -129,13 +173,58 @@ defineExpose({ focusFirstInput })
 
     <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent>
       <el-form-item prop="inviteCode">
-        <el-input
-          v-model="form.inviteCode"
-          size="large"
-          placeholder="邀请码（由站长提供）"
-          clearable
-          autocomplete="off"
-        />
+        <!-- 邀请码 + 右侧感叹号：hover / focus / 点击都能展开说明气泡 -->
+        <div class="qt-invite-row">
+          <el-input
+            v-model="form.inviteCode"
+            class="qt-invite-input"
+            size="large"
+            placeholder="邀请码（由站长提供）"
+            clearable
+            autocomplete="off"
+          />
+          <button
+            type="button"
+            class="qt-invite-help"
+            :class="{ 'is-open': tipOpen }"
+            :aria-expanded="tipOpen ? 'true' : 'false'"
+            aria-controls="qt-invite-tip"
+            aria-label="邀请码与审核说明"
+            data-testid="invite-help"
+            @mouseenter="openTip"
+            @mouseleave="closeTip"
+            @focus="openTip"
+            @blur="onTipFocusOut"
+            @click.prevent="toggleTip"
+            @keydown.esc="tipPinned = false; tipOpen = false"
+          >
+            !
+          </button>
+          <div
+            v-show="tipOpen"
+            id="qt-invite-tip"
+            class="qt-invite-tip"
+            role="tooltip"
+            data-testid="invite-tip"
+            @mouseenter="openTip"
+            @mouseleave="closeTip"
+          >
+            <p class="qt-invite-tip__line">邀请码需向站长申请；注册后还需管理员审核通过才能登录。</p>
+            <p class="qt-invite-tip__row">
+              邮箱：<a :href="'mailto:' + CONTACT_EMAIL" data-testid="invite-mail">{{ CONTACT_EMAIL }}</a>
+            </p>
+            <div class="qt-invite-tip__qr">
+              <img
+                :src="wechatQrPlaceholder"
+                alt="微信二维码（占位）"
+                width="96"
+                height="96"
+                data-testid="invite-qr"
+              />
+              <span class="qt-invite-tip__qr-label">微信二维码（占位）</span>
+            </div>
+          </div>
+        </div>
       </el-form-item>
       <el-form-item prop="username">
         <el-input
@@ -174,7 +263,7 @@ defineExpose({ focusFirstInput })
         :loading="submitting || state.loading"
         @click="onSubmit"
       >
-        注册并登录
+        提交注册（等待站长审核）
       </el-button>
     </el-form>
 
@@ -188,4 +277,88 @@ defineExpose({ focusFirstInput })
 <style scoped lang="scss">
 /* 与登录表单 / 路由页共用同一份账号卡片样式（auth-card.scss 是唯一真源） */
 @use '@/views/auth/auth-card.scss';
+
+/* ---------- 邀请码 + 感叹号说明气泡（P5.79） ---------- */
+.qt-invite-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.qt-invite-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.qt-invite-help {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--el-border-color, #d4d7de);
+  background: var(--el-fill-color-blank, #fff);
+  color: var(--el-color-primary, #2f6fed);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover,
+  &:focus-visible,
+  &.is-open {
+    outline: none;
+    border-color: var(--el-color-primary, #2f6fed);
+    background: var(--el-color-primary-light-9, #eef3ff);
+    box-shadow: 0 0 0 3px var(--el-color-primary-light-8, rgba(47, 111, 237, 0.18));
+  }
+}
+
+.qt-invite-tip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  width: min(280px, calc(100vw - 48px));
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--el-border-color-light, #e4e7ed);
+  background: var(--el-bg-color-overlay, #fff);
+  color: var(--el-text-color-regular, #4b5563);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+  font-size: 12.5px;
+  line-height: 1.6;
+  text-align: left;
+
+  &__line {
+    margin: 0 0 6px;
+  }
+
+  &__row {
+    margin: 0 0 8px;
+
+    a {
+      color: var(--el-color-primary, #2f6fed);
+      word-break: break-all;
+    }
+  }
+
+  &__qr {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__qr-label {
+    color: var(--el-text-color-secondary, #8b95a5);
+    font-size: 12px;
+  }
+
+  img {
+    display: block;
+    border-radius: 6px;
+  }
+}
 </style>

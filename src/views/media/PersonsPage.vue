@@ -66,15 +66,51 @@
 
   P5.72（用户需求）：「背景模糊度还是太高了，在页面中加一个滑块自己调」——工具栏右侧加一个紧凑滑块
   （标签「背景模糊」+ range 0–20px 步长 1 + 当前值小字），与搜索 / 刷新同一行，≤640px 只留滑块与数值。
-    · **实时生效**：滑块只写根节点的 CSS 变量 --pw-bg-blur（半径）与 --pw-mask-l1..l3 / -d1..d3（遮罩），
+    · **实时生效**：滑块写根节点的 CSS 变量 --pw-bg-blur（半径）与 --pw-mask-l1/l2 / -d1/d2（遮罩），
       .pw-bg img 的 filter 与**外扩量**都读它：inset = -1.5 × 半径、尺寸 = 100% + 3 × 半径 ——
       任意半径下模糊只吃图片自身像素，卡片边不露底色；0px 时外扩为 0，正好等于卡片尺寸。
     · **持久化**：localStorage 键 ms.person.bgBlur，默认 6（= P5.69 的线上值）。
-    · **0px = 纯照片背景**：模糊没了就等于把清晰的原始像素重新压回文字底下，遮罩自动**加厚一档**
-      （亮 .96/.94/.78、暗 .95/.92/.86）；半径越大越不需要补偿，6px 起回到现值 .93/.88/.62 / .9/.82/.66
-      并保持不动。阈值 MASK_RAMP = 6：0→6px 是**连续斜坡**（2px 时已退到加强档的 1/3），不是一刀切。
     · 值域 / 联动 / 持久化的唯一实现在 personBgBlur.js（单测 personBgBlur.test.mjs），页面只挂变量与写回。
     · 无头像的卡片本来就没有 .pw-bg 层，滑块不影响它们。
+
+  P5.75（用户反馈：「拉到 0 了但是还是看不清背景」）—— P5.72 的补偿方向错了：
+  （P5.76 复盘：这一段连同 P5.67/P5.69 的「横向遮罩 + 半透明垫底 + 整层不透明度」三层补偿，
+   在 P5.76 全部删除 —— 背景图不再 cover 铺满，遮罩与垫底失去存在理由，见下面 P5.76 那一段。）
+  它在 0px 时把**整块**遮罩加厚到 亮 .96/.94/.78、暗 .95/.92/.86，对比度确实保住了，但照片被整片
+  压成灰白，0px 想说「看清照片」反而什么都看不见。文字只占卡片**左侧**（头像 + 姓名 + 数量 + chips），
+  右侧没有文字，没有理由一起压。于是遮罩从「整体加厚」改成「**横向分区**」：
+    · 0–45%   左区（文字区）恒定高压暗 亮 .94 / 暗 .92 —— 与半径无关（文字对比度不随拖动变）；
+    · 45–62%  过渡带（线性）—— 由文字块下面那层半透明垫底兜底；
+    · 62–100% 右区（纯图片）几乎透明 亮 .10→.20 / 暗 .15→.25，照片真正露出来。
+  右区随滑块联动（t = n/20）：半径越小 = 越想看清照片 → 越透（0px 取 .10/.15）；半径越大照片本来
+  就被糊开，右区回到 .20/.25。左区不参与联动。
+  另一半是整层不透明度：.pw-bg 的 opacity（P5.69 的 .7 = 只留 70% 照片，剩下 30% 是卡片底色）
+  也跟滑块走 —— 0px 到 1（照片原样），6px 起仍是 .7（默认档不变）。只松遮罩不松不透明度，0 档
+  照片依旧是「洗白」的，所以两层一起联动。
+  **文字兜底**：文字块（.pw-body）在 has-bg 卡片上垫一层 65% 卡片底色的半透明板（+ 极轻 text-shadow），
+  宽度只按最宽的一行收缩（flex: 0 1 auto），照片在垫底后面还能透出约三分之一；
+  实测最差 三档 × 亮暗全部 ≥6:1（像素采样口径同 p567/p572，见 devtools/p575-ui/REPORT.md）。
+  保留：滑块 0–20、外扩联动、hover scale、无头像卡不出背景、@supports 回退（回退档整块回到厚遮罩）。
+
+  P5.76（用户反馈三条）：「文字下面还有遮罩，去掉」「左侧遮罩太深了，而且过渡不自然」
+  「背景图像的位置大小不对，头像没有在背景中完整展示…卡片右侧是空着的」——
+  根因不是遮罩该调轻还是调重，而是**定位方式错了**：object-fit: cover 把竖图裁成一条横带，
+  人像只剩中段被放大铺满整卡；文字没有一处落在纯底色上，于是只能靠遮罩 + 垫底去救。P5.76 换定位：
+    · .pw-bg img：height: 100% + width: 32%（固定盒）+ right: 0（object-fit: contain，object-position: right center）
+      —— **按卡片高度等比缩放、右对齐**。人像完整不裁，卡片右半部就是整张头像；左侧空出来的部分是
+      卡片底色 --bg-2（不拉伸、不变形）。外扩（P5.72 的 inset = -1.5 × 半径、尺寸 +3 × 半径）随之删除：
+      图片不再被裁，「被裁的边缘」不需要兜底；模糊在最外圈 ≤ 半径的像素上自然变淡，
+      与左侧淡出是同一种观感（0 档无外扩、无模糊，正好等于卡片内高）。
+    · 左侧渐隐：图片自己的 mask-image = linear-gradient(to right, transparent 0%,
+      rgba(0,0,0,.35) 18%, #000 45%)，亮暗同款（淡出不是压暗，与主题无关）。渐变按**图片自身宽度**
+      算百分比 —— 不论卡片多宽、图片什么比例，淡出段永远是图片宽度的 0–45%，右缘永远全不透明。
+    · .pw-mask 整块删除（元素 + CSS + 亮暗 4 个 alpha 变量）；--pw-bg-opacity / bgOpacity 一并删除：
+      照片以原亮度呈现（P5.69 的 .7 = 只留七成照片，与「看清照片」直接冲突）。
+    · 文字可读性改由文字自己承担：has-bg 卡片的 姓名 / 数量 / 最近 / chip 加 text-shadow
+      （亮 0 1px 2px rgba(255,255,255,.85) / 暗 0 1px 3px rgba(0,0,0,.75)），文字块**没有任何底色**。
+    · 保留：滑块 0–20（0 档 = 清晰完整人像 + 左侧淡出）、hover scale、无头像卡不出背景层、亮暗主题、
+      窄屏单列、@supports 回退（不支持 filter 时文字块退一层 88% 垫底，只有老内核才走得到）。
+    三档视口 × 亮暗 × 模糊 0/6 的截图与实测数据见 devtools/p576-ui/REPORT.md。
 -->
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, reactive, ref, watch } from 'vue'
@@ -91,6 +127,10 @@ import { useMediaEditPolicy } from '@/composables/useMediaEditPolicy'
 import { clearPersonAvatar, errorText, setPersonAvatar } from './video/personApi'
 // P5.72：背景模糊度滑块 —— 值域 / 遮罩联动 / 持久化的唯一实现（单测 personBgBlur.test.mjs）
 import { blurCssVars, clampBlur, readStoredBlur, saveStoredBlur } from './personBgBlur.js'
+// P5.77：卡片底色 = 从头像图拾色 —— 采样 / 缓存 / 亮度护栏的唯一实现（单测 personTone.test.mjs）
+import { parseColor, readToneCache, rgbCss, sampleTone, toneCacheKey, toneFill, writeToneCache } from './personTone.js'
+// P5.78：背景 = 整张原图，裁剪切中心落在卡片 76% —— 纯几何（单测 personBgImage.test.mjs）
+import { cropCenterX, layoutBg, originalSrc, parseCrop } from './personBgImage.js'
 
 const api = useMediaApi()
 const tk = useMediaTrack()
@@ -215,6 +255,7 @@ function observeFrameCards() {
   wallRef.value.querySelectorAll('.pw-card[data-avatar="frame"]').forEach((node) => {
     cardObserver.observe(node)
   })
+  ensureWallObserver()
 }
 
 /** 卡片头像该用的 src：取帧档在进入视口前返回空串（=> 先渲染首字占位，不占一张空白图） */
@@ -228,7 +269,11 @@ function avatarSrcOf(card) {
 // 只观察「取帧」档的卡片，其它档本来就直接出图；onUpdated 比 watch(cards) 更稳，
 // 不依赖「数据先到还是 DOM 先到」的时序。
 onUpdated(() => observeFrameCards())
-watch(cards, () => nextTick(observeFrameCards))
+watch(cards, () => {
+  nextTick(observeFrameCards)
+  // P5.77：数据晚到 / 搜索过滤后，新出现的卡片也要排队采样（已采过的命中 toneRaw，不重复）
+  nextTick(() => queueTones(cards.value))
+})
 
 function markAvatarFailed(card) {
   if (card && card.key) avatarFailed[String(card.key)] = true
@@ -252,23 +297,233 @@ function bgSrcOf(card) {
   if (!card || !card.key) return ''
   const key = String(card.key)
   if (avatarFailed[key] || bgFailed[key]) return ''
-  return avatarSrcOf(card)
+  // P5.78：背景用**整张原图**（avatarUrl 是后端按 crop 裁好的方块，不能当背景）
+  return originalSrc(avatarSrcOf(card))
+}
+
+/* ------------------------------------- P5.78 背景几何：让「裁成头像的那块」落在卡片 76% */
+
+/** 卡片 key → { imgW, tx }；卡片尺寸或图片变化时重算（缓存键含尺寸） */
+const bgGeom = reactive({})
+const bgGeomMemo = new Map()
+let wallResizeObserver = null
+
+function bgGeomKey(card, img) {
+  const el = img && img.closest ? img.closest('.pw-card') : null
+  if (!el || !img) return ''
+  const w = Math.round(el.clientWidth)
+  const h = Math.round(el.clientHeight)
+  return (img.currentSrc || img.src || '') + '#' + w + 'x' + h
+}
+
+/** 图片 load 后算一次：自然尺寸 → 按卡片高缩放 → 把裁剪中心挪到 76% */
+function computeBgGeom(card, img) {
+  if (!card || !img || !img.naturalWidth || !img.naturalHeight) return
+  const key = bgGeomKey(card, img)
+  if (!key) return
+  const host = img.closest('.pw-card')
+  const cardW = host.clientWidth
+  const cardH = host.clientHeight
+  let out = bgGeomMemo.get(key)
+  if (!out) {
+    out = layoutBg({
+      natW: img.naturalWidth,
+      natH: img.naturalHeight,
+      cardW,
+      cardH,
+      cropX: cropCenterX(parseCrop(card.avatar && card.avatar.ref) || parseCrop(card.avatar && card.avatar.url))
+    })
+    if (!out) return
+    bgGeomMemo.set(key, out)
+  }
+  bgGeom[String(card.key)] = out
+}
+
+/** 只给实测脚本看：'imgW,tx,cropX' */
+function bgGeomOf(card) {
+  const g = card && bgGeom[String(card.key)]
+  return g ? [g.imgW, g.tx, g.cropX].join(',') : ''
+}
+
+function bgGeomStyleOf(card) {
+  const g = card && bgGeom[String(card.key)]
+  if (!g) return null
+  return { '--pw-img-w': g.imgW + 'px', '--pw-img-tx': g.tx + 'px' }
 }
 
 function markBgFailed(card) {
   if (card && card.key) bgFailed[String(card.key)] = true
 }
 
+/* --------------------------------------------- P5.77 卡片底色 = 头像拾色（用户可感知的「整卡都是图」） */
+
+/**
+ * 用户口径：「我希望整个卡片的背景全是图片，不足的部分，能不能拾色填充」——
+ * P5.76 把人像贴到右缘之后，左半边是纯底色，观感像「图 + 底色」拼起来。
+ * 这里从**同一张头像图**采样出印象色，作为卡片底色；图片左缘的 mask 渐隐正好淡进这个同色调底，
+ * 接缝消失，整张卡都带这张图的颜色。
+ *
+ * 采样规则（8×8 网格均值 / 缓存键 / 亮度护栏）全在 personTone.js，单测 personTone.test.mjs。
+ * 页面只负责：什么时候采（空闲、限并发）、采完挂到卡片的 --pw-tone、主题切换时重算落地色。
+ * 性能：requestIdleCallback（没有就 setTimeout 0）逐张算，并发 2 —— 采样不在首帧的关键路径上；
+ * 8×8 canvas 单张 < 1ms，13 张实测总耗时见 devtools/p576-ui/REPORT.md（P5.77 一节）。
+ */
+/**
+ * 采样缓存的键是 **toneCacheKey(card)**（头像来源 kind:ref，不是卡片 id）：
+ * 详情请求晚到会把头像从「相册封面」升级成「显式头像 / 视频帧」，URL 一变键就变 ——
+ * 用卡片 id 当键会留下「拿旧图的颜色刷新卡」的脏数据（本轮实测踩过：一张卡的拾色和
+ * 它现在显示的图差了一倍，见 REPORT.md 的 G1 一节）。
+ */
+const toneRaw = reactive({})
+/** 同一个键 → 落地色 'rgb(…)'（按当前主题算好亮度护栏） */
+const toneFillCss = reactive({})
+/** 采样队列与在飞计数（并发 2：别和缩略图抢主线程） */
+const toneQueue = []
+const tonePending = new Set()
+let toneInFlight = 0
+let toneDisposed = false
+
+const toneCache = readToneCache(typeof localStorage === 'undefined' ? null : localStorage)
+
+/** 读当前主题的卡片底色（--bg-2）：在页面里放一个探针元素，让浏览器自己解析变量，页面不硬编码色值 */
+let toneBgProbe = null
+function themeBgRgb() {
+  if (!toneBgProbe) {
+    toneBgProbe = document.createElement('div')
+    toneBgProbe.setAttribute('data-role', 'tone-bg-probe')
+    toneBgProbe.style.cssText = 'position:absolute;left:-9999px;top:0;width:1px;height:1px;background:var(--bg-2)'
+    // --bg-2 是 .media-scope 的局部变量：探针必须挂进页面，挂 body 上读到的是空值（本轮实测踩过）
+    const host = document.querySelector('.person-page') || document.body
+    host.appendChild(toneBgProbe)
+  }
+  return parseColor(getComputedStyle(toneBgProbe).backgroundColor) || [255, 255, 255]
+}
+
+function currentTheme() {
+  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+}
+
+/** 用原始采样色重算落地色（主题切换后重跑一遍） */
+function applyTone(cacheKey) {
+  const raw = toneRaw[cacheKey]
+  if (!raw) return
+  toneFillCss[cacheKey] = toneFill(raw, themeBgRgb(), currentTheme()) || ''
+}
+
+function applyAllTones() {
+  for (const k of Object.keys(toneRaw)) applyTone(k)
+}
+
+function toneStyleOf(card) {
+  const key = card ? toneCacheKey(card) : ''
+  const css = key && toneFillCss[key]
+  if (!css) return null
+  const raw = toneRaw[key]
+  // --pw-tone = 亮度夹过的安全底色（文字压的那一侧）；
+  // --pw-tone-raw = 原始采样色（只用在底色右段渐变里，贴着图片左缘，保证同色调过渡）
+  return raw ? { '--pw-tone': css, '--pw-tone-raw': rgbCss(raw) } : { '--pw-tone': css }
+}
+
+function toneOf(card) {
+  return (card && toneFillCss[toneCacheKey(card)]) || ''
+}
+
+/** 采样到的**原始**印象色（'r,g,b'）—— 只给实测脚本对照 canvas 复算，不参与样式 */
+function toneRawOf(card) {
+  const raw = card && toneRaw[toneCacheKey(card)]
+  return raw ? raw.join(',') : ''
+}
+
+const idle = (fn) =>
+  typeof requestIdleCallback === 'function' ? requestIdleCallback(fn, { timeout: 500 }) : setTimeout(fn, 0)
+
+function pumpTones() {
+  if (toneDisposed) return
+  while (toneInFlight < 2 && toneQueue.length) {
+    const job = toneQueue.shift()
+    toneInFlight++
+    sampleTone(job.url).then((tone) => {
+      toneInFlight--
+      tonePending.delete(job.cacheKey)
+      if (tone) {
+        toneRaw[job.cacheKey] = tone
+        toneCache[job.cacheKey] = tone
+        applyTone(job.cacheKey)
+        writeToneCache(toneCache, typeof localStorage === 'undefined' ? null : localStorage)
+      }
+      if (toneQueue.length) idle(pumpTones)
+    })
+  }
+}
+
+/** 给「有背景层、还没采样过」的卡片排队（同一张图只排一次；命中缓存直接落地） */
+function queueTones(cards) {
+  if (toneDisposed) return
+  let queued = false
+  for (const c of cards || []) {
+    if (!c || !c.key) continue
+    const cacheKey = toneCacheKey(c)
+    if (!cacheKey || toneRaw[cacheKey] || tonePending.has(cacheKey)) continue
+    const url = bgSrcOf(c)
+    if (!url) continue
+    if (toneCache[cacheKey]) {
+      toneRaw[cacheKey] = toneCache[cacheKey]
+      applyTone(cacheKey)
+      continue
+    }
+    tonePending.add(cacheKey)
+    toneQueue.push({ url, cacheKey })
+    queued = true
+  }
+  if (queued) idle(pumpTones)
+}
+
+/** P5.78：卡片尺寸或图片换了都要重算背景几何（用户明确要求 ResizeObserver） */
+function ensureWallObserver() {
+  if (typeof ResizeObserver !== 'function' || !wallRef.value || wallResizeObserver) return
+  wallResizeObserver = new ResizeObserver(() => {
+    if (!wallRef.value) return
+    wallRef.value.querySelectorAll('.pw-card.has-bg').forEach((node) => {
+      const key = node.getAttribute('data-card-key')
+      const card = cards.value.find((c) => String(c.key) === String(key))
+      const img = node.querySelector('.pw-bg img')
+      if (card && img) computeBgGeom(card, img)
+    })
+  })
+  wallResizeObserver.observe(wallRef.value)
+}
+
+onMounted(() => {
+  queueTones(cards.value)
+  ensureWallObserver()
+  if (typeof MutationObserver === 'function') {
+    themeObserver = new MutationObserver(applyAllTones)
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] })
+  }
+})
+
+onBeforeUnmount(() => {
+  toneDisposed = true
+  if (wallResizeObserver) wallResizeObserver.disconnect()
+  wallResizeObserver = null
+  if (themeObserver) themeObserver.disconnect()
+  themeObserver = null
+  if (toneBgProbe && toneBgProbe.parentNode) toneBgProbe.parentNode.removeChild(toneBgProbe)
+  toneBgProbe = null
+})
+
+let themeObserver = null
+
 /* --------------------------------------------- P5.72 卡片背景模糊度（用户可调） */
 
 /**
  * 用户口径：「背景模糊度还是太高了，加一个滑块自己调」。
- * 规则（值域 0–20 步长 1 / 0px 遮罩加厚 / 键 ms.person.bgBlur / 默认 6）全在 personBgBlur.js，
+ * 规则（值域 0–20 步长 1 / 遮罩分区与右区联动 / 键 ms.person.bgBlur / 默认 6）全在 personBgBlur.js，
  * 页面这里只做两件事：把 blurCssVars(n) 挂到根节点 style、拖动时写回 localStorage。
  *
  * 性能：input 只改 bgBlur **一个** ref ——
  *   · cards(v-for 的数据源) 是独立 computed，不依赖 bgBlur，列表不重算；
- *   · 下发到 DOM 的只有根节点上的 7 个 CSS 自定义属性 + 数值小字，卡片尺寸不参与计算 → 整墙不重排；
+ *   · 下发到 DOM 的只有根节点上的 6 个 CSS 自定义属性 + 数值小字，卡片尺寸不参与计算 → 整墙不重排；
  *   · Vue 的 patch 本来就在 microtask 里合并（一次 input 一次 patch），浏览器自身也按帧合并
  *     pointermove，所以不必再叠一层 rAF（叠了反而在后台标签页里被 rAF 节流成「拖了不动」）。
  */
@@ -476,7 +731,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <!-- P5.72：--pw-bg-blur + 6 个遮罩 alpha 挂在根节点上，全页 .pw-bg / .pw-mask 继承（只挂变量，不碰布局） -->
+  <!-- P5.76：根节点只挂一个 --pw-bg-blur（滑块半径），.pw-bg img 的 filter 继承它；遮罩变量已随 .pw-mask 一起删除 -->
   <div class="media-scope person-page" :data-state="uiState" :style="bgBlurVars" :data-bg-blur="bgBlur">
     <header class="pp-head">
       <div class="pp-head-left">
@@ -524,7 +779,10 @@ onBeforeUnmount(() => {
         v-for="c in cards"
         :key="c.key"
         class="pw-card"
-        :class="{ 'has-bg': !!bgSrcOf(c) }"
+        :class="{ 'has-bg': !!bgSrcOf(c), 'has-tone': !!toneOf(c) }"
+        :style="[toneStyleOf(c), bgGeomStyleOf(c)]"
+        :data-tone-raw="toneRawOf(c)"
+        :data-bg-geom="bgGeomOf(c)"
         :data-bg="bgSrcOf(c) ? '1' : '0'"
         :href="'#/media/person/' + encodeURIComponent(c.id !== '' && c.id != null ? c.id : c.name)"
         :data-person-id="c.id"
@@ -533,17 +791,18 @@ onBeforeUnmount(() => {
         :data-frame-inview="c.avatar.kind === 'frame' ? (frameInView[String(c.key)] ? '1' : '0') : ''"
         @click.prevent="openCard(c)"
       >
-        <!-- P5.67：底层 = 同一张头像铺满卡片（模糊 + 遮罩），头像/文字在上面两层 -->
+        <!-- P5.76：底层 = 同一张头像按卡片高度等比缩放、右对齐（模糊 + 左缘渐隐），头像/文字在上面一层 -->
+        <!-- P5.76：P5.67 的 .pw-mask 遮罩层整块删除 —— 图片只占右侧、左缘自己淡出到底色，不再整卡压暗 -->
         <span v-if="bgSrcOf(c)" class="pw-bg" aria-hidden="true">
           <img
             :src="bgSrcOf(c)"
             alt=""
             loading="lazy"
             decoding="async"
+            @load="computeBgGeom(c, $event.target)"
             @error="markBgFailed(c)"
           />
         </span>
-        <span v-if="bgSrcOf(c)" class="pw-mask" aria-hidden="true"></span>
         <span class="pw-avatar-wrap">
           <span class="pw-avatar">
             <img
@@ -756,8 +1015,8 @@ onBeforeUnmount(() => {
 
 .pw-card {
   /* P5.67：卡片是背景层的定位容器，圆角裁切靠 overflow: hidden（背景不溢出卡片）；
-     isolate 让每张卡自成一个层叠上下文 —— 背景（0）/ 遮罩（1）/ 头像与文字（2）的次序只在卡内比较，
-     不会和相邻卡片的 hover 层缠在一起。 */
+     isolate 让每张卡自成一个层叠上下文 —— 背景（0）/ 头像与文字（2）的次序只在卡内比较，
+     不会和相邻卡片的 hover 层缠在一起（P5.76：中间的「遮罩（1）」层已删除）。 */
   position: relative;
   overflow: hidden;
   isolation: isolate;
@@ -784,9 +1043,42 @@ onBeforeUnmount(() => {
   border-color: var(--line-2);
 }
 
+/* P5.77：底色 = 从头像图里拾到的颜色（personTone.toneFill 已按当前主题把亮度夹进安全区间）。
+   两层：
+     · background-color 给文字那一侧（安全亮度，对比度靠它保证）；
+     · background-image 从 68% 处把**原始采样色**渐进来 —— 图片左缘的 mask 淡出的正是这一段，
+       所以「图」和「拾色底」之间有同一个色调过渡，看不到接缝。
+   采样还没回来 / 采样失败（CORS、解码失败）时没有 has-tone，卡片退回原来的 --bg-2。 */
+.pw-card.has-bg::before {
+  /* P5.78：原图铺满整卡后，文字区下面必然有照片内容 —— 用一层**方向性渐隐**保住对比度（
+     颜色取卡片自己的落地色，所以看起来是这张图的淡影，不是灰白板）：左边缘最浓、到 62% 完全透明，
+     62%–74% 是 27px 左右的柔化带，没有硬边；文字列右缘在 64%，落在浓的一端。
+     数字来源：0.84 × 亮色落地色(≈194) = 163 → 与 --fg 仍 ≥5:1（最黑的照片像素也兜得住）。 */
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--pw-tone, var(--bg-2)) 92%, transparent) 0%,
+    color-mix(in srgb, var(--pw-tone, var(--bg-2)) 92%, transparent) 62%,
+    transparent 74%
+  );
+}
+.pw-card.has-tone {
+  background-color: var(--pw-tone, var(--bg-2));
+  background-image: linear-gradient(
+    to right,
+    transparent 68%,
+    color-mix(in srgb, var(--pw-tone-raw, var(--pw-tone)) 55%, transparent) 100%
+  );
+}
+
 /* ------------------------------------------------ P5.67 卡片背景层（头像铺满） */
 
-/* 底层：整卡铺满的模糊人像。inset 负值外扩 9px —— 见文件头 P5.69 注释（避免模糊边缘透底） */
+/* 底层：贴在卡片右侧、按卡片内高铺开的人像（P5.76 起不再铺满整卡，也不再外扩） */
 .pw-bg {
   position: absolute;
   inset: 0;
@@ -794,26 +1086,42 @@ onBeforeUnmount(() => {
   overflow: hidden;
   border-radius: inherit;
   pointer-events: none;
-  /* P5.69：整层降不透明度 —— 背景从「主体」退成「隐约的人像氛围」。
-     0.7 与上面 blur(6px) 叠加后：轮廓还能辨认（人像不再是色块），但整片亮度/对比都往卡片底色
-     --bg-2 收，压在照片上的文字反而更干净（亮色往近白收、暗色往近黑收，两侧都是对比度加分）。 */
-  opacity: 0.7;
+  /* P5.76：**整层不透明度删除** —— P5.69 的 .7 与 P5.75 的「0px→1」联动，都是「cover 铺满 + 遮罩」
+     这套补偿的一部分。现在图片只占右侧、左缘淡出到底色，照片就该以原亮度呈现
+     （用户诉求就是「看清照片」；只留七成照片等于先砍三成）。文字落在纯底色上，不靠压暗照片换对比度。 */
 }
 
 .pw-bg img {
   position: absolute;
-  /* P5.72：**外扩量随模糊半径联动** = 半径 × 1.5（默认 6px → 9px，与 P5.69 的实测值完全一致；
-     拖到 0px 时外扩 = 0，图片正好等于卡片尺寸）。高斯模糊会从图片自身边缘往里渗，
-     图若压着卡片边，模糊后边上会透出卡片底色（「一圈发白的模糊边」）；外扩后模糊只吃图片
-     自身的像素，任意半径下卡片内都不露边。宽度同步 100% + 3 × 半径，cover 的裁切比例不变。 */
-  inset: calc(var(--pw-bg-blur, 6px) * -1.5);
-  width: calc(100% + var(--pw-bg-blur, 6px) * 3);
-  height: calc(100% + var(--pw-bg-blur, 6px) * 3);
-  /* center 25%：人像竖图里脸通常在偏上 1/4，cover 按这个锚点裁，尽量露出人脸 */
-  object-fit: cover;
-  object-position: center 25%;
+  /* P5.76：**人像按卡片内高铺开、贴住右缘** —— 本轮的核心改动。
+     height: 100% 把高度钉死等于卡片内高，top: 0 / right: 0 让人像贴住卡片右缘；
+     图片**完整**出现在卡片右半部（P5.67–P5.75 的 cover 会把竖图裁成一条横带，脸只剩中段）。
+     P5.72 的外扩（inset = -1.5 × 半径 / 尺寸 = 卡片 + 3 × 半径）在这里删除：图片不再被裁，
+     没有「被裁的边缘」要兜；模糊在最外圈 ≤ 半径的像素上自然变淡，与左侧淡出是同一种观感。 */
+  /* P5.78：**整张原图铺进卡片** —— 宽度与水平位移都由 JS 算好（personBgImage.layoutBg）：
+       width  = 原图宽 × (卡片高 / 原图高)   —— 等比，不裁、不变形
+       translateX(tx) 把「裁成头像的那块」的中心推到卡片宽度的 76%
+     所以卡片左半部看到的是**原图里裁剪区左边的内容**，而不是一张被裁过的方块。 */
+  left: 0;
+  height: 100%;
+  width: var(--pw-img-w, auto);
+  transform: translateX(var(--pw-img-tx, 0px));
+  object-fit: contain;
+  object-position: left center;
   /* P5.69 的 6px 现在是**默认值**（滑块初值）；实际半径来自根节点 --pw-bg-blur（P5.72） */
   filter: blur(var(--pw-bg-blur, 6px)) saturate(1.1) brightness(0.9);
+  /* P5.76 左侧渐隐：**淡出**（alpha 从 0 涨到 1）而不是压暗，所以亮暗同款、不需要主题分支。
+     停靠点按**图片自身宽度**算百分比：0% 全透明 → 30% alpha .14 → 56% .28 → 74% 全不透明
+     （56% 之后文字已经到不了那里 —— 护栏见下面 .pw-card.has-bg .pw-body 的 padding-right）。
+     为什么不是「18% 到 .35、45% 全不透明」的一刀切：文字块（姓名 / 数量 / chips）会伸到图片左缘
+     以内，取样点是**整行盒**（含行尾空白），所以「文字能到的地方」alpha 必须压在 ≤.34 —— 见下面
+     .pw-card.has-bg .pw-body 的 max-width 与 devtools/p576-ui/REPORT.md 里的对比度实测。
+     .28 是实测预算：亮色卡片底色 #fff 上 28% 照片 → 灰阶 219，对 --fg 仍有 7:1 以上；暗色底色上
+     28% 的亮照片 → 灰阶 90，对 --fg 仍有 5.7:1（实测见 devtools/p576-ui/REPORT.md）。 */
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 40px);
+  mask-image: linear-gradient(to right, transparent 0, #000 40px);
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
   /* P5.72：filter 退出 0.12s 过渡 —— 拖滑块必须**立刻**看到半径变化，
      带过渡时每一档都要 120ms 才到位（且途中读到的 computed filter 是插值）。transform 仍过渡。 */
   transition: transform 0.12s ease;
@@ -823,40 +1131,15 @@ onBeforeUnmount(() => {
    「换」按钮在 .pw-avatar-wrap（z-index: 2）里，永远压在背景之上，不会被盖住/挡住点击。 */
 .pw-card:hover .pw-bg img,
 .pw-card:focus-visible .pw-bg img {
-  transform: scale(1.03);
+  transform: translateX(var(--pw-img-tx, 0px)) scale(1.03);
   /* P5.72：半径照样读滑块变量，只把 saturate / brightness 提一档 */
   filter: blur(var(--pw-bg-blur, 6px)) saturate(1.12) brightness(1);
 }
 
-/* 遮罩：左强右弱 —— 左侧是头像 + 名字（要最清楚），右侧只留人像氛围。
-   取值是按「最坏情况」算的：亮色下背景可能整片近黑（255×α），暗色下可能整片近白（18×α + 255×(1-α)）；
-   文字色统一用 --fg 时，亮色 α=.62（只有卡片最右边那一小条，名字被省略号截断时才到得了）→ 5.0:1 解析值，
-   暗色 α=.66 → 4.9:1 解析值；实测像素最差 5.33:1（亮）/ 6.27:1（暗），见 devtools/p567-ui/REPORT.md。
-   亮色右边留到 .62 是为了让人像在卡片右侧真的看得见（左侧 .93 保证头像与名字区最清楚）。 */
-.pw-mask {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  border-radius: inherit;
-  /* P5.72：三个停靠点的 alpha 改由根节点变量给 —— 0px（纯照片）时自动加厚到 .96/.94/.78，
-     6px 起回到 P5.69 的 .93/.88/.62。只换 alpha、不动渐变几何，所以拖动时遮罩不会左右跳。 */
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, var(--pw-mask-l1, 0.93)) 0%,
-    rgba(255, 255, 255, var(--pw-mask-l2, 0.88)) 50%,
-    rgba(255, 255, 255, var(--pw-mask-l3, 0.62)) 100%
-  );
-}
-
-html.dark .pw-mask {
-  background: linear-gradient(
-    90deg,
-    rgba(18, 18, 18, var(--pw-mask-d1, 0.9)) 0%,
-    rgba(18, 18, 18, var(--pw-mask-d2, 0.82)) 46%,
-    rgba(18, 18, 18, var(--pw-mask-d3, 0.66)) 100%
-  );
-}
+/* P5.76：P5.67–P5.75 的 .pw-mask 遮罩层（整卡压暗、横向分区、亮暗两套 alpha）**整块删除**。
+   它存在的前提是「照片铺满整卡、文字压在照片上」；P5.76 把图片改成按高贴合的右对齐人像，
+   文字区落在纯底色上，遮罩既压不到文字、又会把人像糊成一片灰白（用户：「左侧遮罩太深了」）。
+   淡出改由 .pw-bg img 自己的 mask-image 承担（渐变按图片宽度算，见上面那段注释）。 */
 
 /* 文字压在照片上：数量行 / 最近更新 / 别名从「卡片底上的次级色」--fg-dim 提到 --fg。
    --fg-dim 对纯底是 4.9:1，但压在照片上（遮罩最薄处 + 近黑/近白像素）只剩 2.5–3.9:1；
@@ -872,28 +1155,62 @@ html.dark .pw-mask {
   opacity: 1;
 }
 
-/* 浏览器不支持 filter（模糊失效 → 背景是清晰原图）：退化成更厚的半透明遮罩，文字照样 ≥4.5:1 */
+/* ---------------------------------- P5.76 文字可读性：只靠文字自己，**没有任何垫底**
+   P5.75 在文字块下面垫了一层 65% 卡片底色的半透明板（padding 4/6 + 负 margin 抵消），
+   用户看到的就是「文字下面还有遮罩」—— 整块删除（背景 / 圆角 / padding / margin / flex 全撤）。
+   现在图片右对齐、左缘按 mask 淡出，文字块压的主要是**纯底色 --bg-2**；只有长行的行尾会伸进
+   淡出段，而那段 alpha 已被预算压在 ≤.34（见 .pw-bg img 的 mask 与下面 .pw-body 的 max-width）。
+   text-shadow 负责两类边角：淡出段的极淡残影与字形抗锯齿。
+   取值：亮 0 1px 3px rgba(255,255,255,.95) / 暗 0 1px 4px rgba(0,0,0,.85)，与图片淡出同向
+   （亮底用白晕把字「托」起来，暗底用黑晕）—— 实测最坏对比度见 devtools/p576-ui/REPORT.md。 */
+
+/* P5.76：**文字列与图片列在几何上分开** —— 卡片右侧让出「图片列 + 10px 间隙」，文字永远进不去。 *//* P5.76（用户纠正）：「不是说让你把背景图像放在右侧吗…让文字不要压图」——
+   不再靠 mask 渐隐掩盖重叠，改成**几何不重叠**：给卡片（不是文字块）让出右侧图片列的宽度，
+   于是文字容器天然在图片左侧，行盒右缘 < img.left − 4px（三档实测见 p576-ui/REPORT.md）。
+   32% = 图片盒宽（.pw-bg 的 32%），+10px = 间隙；百分比按卡片的包含块（网格列宽）解析。
+   文字因此变窄（1600 档约 126px），数量行/chips 会省略 —— 这是用户明确接受的取舍，
+   「不要再靠缩头像解决」。 */
+.pw-card.has-bg {
+  padding-right: calc(32% + 10px);
+}
+
+.pw-card.has-bg .pw-name,
+.pw-card.has-bg .pw-counts,
+.pw-card.has-bg .pw-recent,
+.pw-card.has-bg .pw-chip {
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.95);
+}
+
+html.dark .pw-card.has-bg .pw-name,
+html.dark .pw-card.has-bg .pw-counts,
+html.dark .pw-card.has-bg .pw-recent,
+html.dark .pw-card.has-bg .pw-chip {
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+}
+
+/* 浏览器不支持 filter（模糊失效 → 背景是清晰原图，且这类老内核多半也不支持 mask-image，
+   左缘淡出同时失效）：唯一的降级手段是给文字块垫一层 88% 卡片底色 —— 只有在老内核才会出现，
+   现代内核两个特性都有，永远走不到这里。
+   为什么不沿用 P5.75 的「整块厚遮罩」：P5.76 的图片只占卡片右侧，整卡压暗压不到文字区（左半边
+   本来就是底色），只会把人像糊成灰白 —— 那正是用户这次投诉的画面。 */
 @supports not (filter: blur(4px)) {
   .pw-bg img {
     filter: none;
   }
 
-  .pw-mask {
-    background: linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.96) 0%,
-      rgba(255, 255, 255, 0.93) 46%,
-      rgba(255, 255, 255, 0.84) 100%
-    );
+  .pw-card.has-bg .pw-body {
+    background: rgba(255, 255, 255, 0.88);
+    background: color-mix(in srgb, var(--bg-2) 88%, transparent);
+    border-radius: 8px;
+    padding: 4px 6px;
+    margin: -4px -6px;
+    flex: 0 1 auto;
+    max-width: 100%;
   }
 
-  html.dark .pw-mask {
-    background: linear-gradient(
-      90deg,
-      rgba(18, 18, 18, 0.95) 0%,
-      rgba(18, 18, 18, 0.92) 46%,
-      rgba(18, 18, 18, 0.84) 100%
-    );
+  html.dark .pw-card.has-bg .pw-body {
+    background: rgba(20, 20, 20, 0.88);
+    background: color-mix(in srgb, var(--bg-2) 88%, transparent);
   }
 }
 
@@ -910,7 +1227,7 @@ html.dark .pw-mask {
 /* 头像外层（P5.48）：只负责定位「换」按钮，尺寸口径与旧 .pw-avatar 完全一致 */
 .pw-avatar-wrap {
   position: relative;
-  /* P5.67：压在背景（0）/ 遮罩（1）之上 */
+  /* P5.67：压在背景（0）之上（P5.76：中间的遮罩层已删除） */
   z-index: 2;
   flex: 0 0 56px;
   width: 56px;

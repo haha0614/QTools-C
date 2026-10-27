@@ -13,9 +13,14 @@ const router = useRouter()
 // 「去登录」在当前页开登录悬浮窗：不离开注册页，也不会把已填内容丢掉
 const { openAuthDialog } = useAuthDialog()
 
-// 页面注册成功：与改造前一致，回首页（弹窗内注册成功则是原地关窗）
-function onSuccess() {
-  router.replace('/')
+// 页面注册成功（P5.79 审核制）：不再自动登录，切到登录页并把「等待站长审核」的提示带过去；
+// 账号建好但没登进来（旧路径）同样去登录页；真登录成功才回首页。
+function onSuccess(payload) {
+  if (payload && payload.pending) {
+    router.replace({ path: '/login', query: { notice: payload.message || '注册成功，等待站长审核后可登录' } })
+    return
+  }
+  router.replace(payload && payload.autoLoggedIn === false ? '/login' : '/')
 }
 </script>
 

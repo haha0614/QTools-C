@@ -1,0 +1,554 @@
+{
+  "passed": 66,
+  "failures": [
+    "A10 垫底只按文字行宽收缩，右侧留出照片区 -> 185.94px / 卡宽 335.25px",
+    "D light 0px 右侧细节是旧取值的 ≥2.5 倍（照片真的露出来了） -> 0.017 vs 旧 0.016（×1.06）",
+    "D light 0px 右侧比 20px 更锐（模糊真的生效） -> 0.017 vs 0.016",
+    "D dark 0px 右侧细节是旧取值的 ≥2.5 倍（照片真的露出来了） -> 0.013 vs 旧 0.01（×1.3）",
+    "D dark 0px 右侧比 20px 更锐（模糊真的生效） -> 0.013 vs 0.011"
+  ],
+  "facts": {
+    "structure": {
+      "stops": [
+        {
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "a": 0.94,
+          "at": 0
+        },
+        {
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "a": 0.94,
+          "at": 45
+        },
+        {
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "a": 0.13,
+          "at": 62
+        },
+        {
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "a": 0.13,
+          "at": 100
+        }
+      ],
+      "rootVars": {
+        "blur": "6px",
+        "op": "0.7",
+        "l1": "0.94",
+        "l2": "0.13",
+        "d1": "0.92",
+        "d2": "0.18"
+      },
+      "bodyBg": "color(srgb 1 1 1 / 0.78)",
+      "bodyShadow": "rgba(255, 255, 255, 0.9) 0px 1px 2px",
+      "bodyW": 185.94,
+      "cardW": 335.25
+    },
+    "table": {
+      "light0": {
+        "theme": "light",
+        "blur": 0,
+        "stops": [
+          {
+            "at": 0,
+            "a": 0.94
+          },
+          {
+            "at": 45,
+            "a": 0.94
+          },
+          {
+            "at": 62,
+            "a": 0.1
+          },
+          {
+            "at": 100,
+            "a": 0.1
+          }
+        ],
+        "at": {
+          "left": 0.94,
+          "mid": 0.545,
+          "right": 0.1
+        },
+        "rootVar": "0.1",
+        "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+        "inset": "0px 0px 0px 0px",
+        "bgOpacity": "1",
+        "opVar": "1"
+      },
+      "light6": {
+        "theme": "light",
+        "blur": 6,
+        "stops": [
+          {
+            "at": 0,
+            "a": 0.94
+          },
+          {
+            "at": 45,
+            "a": 0.94
+          },
+          {
+            "at": 62,
+            "a": 0.13
+          },
+          {
+            "at": 100,
+            "a": 0.13
+          }
+        ],
+        "at": {
+          "left": 0.94,
+          "mid": 0.559,
+          "right": 0.13
+        },
+        "rootVar": "0.13",
+        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+        "inset": "-9px -9px -9px -9px",
+        "bgOpacity": "0.7",
+        "opVar": "0.7"
+      },
+      "light20": {
+        "theme": "light",
+        "blur": 20,
+        "stops": [
+          {
+            "at": 0,
+            "a": 0.94
+          },
+          {
+            "at": 45,
+            "a": 0.94
+          },
+          {
+            "at": 62,
+            "a": 0.2
+          },
+          {
+            "at": 100,
+            "a": 0.2
+          }
+        ],
+        "at": {
+          "left": 0.94,
+          "mid": 0.592,
+          "right": 0.2
+        },
+        "rootVar": "0.2",
+        "filter": "blur(20px) saturate(1.1) brightness(0.9)",
+        "inset": "-30px -30px -30px -30px",
+        "bgOpacity": "0.7",
+        "opVar": "0.7"
+      },
+      "dark0": {
+        "theme": "dark",
+        "blur": 0,
+        "stops": [
+          {
+            "at": 0,
+            "a": 0.92
+          },
+          {
+            "at": 45,
+            "a": 0.92
+          },
+          {
+            "at": 62,
+            "a": 0.15
+          },
+          {
+            "at": 100,
+            "a": 0.15
+          }
+        ],
+        "at": {
+          "left": 0.92,
+          "mid": 0.558,
+          "right": 0.15
+        },
+        "rootVar": "0.15",
+        "filter": "blur(0px) saturate(1.1) brightness(0.9)",
+        "inset": "0px 0px 0px 0px",
+        "bgOpacity": "1",
+        "opVar": "1"
+      },
+      "dark6": {
+        "theme": "dark",
+        "blur": 6,
+        "stops": [
+          {
+            "at": 0,
+            "a": 0.92
+          },
+          {
+            "at": 45,
+            "a": 0.92
+          },
+          {
+            "at": 62,
+            "a": 0.18
+          },
+          {
+            "at": 100,
+            "a": 0.18
+          }
+        ],
+        "at": {
+          "left": 0.92,
+          "mid": 0.572,
+          "right": 0.18
+        },
+        "rootVar": "0.18",
+        "filter": "blur(6px) saturate(1.1) brightness(0.9)",
+        "inset": "-9px -9px -9px -9px",
+        "bgOpacity": "0.7",
+        "opVar": "0.7"
+      },
+      "dark20": {
+        "theme": "dark",
+        "blur": 20,
+        "stops": [
+          {
+            "at": 0,
+            "a": 0.92
+          },
+          {
+            "at": 45,
+            "a": 0.92
+          },
+          {
+            "at": 62,
+            "a": 0.25
+          },
+          {
+            "at": 100,
+            "a": 0.25
+          }
+        ],
+        "at": {
+          "left": 0.92,
+          "mid": 0.605,
+          "right": 0.25
+        },
+        "rootVar": "0.25",
+        "filter": "blur(20px) saturate(1.1) brightness(0.9)",
+        "inset": "-30px -30px -30px -30px",
+        "bgOpacity": "0.7",
+        "opVar": "0.7"
+      }
+    },
+    "contrast": {
+      "light0": {
+        "cards": 13,
+        "nameW": {
+          "name": "念念",
+          "line": "name",
+          "samples": 178,
+          "color": "rgb(48, 49, 51)",
+          "worst": 8.19,
+          "worstBg": [
+            205,
+            205,
+            205
+          ],
+          "best": 12.93
+        },
+        "countW": {
+          "name": "念念",
+          "line": "counts",
+          "samples": 178,
+          "color": "rgb(48, 49, 51)",
+          "worst": 8.19,
+          "worstBg": [
+            205,
+            205,
+            205
+          ],
+          "best": 12.93
+        },
+        "measured": 26
+      },
+      "light6": {
+        "cards": 13,
+        "nameW": {
+          "name": "桜井宁宁",
+          "line": "name",
+          "samples": 148,
+          "color": "rgb(48, 49, 51)",
+          "worst": 9.78,
+          "worstBg": [
+            224,
+            223,
+            222
+          ],
+          "best": 12.91
+        },
+        "countW": {
+          "name": "梨霜儿",
+          "line": "counts",
+          "samples": 148,
+          "color": "rgb(48, 49, 51)",
+          "worst": 9.77,
+          "worstBg": [
+            223,
+            223,
+            223
+          ],
+          "best": 12.91
+        },
+        "measured": 26
+      },
+      "light20": {
+        "cards": 13,
+        "nameW": {
+          "name": "素人",
+          "line": "name",
+          "samples": 172,
+          "color": "rgb(48, 49, 51)",
+          "worst": 10.07,
+          "worstBg": [
+            227,
+            226,
+            226
+          ],
+          "best": 12.8
+        },
+        "countW": {
+          "name": "素人",
+          "line": "counts",
+          "samples": 172,
+          "color": "rgb(48, 49, 51)",
+          "worst": 10.07,
+          "worstBg": [
+            227,
+            226,
+            226
+          ],
+          "best": 12.8
+        },
+        "measured": 26
+      },
+      "dark0": {
+        "cards": 13,
+        "nameW": {
+          "name": "念念",
+          "line": "name",
+          "samples": 178,
+          "color": "rgb(229, 234, 243)",
+          "worst": 8.69,
+          "worstBg": [
+            64,
+            63,
+            63
+          ],
+          "best": 14.7
+        },
+        "countW": {
+          "name": "念念",
+          "line": "counts",
+          "samples": 178,
+          "color": "rgb(229, 234, 243)",
+          "worst": 8.72,
+          "worstBg": [
+            63,
+            63,
+            63
+          ],
+          "best": 14.7
+        },
+        "measured": 26
+      },
+      "dark6": {
+        "cards": 13,
+        "nameW": {
+          "name": "念念",
+          "line": "name",
+          "samples": 178,
+          "color": "rgb(229, 234, 243)",
+          "worst": 10.47,
+          "worstBg": [
+            51,
+            51,
+            51
+          ],
+          "best": 14.19
+        },
+        "countW": {
+          "name": "念念",
+          "line": "counts",
+          "samples": 178,
+          "color": "rgb(229, 234, 243)",
+          "worst": 10.43,
+          "worstBg": [
+            52,
+            51,
+            51
+          ],
+          "best": 14.11
+        },
+        "measured": 26
+      },
+      "dark20": {
+        "cards": 13,
+        "nameW": {
+          "name": "念念",
+          "line": "name",
+          "samples": 178,
+          "color": "rgb(229, 234, 243)",
+          "worst": 11.09,
+          "worstBg": [
+            47,
+            47,
+            47
+          ],
+          "best": 14.07
+        },
+        "countW": {
+          "name": "念念",
+          "line": "counts",
+          "samples": 178,
+          "color": "rgb(229, 234, 243)",
+          "worst": 10.9,
+          "worstBg": [
+            49,
+            48,
+            48
+          ],
+          "best": 13.95
+        },
+        "measured": 26
+      }
+    },
+    "photoBand": {
+      "light0": {
+        "n": 6048,
+        "detail": 0.017,
+        "sd": 0.245,
+        "meanChroma": 5.69,
+        "distBg": 222.16,
+        "meanRgb": [
+          127.82,
+          127.97,
+          124.82
+        ],
+        "x0": 399.86,
+        "x1": 524.25
+      },
+      "light6": {
+        "n": 6048,
+        "detail": 0.017,
+        "sd": 0.236,
+        "meanChroma": 4.2,
+        "distBg": 159.03,
+        "meanRgb": [
+          163.98,
+          163.87,
+          162.13
+        ],
+        "x0": 399.86,
+        "x1": 524.25
+      },
+      "light20": {
+        "n": 6048,
+        "detail": 0.016,
+        "sd": 0.231,
+        "meanChroma": 3.73,
+        "distBg": 155.55,
+        "meanRgb": [
+          166.09,
+          165.51,
+          164.42
+        ],
+        "x0": 399.86,
+        "x1": 524.25
+      },
+      "lightold0": {
+        "n": 6048,
+        "detail": 0.016,
+        "sd": 0.124,
+        "meanChroma": 2.47,
+        "distBg": 42.52,
+        "meanRgb": [
+          230.69,
+          230.77,
+          230.45
+        ],
+        "x0": 399.86,
+        "x1": 524.25
+      },
+      "dark0": {
+        "n": 6048,
+        "detail": 0.013,
+        "sd": 0.111,
+        "meanChroma": 5.83,
+        "distBg": 61.06,
+        "meanRgb": [
+          61.11,
+          61.26,
+          58.5
+        ],
+        "x0": 399.86,
+        "x1": 524.25
+      },
+      "dark6": {
+        "n": 6048,
+        "detail": 0.011,
+        "sd": 0.092,
+        "meanChroma": 4.37,
+        "distBg": 37.44,
+        "meanRgb": [
+          47.66,
+          47.5,
+          46.14
+        ],
+        "x0": 399.86,
+        "x1": 524.25
+      },
+      "dark20": {
+        "n": 6048,
+        "detail": 0.011,
+        "sd": 0.088,
+        "meanChroma": 3.71,
+        "distBg": 22.4,
+        "meanRgb": [
+          39.64,
+          39.13,
+          38.46
+        ],
+        "x0": 399.86,
+        "x1": 524.25
+      },
+      "darkold0": {
+        "n": 6048,
+        "detail": 0.01,
+        "sd": 0.088,
+        "meanChroma": 2.57,
+        "distBg": 15.33,
+        "meanRgb": [
+          28.57,
+          28.55,
+          28.64
+        ],
+        "x0": 399.86,
+        "x1": 524.25
+      }
+    }
+  }
+}
