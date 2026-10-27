@@ -44,7 +44,13 @@ const props = defineProps({
   /** 是否已有全局默认（用于「清除全局默认」提示行） */
   hasDefault: { type: Boolean, default: false },
   /** 全局默认的数值（提示行展示用） */
-  defaultAdjust: { type: Object, default: null }
+  defaultAdjust: { type: Object, default: null },
+  /** P5.89：当前是否是站长（决定这行提示与「保存去哪儿」） */
+  owner: { type: Boolean, default: false },
+  /** P5.89：保存中（站长那次是网络请求，防风重复提交） */
+  saving: { type: Boolean, default: false },
+  /** P5.89：这一行说明「本机 / 全站」，由页面按角色算好传进来（文案唯一来源在页面） */
+  serverHint: { type: String, default: '' }
 })
 const emit = defineEmits(['close', 'save', 'clearDefault'])
 
@@ -340,6 +346,10 @@ watch(
           <b data-role="bg-adjust-dy">dy {{ dyText }}</b>) px
         </p>
 
+        <p v-if="serverHint" class="pba-server" :data-owner="owner ? '1' : '0'" data-role="bg-adjust-server-hint">
+          {{ serverHint }}
+        </p>
+
         <div class="pba-default">
           <label class="pba-check">
             <input v-model="asDefault" type="checkbox" data-role="bg-adjust-default" />
@@ -356,7 +366,15 @@ watch(
 
       <footer class="pba-foot">
         <button class="pba-btn" type="button" data-role="bg-adjust-cancel" @click="emit('close')">取消</button>
-        <button class="pba-btn pba-primary" type="button" data-role="bg-adjust-save" @click="onSave">保存</button>
+        <button
+          class="pba-btn pba-primary"
+          type="button"
+          data-role="bg-adjust-save"
+          :disabled="saving"
+          @click="onSave"
+        >
+          {{ saving ? '保存中…' : '保存' }}
+        </button>
       </footer>
     </div>
   </div>
@@ -439,6 +457,21 @@ watch(
   margin: 0 0 10px;
   font-size: 12.5px;
   color: var(--fg-dim);
+}
+
+/* P5.89：这行说清「保存去哪儿」—— 站长全站生效，普通用户只在本机 */
+.pba-server {
+  margin: 10px 0 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fg-dim);
+  background: var(--bg-3, rgba(127, 127, 127, 0.12));
+
+  &[data-owner='1'] {
+    color: var(--accent);
+  }
 }
 
 /* 预览舞台：占满宽度，真正摆放的盒子由 JS 按卡片比例算好尺寸 */

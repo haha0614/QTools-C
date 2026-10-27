@@ -1,0 +1,104 @@
+{
+  "passed": 74,
+  "failures": [],
+  "facts": {
+    "baseline": {
+      "cards": 13,
+      "withBg": 13,
+      "buttons": 13,
+      "chips": 13,
+      "cols": 4,
+      "key": "125",
+      "autoGeom": "244.2,434.676,128.269,-103.853,0.5111,0.35625"
+    },
+    "heights": [
+      103.7,
+      103.7
+    ],
+    "drag": {
+      "dxBefore": "dx 0",
+      "dxAfter": "dx -43.3",
+      "dyBefore": "dy 0",
+      "dyAfter": "dy +21.4",
+      "moved": [
+        -67.59999999999991,
+        33.44999999999999
+      ],
+      "beforeRect": [
+        733.8,
+        301.69,
+        381.33,
+        678.77
+      ],
+      "afterRect": [
+        666.2,
+        335.14,
+        381.33,
+        678.77
+      ]
+    },
+    "scale": [
+      {
+        "pct": 50,
+        "previewImgW": 190.66,
+        "cardImgW": 122.09,
+        "expectCard": 122.1,
+        "scale": 0.5
+      },
+      {
+        "pct": 100,
+        "previewImgW": 381.33,
+        "cardImgW": 244.19,
+        "expectCard": 244.2
+      },
+      {
+        "pct": 300,
+        "previewImgW": 1143.98,
+        "cardImgW": 732.59,
+        "expectCard": 732.6,
+        "scale": 3
+      }
+    ],
+    "saved": {
+      "adjust": "1.6,0.09,-0.14,390.72,695.482,158.239,-118.133",
+      "rect": [
+        351.24,
+        -54.13,
+        390.72,
+        695.47
+      ],
+      "transform": "matrix(1, 0, 0, 1, 158.239, -118.133)",
+      "trio": 0
+    },
+    "reset": {
+      "rect": [
+        321.27,
+        -39.85,
+        244.19,
+        434.67
+      ],
+      "autoRect": [
+        321.27,
+        -39.85,
+        244.19,
+        434.67
+      ],
+      "dev": 0,
+      "center": [
+        253.08,
+        51
+      ]
+    },
+    "default": {
+      "stored": "{\"scale\":1.5,\"dx\":0.04,\"dy\":0.08}",
+      "otherCard": "1.5,0.04,0.08,651.2,366.3,75.577,-14.1",
+      "afterClear": ""
+    },
+    "chipCard": {
+      "key": "122",
+      "chips": 3,
+      "h": 103.7
+    },
+    "nav": "/media/person/125"
+  }
+}

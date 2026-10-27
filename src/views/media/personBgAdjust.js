@@ -261,6 +261,30 @@ export function writeAdjustDefault(adjust, storage) {
   return a
 }
 
+/**
+ * 服务端持久化的调整（P5.89）：人物节点上的 {@code bgScale / bgDx / bgDy}（后端「非空才输出」）
+ *
+ * 站长（role=owner）保存时写到服务端，这张值<b>优先级最高</b>：换个浏览器 / 清了 localStorage
+ * 也照样生效。三键都缺（或等于自动几何）→ null，表示「服务端没有调整」。
+ */
+export function serverAdjustOf(person) {
+  if (!person || typeof person !== 'object') return null
+  const a = normalizeAdjust({ scale: person.bgScale, dx: person.bgDx, dy: person.bgDy })
+  return a && !isAuto(a) ? a : null
+}
+
+/**
+ * 某人物最终生效的调整（P5.89 起四层）：服务端逐人 > localStorage 逐人 > 全局默认 > null（自动）
+ *
+ * 「服务端优先」是用户口径：「站长设为全站生效」必须压过任何本机残留 —— 否则站长在一台机器上
+ * 调好后，另一台机器上的旧 localStorage 会悄悄盖掉他刚保存的构图。
+ */
+export function resolveEffectiveAdjust(serverAdjust, map, def, id) {
+  const fromServer = normalizeAdjust(serverAdjust)
+  if (fromServer && !isAuto(fromServer)) return fromServer
+  return resolveAdjust(map, def, id)
+}
+
 /** 某人物最终生效的调整：逐人记录 > 全局默认 > null（= 自动） */
 export function resolveAdjust(map, def, id) {
   const own = getAdjust(map, id)

@@ -460,11 +460,11 @@ const bs = JSON.parse(btnInfo)
 console.log('  hover 后按钮 opacity=' + bs.opacity + ' rect=' + JSON.stringify(bs.rect) + ' text=' + JSON.stringify(bs.text))
 ok(bs.opacity === '1', 'A2 hover 后按钮可见（opacity=1）')
 ok(bs.rect[2] >= 20 && bs.rect[3] >= 20, 'A3 按钮尺寸可用（' + bs.rect[2] + '×' + bs.rect[3] + '）')
-const hashBefore = await evaluate('location.hash')
+const urlBefore = await evaluate('location.pathname + location.hash')
 ok(await openAdjust(KEY), 'A4 点击打开调整弹层')
 const dlg0 = await dialogProbe()
-const hashAfter = await evaluate('location.hash')
-ok(hashAfter === hashBefore, 'A5 点调整按钮**不**跳详情（@click.stop 生效）', hashBefore + ' → ' + hashAfter)
+const urlAfter = await evaluate('location.pathname + location.hash')
+ok(urlAfter === urlBefore, 'A5 点调整按钮**不**跳详情（@click.stop 生效）', urlBefore + ' → ' + urlAfter)
 console.log('  弹层面板尺寸 ' + JSON.stringify(dlg0.panel))
 ok(dlg0.panel[2] <= 560.5, 'A6 弹层宽 = min(560px, 92vw)', dlg0.panel[2] + 'px')
 ok(dlg0.imgs.length === 3, 'A7 弹层里三层图都在')
@@ -473,7 +473,8 @@ const pvRatio = dlg0.preview[3] / dlg0.preview[2]
 const cardRatio = auto.bg[3] / auto.bg[2]
 ok(Math.abs(pvRatio - cardRatio) < 0.02, 'A8 预览与卡片同比例（' + r2(pvRatio) + ' vs ' + r2(cardRatio) + '）')
 ok(MAXD(dlg0.imgs[0], dlg0.imgs[1]) < 0.5 && MAXD(dlg0.imgs[0], dlg0.imgs[2]) < 0.5, 'A9 预览三层 rect 逐像素一致')
-const pvAutoImgW = (dlg0.preview[2] * 0.44) / aCropX
+// 预览自动 imgW = 预览宽 × (卡片 imgW / 卡片宽)：layoutCrop 对盒子线性，倍率相同
+const pvAutoImgW = (dlg0.preview[2] * aImgW) / auto.bgClient[0]
 ok(Math.abs(dlg0.imgW - pvAutoImgW) / pvAutoImgW < 0.02, 'A10 预览 100% = 自动尺寸（' + dlg0.imgW + ' vs 预览自动 ' + r2(pvAutoImgW) + '）')
 ok(/^dx 0$/.test(dlg0.dx) && /^dy 0$/.test(dlg0.dy), 'A11 初始偏移为 0', dlg0.dx + ' / ' + dlg0.dy)
 await shot('p588-a-dialog-open-1600-light')
@@ -512,7 +513,8 @@ for (const pct of [50, 100, 300]) {
   ok(Math.abs(cp.sharp[2] - expectCard) <= 1.5, 'C2 ' + pct + '% 卡片 image 宽 = 自动 imgW × ' + pct / 100, cp.sharp[2] + ' vs ' + r2(expectCard))
   ok(Math.abs(parseFloat(cp.sharpStyle.w) - cp.sharp[2]) <= 1, 'C3 卡片 computed width 与 rect 一致', cp.sharpStyle.w)
   const stored = JSON.parse(await evaluate("localStorage.getItem('ms.person.bgAdjust.v1')||'{}'"))
-  ok(stored[KEY] && Math.abs(stored[KEY].scale - pct / 100) < 1e-6, 'C4 localStorage 里 scale = ' + pct / 100, JSON.stringify(stored[KEY]))
+  const storedScale = stored[KEY] ? stored[KEY].scale : 1
+  ok(Math.abs(storedScale - pct / 100) < 1e-6, 'C4 localStorage 里 scale = ' + pct / 100 + (pct === 100 ? '（自动 = 不落库）' : ''), JSON.stringify(stored[KEY] || null))
   scaleTable.push({ pct: pct, previewImgW: d.imgW, cardImgW: cp.sharp[2], expectCard: r2(expectCard), scale: stored[KEY] && stored[KEY].scale })
   await openAdjust(KEY)
 }
@@ -542,7 +544,14 @@ ok(Math.abs(sTx - (aTx + sDx * auto.bgClient[0])) <= 1.5, 'D3 tx = 自动 tx + d
 ok(Math.abs(sTy - (aTy + sDy * auto.bgClient[1])) <= 1.5, 'D4 ty = 自动 ty + dy × 卡片高', sTy + ' vs ' + r2(aTy + sDy * auto.bgClient[1]))
 const trioSaved = trioDev(saved)
 ok(trioSaved <= 0.5, 'D5 调整后三层 rect 逐像素一致（±0.5px）', r2(trioSaved) + 'px')
-ok(saved.sharpStyle.transform.indexOf('translate') === 0, 'D6 三层共用同一个 translate（--pw-img-tx/ty）', saved.sharpStyle.transform)
+const wantM = 'matrix(1, 0, 0, 1, ' + sTx + ', ' + sTy + ')'
+ok(
+  saved.sharpStyle.transform === saved.blurStyle.transform && saved.sharpStyle.transform === saved.fogStyle.transform,
+  'D6 三层 computed transform 完全相同',
+  saved.sharpStyle.transform
+)
+ok(Math.abs(parseFloat(saved.sharpStyle.tx) - sTx) <= 0.01 && Math.abs(parseFloat(saved.sharpStyle.ty) - sTy) <= 0.01, 'D7 --pw-img-tx/ty 与下发几何一致', saved.sharpStyle.tx + '/' + saved.sharpStyle.ty)
+console.log('  三层 transform 期望 ' + wantM)
 const storeBeforeReload = await evaluate("localStorage.getItem('ms.person.bgAdjust.v1')||''")
 console.log('  localStorage[ms.person.bgAdjust.v1] = ' + storeBeforeReload)
 facts.saved = { adjust: saved.adjust, rect: saved.sharp, transform: saved.sharpStyle.transform, trio: r2(trioSaved) }
@@ -615,15 +624,46 @@ const wallA = await wallProbe()
 ok(Math.max.apply(null, wallA.heights) - Math.min.apply(null, wallA.heights) <= 1, 'G1 调整后卡片仍等高', r2(Math.max.apply(null, wallA.heights) - Math.min.apply(null, wallA.heights)) + 'px')
 ok(wallA.chips === wall0.chips, 'G2 chip 数不变（' + wall0.chips + '）', String(wallA.chips))
 ok(wallA.cols === wall0.cols && wallA.cards === wall0.cards, 'G3 列数 / 卡片数不变', wallA.cols + ' / ' + wallA.cards)
-const blurFilter = async (n) =>
+// 多 chip 的卡（有 3 个 chip 的那种）chip 数与高度都不变
+const chipCard = JSON.parse(
   await evaluate(
-    '(function(){var e=document.getElementById("pp-bg-blur");e.value=' + n + ';e.dispatchEvent(new Event("input",{bubbles:true}));' +
-      'var all=[].slice.call(document.querySelectorAll(".pw-card")),c=null,i;' +
+    '(function(){var all=[].slice.call(document.querySelectorAll(".pw-card"));' +
+      'for(var i=0;i<all.length;i++){var n=all[i].querySelectorAll(".pw-chip").length;' +
+      'if(n>=3){return JSON.stringify({key:all[i].getAttribute("data-card-key"),chips:n,h:Math.round(all[i].getBoundingClientRect().height*100)/100})}}' +
+      'return JSON.stringify({key:"",chips:0,h:0})})()'
+  )
+)
+if (chipCard.key) {
+  const chipNow = JSON.parse(
+    await evaluate(
+      '(function(){var all=[].slice.call(document.querySelectorAll(".pw-card")),c=null,i;' +
+        'for(i=0;i<all.length;i++){if(all[i].getAttribute("data-card-key")===' +
+        JSON.stringify(chipCard.key) +
+        '){c=all[i];break}}if(!c)return "";' +
+        'return JSON.stringify({chips:c.querySelectorAll(".pw-chip").length,h:Math.round(c.getBoundingClientRect().height*100)/100})})()'
+    )
+  )
+  console.log('  3 chip 卡 key=' + chipCard.key + ' chip=' + chipCard.chips + ' → ' + chipNow.chips + ' 高 ' + chipCard.h + ' → ' + chipNow.h)
+  ok(chipNow.chips === chipCard.chips && Math.abs(chipNow.h - chipCard.h) <= 1, 'G3b 3 chip 卡 chip 数与高度不变', chipNow.chips + ' / ' + chipNow.h + 'px')
+  facts.chipCard = { key: chipCard.key, chips: chipNow.chips, h: chipNow.h }
+}
+// ⛶ 按钮是绝对定位：不进入文档流，因此不可能改变卡片内部排版
+const absBtn = await evaluate(
+  '(function(){var b=document.querySelector(".pw-adjust");if(!b)return "";var s=getComputedStyle(b);return s.position+"/"+s.width+"/"+s.height})()'
+)
+console.log('  .pw-adjust computed = ' + absBtn)
+ok(absBtn.indexOf('absolute') === 0, 'G3c 「⛶」是绝对定位，不参与卡片排版', absBtn)
+const blurFilter = async (n) => {
+  await evaluate('(function(){var e=document.getElementById("pp-bg-blur");e.value=' + n + ';e.dispatchEvent(new Event("input",{bubbles:true}));return e.value})()')
+  await sleep(320)
+  return await evaluate(
+    '(function(){var all=[].slice.call(document.querySelectorAll(".pw-card")),c=null,i;' +
       'for(i=0;i<all.length;i++){if(all[i].getAttribute("data-card-key")===' +
       JSON.stringify(KEY) +
       '){c=all[i];break}}' +
       'return getComputedStyle(c.querySelector(".pw-bg-blur")).filter})()'
   )
+}
 const f0 = await blurFilter(0)
 const f20 = await blurFilter(20)
 console.log('  模糊滑块 0 → ' + f0 + ' ； 20 → ' + f20)
@@ -709,9 +749,9 @@ const bodyPoint = await evaluate(
     'if(!c) return null;var b=c.querySelector(".pw-body").getBoundingClientRect();return [b.x+b.width-8,b.y+b.height/2]})()'
 )
 await clickAt(bodyPoint[0], bodyPoint[1])
-const navOk = await waitFor("location.hash.indexOf('/media/person/')>=0", 5000)
-ok(!!navOk, 'J1 点卡片正文跳到人物详情', await evaluate('location.hash'))
-facts.nav = await evaluate('location.hash')
+const navOk = await waitFor("location.pathname.indexOf('/media/person/')>=0||location.hash.indexOf('/media/person/')>=0", 6000)
+ok(!!navOk, 'J1 点卡片正文跳到人物详情', await evaluate('location.pathname + location.hash'))
+facts.nav = await evaluate('location.pathname + location.hash')
 
 await goto('/media/persons')
 await waitFor(READY, 20000)

@@ -28,7 +28,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 // 图标按名显式导入（本项目没有 unplugin-auto-import，模板里不能凭空出现组件名）
-import { House, List, Menu, Moon, Picture, Sunny, User, UserFilled, VideoPlay } from '@element-plus/icons-vue'
+import { House, List, Menu, Moon, Picture, Setting, Sunny, User, UserFilled, VideoPlay } from '@element-plus/icons-vue'
 import BrandMark from '@/components/BrandMark.vue'
 // P5.70：全局登录悬浮窗（全站只挂这一次）+ 它的开关单例
 import AuthLoginDialog from '@/components/AuthLoginDialog.vue'
@@ -260,6 +260,32 @@ const accountName = computed(() => {
   const user = state.user || {}
   return String(user.nickname || user.username || '')
 })
+
+/* ================================================================ 管理后台入口（P5.89，仅站长） */
+/**
+ * 管理端地址：优先构建变量 VITE_APP_ADMIN_SITE_URL，缺省同源 /admin-ui/
+ *
+ * 为什么默认是 /admin-ui/：管理端 SPA 的 vite base 就是 /admin-ui/（见 QTools-M/vite.config.js
+ * 与 docker/nginx/conf.d/qtools.conf 的 location 段），同源部署下这条路径一定可用；
+ * 独立域名 / 端口部署时用 VITE_APP_ADMIN_SITE_URL 覆盖即可（末尾补斜杠，避免 /admin-ui 少一次 302）。
+ */
+const ADMIN_SITE_URL = (() => {
+  const raw = (import.meta.env && import.meta.env.VITE_APP_ADMIN_SITE_URL) || ''
+  const url = String(raw).trim()
+  if (!url) return '/admin-ui/'
+  return url.endsWith('/') ? url : url + '/'
+})()
+
+/** 当前账号是不是站长（role 由 GET /api/app/me 下发；缓存里没有就当普通用户） */
+const isOwner = computed(() => String((state.user && state.user.role) || '').toLowerCase() === 'owner')
+
+/**
+ * 侧栏底部的「管理后台」入口：**只有登录且 role=owner 才存在**（普通用户 / 未登录整项不渲染，
+ * 不是隐藏）。online: true —— 管理端本身要后端在线，后端 offline 时按既有规则禁用。
+ */
+const adminItem = computed(() =>
+  isOwner.value ? { href: ADMIN_SITE_URL, label: '管理后台', icon: Setting, online: true } : null
+)
 
 /* ================================================================ 账号入口（P5.70：一律开弹窗，不跳页） */
 /**
@@ -514,6 +540,38 @@ onBeforeUnmount(() => {
           <el-icon class="qt-rail__icon" :size="18"><User /></el-icon>
           <span class="qt-rail__label">登录</span>
         </button>
+
+        <!--
+          P5.89：管理后台入口 —— **只有登录且 role=owner 才渲染**（v-if 在 adminItem 上：
+          普通用户 / 未登录时这个节点在 DOM 里根本不存在，不是用 CSS 藏起来）。
+          新标签打开，rel 固定 noopener noreferrer（管理端是另一套身份体系，不能拿到本页的 window.opener）。
+          后端 offline 时与其它在线入口一致：降级成 disabled 按钮（没有 href，键盘也进不去）。
+        -->
+        <button
+          v-if="adminItem && isNavLocked(adminItem)"
+          class="qt-rail__link qt-rail__link--button is-disabled"
+          type="button"
+          disabled
+          aria-disabled="true"
+          :title="LOCKED_HINT"
+          data-nav-locked="admin"
+          data-testid="rail-admin-locked"
+        >
+          <el-icon class="qt-rail__icon" :size="18"><Setting /></el-icon>
+          <span class="qt-rail__label">管理后台</span>
+        </button>
+        <a
+          v-else-if="adminItem"
+          class="qt-rail__link"
+          :href="adminItem.href"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="打开管理后台（新窗口）"
+          data-testid="rail-admin"
+        >
+          <el-icon class="qt-rail__icon" :size="18"><Setting /></el-icon>
+          <span class="qt-rail__label">管理后台</span>
+        </a>
       </div>
 
       <!-- 折叠手柄热区：跨在分割线上的 22px 竖直窄条（栏内 12 + 栏外 10），指针进入这里手柄才出现 -->

@@ -22,6 +22,8 @@ import { errorText } from './synopsisGenerate'
 
 const API_MEDIA = '/media'
 const OWNER_STORE_KEY = 'ms.owner'
+/** 站级登录 token 键（与 useMediaApi / api/appAuth.js 同一个 localStorage 键） */
+const TOKEN_STORE_KEY = 'app.token'
 
 /** 接口未就绪时页面统一用这一句（与卡片 / 抽屉提示同源） */
 export const PERSON_NOT_READY = '演员接口未就绪，暂只能查看'
@@ -33,6 +35,16 @@ function mediaHeaders() {
     if (owner) headers['X-Ms-Owner'] = owner
   } catch {
     /* 隐私模式：不带 owner 头，后端按 anon 处理 */
+  }
+  // P5.89：必须带登录 token —— 站长（role=owner）的站端 full 权限由后端按
+  // Authorization 判定（MediaOwnerService → IAppTokenVerifier → IAppRoleResolver）。
+  // 之前这里只带 X-Ms-Owner，于是「已登录站长」在写接口眼里仍是匿名，
+  // off / local 档照样 403，「站长无视三档」就成了空话。
+  try {
+    const token = localStorage.getItem(TOKEN_STORE_KEY) || ''
+    if (token) headers.Authorization = 'Bearer ' + token
+  } catch {
+    /* 忽略 */
   }
   return headers
 }
@@ -107,6 +119,27 @@ export function clearPersonAvatar(id) {
   return mediaCall({ url: '/person/' + encodeId(id) + '/avatar', method: 'delete' })
 }
 
+/**
+ * 人物卡背景调整（P5.89） 后端：PUT /api/media/person/{id}/bg body { scale, dx, dy }
+ *
+ * 口径与 P5.88 前端存储一致：scale 1 = 自动几何（0.5–3）；dx / dy 是**卡片宽高的比例**（±2 = ±200%）。
+ * 闸门：站长（role=owner）无视 media.userEditing 三档；普通用户 / 未登录只在 full 档可写。
+ * 回包是整条人物节点（含 bgScale / bgDx / bgDy）。
+ */
+export function setPersonBg(id, adjust) {
+  const a = adjust && typeof adjust === 'object' ? adjust : {}
+  return mediaCall({
+    url: '/person/' + encodeId(id) + '/bg',
+    method: 'put',
+    data: { scale: a.scale, dx: a.dx, dy: a.dy }
+  })
+}
+
+/** 重置人物卡背景调整（回到自动几何） 后端：DELETE /api/media/person/{id}/bg */
+export function clearPersonBg(id) {
+  return mediaCall({ url: '/person/' + encodeId(id) + '/bg', method: 'delete' })
+}
+
 /** HTTP 状态码（axios 错误 / 业务错误两种形态都取得到） */
 export function httpStatus(err) {
   if (!err) return 0
@@ -142,6 +175,8 @@ export default {
   createPerson,
   setPersonAvatar,
   clearPersonAvatar,
+  setPersonBg,
+  clearPersonBg,
   httpStatus,
   isNotReady,
   errorText

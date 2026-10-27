@@ -10,6 +10,9 @@
  */
 import { reactive } from 'vue'
 import * as appAuthApi from '@/api/appAuth'
+// P5.89：登录态一变就重新取一次 /media/edit-policy —— 站长（role=owner）的编辑入口与
+// 「管理后台」链接都靠它，不能让用户刷新页面才看到
+import { reloadEditPolicy } from '@/composables/useMediaEditPolicy'
 
 const { TOKEN_KEY, USER_KEY } = appAuthApi
 
@@ -47,12 +50,23 @@ const state = reactive({
   restored: false
 })
 
+/** 角色变化后刷新站端策略（失败静默：拿不到就按旧口径走，不影响主流程） */
+function refreshRolePolicy() {
+  try {
+    const pending = reloadEditPolicy()
+    if (pending && typeof pending.catch === 'function') pending.catch(() => {})
+  } catch (err) {
+    /* 忽略 */
+  }
+}
+
 /** 清空登录态：401 与主动退出共用 */
 function clearAuth() {
   state.token = ''
   state.user = null
   removeStorage(TOKEN_KEY)
   removeStorage(USER_KEY)
+  refreshRolePolicy()
 }
 
 // 401 由 api 层统一广播到这里，页面层无需逐处处理
@@ -67,6 +81,7 @@ function applySession(data) {
   if (data && data.user) {
     state.user = data.user
     writeStorage(USER_KEY, JSON.stringify(data.user))
+    refreshRolePolicy()
   }
 }
 

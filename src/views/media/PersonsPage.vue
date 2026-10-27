@@ -176,6 +176,23 @@
     · 保留：滑块 0–20（--pw-bg-blur）、裁剪中心 76% / 50%（±1px）、不放大（imgW = bgW × 0.44 / cropW）、
       拾色填充、文字直接压图。对比度仍**只记录 INFO**，不作门槛。
     实测（三层 rect / mask computed / 三档滤镜 / 20 点色差表 / 接缝剖面 / 24 张截图）见 devtools/p585-ui/REPORT.md。
+
+  P5.88（用户需求）：「人物页增加一个功能，可以手动设置人物卡片背景图片的位置和尺寸缩放」。
+   · 入口：卡片 hover 时头像**右上角**的「⛶」（「换」在右下角，两者不重叠，都是 22px 小圆钮）；
+     只在该卡**真有背景图**时渲染（首字占位卡没有），点击 @click.stop.prevent，不跳详情。
+   · 弹层 PersonBgAdjustDialog.vue：按卡片同比例的预览（同一套三层图，实时反映调整）+ 拖拽平移
+     + 缩放滑块 50%–300%（100% = 自动尺寸）+ 「重置为自动 / 居中 / 填满卡片」+ 吸附 1% +
+     「设为所有卡片默认」（另有「清除全局默认」）+ 保存 / 取消。宽 min(560px, 92vw)。
+   · 叠加公式（几何仍由 personBgImage.layoutCrop 自动算，本功能只在其上叠加）：
+       imgW = autoImgW × scale；imgH = autoImgH × scale；tx = autoTx + dx × bgW；ty = autoTy + dy × bgH
+     dx / dy 存的是**卡片宽高的比例**（不是 px）：卡片是流式 grid，存 px 换个视口就偏；
+     比例则「拖到卡片 30% 的位置」在任何宽度下都是 30%。三层共用同一份变量 → rect 仍逐像素一致。
+   · 存储：ms.person.bgAdjust.v1 = { [personId]: { scale, dx, dy } }，上限 500 条 LRU
+     （JSON 保留插入顺序，写入先删后写把该 id 挪到末尾，超限从最前面淘汰）；
+     ms.person.bgAdjust.default = { scale, dx, dy }（逐人记录优先，没有逐人记录才用默认）。
+     规则 / 值域 / LRU / 预设全在 personBgAdjust.js，单测 personBgAdjust.test.mjs。
+   · 不变：卡片等高、3 chip、点击跳详情、375 单列、模糊滑块、prefers-reduced-motion 无过渡。
+     实测见 devtools/p588-ui/REPORT.md（真浏览器拖拽 / 滑块 / 保存 / 刷新 / 全局默认 / 三层 ±0.5px）。
 -->
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, reactive, ref, watch } from 'vue'
@@ -189,20 +206,24 @@ import PersonAvatarDialog from './PersonAvatarDialog.vue'
 import PageToast from './PageToast.vue'
 import { usePageToast } from './usePageToast.js'
 import { useMediaEditPolicy } from '@/composables/useMediaEditPolicy'
-import { clearPersonAvatar, errorText, setPersonAvatar } from './video/personApi'
+import { clearPersonAvatar, clearPersonBg, errorText, setPersonAvatar, setPersonBg } from './video/personApi'
 // P5.72：背景模糊度滑块 —— 值域 / 遮罩联动 / 持久化的唯一实现（单测 personBgBlur.test.mjs）
 import { blurCssVars, clampBlur, readStoredBlur, saveStoredBlur } from './personBgBlur.js'
 // P5.84：整卡原图（清晰层 + 模糊层）—— 裁剪块中心落在整卡 76% / 50%，倍率固定 0.44（单测 personBgImage.test.mjs）
 import { layoutCrop, originalSrc, parseCrop } from './personBgImage.js'
 // P5.84：图片盖不满卡片的区域 = 从同一张图拾到的颜色（采样 / 缓存 / 落地色的唯一实现在 personTone.js）
 import { parseColor, readToneCache, rgbCss, sampleTone, toneCacheKey, toneFill, writeToneCache } from './personTone.js'
+// P5.90：卡片背景「服务端预渲染成一张图」—— URL / 尺寸 / 版本 / 拖动期近似的唯一实现在 personCardBg.js
+// （单测 personCardBg.test.mjs）
+import { avatarVersion, cardBgFilterCss, cardBgSize, cardBgUrl, rgbHex } from './personCardBg.js'
 // P5.88：背景「手动调整位置与缩放」—— 叠加公式 / 存储 / LRU 上限的唯一实现在 personBgAdjust.js
 import {
   applyAdjust,
   isAuto,
   readAdjustDefault,
   readAdjustMap,
-  resolveAdjust,
+  resolveEffectiveAdjust,
+  serverAdjustOf,
   setAdjust,
   writeAdjustDefault,
   writeAdjustMap
@@ -352,6 +373,8 @@ watch(cards, () => {
   nextTick(() => queueTones(cards.value))
   // P5.84：详情晚到会让头像换一张 crop（背景 src 不变 → @load 不再触发），几何必须重算
   nextTick(refreshBgGeom)
+  // P5.90：新卡片 / 过滤后重排都要重新量 .pw-bg 盒子（URL 里的 w/h 就是它）
+  nextTick(measureCardBg)
 })
 
 function markAvatarFailed(card) {
@@ -484,7 +507,8 @@ function bgGeomOf(card) {
  * 两个条件都满足才淡入，且与 --pw-img-* 同一个 tick 落地：首帧就在正确位置，之后不再变。
  */
 function bgReadyOf(card) {
-  return !!(card && bgGeom[String(card.key)] && bgReady[String(card.key)])
+  // P5.90：预渲染图在 @load 时置位（没有几何可等）；三层兜底仍由 computeBgGeom → armBgReady 置位
+  return !!(card && bgReady[String(card.key)])
 }
 
 /* ---------------------------------- P5.88 背景手动调整（位置 + 缩放，叠在自动几何之上） */
@@ -509,9 +533,33 @@ const bgAdjustDialog = reactive({
   adjust: null
 })
 
-/** 某张卡当前生效的调整：逐人记录 > 全局默认 > null（= 自动几何） */
+/**
+ * 服务端持久化的调整表（P5.89，键 = 人物 id 字符串）：来自 /media/persons 清单与 /person/{id} 详情
+ *
+ * 站长保存后 PUT 回包就是整条人物节点，mergeServerPerson() 会把它写进 details，
+ * 所以这张 computed 表自动跟着变 —— 卡片当帧就是新构图，不需要重新拉清单。
+ */
+const bgServerAdjust = computed(() => {
+  const out = {}
+  const put = (node) => {
+    if (!node) return
+    const id = node.id != null ? String(node.id) : ''
+    if (!id) return
+    const a = serverAdjustOf(node)
+    if (a) out[id] = a
+  }
+  for (const person of persons.value) put(person)
+  for (const key of Object.keys(details)) put(details[key])
+  return out
+})
+
+/**
+ * 某张卡当前生效的调整（P5.89 四层优先级）：
+ *   服务端逐人（站长持久化） > localStorage 逐人 > localStorage 全局默认 > null（= 自动几何）
+ */
 function bgAdjustOf(card) {
-  return resolveAdjust(bgAdjustMap, bgAdjustDefault.value, card && card.id)
+  const id = card && card.id != null ? String(card.id) : ''
+  return resolveEffectiveAdjust(id ? bgServerAdjust.value[id] : null, bgAdjustMap, bgAdjustDefault.value, id)
 }
 
 /**
@@ -564,27 +612,73 @@ function openBgAdjust(card) {
   bgAdjustDialog.person = { id: card.id, name: card.name }
   bgAdjustDialog.src = src
   bgAdjustDialog.crop = bgCropOf(card)
-  bgAdjustDialog.natW = (img && img.naturalWidth) || (g ? g.imgW : 0)
-  bgAdjustDialog.natH = (img && img.naturalHeight) || (g ? g.imgH : 0)
   bgAdjustDialog.boxW = bg ? bg.clientWidth : 0
   bgAdjustDialog.boxH = bg ? bg.clientHeight : 0
   bgAdjustDialog.adjust = bgAdjustOf(card)
-  bgAdjustDialog.open = true
+  const natW = (img && img.naturalWidth) || (g ? g.imgW : 0)
+  const natH = (img && img.naturalHeight) || (g ? g.imgH : 0)
+  if (natW && natH) {
+    bgAdjustDialog.natW = natW
+    bgAdjustDialog.natH = natH
+    bgAdjustDialog.open = true
+    return
+  }
+  // P5.90：预渲染后卡片里没有三层原图可读 naturalWidth —— 临时量一次（浏览器 HTTP 缓存命中，不额外下载）
+  const seq = ++bgAdjustMeasureSeq
+  measureImageSize(src).then((size) => {
+    if (seq !== bgAdjustMeasureSeq) return
+    bgAdjustDialog.natW = size ? size.w : 0
+    bgAdjustDialog.natH = size ? size.h : 0
+    bgAdjustDialog.open = true
+  })
 }
 
 function closeBgAdjust() {
   bgAdjustDialog.open = false
 }
 
+/** 保存中的网络标志：站长那次是 PUT / DELETE 请求，防重复提交 */
+const bgSaving = ref(false)
+
 /**
- * 保存 = 乐观更新：先改 reactive 表（卡片这一帧就是新构图）再落 localStorage；没有网络请求，
- * 所以没有回滚路径。等于自动几何的调整不写库（setAdjust 会删掉这一条）。
+ * 弹层里那行「这次保存去哪儿」（P5.89）：
+ * 站长 → 全站生效；普通用户 → 仅本机（用户口径：普通用户存 localStorage 并提示）。
  */
-function saveBgAdjust(payload) {
+const bgServerHint = computed(() =>
+  policy.isOwner.value
+    ? '已登录站长：保存后全站生效（写入服务端，换浏览器也一样）'
+    : policy.hintOwnerOnly + '（当前调整只保存在本浏览器）'
+)
+
+/**
+ * 保存（P5.89 起分两条路）：
+ *   · 已登录站长（role=owner）→ 写服务端（PUT /person/{id}/bg；重置为自动 / 清空 → DELETE），
+ *     全站生效：任何浏览器、任何设备打开都是这份构图，服务端值优先级最高；
+ *   · 普通用户 / 未登录 → 与 P5.88 完全一致，只落 localStorage，并提示「仅本机生效」。
+ * 等于自动几何的调整不写库（服务端 PUT 会被后端归一成清空，本机 setAdjust 会删掉这一条）。
+ */
+async function saveBgAdjust(payload) {
   const person = bgAdjustDialog.person
-  if (!person) return
+  if (!person || bgSaving.value) return
   const adjust = payload ? payload.adjust : null
   const id = person.id != null && person.id !== '' ? String(person.id) : ''
+  const toServer = policy.isOwner.value && policy.canWrite.value && !!id
+  if (toServer) {
+    bgSaving.value = true
+    try {
+      mergeServerPerson(id, adjust ? await setPersonBg(id, adjust) : await clearPersonBg(id))
+      // 站长这份已经全站生效：把本机那条逐人记录清掉，免得以后 DELETE 之后又冒出来盖住服务端
+      setAdjust(bgAdjustMap, id, null)
+      writeAdjustMap(bgAdjustMap, typeof localStorage === 'undefined' ? null : localStorage)
+      bgAdjustDialog.open = false
+      showToast(isAuto(adjust) ? '背景已恢复自动（全站生效）' : '背景调整已保存（全站生效）')
+    } catch (err) {
+      pushToastError(err)
+    } finally {
+      bgSaving.value = false
+    }
+    return
+  }
   if (id) {
     setAdjust(bgAdjustMap, id, adjust)
     writeAdjustMap(bgAdjustMap, typeof localStorage === 'undefined' ? null : localStorage)
@@ -593,7 +687,13 @@ function saveBgAdjust(payload) {
     bgAdjustDefault.value = writeAdjustDefault(adjust, typeof localStorage === 'undefined' ? null : localStorage)
   }
   bgAdjustDialog.open = false
-  showToast(isAuto(adjust) ? '背景已恢复自动' : '背景调整已保存')
+  // 普通用户的提示必须把「只有本机能看见」说明白，否则用户会以为改了全站
+  showToast(isAuto(adjust) ? '背景已恢复自动（仅本机）' : '背景调整已保存：仅本机生效，站长可设为全站生效')
+}
+
+/** 失败提示统一走 errorText（三态错误体），不吞异常也不弹全局框 */
+function pushToastError(err) {
+  showToast('背景保存失败：' + errorText(err))
 }
 
 function clearBgAdjustDefault() {
@@ -720,21 +820,35 @@ function queueTones(list) {
 /** P5.84：卡片尺寸变了要重算背景几何（三层共用同一组 CSS 变量，只算一次） */
 function ensureWallObserver() {
   if (typeof ResizeObserver !== 'function' || !wallRef.value || wallResizeObserver) return
-  wallResizeObserver = new ResizeObserver(() => refreshBgGeom())
+  wallResizeObserver = new ResizeObserver(() => {
+    // 三层兜底要重算几何；预渲染图只要在尺寸稳定后换 URL（防抖 200ms，见 scheduleCardBgMeasure）
+    refreshBgGeom()
+    scheduleCardBgMeasure()
+  })
   wallResizeObserver.observe(wallRef.value)
 }
 
 onMounted(() => {
   ensureWallObserver()
   queueTones(cards.value)
+  refreshThemeColors()
+  // 首屏先量一次（不防抖）：早一帧发请求，早一帧出图
+  nextTick(() => measureCardBg())
   if (typeof MutationObserver === 'function') {
-    themeObserver = new MutationObserver(applyAllTones)
+    themeObserver = new MutationObserver(() => {
+      applyAllTones()
+      refreshThemeColors()
+    })
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] })
   }
 })
 
 onBeforeUnmount(() => {
   toneDisposed = true
+  if (cardBgMeasureTimer) clearTimeout(cardBgMeasureTimer)
+  cardBgMeasureTimer = null
+  if (blurCommitTimer) clearTimeout(blurCommitTimer)
+  blurCommitTimer = null
   if (wallResizeObserver) wallResizeObserver.disconnect()
   wallResizeObserver = null
   if (themeObserver) themeObserver.disconnect()
@@ -757,12 +871,159 @@ onBeforeUnmount(() => {
  *     pointermove，所以不必再叠一层 rAF（叠了反而在后台标签页里被 rAF 节流成「拖了不动」）。
  */
 const bgBlur = ref(readStoredBlur())
-const bgBlurVars = computed(() => blurCssVars(bgBlur.value))
+/** 滑块此刻的值（P5.90）：它与 bgBlur 分开 —— bgBlur 是「已经烘进服务端图里的半径」，进 URL；
+ *  bgBlurInput 只在拖动期间改，用来做 CSS 近似，松手 300ms 才提交成新 URL（否则每拖一格都要重新渲染一张图） */
+const bgBlurInput = ref(bgBlur.value)
+const bgBlurVars = computed(() => blurCssVars(bgBlurInput.value))
+let blurCommitTimer = null
 
-/** 拖动 / 键盘方向键：夹取到 0–20 的整数并落盘（存储不可用时静默，本次会话照常生效） */
+/** 拖动 / 键盘方向键：夹取到 0–20 的整数、本地近似立即生效，300ms 不动才落盘 + 换图 */
 function onBgBlurInput(event) {
-  bgBlur.value = saveStoredBlur(clampBlur(event && event.target ? event.target.value : bgBlur.value, bgBlur.value))
+  bgBlurInput.value = clampBlur(event && event.target ? event.target.value : bgBlurInput.value, bgBlurInput.value)
+  if (blurCommitTimer) clearTimeout(blurCommitTimer)
+  blurCommitTimer = setTimeout(commitBgBlur, 300)
 }
+
+/** 松手（change）/ 300ms 无输入：把预览值提交成「已烘进图」的半径 → URL 变化 → 取新图 */
+function commitBgBlur() {
+  if (blurCommitTimer) {
+    clearTimeout(blurCommitTimer)
+    blurCommitTimer = null
+  }
+  const v = saveStoredBlur(clampBlur(bgBlurInput.value, bgBlur.value))
+  bgBlurInput.value = v
+  bgBlur.value = v
+}
+
+/* --------------------------------- P5.90 卡片背景 = 服务端预渲染的一张图 */
+
+/**
+ * 用户口径：「把我所选的区域裁下来作为一个文件或缓存，然后每次加载就直接加载这个图片就行了」。
+ *
+ * 形态：每张卡**一个** <img>，src 直指 {@code /api/media/person/<id>/card-bg?w=&h=&s=&dx=&dy=&blur=&d=&bg=&v=}；
+ * 不再挂三层图、不再算 transform、不再写 --pw-img-* —— 浏览器拿到就是最终像素。
+ *
+ * 兜底：接口 404/500、或该人物没有可预渲染的头像来源（url 档 / 无手动头像）→ cardBgFailed[key]，
+ * 这一张卡退回 P5.84 的三层方案（同一份 DOM 结构仍在模板里，只是改由 v-else 渲染）；
+ * 头像一换（applyLocalAvatar / mergeServerPerson）就清掉失败标记，重新走服务端图。
+ *
+ * 尺寸：取 .pw-bg 的 clientWidth/Height × DPR（上限 2x），取偶数并夹到 1200×600（与后端同值）——
+ * 尺寸变化时**防抖 200ms** 再换 URL；同尺寸同参数的 URL 命中服务端缓存，几乎零成本。
+ */
+const cardBgPx = reactive({})
+const cardBgFailed = reactive({})
+/** 主题（暗色决定柔光的混合色）与卡片底色 --bg-2：都是 URL 参数，切主题要换图 */
+const themeDark = ref(typeof document !== 'undefined' && document.documentElement.classList.contains('dark'))
+const themeBgHex = ref('ffffff')
+let cardBgMeasureTimer = null
+let bgAdjustMeasureSeq = 0
+
+/** 这张卡走服务端图还是三层兜底 */
+function useCardBgOf(card) {
+  if (!card || card.id === '' || card.id == null) return false
+  return !cardBgFailed[String(card.key)]
+}
+
+/** 服务端图的 URL（还没测出尺寸 → 空串，不挂 src，避免按默认尺寸白请求一次） */
+function cardBgUrlOf(card) {
+  if (!card || !useCardBgOf(card)) return ''
+  const px = cardBgPx[String(card.key)]
+  if (!px) return ''
+  const adj = bgAdjustOf(card) || { scale: 1, dx: 0, dy: 0 }
+  return cardBgUrl(card.id, {
+    w: px.w,
+    h: px.h,
+    scale: adj.scale,
+    dx: adj.dx,
+    dy: adj.dy,
+    blur: bgBlur.value,
+    dark: themeDark.value,
+    bg: themeBgHex.value,
+    v: avatarVersionOf(card)
+  })
+}
+
+/** 头像版本：头像来源一变，URL 就变（否则浏览器会用 immutable 缓存里的旧图） */
+function avatarVersionOf(card) {
+  const av = (card && card.avatar) || {}
+  return avatarVersion(av.ref || av.url || '')
+}
+
+/** 拖动滑块时的本地近似（只加不减；变小只能等新图） */
+function cardBgFilterOf(card) {
+  if (!useCardBgOf(card)) return ''
+  return cardBgFilterCss(bgBlur.value, bgBlurInput.value)
+}
+
+function markCardBgLoaded(card) {
+  if (card && card.key) bgReady[String(card.key)] = true
+}
+
+/** 服务端图失败（端点异常 / 无头像来源 / 被访客可见性拦成 404）→ 这一张卡退回三层 */
+function markCardBgFailed(card) {
+  if (!card || !card.key) return
+  const key = String(card.key)
+  cardBgFailed[key] = true
+  delete bgReady[key]
+  nextTick(refreshBgGeom)
+}
+
+/** 清掉服务端图的失败标记（换头像 / 数据刷新后重试一次） */
+function resetCardBg(card) {
+  if (!card || !card.key) return
+  const key = String(card.key)
+  delete cardBgFailed[key]
+  delete bgReady[key]
+}
+
+/** 读 .pw-bg 的实际像素盒子 → cardBgPx[key]（只在真的变了才写，避免无意义重渲染） */
+function measureCardBg() {
+  cardBgMeasureTimer = null
+  const wall = wallRef.value
+  if (!wall) return
+  const dpr = typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1
+  wall.querySelectorAll('.pw-card').forEach((node) => {
+    const key = String(node.getAttribute('data-card-key') || '')
+    const bg = node.querySelector('.pw-bg')
+    if (!key || !bg) return
+    const size = cardBgSize(bg.clientWidth, bg.clientHeight, dpr)
+    if (!size) return
+    const prev = cardBgPx[key]
+    if (prev && prev.w === size.w && prev.h === size.h) return
+    cardBgPx[key] = size
+  })
+}
+
+/** 尺寸变化防抖 200ms：拖动窗口时不逐帧换 URL（每个新尺寸都是一次服务端渲染） */
+function scheduleCardBgMeasure(delay) {
+  if (cardBgMeasureTimer) clearTimeout(cardBgMeasureTimer)
+  cardBgMeasureTimer = setTimeout(measureCardBg, delay == null ? 200 : delay)
+}
+
+/** 主题切换：暗色 / --bg-2 都进 URL，换主题就要换图（同一张卡最多两份缓存） */
+function refreshThemeColors() {
+  themeDark.value = typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
+  const hex = rgbHex(themeBgRgb())
+  if (hex !== themeBgHex.value) themeBgHex.value = hex
+}
+
+/**
+ * 量一张背景原图的自然尺寸（给「⛶ 调背景」弹层的预览用）
+ *
+ * 预渲染之后卡片里没有三层原图可读 naturalWidth，但弹层预览仍需要它 —— 这里临时 new Image()
+ * 读一次（URL 与头像同源，浏览器命中 HTTP 缓存，不额外下载）。
+ */
+function measureImageSize(url) {
+  return new Promise((resolve) => {
+    if (!url || typeof Image === 'undefined') return resolve(null)
+    const img = new Image()
+    img.decoding = 'async'
+    img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight })
+    img.onerror = () => resolve(null)
+    img.src = url
+  })
+}
+
 
 function openCard(card) {
   const id = card && card.id !== '' && card.id != null ? card.id : card && card.name
@@ -776,9 +1037,12 @@ function detailOfId(id) {
   return details[String(id)] || null
 }
 
-/** 能不能换头像：必须 full 档 + 有真实 id（没有 id 的老数据拼不出接口路径） */
+/**
+ * 能不能换头像：后端此刻允许写（canWrite —— 普通用户 = full 档，站长 = 恒 true，P5.89）+ 有真实 id
+ * （没有 id 的老数据拼不出接口路径）
+ */
 function canChangeAvatar(card) {
-  return policy.isFull.value && !!card && card.id !== '' && card.id != null
+  return policy.canWrite.value && !!card && card.id !== '' && card.id != null
 }
 
 /** 弹层里「当前手动头像」：kind / ref 用来打勾，url 用来预览 */
@@ -818,6 +1082,9 @@ function applyLocalAvatar(id, patch) {
   delete avatarFailed[key]
   // P5.67：换头像 = 换 URL → 清掉「背景失败」，让背景层跟着新图重新挂上
   delete bgFailed[key]
+  // P5.90：头像换了 → 服务端图也要重新取（URL 里的 v 变了），失败标记一并清掉
+  delete cardBgFailed[key]
+  delete bgReady[key]
   return () => {
     if (had) details[key] = before
     else delete details[key]
@@ -833,6 +1100,9 @@ function mergeServerPerson(id, res) {
     delete avatarFailed[String(id)]
     // P5.67：服务端回包可能换了头像 URL，背景层同样跟着新图重挂
     delete bgFailed[String(id)]
+    // P5.90：同上 —— 服务端图按新头像版本重新请求
+    delete cardBgFailed[String(id)]
+    delete bgReady[String(id)]
   }
 }
 
@@ -982,12 +1252,13 @@ onBeforeUnmount(() => {
             min="0"
             max="20"
             step="1"
-            :value="bgBlur"
+            :value="bgBlurInput"
             aria-label="背景模糊度"
             data-role="bg-blur"
             @input="onBgBlurInput"
+            @change="commitBgBlur"
           />
-          <span class="pp-blur-val" data-role="bg-blur-value">{{ bgBlur }}px</span>
+          <span class="pp-blur-val" data-role="bg-blur-value">{{ bgBlurInput }}px</span>
         </div>
       </div>
     </header>
@@ -1013,6 +1284,7 @@ onBeforeUnmount(() => {
         :style="[toneStyleOf(c), bgGeomStyleOf(c)]"
         :data-bg-geom="bgGeomOf(c)"
         :data-bg-adjust="bgAdjustAttrOf(c)"
+        :data-card-bg="useCardBgOf(c) ? (cardBgUrlOf(c) || 'measuring') : 'fallback'"
         :data-bg="bgSrcOf(c) ? '1' : '0'"
         :data-tone="toneOf(c)"
         :href="'#/media/person/' + encodeURIComponent(c.id !== '' && c.id != null ? c.id : c.name)"
@@ -1028,34 +1300,53 @@ onBeforeUnmount(() => {
              层 0 .pw-glow 是垫在图片之下的极淡柔光（拾色色的亮化版），给左端「雾白 / 淡粉」的底。 -->
         <span v-if="bgSrcOf(c)" class="pw-glow" data-role="pw-glow" aria-hidden="true"></span>
         <span v-if="bgSrcOf(c)" class="pw-bg" :class="{ 'is-ready': bgReadyOf(c) }" data-role="pw-bg" aria-hidden="true">
-          <img
-            class="pw-bg-img pw-bg-sharp"
-            data-role="pw-bg-sharp"
-            :src="bgSrcOf(c)"
-            alt=""
-            loading="lazy"
-            decoding="async"
-            @load="computeBgGeom(c, $event.target)"
-            @error="markBgFailed(c)"
-          />
-          <img
-            class="pw-bg-img pw-bg-blur"
-            data-role="pw-bg-blur"
-            :src="bgSrcOf(c)"
-            alt=""
-            loading="lazy"
-            decoding="async"
-            @error="markBgFailed(c)"
-          />
-          <img
-            class="pw-bg-img pw-bg-fog"
-            data-role="pw-bg-fog"
-            :src="bgSrcOf(c)"
-            alt=""
-            loading="lazy"
-            decoding="async"
-            @error="markBgFailed(c)"
-          />
+          <!-- P5.90：服务端预渲染 —— **一个** <img> 就是最终像素（几何 / 模糊 / 渐变都由后端烘好），
+               不再挂三层图、不再算 transform。尺寸量出来之前不挂 src（避免按默认尺寸白请求一次）。 -->
+          <template v-if="useCardBgOf(c)">
+            <img
+              v-if="cardBgUrlOf(c)"
+              class="pw-bg-card"
+              data-role="pw-bg-card"
+              :src="cardBgUrlOf(c)"
+              :style="cardBgFilterOf(c) ? { filter: cardBgFilterOf(c) } : null"
+              alt=""
+              loading="lazy"
+              decoding="async"
+              @load="markCardBgLoaded(c)"
+              @error="markCardBgFailed(c)"
+            />
+          </template>
+          <!-- 兜底（P5.84 三层）：端点异常 / 该人物没有可预渲染的头像来源 / 被访客可见性拦成 404 -->
+          <template v-else>
+            <img
+              class="pw-bg-img pw-bg-sharp"
+              data-role="pw-bg-sharp"
+              :src="bgSrcOf(c)"
+              alt=""
+              loading="lazy"
+              decoding="async"
+              @load="computeBgGeom(c, $event.target)"
+              @error="markBgFailed(c)"
+            />
+            <img
+              class="pw-bg-img pw-bg-blur"
+              data-role="pw-bg-blur"
+              :src="bgSrcOf(c)"
+              alt=""
+              loading="lazy"
+              decoding="async"
+              @error="markBgFailed(c)"
+            />
+            <img
+              class="pw-bg-img pw-bg-fog"
+              data-role="pw-bg-fog"
+              :src="bgSrcOf(c)"
+              alt=""
+              loading="lazy"
+              decoding="async"
+              @error="markBgFailed(c)"
+            />
+          </template>
         </span>
         <!-- 文字直接压在图片上（z-index: 2），默认主题色，没有遮罩 / 垫底 / text-shadow -->
         <span class="pw-avatar-wrap">
@@ -1119,6 +1410,9 @@ onBeforeUnmount(() => {
       :adjust="bgAdjustDialog.adjust"
       :has-default="!!bgAdjustDefault"
       :default-adjust="bgAdjustDefault"
+      :owner="policy.isOwner.value"
+      :saving="bgSaving"
+      :server-hint="bgServerHint"
       @close="closeBgAdjust"
       @save="saveBgAdjust"
       @clear-default="clearBgAdjustDefault"
@@ -1381,6 +1675,26 @@ onBeforeUnmount(() => {
 
 /* P5.86：几何到位才显示（--pw-img-* 与 .is-ready 来自同一份 bgGeom，同一个 tick 落地） */
 .pw-bg.is-ready .pw-bg-img {
+  opacity: 1;
+}
+
+/* P5.90 服务端预渲染：一张图铺满 .pw-bg，像素级就是最终构图。
+   没有 transform / mask / filter —— 定位与缩放已经在服务端烘进字节里，这里只负责「贴上去」。
+   object-fit: fill 是对的：图就是按这个盒子的像素尺寸生成的（w/h 来自 clientWidth × DPR）。 */
+.pw-bg-card {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: fill;
+  opacity: 0;
+  transition: opacity 0.12s linear;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.pw-bg.is-ready .pw-bg-card {
   opacity: 1;
 }
 

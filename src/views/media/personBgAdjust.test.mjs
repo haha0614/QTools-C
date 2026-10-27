@@ -21,6 +21,8 @@ import {
   normalizeAdjust,
   previewGeom,
   readAdjustDefault,
+  resolveEffectiveAdjust,
+  serverAdjustOf,
   readAdjustMap,
   removeAdjust,
   resolveAdjust,
@@ -167,6 +169,25 @@ ok(near(pv.imgH / cardApplied.imgH, k, 0.001), '5.1 预览 imgW/imgH 与卡片�
 ok(near(pv.tx / cardApplied.tx, k, 0.002) || Math.abs(cardApplied.tx) < 1, '5.2 预览 tx 按同一倍率缩放', pv.tx + ' vs ' + cardApplied.tx)
 ok(near((pv.tx + pv.imgW * 0.5) / k, cardApplied.tx + cardApplied.imgW * 0.5, 1.5), '5.3 图片中心落点等比（同一构图）')
 eq(previewGeom({ natW: 0, natH: 0, boxW: 480, boxH: 100, crop: null, adjust: adj }), null, '5.4 自然尺寸未知 → null')
+
+console.log('[6] P5.89 服务端持久化：服务端逐人 > localStorage 逐人 > 全局默认')
+eq(serverAdjustOf({ id: 1 }), null, '6.1 节点上没有 bgKey → null（自动）')
+eq(serverAdjustOf({ bgScale: 1.25, bgDx: -0.2, bgDy: 0.12 }), { scale: 1.25, dx: -0.2, dy: 0.12 }, '6.2 bgScale/bgDx/bgDy → {scale,dx,dy}')
+eq(serverAdjustOf({ bgScale: 1, bgDx: 0, bgDy: 0 }), null, '6.3 服务端值等于自动几何 → null（后端也会清空）')
+eq(serverAdjustOf({ bgScale: '1.5' }), { scale: 1.5, dx: 0, dy: 0 }, '6.4 字符串数字也认（DECIMAL 走 JSON 时可能带引号）')
+eq(serverAdjustOf({ bgDx: 9 }), { scale: 1, dx: OFFSET_LIMIT, dy: 0 }, '6.5 越界偏移夹到 ±' + OFFSET_LIMIT)
+eq(
+  resolveEffectiveAdjust({ scale: 2, dx: 0.1, dy: 0 }, { p1: { scale: 1.5 } }, { scale: 1.2, dx: 0, dy: 0 }, 'p1'),
+  { scale: 2, dx: 0.1, dy: 0 },
+  '6.6 服务端值压过 localStorage 逐人与全局默认'
+)
+eq(
+  resolveEffectiveAdjust(null, { p1: { scale: 1.5 } }, { scale: 1.2, dx: 0, dy: 0 }, 'p1'),
+  { scale: 1.5, dx: 0, dy: 0 },
+  '6.7 服务端没有 → 退回 localStorage 逐人'
+)
+eq(resolveEffectiveAdjust(null, {}, { scale: 1.2, dx: 0, dy: 0 }, 'p9'), { scale: 1.2, dx: 0, dy: 0 }, '6.8 再退回全局默认')
+eq(resolveEffectiveAdjust({ scale: 1, dx: 0, dy: 0 }, {}, null, 'p9'), null, '6.9 都没有 → null（自动几何）')
 
 console.log('')
 if (failures.length) {

@@ -1,0 +1,38 @@
+{
+  "passed": 23,
+  "failures": [],
+  "facts": {
+    "anonAdmin": {
+      "exists": false,
+      "locked": false
+    },
+    "userAdmin": {
+      "exists": false,
+      "locked": false
+    },
+    "ownerAdmin": {
+      "exists": true,
+      "locked": false,
+      "tag": "A",
+      "text": "管理后台",
+      "href": "/admin-ui/",
+      "target": "_blank",
+      "rel": "noopener noreferrer",
+      "visible": true,
+      "rect": [
+        6,
+        1054,
+        163,
+        38
+      ]
+    },
+    "ownerServerAdjust": "1.5,0,0,219.78,219.78,179.82,-22.26",
+    "narrowOwner": {
+      "railW": 176,
+      "scrollW": 175,
+      "linkW": 163,
+      "docW": 360,
+      "winW": 375
+    }
+  }
+}
