@@ -167,7 +167,7 @@ const NAV_GROUPS = [
       { to: '/media/persons', label: '人物', icon: UserFilled, also: ['/media/person'] },
       // 播放列表（P5.46）：不再是独立页面，改为「展开/聚焦筛选」的动作项 ——
       // 在视频库就直接打开播放列表下拉，不在就跳过去再打开（item.action 让它在任何路径都不高亮）
-      { to: '/media', label: '播放列表', icon: List, action: 'playlist-filter' }
+
     ]
   }
 ]
