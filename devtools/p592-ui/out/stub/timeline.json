@@ -1,0 +1,48 @@
+{
+ "delay": 200,
+ "origin": "https://127.0.0.1",
+ "paused": 13,
+ "urls": 13,
+ "timeline": [
+  {
+   "t": 75,
+   "s": {
+    "cards": 0,
+    "preview": 0,
+    "full": 0,
+    "loaded": 0
+   },
+   "paused": 0
+  },
+  {
+   "t": 965,
+   "s": {
+    "cards": 13,
+    "preview": 1,
+    "full": 0,
+    "loaded": 0
+   },
+   "paused": 0
+  },
+  {
+   "t": 1161,
+   "s": {
+    "cards": 13,
+    "preview": 13,
+    "full": 0,
+    "loaded": 13
+   },
+   "paused": 0
+  },
+  {
+   "t": 1634,
+   "s": {
+    "cards": 13,
+    "preview": 0,
+    "full": 13,
+    "loaded": 13
+   },
+   "paused": 13
+  }
+ ]
+}

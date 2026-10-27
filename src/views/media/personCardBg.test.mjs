@@ -16,7 +16,9 @@ import {
   cardBgUrl,
   evenPx,
   extraBlur,
-  rgbHex
+  previewBlur,
+  rgbHex,
+  transientTransform
 } from './personCardBg.js'
 
 let passed = 0
@@ -87,6 +89,33 @@ eq(extraBlur('6', '7.6'), 2, '6.4 字符串 + 四舍五入')
 eq(extraBlur(NaN, 3), 0, '6.5 脏值 → 0')
 eq(cardBgFilterCss(6, 9), 'blur(3px)', '6.6 CSS 值')
 eq(cardBgFilterCss(6, 6), '', '6.7 无 Δ → 空串（不写空 style）')
+
+console.log('[7] P5.93 弹层预览：blur 按出图宽等比换算（服务端的 blur 是输出像素）')
+eq(previewBlur(6, 1040, 656), 10, '7.1 预览 1040 宽 / 卡片 656 宽 → 6 × 1040/656 ≈ 9.5 → 10')
+eq(previewBlur(6, 656, 656), 6, '7.2 同宽 → 原样')
+eq(previewBlur(0, 1040, 656), 0, '7.3 卡片不模糊 → 预览也不模糊')
+eq(previewBlur(12, 520, 328), 19, '7.4 12 × 520/328 ≈ 19.0 → 19')
+eq(previewBlur(20, 1040, 328), 20, '7.5 超后端值域（32）→ 夹到 20')
+eq(previewBlur('6', '1040', '656'), 10, '7.6 字符串入参')
+eq(previewBlur(6, 0, 0), 6, '7.7 宽度量不出来 → 不换算（宁可差一档，也不要 NaN）')
+eq(previewBlur(NaN, 1040, 656), 0, '7.8 脏值 → 0')
+eq(previewBlur(-3, 1040, 656), 0, '7.9 负数 → 0')
+
+console.log('[8] P5.93 等图空窗期的即时近似：纯平移 / 纯缩放 / 两者叠加')
+const ORIGIN = { scale: 1, dx: 0, dy: 0 }
+const t1 = transientTransform(ORIGIN, { scale: 1, dx: 0.05, dy: -0.02 }, 520, 157)
+eq([t1.k, t1.tx, t1.ty], [1, 26, -3.14], '8.1 只拖不改缩放 → 纯平移（0.05×520 / −0.02×157）')
+eq([t1.originX, t1.originY], [395.2, 78.5], '8.2 缩放原点 = 自动几何钉的 76% / 50%')
+const t2 = transientTransform(ORIGIN, { scale: 1.5, dx: 0, dy: 0 }, 520, 157)
+eq([t2.k, t2.tx, t2.ty], [1.5, 0, 0], '8.3 只改缩放 → 纯缩放（原点已是锚点，无平移）')
+const t3 = transientTransform({ scale: 2, dx: 0.1, dy: 0 }, { scale: 1, dx: 0, dy: 0 }, 520, 157)
+eq([t3.k, t3.tx, t3.ty], [0.5, -26, 0], '8.4 从 2× 缩回 1×：(0 − 0.5×0.1) × 520 = −26')
+eq(transientTransform(ORIGIN, ORIGIN, 520, 157), null, '8.5 没有可见差异 → null（不写空 style）')
+eq(transientTransform(ORIGIN, { scale: 1.001, dx: 0.0001, dy: 0 }, 520, 157), null, '8.6 亚像素差异（0.1% / 0.05px）→ null')
+ok(transientTransform(ORIGIN, { scale: 1.007, dx: 0, dy: 0 }, 520, 157) !== null, '8.6b 0.7% 缩放 = 3.6px 位移，够看得见 → 仍然要变换')
+eq(transientTransform(ORIGIN, { scale: 1, dx: 1, dy: 0 }, 0, 157), null, '8.7 盒子没量出来 → null')
+eq(transientTransform(null, ORIGIN, 520, 157), null, '8.8 还没有基准图 → null')
+eq(transientTransform({ scale: 0, dx: 0, dy: 0 }, ORIGIN, 520, 157), null, '8.9 基准 scale 非法 → null')
 
 console.log('')
 if (failures.length) {

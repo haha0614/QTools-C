@@ -34,9 +34,22 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 mkdirSync(OUT, { recursive: true })
 
 let passed = 0
+let skipped = 0
+/** P5.90 起卡片背景 = 服务端预渲染的一张图：DOM 里不再有「三层 rect / 几何变量」可量。
+ *  这几类旧断言按名字跳过（并在结尾列出），行为类断言（弹层 / 保存 / localStorage / 截图）原样保留。 */
+let layerMode = true
+const SUPERSEDED = [/三层/, /rect/, /几何/, /imgW/, /transform/, /--pw-img/, /裁剪中心/, /computed width/, /76%/, /50%/, /tx = 自动/, /ty = 自动/, /预览 100%/,
+  // P5.93：弹层预览从「三层 CSS 复现」改成「服务端同一张图」，预览图不再靠 transform 位移 —— 这条按名字跳过。
+  // 「预览 = 应用后」的一致性改由 devtools/p593-ui/run.mjs 做像素对比（MAE）来证明。
+  /预览图位移/]
 const failures = []
 const facts = {}
 function ok(cond, name, extra) {
+  if (!layerMode && SUPERSEDED.some((re) => re.test(name))) {
+    skipped++
+    console.log('  SKIP (P5.90 单图：几何在服务端) ' + name)
+    return true
+  }
   if (cond) {
     passed++
     console.log('  PASS ' + name + (extra ? '  -- ' + extra : ''))
@@ -256,10 +269,20 @@ function cardProbeExpr(key) {
     'for(i=0;i<all.length;i++){if(all[i].getAttribute("data-card-key")===k){c=all[i];break}}' +
     'if(!c) return "";' +
     'var bg=c.querySelector(".pw-bg"),im=c.querySelectorAll(".pw-bg-img");' +
-    'if(!bg||im.length!==3) return "";' +
+    'if(!bg) return "";' +
     'function box(el){var r=el.getBoundingClientRect();return [r.x,r.y,r.width,r.height].map(function(n){return Math.round(n*100)/100})}' +
     'function cs(el){var s=getComputedStyle(el);return {w:s.width,h:s.height,tx:s.getPropertyValue("--pw-img-tx").trim(),ty:s.getPropertyValue("--pw-img-ty").trim(),transform:s.transform,filter:s.filter,transition:s.transitionProperty+" "+s.transitionDuration,opacity:s.opacity}}' +
-    'return JSON.stringify({key:k,geom:c.getAttribute("data-bg-geom")||"",adjust:c.getAttribute("data-bg-adjust")||"",' +
+    // P5.90：卡片背景改成「服务端预渲染的一张图」后，DOM 里只有一个 .pw-bg-card。
+    // 这里把它当作 mode=card 返回（sharp/blur/fog 三个 rect 都指向同一个 img）：
+    // 与几何相关的旧断言在 ok() 里按名字跳过（见 SUPERSEDED），行为类断言（弹层 / 保存 / localStorage）原样保留。
+    'var one=c.querySelector(".pw-bg-card");' +
+    'if(im.length!==3&&one){' +
+    'return JSON.stringify({key:k,mode:"card",geom:c.getAttribute("data-bg-geom")||"",adjust:c.getAttribute("data-bg-adjust")||"",' +
+    'card:box(c),bg:box(bg),bgClient:[bg.clientWidth,bg.clientHeight],' +
+    'sharp:box(one),blur:box(one),fog:box(one),src:one.getAttribute("src"),' +
+    'sharpStyle:cs(one),blurStyle:cs(one),fogStyle:cs(one),bgStyle:cs(bg)})}' +
+    'if(im.length!==3) return "";' +
+    'return JSON.stringify({key:k,mode:"layers",geom:c.getAttribute("data-bg-geom")||"",adjust:c.getAttribute("data-bg-adjust")||"",' +
     'card:box(c),bg:box(bg),bgClient:[bg.clientWidth,bg.clientHeight],' +
     'sharp:box(im[0]),blur:box(im[1]),fog:box(im[2]),' +
     'sharpStyle:cs(im[0]),blurStyle:cs(im[1]),fogStyle:cs(im[2]),bgStyle:cs(bg)})' +
@@ -273,7 +296,9 @@ const DIALOG_PROBE =
   '(function(){' +
   'var d=document.querySelector("[data-role=\'bg-adjust-dialog\']");' +
   'if(!d) return "";' +
-  'var pv=d.querySelector("[data-role=\'bg-adjust-preview\']"),im=d.querySelectorAll(".pba-img");' +
+  'var pv=d.querySelector("[data-role=\'bg-adjust-preview\']"),im=d.querySelectorAll(".pba-img"),one=d.querySelector("[data-role=\'bg-adjust-card\']");' +
+  'if(!pv) return "";' +
+  'if(one&&!im.length){var ob=box(one);return JSON.stringify({panel:box(d.querySelector(".pba-panel")),preview:box(pv),imgs:[ob,ob,ob],serverImg:true,imgW:Math.round(ob[2]*100)/100,sharpVar:"",scale:(function(){var s=d.querySelector("[data-role=\'bg-adjust-scale\']");return s?s.value:""})(),scaleValue:txt("[data-role=\'bg-adjust-scale-value\']"),dx:txt("[data-role=\'bg-adjust-dx\']"),dy:txt("[data-role=\'bg-adjust-dy\']"),values:txt("[data-role=\'bg-adjust-values\']"),defaultChecked:(function(){var e=d.querySelector("[data-role=\'bg-adjust-default\']");return !!(e&&e.checked)})()})}' +
   'function box(el){var r=el.getBoundingClientRect();return [r.x,r.y,r.width,r.height].map(function(n){return Math.round(n*100)/100})}' +
   'function txt(sel){var e=d.querySelector(sel);return e?e.textContent.replace(/\\s+/g," ").trim():""}' +
   'var sc=d.querySelector("[data-role=\'bg-adjust-scale\']");' +
@@ -296,8 +321,9 @@ const WALL_PROBE =
   'cols:wall?getComputedStyle(wall).gridTemplateColumns.split(" ").filter(Boolean).length:0})' +
   '})()'
 
+// P5.90：ready 的判据改成「三层的旧形态」或「服务端单图已解码」二者之一
 const READY =
-  "document.querySelectorAll('.pw-card').length>=11&&document.querySelectorAll('.pw-card.has-bg').length>=11&&Array.prototype.every.call(document.querySelectorAll('.pw-card.has-bg'),function(c){var im=c.querySelectorAll('.pw-bg-img');return im.length===3&&im[0].complete&&im[0].naturalWidth>0&&(c.getAttribute('data-bg-geom')||'').length>0})"
+  "document.querySelectorAll('.pw-card').length>=11&&document.querySelectorAll('.pw-card.has-bg').length>=11&&Array.prototype.every.call(document.querySelectorAll('.pw-card.has-bg'),function(c){var im=c.querySelectorAll('.pw-bg-img');if(im.length===3)return im[0].complete&&im[0].naturalWidth>0&&(c.getAttribute('data-bg-geom')||'').length>0;var one=c.querySelector('.pw-bg-card');return !!(one&&one.complete&&one.naturalWidth>0)})"
 const DIALOG_READY = "!!document.querySelector('[data-role=\"bg-adjust-dialog\"]')"
 
 /* ------------------------------------------------------------------ 操作 */
@@ -419,13 +445,20 @@ ok(base, '0.1 人物墙渲染完成（>=11 张有背景的卡）')
 await evaluate("localStorage.removeItem('ms.person.bgAdjust.v1');localStorage.removeItem('ms.person.bgAdjust.default');1")
 base = await reloadWall(1600, 1200, 'light')
 const wall0 = await wallProbe()
-const keys = JSON.parse(
-  await evaluate("JSON.stringify([].slice.call(document.querySelectorAll('.pw-card[data-bg=\"1\"]')).map(function(c){return c.getAttribute('data-card-key')}))")
+// P5.93 实测调整：优先挑「没有任何生效调整」的卡 —— 站长在服务端存过 bgScale/bgDx/bgDy 的人物
+// 优先级最高（P5.89 四层），本机 localStorage 的保存会被压住，0.2 会假失败。
+const keyInfo = JSON.parse(
+  await evaluate("JSON.stringify([].slice.call(document.querySelectorAll('.pw-card[data-bg=\"1\"]')).map(function(c){return {k:c.getAttribute('data-card-key'),a:c.getAttribute('data-bg-adjust')||''}}))")
 )
+const cleanKeys = keyInfo.filter((x) => !x.a).map((x) => x.k)
+const keys = cleanKeys.length >= 3 ? cleanKeys : keyInfo.map((x) => x.k)
 const KEY = keys[0]
 const KEY2 = keys[1]
 const KEY3 = keys[keys.length - 1]
 const auto = await cardProbe(KEY)
+layerMode = auto.mode !== 'card'
+console.log('  背景形态 = ' + auto.mode + (layerMode ? '（P5.84 三层）' : '（P5.90 服务端单图）'))
+facts.mode = auto.mode
 const geomParts = auto.geom.split(',').map(Number)
 const aImgW = geomParts[0]
 const aImgH = geomParts[1]
@@ -661,13 +694,21 @@ const blurFilter = async (n) => {
       'for(i=0;i<all.length;i++){if(all[i].getAttribute("data-card-key")===' +
       JSON.stringify(KEY) +
       '){c=all[i];break}}' +
-      'return getComputedStyle(c.querySelector(".pw-bg-blur")).filter})()'
-  )
+      'var three=c.querySelector(".pw-bg-blur");' +
+      'if(three) return JSON.stringify({mode:"layers",value:getComputedStyle(three).filter});' +
+      'var one=c.querySelector(".pw-bg-card");' +
+      'return JSON.stringify({mode:"card",value:one?one.getAttribute("src"):""})})()'
+  ).then((s) => JSON.parse(s))
 }
 const f0 = await blurFilter(0)
 const f20 = await blurFilter(20)
-console.log('  模糊滑块 0 → ' + f0 + ' ； 20 → ' + f20)
-ok(f0.indexOf('blur(0px)') === 0 && f20.indexOf('blur(20px)') === 0, 'G4 模糊滑块在调整过的卡片上仍生效')
+console.log('  模糊滑块 0 → ' + JSON.stringify(f0).slice(0, 120) + ' ； 20 → ' + JSON.stringify(f20).slice(0, 120))
+if (f0.mode === 'layers') {
+  ok(f0.value.indexOf('blur(0px)') === 0 && f20.value.indexOf('blur(20px)') === 0, 'G4 模糊滑块在调整过的卡片上仍生效')
+} else {
+  // P5.90：模糊半径烘进图里 → 松手后 URL 的 blur 参数变化（0 → 20）
+  ok(/[?&]blur=0([&]|$)/.test(f0.value) && /[?&]blur=20([&]|$)/.test(f20.value), 'G4 模糊滑块 → 松手后 URL 的 blur=0 / 20（服务端重新渲染）')
+}
 await blurFilter(6)
 await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] })
 await sleep(300)
@@ -677,7 +718,7 @@ const rmObj = JSON.parse(
       'for(i=0;i<all.length;i++){if(all[i].getAttribute("data-card-key")===' +
       JSON.stringify(KEY) +
       '){c=all[i];break}}' +
-      'var b=c.querySelector(".pw-adjust"),im=c.querySelector(".pw-bg-img");' +
+      'var b=c.querySelector(".pw-adjust"),im=c.querySelector(".pw-bg-card")||c.querySelector(".pw-bg-img");' +
       'return JSON.stringify({img:im?getComputedStyle(im).transitionDuration:"",btn:b?getComputedStyle(b).transitionDuration:"",bg:getComputedStyle(c.querySelector(".pw-bg")).transform})})()'
   )
 )
@@ -748,10 +789,14 @@ const bodyPoint = await evaluate(
     '){c=all[i];break}}' +
     'if(!c) return null;var b=c.querySelector(".pw-body").getBoundingClientRect();return [b.x+b.width-8,b.y+b.height/2]})()'
 )
+if (!bodyPoint) {
+  ok(false, 'J1 点卡片正文跳到人物详情', '拿不到 .pw-body 的位置（卡还没渲染完）')
+} else {
 await clickAt(bodyPoint[0], bodyPoint[1])
 const navOk = await waitFor("location.pathname.indexOf('/media/person/')>=0||location.hash.indexOf('/media/person/')>=0", 6000)
 ok(!!navOk, 'J1 点卡片正文跳到人物详情', await evaluate('location.pathname + location.hash'))
 facts.nav = await evaluate('location.pathname + location.hash')
+}
 
 await goto('/media/persons')
 await waitFor(READY, 20000)

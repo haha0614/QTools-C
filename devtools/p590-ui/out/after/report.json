@@ -1,0 +1,859 @@
+{
+  "passed": 30,
+  "failures": [],
+  "facts": {
+    "wide": {
+      "theme": "light",
+      "dpr": 1,
+      "cards": [
+        {
+          "key": "125",
+          "id": "125",
+          "bgBox": [
+            193,
+            64,
+            333.3,
+            101.7
+          ],
+          "cardBg": {
+            "src": "/api/media/person/125/card-bg?w=332&h=102&s=1&dx=0&dy=-0.02&blur=6&d=0&bg=ffffff&v=1vche51",
+            "natural": [
+              332,
+              102
+            ],
+            "rect": [
+              193,
+              64,
+              333.3,
+              101.7
+            ],
+            "filter": "none",
+            "opacity": "1"
+          },
+          "layerCount": 0,
+          "geom": "",
+          "adjust": "1,0,-0.02",
+          "inlineVarW": false
+        },
+        {
+          "key": "122",
+          "id": "122",
+          "bgBox": [
+            540.3,
+            64,
+            333.3,
+            101.7
+          ],
+          "cardBg": {
+            "src": "/api/media/person/122/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=192ndov",
+            "natural": [
+              332,
+              102
+            ],
+            "rect": [
+              540.3,
+              64,
+              333.3,
+              101.7
+            ],
+            "filter": "none",
+            "opacity": "1"
+          },
+          "layerCount": 0,
+          "geom": "",
+          "adjust": "",
+          "inlineVarW": false
+        },
+        {
+          "key": "124",
+          "id": "124",
+          "bgBox": [
+            887.5,
+            64,
+            333.3,
+            101.7
+          ],
+          "cardBg": {
+            "src": "/api/media/person/124/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=8fo3m1",
+            "natural": [
+              332,
+              102
+            ],
+            "rect": [
+              887.5,
+              64,
+              333.3,
+              101.7
+            ],
+            "filter": "none",
+            "opacity": "1"
+          },
+          "layerCount": 0,
+          "geom": "",
+          "adjust": "",
+          "inlineVarW": false
+        },
+        {
+          "key": "123",
+          "id": "123",
+          "bgBox": [
+            1234.8,
+            64,
+            333.3,
+            101.7
+          ],
+          "cardBg": {
+            "src": "/api/media/person/123/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=19ow5e1",
+            "natural": [
+              332,
+              102
+            ],
+            "rect": [
+              1234.8,
+              64,
+              333.3,
+              101.7
+            ],
+            "filter": "none",
+            "opacity": "1"
+          },
+          "layerCount": 0,
+          "geom": "",
+          "adjust": "",
+          "inlineVarW": false
+        },
+        {
+          "key": "119",
+          "id": "119",
+          "bgBox": [
+            193,
+            179.7,
+            333.3,
+            101.7
+          ],
+          "cardBg": {
+            "src": "/api/media/person/119/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1r5evxi",
+            "natural": [
+              332,
+              102
+            ],
+            "rect": [
+              193,
+              179.7,
+              333.3,
+              101.7
+            ],
+            "filter": "none",
+            "opacity": "1"
+          },
+          "layerCount": 0,
+          "geom": "",
+          "adjust": "",
+          "inlineVarW": false
+        },
+        {
+          "key": "115",
+          "id": "115",
+          "bgBox": [
+            540.3,
+            179.7,
+            333.3,
+            101.7
+          ],
+          "cardBg": {
+            "src": "/api/media/person/115/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=rl823f",
+            "natural": [
+              332,
+              102
+            ],
+            "rect": [
+              540.3,
+              179.7,
+              333.3,
+              101.7
+            ],
+            "filter": "none",
+            "opacity": "1"
+          },
+          "layerCount": 0,
+          "geom": "",
+          "adjust": "",
+          "inlineVarW": false
+        },
+        {
+          "key": "111",
+          "id": "111",
+          "bgBox": [
+            887.5,
+            179.7,
+            333.3,
+            101.7
+          ],
+          "cardBg": {
+            "src": "/api/media/person/111/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1gb354d",
+            "natural": [
+              332,
+              102
+            ],
+            "rect": [
+              887.5,
+              179.7,
+              333.3,
+              101.7
+            ],
+            "filter": "none",
+            "opacity": "1"
+          },
+          "layerCount": 0,
+          "geom": "",
+          "adjust": "",
+          "inlineVarW": false
+        },
+        {
+          "key": "117",
+          "id": "117",
+          "bgBox": [
+            1234.8,
+            179.7,
+            333.3,
+            101.7
+          ],
+          "cardBg": {
+            "src": "/api/media/person/117/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1n6mulp",
+            "natural": [
+              332,
+              102
+            ],
+            "rect": [
+              1234.8,
+              179.7,
+              333.3,
+              101.7
+            ],
+            "filter": "none",
+            "opacity": "1"
+          },
+          "layerCount": 0,
+          "geom": "",
+          "adjust": "",
+          "inlineVarW": false
+        },
+        {
+          "key": "114",
+          "id": "114",
+          "bgBox": [
+            193,
+            295.4,
+            333.3,
+            101.7
+          ],
+          "cardBg": {
+            "src": "/api/media/person/114/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1hz3sz",
+            "natural": [
+              332,
+              102
+            ],
+            "rect": [
+              193,
+              295.4,
+              333.3,
+              101.7
+            ],
+            "filter": "none",
+            "opacity": "1"
+          },
+          "layerCount": 0,
+          "geom": "",
+          "adjust": "",
+          "inlineVarW": false
+        },
+        {
+          "key": "116",
+          "id": "116",
+          "bgBox": [
+            540.3,
+            295.4,
+            333.3,
+            101.7
+          ],
+          "cardBg": {
+            "src": "/api/media/person/116/card-bg?w=332&h=102&s=1.39&dx=-0.03&dy=-0.12&blur=6&d=0&bg=ffffff&v=hypve4",
+            "natural": [
+              332,
+              102
+            ],
+            "rect": [
+              540.3,
+              295.4,
+              333.3,
+              101.7
+            ],
+            "filter": "none",
+            "opacity": "1"
+          },
+          "layerCount": 0,
+          "geom": "",
+          "adjust": "1.39,-0.03,-0.12",
+          "inlineVarW": false
+        },
+        {
+          "key": "118",
+          "id": "118",
+          "bgBox": [
+            887.5,
+            295.4,
+            333.3,
+            101.7
+          ],
+          "cardBg": {
+            "src": "/api/media/person/118/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=dowcfi",
+            "natural": [
+              332,
+              102
+            ],
+            "rect": [
+              887.5,
+              295.4,
+              333.3,
+              101.7
+            ],
+            "filter": "none",
+            "opacity": "1"
+          },
+          "layerCount": 0,
+          "geom": "",
+          "adjust": "",
+          "inlineVarW": false
+        },
+        {
+          "key": "120",
+          "id": "120",
+          "bgBox": [
+            1234.8,
+            295.4,
+            333.3,
+            101.7
+          ],
+          "cardBg": {
+            "src": "/api/media/person/120/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1rieejw",
+            "natural": [
+              332,
+              102
+            ],
+            "rect": [
+              1234.8,
+              295.4,
+              333.3,
+              101.7
+            ],
+            "filter": "none",
+            "opacity": "1"
+          },
+          "layerCount": 0,
+          "geom": "",
+          "adjust": "",
+          "inlineVarW": false
+        },
+        {
+          "key": "112",
+          "id": "112",
+          "bgBox": [
+            193,
+            411.1,
+            333.3,
+            101.7
+          ],
+          "cardBg": {
+            "src": "/api/media/person/112/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1py5u4u",
+            "natural": [
+              332,
+              102
+            ],
+            "rect": [
+              193,
+              411.1,
+              333.3,
+              101.7
+            ],
+            "filter": "none",
+            "opacity": "1"
+          },
+          "layerCount": 0,
+          "geom": "",
+          "adjust": "",
+          "inlineVarW": false
+        }
+      ],
+      "perf": [
+        {
+          "url": "/api/media/person/125/card-bg?w=240&h=58&s=1&dx=0&dy=-0.02&blur=6&d=0&bg=ffffff&v=1vche51",
+          "size": 2467,
+          "duration": 31
+        },
+        {
+          "url": "/api/media/person/115/card-bg?w=240&h=58&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=rl823f",
+          "size": 2720,
+          "duration": 58.6
+        },
+        {
+          "url": "/api/media/person/119/card-bg?w=240&h=58&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1r5evxi",
+          "size": 2227,
+          "duration": 59
+        },
+        {
+          "url": "/api/media/person/111/card-bg?w=240&h=58&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1gb354d",
+          "size": 2665,
+          "duration": 59.3
+        },
+        {
+          "url": "/api/media/person/117/card-bg?w=240&h=58&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1n6mulp",
+          "size": 3522,
+          "duration": 58
+        },
+        {
+          "url": "/api/media/person/116/card-bg?w=240&h=58&s=1.39&dx=-0.03&dy=-0.12&blur=6&d=0&bg=ffffff&v=hypve4",
+          "size": 3064,
+          "duration": 68.8
+        },
+        {
+          "url": "/api/media/person/114/card-bg?w=240&h=58&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1hz3sz",
+          "size": 2074,
+          "duration": 77.4
+        },
+        {
+          "url": "/api/media/person/120/card-bg?w=240&h=58&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1rieejw",
+          "size": 2597,
+          "duration": 59.4
+        },
+        {
+          "url": "/api/media/person/118/card-bg?w=240&h=58&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=dowcfi",
+          "size": 3086,
+          "duration": 79
+        },
+        {
+          "url": "/api/media/person/112/card-bg?w=240&h=58&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1py5u4u",
+          "size": 2512,
+          "duration": 89.9
+        },
+        {
+          "url": "/api/media/person/124/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=8fo3m1",
+          "size": 0,
+          "duration": 0
+        },
+        {
+          "url": "/api/media/person/123/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=19ow5e1",
+          "size": 0,
+          "duration": 0
+        },
+        {
+          "url": "/api/media/person/122/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=192ndov",
+          "size": 0,
+          "duration": 2.1
+        },
+        {
+          "url": "/api/media/person/122/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=192ndov",
+          "size": 3644,
+          "duration": 34.1
+        },
+        {
+          "url": "/api/media/person/125/card-bg?w=332&h=102&s=1&dx=0&dy=-0.02&blur=6&d=0&bg=ffffff&v=1vche51",
+          "size": 3987,
+          "duration": 39.1
+        },
+        {
+          "url": "/api/media/person/119/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1r5evxi",
+          "size": 3401,
+          "duration": 25.2
+        },
+        {
+          "url": "/api/media/person/115/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=rl823f",
+          "size": 4739,
+          "duration": 29.1
+        },
+        {
+          "url": "/api/media/person/124/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=8fo3m1",
+          "size": 4163,
+          "duration": 36.8
+        },
+        {
+          "url": "/api/media/person/123/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=19ow5e1",
+          "size": 5227,
+          "duration": 37.1
+        },
+        {
+          "url": "/api/media/person/117/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1n6mulp",
+          "size": 5759,
+          "duration": 50.3
+        },
+        {
+          "url": "/api/media/person/111/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1gb354d",
+          "size": 4334,
+          "duration": 52
+        },
+        {
+          "url": "/api/media/person/114/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1hz3sz",
+          "size": 3267,
+          "duration": 56.3
+        },
+        {
+          "url": "/api/media/person/116/card-bg?w=332&h=102&s=1.39&dx=-0.03&dy=-0.12&blur=6&d=0&bg=ffffff&v=hypve4",
+          "size": 4770,
+          "duration": 60.5
+        },
+        {
+          "url": "/api/media/person/118/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=dowcfi",
+          "size": 5003,
+          "duration": 60.7
+        },
+        {
+          "url": "/api/media/person/120/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1rieejw",
+          "size": 4160,
+          "duration": 59.2
+        },
+        {
+          "url": "/api/media/person/112/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1py5u4u",
+          "size": 4127,
+          "duration": 81.6
+        }
+      ],
+      "nav": {
+        "dcl": 79.9,
+        "load": 81.4
+      }
+    },
+    "blurSwitchMs": 1731,
+    "warm": [
+      {
+        "url": "/api/media/person/122/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=192ndov",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/119/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1r5evxi",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/115/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=rl823f",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/111/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1gb354d",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/117/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1n6mulp",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/114/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1hz3sz",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/118/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=dowcfi",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/120/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1rieejw",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/112/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1py5u4u",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/125/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1vche51",
+        "size": 2819,
+        "duration": 114.5
+      },
+      {
+        "url": "/api/media/person/116/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=hypve4",
+        "size": 3217,
+        "duration": 95.5
+      },
+      {
+        "url": "/api/media/person/124/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=8fo3m1",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/123/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=19ow5e1",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/124/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=8fo3m1",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/123/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=19ow5e1",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/119/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1r5evxi",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/115/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=rl823f",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/111/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1gb354d",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/117/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1n6mulp",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/114/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1hz3sz",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/118/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=dowcfi",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/120/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1rieejw",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/112/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1py5u4u",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/125/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1vche51",
+        "size": 3959,
+        "duration": 50
+      },
+      {
+        "url": "/api/media/person/122/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=192ndov",
+        "size": 0,
+        "duration": 3.3
+      },
+      {
+        "url": "/api/media/person/116/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=hypve4",
+        "size": 4459,
+        "duration": 49.5
+      }
+    ],
+    "cold": [
+      {
+        "url": "/api/media/person/122/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=192ndov",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/119/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1r5evxi",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/115/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=rl823f",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/111/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1gb354d",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/117/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1n6mulp",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/114/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1hz3sz",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/118/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=dowcfi",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/120/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1rieejw",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/112/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1py5u4u",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/125/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1vche51",
+        "size": 2819,
+        "duration": 114.5
+      },
+      {
+        "url": "/api/media/person/116/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=hypve4",
+        "size": 3217,
+        "duration": 95.5
+      },
+      {
+        "url": "/api/media/person/124/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=8fo3m1",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/123/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=19ow5e1",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/124/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=8fo3m1",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/123/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=19ow5e1",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/119/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1r5evxi",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/115/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=rl823f",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/111/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1gb354d",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/117/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1n6mulp",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/114/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1hz3sz",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/118/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=dowcfi",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/120/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1rieejw",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/112/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1py5u4u",
+        "size": 0,
+        "duration": 0
+      },
+      {
+        "url": "/api/media/person/125/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1vche51",
+        "size": 3959,
+        "duration": 50
+      },
+      {
+        "url": "/api/media/person/122/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=192ndov",
+        "size": 0,
+        "duration": 3.3
+      },
+      {
+        "url": "/api/media/person/116/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=hypve4",
+        "size": 4459,
+        "duration": 49.5
+      },
+      {
+        "url": "/api/media/person/122/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=192ndov",
+        "size": 3613,
+        "duration": 26.4
+      },
+      {
+        "url": "/api/media/person/125/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1vche51",
+        "size": 3948,
+        "duration": 66
+      },
+      {
+        "url": "/api/media/person/124/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=8fo3m1",
+        "size": 4112,
+        "duration": 27.9
+      },
+      {
+        "url": "/api/media/person/123/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=19ow5e1",
+        "size": 5142,
+        "duration": 32.2
+      },
+      {
+        "url": "/api/media/person/119/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1r5evxi",
+        "size": 3374,
+        "duration": 25.6
+      },
+      {
+        "url": "/api/media/person/115/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=rl823f",
+        "size": 4632,
+        "duration": 27.3
+      },
+      {
+        "url": "/api/media/person/111/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1gb354d",
+        "size": 4381,
+        "duration": 56.1
+      },
+      {
+        "url": "/api/media/person/117/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1n6mulp",
+        "size": 5724,
+        "duration": 57.4
+      },
+      {
+        "url": "/api/media/person/114/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1hz3sz",
+        "size": 3252,
+        "duration": 53.8
+      },
+      {
+        "url": "/api/media/person/118/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=dowcfi",
+        "size": 4947,
+        "duration": 53.8
+      },
+      {
+        "url": "/api/media/person/116/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=hypve4",
+        "size": 4422,
+        "duration": 84.3
+      },
+      {
+        "url": "/api/media/person/120/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1rieejw",
+        "size": 4146,
+        "duration": 71.6
+      },
+      {
+        "url": "/api/media/person/112/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1py5u4u",
+        "size": 4117,
+        "duration": 82.9
+      }
+    ],
+    "warmAvgMs": 12,
+    "coldAvgMs": 51.2,
+    "paused": 13,
+    "fellBack": 13
+  }
+}

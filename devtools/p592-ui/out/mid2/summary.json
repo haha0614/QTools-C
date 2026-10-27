@@ -1,0 +1,1061 @@
+{
+ "med": {
+  "fcp": 196,
+  "tCards13": 189,
+  "tFirstBgUrl": 211.1,
+  "bgFirstStart": 210.9,
+  "assetDone": 308.3,
+  "tFirstImg": 296.7,
+  "apiIndexDone": 215.8,
+  "bgLastDone": 643.5,
+  "allReady": 424.7
+ },
+ "agg": {
+  "bgCount": 26,
+  "bgBytes": 95455,
+  "bgConns": 1,
+  "bgMaxParallel": 13,
+  "bgProto": "h2",
+  "bgHit": 26,
+  "bgMiss": 0,
+  "bgServerMsMax": 178,
+  "apiCount": 42,
+  "apiBytes": 560167,
+  "apiIndexBytes": 191427,
+  "assetCount": 53,
+  "assetBytes": 1971750,
+  "totalReqs": 124,
+  "totalBytes": 2632999,
+  "decodeSum": 66.9
+ },
+ "rows": [
+  {
+   "fcp": 888,
+   "tCards13": 879.1,
+   "tFirstBgUrl": 917.4,
+   "tLastBgUrl": 1046.2,
+   "tFirstImg": 1001.8,
+   "tLastImg": 1134.1,
+   "allReady": 1129.3,
+   "bgCount": 26,
+   "bgBytes": 92232,
+   "bgProto": "h2",
+   "bgConns": 1,
+   "bgMaxParallel": 13,
+   "bgFirstStart": 917,
+   "bgLastDone": 1399.4,
+   "bgHit": 26,
+   "bgMiss": 0,
+   "bgServerMs": [
+    108,
+    77,
+    42,
+    72,
+    178,
+    137,
+    177,
+    123,
+    65,
+    101,
+    128,
+    76,
+    53,
+    108,
+    71,
+    38,
+    127,
+    89,
+    115,
+    129,
+    136,
+    138,
+    110,
+    53,
+    123,
+    118
+   ],
+   "apiCount": 44,
+   "apiBytes": 631983,
+   "apiIndexBytes": 191427,
+   "apiIndexDone": 1138.7,
+   "apiApi": [
+    {
+     "url": "/api/media/track",
+     "start": 813.1,
+     "done": 838.1,
+     "encoded": 321,
+     "status": 200
+    },
+    {
+     "url": "/api/media/edit-policy",
+     "start": 814,
+     "done": 841.9,
+     "encoded": 293,
+     "status": 200
+    },
+    {
+     "url": "/api/media/index",
+     "start": 814.4,
+     "done": 1138.7,
+     "encoded": 191427,
+     "status": 200
+    },
+    {
+     "url": "/api/media/persons",
+     "start": 814.8,
+     "done": 842.9,
+     "encoded": 1134,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/125",
+     "start": 868.8,
+     "done": 880.2,
+     "encoded": 1077,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/122",
+     "start": 869.4,
+     "done": 892.7,
+     "encoded": 537,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/124",
+     "start": 869.7,
+     "done": 878.9,
+     "encoded": 917,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/123",
+     "start": 869.9,
+     "done": 892.4,
+     "encoded": 890,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/111",
+     "start": 870.2,
+     "done": 897.3,
+     "encoded": 478,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/112",
+     "start": 870.5,
+     "done": 890.4,
+     "encoded": 481,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/114",
+     "start": 898.5,
+     "done": 908,
+     "encoded": 476,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/115",
+     "start": 900.2,
+     "done": 912.8,
+     "encoded": 486,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/116",
+     "start": 901.8,
+     "done": 918.5,
+     "encoded": 472,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/117",
+     "start": 903.6,
+     "done": 920.6,
+     "encoded": 481,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/118",
+     "start": 905.5,
+     "done": 915,
+     "encoded": 486,
+     "status": 200
+    },
+    {
+     "url": "/api/media/frame/046839cff1cd?t=1472&w=480&crop=0.3333,0.0000,0.2979,0.5296",
+     "start": 918.7,
+     "done": 976.5,
+     "encoded": 5028,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a159/0000?crop=0.2111,0.1875,0.6000,0.3375",
+     "start": 918.8,
+     "done": 1032.5,
+     "encoded": 13306,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a163/0000?crop=0.1875,0.0219,0.6000,0.4500",
+     "start": 918.8,
+     "done": 953.7,
+     "encoded": 16106,
+     "status": 200
+    },
+    {
+     "url": "/api/media/frame/d1d123208f95?t=59&w=480&crop=0.3208,0.0000,0.3375,0.6000",
+     "start": 918.8,
+     "done": 1038.8,
+     "encoded": 8829,
+     "status": 200
+    },
+    {
+     "url": "/api/media/frame/485470e2cc08?t=93&w=480&crop=0.2708,0.0000,0.3375,0.6000",
+     "start": 918.8,
+     "done": 1013.6,
+     "encoded": 5766,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/119",
+     "start": 921.1,
+     "done": 997.8,
+     "encoded": 472,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/120",
+     "start": 922.9,
+     "done": 1025.9,
+     "encoded": 470,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a165/0015?crop=0.2301,0.0812,0.4178,0.2781",
+     "start": 930.4,
+     "done": 973.6,
+     "encoded": 9377,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a004/0000?crop=0.1397,0.0562,0.4000,0.6000",
+     "start": 930.5,
+     "done": 981.2,
+     "encoded": 6327,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a005/0000?crop=0.1221,0.0656,0.7277,0.4844",
+     "start": 930.5,
+     "done": 1018.3,
+     "encoded": 28041,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a152/0001?crop=0.4613,0.0500,0.2014,0.2687",
+     "start": 930.5,
+     "done": 979.6,
+     "encoded": 3432,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a006/0002",
+     "start": 938.9,
+     "done": 1042,
+     "encoded": 12603,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a151/0000?crop=0.7346,0.0000,0.1916,0.3406",
+     "start": 939,
+     "done": 1053.2,
+     "encoded": 3236,
+     "status": 200
+    },
+    {
+     "url": "/api/media/frame/046839cff1cd?t=1472&w=480",
+     "start": 939.9,
+     "done": 1073.9,
+     "encoded": 14728,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a159/0000",
+     "start": 940,
+     "done": 1022,
+     "encoded": 27696,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a153/0000?crop=0.0984,0.0469,0.2740,0.3656",
+     "start": 1007.4,
+     "done": 1083.8,
+     "encoded": 5822,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a154/0000?crop=0.3528,0.0000,0.3403,0.5094",
+     "start": 1048.1,
+     "done": 1062.5,
+     "encoded": 6291,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a163/0000",
+     "start": 1134.4,
+     "done": 1154.1,
+     "encoded": 40876,
+     "status": 200
+    },
+    {
+     "url": "/api/media/frame/d1d123208f95?t=59&w=480",
+     "start": 1134.5,
+     "done": 1146.7,
+     "encoded": 21127,
+     "status": 200
+    },
+    {
+     "url": "/api/media/frame/485470e2cc08?t=93&w=480",
+     "start": 1164.7,
+     "done": 1179.7,
+     "encoded": 10767,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a165/0015",
+     "start": 1164.8,
+     "done": 1184.5,
+     "encoded": 35993,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a004/0000",
+     "start": 1192.8,
+     "done": 1201,
+     "encoded": 15190,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a005/0000",
+     "start": 1192.9,
+     "done": 1214.9,
+     "encoded": 47858,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a152/0001",
+     "start": 1206,
+     "done": 1229.1,
+     "encoded": 28839,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a151/0000",
+     "start": 1235.8,
+     "done": 1242.1,
+     "encoded": 19354,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a153/0000",
+     "start": 1235.9,
+     "done": 1243.6,
+     "encoded": 28140,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a154/0000",
+     "start": 1248,
+     "done": 1253.3,
+     "encoded": 15241,
+     "status": 200
+    },
+    {
+     "url": "/api/toolInfo/list",
+     "start": 798.9,
+     "done": 803.7,
+     "encoded": 791,
+     "status": 200
+    },
+    {
+     "url": "/api/toolVisit/add",
+     "start": 813.4,
+     "done": 837.9,
+     "encoded": 321,
+     "status": 200
+    }
+   ],
+   "assetCount": 53,
+   "assetBytes": 1971114,
+   "assetDone": 1121.4,
+   "totalReqs": 126,
+   "totalBytes": 2699391,
+   "decodeSum": 93.9
+  },
+  {
+   "fcp": 188,
+   "tCards13": 185.9,
+   "tFirstBgUrl": 210.2,
+   "tLastBgUrl": 290.8,
+   "tFirstImg": 296.7,
+   "tLastImg": 421.2,
+   "allReady": 424.7,
+   "bgCount": 26,
+   "bgBytes": 97021,
+   "bgProto": "h2",
+   "bgConns": 1,
+   "bgMaxParallel": 13,
+   "bgFirstStart": 209.9,
+   "bgLastDone": 621.9,
+   "bgHit": 26,
+   "bgMiss": 0,
+   "bgServerMs": [
+    18,
+    47,
+    43,
+    51,
+    84,
+    80,
+    87,
+    40,
+    48,
+    59,
+    87,
+    109,
+    113,
+    35,
+    24,
+    116,
+    36,
+    27,
+    39,
+    20,
+    12,
+    34,
+    17,
+    55,
+    32,
+    37
+   ],
+   "apiCount": 42,
+   "apiBytes": 560167,
+   "apiIndexBytes": 191427,
+   "apiIndexDone": 212.3,
+   "apiApi": [
+    {
+     "url": "/api/media/track",
+     "start": 164.1,
+     "done": 188.2,
+     "encoded": 321,
+     "status": 200
+    },
+    {
+     "url": "/api/media/edit-policy",
+     "start": 165.5,
+     "done": 169.4,
+     "encoded": 284,
+     "status": 200
+    },
+    {
+     "url": "/api/media/index",
+     "start": 165.9,
+     "done": 212.3,
+     "encoded": 191427,
+     "status": 200
+    },
+    {
+     "url": "/api/media/persons",
+     "start": 166.1,
+     "done": 177.2,
+     "encoded": 1125,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/125",
+     "start": 182.6,
+     "done": 208.7,
+     "encoded": 1068,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/122",
+     "start": 182.9,
+     "done": 203.3,
+     "encoded": 537,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/124",
+     "start": 183.1,
+     "done": 216,
+     "encoded": 908,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/123",
+     "start": 183.4,
+     "done": 208.3,
+     "encoded": 890,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/111",
+     "start": 183.6,
+     "done": 215.4,
+     "encoded": 478,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/112",
+     "start": 183.8,
+     "done": 215.1,
+     "encoded": 481,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/114",
+     "start": 205.8,
+     "done": 219.3,
+     "encoded": 476,
+     "status": 200
+    },
+    {
+     "url": "/api/media/frame/485470e2cc08?t=93&w=480&crop=0.2708,0.0000,0.3375,0.6000",
+     "start": 211.2,
+     "done": 241.3,
+     "encoded": 5766,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/115",
+     "start": 226.1,
+     "done": 237.9,
+     "encoded": 486,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/116",
+     "start": 229.9,
+     "done": 241.4,
+     "encoded": 472,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a159/0000?crop=0.2111,0.1875,0.6000,0.3375",
+     "start": 246.4,
+     "done": 260.8,
+     "encoded": 13306,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a153/0000",
+     "start": 246.5,
+     "done": 279.8,
+     "encoded": 28140,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a005/0000",
+     "start": 246.5,
+     "done": 274.2,
+     "encoded": 47858,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a164/0000",
+     "start": 246.5,
+     "done": 267.7,
+     "encoded": 31010,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a151/0000",
+     "start": 246.5,
+     "done": 295.7,
+     "encoded": 19354,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a004/0000",
+     "start": 246.6,
+     "done": 335.5,
+     "encoded": 15190,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a006/0000",
+     "start": 246.6,
+     "done": 325.7,
+     "encoded": 12620,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a152/0000",
+     "start": 246.6,
+     "done": 370.3,
+     "encoded": 19624,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a154/0000",
+     "start": 246.6,
+     "done": 352.6,
+     "encoded": 15241,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a161/0000",
+     "start": 246.6,
+     "done": 333.7,
+     "encoded": 35793,
+     "status": 200
+    },
+    {
+     "url": "/api/media/frame/d1d123208f95?t=59&w=480&crop=0.3208,0.0000,0.3375,0.6000",
+     "start": 246.6,
+     "done": 369,
+     "encoded": 8829,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a163/0000?crop=0.1875,0.0219,0.6000,0.4500",
+     "start": 250.5,
+     "done": 392,
+     "encoded": 16106,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/117",
+     "start": 251.2,
+     "done": 274.1,
+     "encoded": 472,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a165/0015?crop=0.2301,0.0812,0.4178,0.2781",
+     "start": 254.9,
+     "done": 362.2,
+     "encoded": 9377,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/118",
+     "start": 256.7,
+     "done": 289.2,
+     "encoded": 477,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/119",
+     "start": 262.7,
+     "done": 288.6,
+     "encoded": 472,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a004/0000?crop=0.1397,0.0562,0.4000,0.6000",
+     "start": 266.6,
+     "done": 389.9,
+     "encoded": 6327,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/120",
+     "start": 267.6,
+     "done": 338.3,
+     "encoded": 470,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a005/0000?crop=0.1221,0.0656,0.7277,0.4844",
+     "start": 272.6,
+     "done": 364.2,
+     "encoded": 28041,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a006/0002",
+     "start": 278.1,
+     "done": 397.7,
+     "encoded": 12603,
+     "status": 200
+    },
+    {
+     "url": "/api/media/frame/046839cff1cd?t=1472&w=480&crop=0.3333,0.0000,0.2979,0.5296",
+     "start": 293.2,
+     "done": 413,
+     "encoded": 5028,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a151/0000?crop=0.7346,0.0000,0.1916,0.3406",
+     "start": 304,
+     "done": 326.7,
+     "encoded": 3236,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a153/0000?crop=0.0984,0.0469,0.2740,0.3656",
+     "start": 307.5,
+     "done": 402.6,
+     "encoded": 5822,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a152/0001?crop=0.4613,0.0500,0.2014,0.2687",
+     "start": 310.6,
+     "done": 417.6,
+     "encoded": 3432,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a154/0000?crop=0.3528,0.0000,0.3403,0.5094",
+     "start": 342.5,
+     "done": 413.4,
+     "encoded": 6291,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a158/0000",
+     "start": 359.1,
+     "done": 421,
+     "encoded": 9217,
+     "status": 200
+    },
+    {
+     "url": "/api/toolInfo/list",
+     "start": 159.7,
+     "done": 166.6,
+     "encoded": 791,
+     "status": 200
+    },
+    {
+     "url": "/api/toolVisit/add",
+     "start": 164.5,
+     "done": 183.6,
+     "encoded": 321,
+     "status": 200
+    }
+   ],
+   "assetCount": 53,
+   "assetBytes": 1971750,
+   "assetDone": 303.4,
+   "totalReqs": 124,
+   "totalBytes": 2632999,
+   "decodeSum": 43.3
+  },
+  {
+   "fcp": 196,
+   "tCards13": 189,
+   "tFirstBgUrl": 211.1,
+   "tLastBgUrl": 276.2,
+   "tFirstImg": 282.6,
+   "tLastImg": 368.1,
+   "allReady": 374.4,
+   "bgCount": 26,
+   "bgBytes": 95455,
+   "bgProto": "h2",
+   "bgConns": 1,
+   "bgMaxParallel": 13,
+   "bgFirstStart": 210.9,
+   "bgLastDone": 643.5,
+   "bgHit": 26,
+   "bgMiss": 0,
+   "bgServerMs": [
+    18,
+    46,
+    29,
+    32,
+    33,
+    32,
+    46,
+    52,
+    47,
+    40,
+    34,
+    46,
+    20,
+    83,
+    34,
+    31,
+    24,
+    34,
+    29,
+    18,
+    29,
+    17,
+    49,
+    17,
+    32,
+    26
+   ],
+   "apiCount": 36,
+   "apiBytes": 408506,
+   "apiIndexBytes": 191427,
+   "apiIndexDone": 215.8,
+   "apiApi": [
+    {
+     "url": "/api/media/track",
+     "start": 163.8,
+     "done": 191.6,
+     "encoded": 321,
+     "status": 200
+    },
+    {
+     "url": "/api/media/edit-policy",
+     "start": 164.8,
+     "done": 167.3,
+     "encoded": 293,
+     "status": 200
+    },
+    {
+     "url": "/api/media/index",
+     "start": 165.2,
+     "done": 215.8,
+     "encoded": 191427,
+     "status": 200
+    },
+    {
+     "url": "/api/media/persons",
+     "start": 165.4,
+     "done": 176.2,
+     "encoded": 1125,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/125",
+     "start": 186.5,
+     "done": 211.5,
+     "encoded": 1068,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/122",
+     "start": 186.8,
+     "done": 201.4,
+     "encoded": 537,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/124",
+     "start": 187,
+     "done": 211.8,
+     "encoded": 908,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/123",
+     "start": 187.1,
+     "done": 212.3,
+     "encoded": 890,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/111",
+     "start": 187.3,
+     "done": 214,
+     "encoded": 478,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/112",
+     "start": 187.4,
+     "done": 212,
+     "encoded": 481,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/114",
+     "start": 203.9,
+     "done": 221.8,
+     "encoded": 485,
+     "status": 200
+    },
+    {
+     "url": "/api/media/frame/485470e2cc08?t=93&w=480&crop=0.2708,0.0000,0.3375,0.6000",
+     "start": 212,
+     "done": 237,
+     "encoded": 5766,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/115",
+     "start": 215.4,
+     "done": 236.9,
+     "encoded": 495,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/116",
+     "start": 218.1,
+     "done": 235.4,
+     "encoded": 463,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/117",
+     "start": 221,
+     "done": 242.2,
+     "encoded": 472,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/118",
+     "start": 225.7,
+     "done": 242.1,
+     "encoded": 486,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a159/0000?crop=0.2111,0.1875,0.6000,0.3375",
+     "start": 240.8,
+     "done": 250.1,
+     "encoded": 13306,
+     "status": 200
+    },
+    {
+     "url": "/api/media/frame/046839cff1cd?t=1472&w=480&crop=0.3333,0.0000,0.2979,0.5296",
+     "start": 240.9,
+     "done": 299.8,
+     "encoded": 5028,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a163/0000?crop=0.1875,0.0219,0.6000,0.4500",
+     "start": 240.9,
+     "done": 257.7,
+     "encoded": 16106,
+     "status": 200
+    },
+    {
+     "url": "/api/media/frame/d1d123208f95?t=59&w=480&crop=0.3208,0.0000,0.3375,0.6000",
+     "start": 240.9,
+     "done": 294,
+     "encoded": 8829,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/119",
+     "start": 245,
+     "done": 269.7,
+     "encoded": 472,
+     "status": 200
+    },
+    {
+     "url": "/api/media/person/120",
+     "start": 258.6,
+     "done": 278.5,
+     "encoded": 470,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a165/0015?crop=0.2301,0.0812,0.4178,0.2781",
+     "start": 278.7,
+     "done": 298.1,
+     "encoded": 9377,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a153/0000",
+     "start": 278.7,
+     "done": 298.2,
+     "encoded": 28140,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a005/0000?crop=0.1221,0.0656,0.7277,0.4844",
+     "start": 278.8,
+     "done": 302.8,
+     "encoded": 28041,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a151/0000",
+     "start": 278.8,
+     "done": 304.5,
+     "encoded": 19354,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a004/0000?crop=0.1397,0.0562,0.4000,0.6000",
+     "start": 278.9,
+     "done": 315.9,
+     "encoded": 6327,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a006/0002",
+     "start": 278.9,
+     "done": 319.2,
+     "encoded": 12603,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a152/0000",
+     "start": 278.9,
+     "done": 325.4,
+     "encoded": 19624,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a154/0000",
+     "start": 279,
+     "done": 351.8,
+     "encoded": 15241,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a152/0001?crop=0.4613,0.0500,0.2014,0.2687",
+     "start": 285.2,
+     "done": 351.4,
+     "encoded": 3432,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a151/0000?crop=0.7346,0.0000,0.1916,0.3406",
+     "start": 290.5,
+     "done": 349.1,
+     "encoded": 3236,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a153/0000?crop=0.0984,0.0469,0.2740,0.3656",
+     "start": 301.8,
+     "done": 351.6,
+     "encoded": 5822,
+     "status": 200
+    },
+    {
+     "url": "/api/media/thumb/p/a154/0000?crop=0.3528,0.0000,0.3403,0.5094",
+     "start": 312.3,
+     "done": 355.3,
+     "encoded": 6291,
+     "status": 200
+    },
+    {
+     "url": "/api/toolInfo/list",
+     "start": 159.5,
+     "done": 163.9,
+     "encoded": 791,
+     "status": 200
+    },
+    {
+     "url": "/api/toolVisit/add",
+     "start": 164.1,
+     "done": 182.8,
+     "encoded": 321,
+     "status": 200
+    }
+   ],
+   "assetCount": 53,
+   "assetBytes": 1971845,
+   "assetDone": 308.3,
+   "totalReqs": 118,
+   "totalBytes": 2479867,
+   "decodeSum": 66.9
+  }
+ ]
+}

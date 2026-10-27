@@ -178,9 +178,9 @@
     实测（三层 rect / mask computed / 三档滤镜 / 20 点色差表 / 接缝剖面 / 24 张截图）见 devtools/p585-ui/REPORT.md。
 
   P5.88（用户需求）：「人物页增加一个功能，可以手动设置人物卡片背景图片的位置和尺寸缩放」。
-   · 入口：卡片 hover 时头像**右上角**的「⛶」（「换」在右下角，两者不重叠，都是 22px 小圆钮）；
+   · 入口：卡片 hover 时头像**右上角**的「⛶」（「换」在右下角；两钮 20px、间距 ≥6px、距卡片内边缘 ≥6px —— P5.93 收紧前 ≤768 档只有 4px 缝，看着像叠着）；
      只在该卡**真有背景图**时渲染（首字占位卡没有），点击 @click.stop.prevent，不跳详情。
-   · 弹层 PersonBgAdjustDialog.vue：按卡片同比例的预览（同一套三层图，实时反映调整）+ 拖拽平移
+   · 弹层 PersonBgAdjustDialog.vue：P5.93 起预览直接用服务端 card-bg 端点（与卡片同一张图，只有 w/h/blur 按预览盒换算，失败才退回三层）+ 拖拽平移
      + 缩放滑块 50%–300%（100% = 自动尺寸）+ 「重置为自动 / 居中 / 填满卡片」+ 吸附 1% +
      「设为所有卡片默认」（另有「清除全局默认」）+ 保存 / 取消。宽 min(560px, 92vw)。
    · 叠加公式（几何仍由 personBgImage.layoutCrop 自动算，本功能只在其上叠加）：
@@ -215,7 +215,7 @@ import { layoutCrop, originalSrc, parseCrop } from './personBgImage.js'
 import { parseColor, readToneCache, rgbCss, sampleTone, toneCacheKey, toneFill, writeToneCache } from './personTone.js'
 // P5.90：卡片背景「服务端预渲染成一张图」—— URL / 尺寸 / 版本 / 拖动期近似的唯一实现在 personCardBg.js
 // （单测 personCardBg.test.mjs）
-import { avatarVersion, cardBgFilterCss, cardBgSize, cardBgUrl, rgbHex } from './personCardBg.js'
+import { avatarVersion, cardBgFilterCss, cardBgPreview, cardBgSize, cardBgUrl, rgbHex } from './personCardBg.js'
 // P5.88：背景「手动调整位置与缩放」—— 叠加公式 / 存储 / LRU 上限的唯一实现在 personBgAdjust.js
 import {
   applyAdjust,
@@ -373,8 +373,12 @@ watch(cards, () => {
   nextTick(() => queueTones(cards.value))
   // P5.84：详情晚到会让头像换一张 crop（背景 src 不变 → @load 不再触发），几何必须重算
   nextTick(refreshBgGeom)
-  // P5.90：新卡片 / 过滤后重排都要重新量 .pw-bg 盒子（URL 里的 w/h 就是它）
-  nextTick(measureCardBg)
+  // P5.90/P5.92：新卡片 / 过滤后重排都要重新量 .pw-bg 盒子（URL 里的 w/h 就是它）——
+  // 现在是一个 rAF 就量（原本等布局稳定 200ms，正是首屏那 200ms 的人为等待）
+  nextTick(() => {
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(measureCardBg)
+    else measureCardBg()
+  })
 })
 
 function markAvatarFailed(card) {
@@ -530,7 +534,11 @@ const bgAdjustDialog = reactive({
   natH: 0,
   boxW: 0,
   boxH: 0,
-  adjust: null
+  adjust: null,
+  /** P5.93：服务端预览要的那几项 —— 人物 id / 头像版本 / 卡片那张图的 URL（预览与卡片同参的保证） */
+  personId: '',
+  avatarV: '',
+  cardUrl: ''
 })
 
 /**
@@ -586,7 +594,10 @@ function bgGeomStyleOf(card) {
 function bgAdjustAttrOf(card) {
   const g = bgAppliedOf(card)
   const adj = bgAdjustOf(card)
-  if (!g || !adj) return ''
+  if (!adj) return ''
+  // P5.90：走服务端单图时没有本地几何（bgGeom 只在三层兜底里算），只回「调整三件套」——
+  // 实测脚本据此断言「调整生效了没有」，几何由服务端负责，前端不再持有。
+  if (!g) return [adj.scale, adj.dx, adj.dy].join(',')
   return [adj.scale, adj.dx, adj.dy, g.imgW, g.imgH, g.tx, g.ty].join(',')
 }
 
@@ -615,6 +626,10 @@ function openBgAdjust(card) {
   bgAdjustDialog.boxW = bg ? bg.clientWidth : 0
   bgAdjustDialog.boxH = bg ? bg.clientHeight : 0
   bgAdjustDialog.adjust = bgAdjustOf(card)
+  // P5.93：预览 = 服务端同一张图，URL 里的 id / v 与卡片同一个来源（否则缓存 / 头像对不上）
+  bgAdjustDialog.personId = card.id != null && card.id !== '' ? String(card.id) : ''
+  bgAdjustDialog.avatarV = avatarVersionOf(card)
+  bgAdjustDialog.cardUrl = cardBgUrlOf(card) || ''
   const natW = (img && img.naturalWidth) || (g ? g.imgW : 0)
   const natH = (img && img.naturalHeight) || (g ? g.imgH : 0)
   if (natW && natH) {
@@ -623,6 +638,9 @@ function openBgAdjust(card) {
     bgAdjustDialog.open = true
     return
   }
+  // P5.93：服务端预览不需要原图自然尺寸（几何在服务端），量尺寸只为了三层兜底能画对 ——
+  // 所以先开弹层，别再让用户等一次图片测量；尺寸晚到只影响兜底那一路。
+  if (bgAdjustDialog.personId) bgAdjustDialog.open = true
   // P5.90：预渲染后卡片里没有三层原图可读 naturalWidth —— 临时量一次（浏览器 HTTP 缓存命中，不额外下载）
   const seq = ++bgAdjustMeasureSeq
   measureImageSize(src).then((size) => {
@@ -832,8 +850,12 @@ onMounted(() => {
   ensureWallObserver()
   queueTones(cards.value)
   refreshThemeColors()
-  // 首屏先量一次（不防抖）：早一帧发请求，早一帧出图
-  nextTick(() => measureCardBg())
+  // P5.92：挂载当帧就量（一个 rAF，让浏览器把这一帧布局刷完），不再等「布局稳定 200ms」——
+  // 那 200ms 是首屏唯一的人为等待，占原耗时三分之一强
+  nextTick(() => {
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(measureCardBg)
+    else measureCardBg()
+  })
   if (typeof MutationObserver === 'function') {
     themeObserver = new MutationObserver(() => {
       applyAllTones()
@@ -847,6 +869,8 @@ onBeforeUnmount(() => {
   toneDisposed = true
   if (cardBgMeasureTimer) clearTimeout(cardBgMeasureTimer)
   cardBgMeasureTimer = null
+  if (cardBgFullTimer) clearTimeout(cardBgFullTimer)
+  cardBgFullTimer = null
   if (blurCommitTimer) clearTimeout(blurCommitTimer)
   blurCommitTimer = null
   if (wallResizeObserver) wallResizeObserver.disconnect()
@@ -910,7 +934,12 @@ function commitBgBlur() {
  * 尺寸：取 .pw-bg 的 clientWidth/Height × DPR（上限 2x），取偶数并夹到 1200×600（与后端同值）——
  * 尺寸变化时**防抖 200ms** 再换 URL；同尺寸同参数的 URL 命中服务端缓存，几乎零成本。
  */
+/** key → { full:{w,h}, preview:{w,h} }：正式尺寸 + 低清占位尺寸（P5.92） */
 const cardBgPx = reactive({})
+/** key → 已经预载完成的正式 URL（等于当前 full URL 时才把 <img src> 换过去） */
+const cardBgFull = reactive({})
+/** 在飞的正式图预载 URL（同一 URL 不重复 new Image） */
+const cardBgPreloading = new Set()
 const cardBgFailed = reactive({})
 /** 主题（暗色决定柔光的混合色）与卡片底色 --bg-2：都是 URL 参数，切主题要换图 */
 const themeDark = ref(typeof document !== 'undefined' && document.documentElement.classList.contains('dark'))
@@ -924,15 +953,10 @@ function useCardBgOf(card) {
   return !cardBgFailed[String(card.key)]
 }
 
-/** 服务端图的 URL（还没测出尺寸 → 空串，不挂 src，避免按默认尺寸白请求一次） */
-function cardBgUrlOf(card) {
-  if (!card || !useCardBgOf(card)) return ''
-  const px = cardBgPx[String(card.key)]
-  if (!px) return ''
+/** URL 里除尺寸外的全部参数（调整 / 模糊 / 主题 / 头像版本）：低清与高清共用同一份 */
+function cardBgParamsOf(card) {
   const adj = bgAdjustOf(card) || { scale: 1, dx: 0, dy: 0 }
-  return cardBgUrl(card.id, {
-    w: px.w,
-    h: px.h,
+  return {
     scale: adj.scale,
     dx: adj.dx,
     dy: adj.dy,
@@ -940,13 +964,105 @@ function cardBgUrlOf(card) {
     dark: themeDark.value,
     bg: themeBgHex.value,
     v: avatarVersionOf(card)
-  })
+  }
 }
 
-/** 头像版本：头像来源一变，URL 就变（否则浏览器会用 immutable 缓存里的旧图） */
+/** 指定尺寸的服务端图 URL；尺寸还没测出来 → 空串（不挂 src，避免按默认尺寸白请求一次） */
+function cardBgUrlSized(card, size) {
+  if (!card || !useCardBgOf(card) || !size) return ''
+  return cardBgUrl(card.id, Object.assign({ w: size.w, h: size.h }, cardBgParamsOf(card)))
+}
+
+/**
+ * 正式（高清）URL —— 这是**最终**要显示的那张图，也是预热要命中的那个 key
+ */
+function cardBgFullUrlOf(card) {
+  const px = cardBgPx[String(card && card.key)]
+  return px ? cardBgUrlSized(card, px.full) : ''
+}
+
+/**
+ * <img src> 此刻该用的 URL（P5.92 两段式）
+ *
+ * <p>低清先出：正式图还没预载完时先用 {@link cardBgPreview} 的 240 宽那张（服务端 10–30ms、
+ * 2–4KB），高清下好后再切过去。两次 URL 同源同构图，切的时候浏览器里已经有正式图
+ * （`new Image()` 预载命中 HTTP 缓存），所以不会闪一下白。</p>
+ */
+function cardBgUrlOf(card) {
+  if (!card || !useCardBgOf(card)) return ''
+  const px = cardBgPx[String(card.key)]
+  if (!px) return ''
+  const full = cardBgFullUrlOf(card)
+  if (full && cardBgFull[String(card.key)] === full) return full
+  return cardBgUrlSized(card, px.preview) || full
+}
+
+/** 'full' | 'preview' | ''（给实测脚本一个能断言的钩子） */
+function cardBgStageOf(card) {
+  if (!card || !useCardBgOf(card)) return ''
+  const px = cardBgPx[String(card.key)]
+  if (!px) return ''
+  const full = cardBgFullUrlOf(card)
+  return full && cardBgFull[String(card.key)] === full ? 'full' : 'preview'
+}
+
+/**
+ * 预载正式图，装好后把这张卡切到高清
+ *
+ * <p>为什么用 {@code new Image()} 而不是先改 <img src> 再看它加载：改 src 会立刻丢掉旧图
+ * （占位图消失 → 空白一两帧）。预载是「另一张图在后台解码」，装好那一刻 <img> 直接命中
+ * 缓存，只有清晰度变化。</p>
+ */
+function preloadCardBgFull(card) {
+  if (!card || !card.key || !useCardBgOf(card)) return
+  const key = String(card.key)
+  const url = cardBgFullUrlOf(card)
+  if (!url || cardBgFull[key] === url) return
+  const px = cardBgPx[key]
+  if (px && px.full.w === px.preview.w && px.full.h === px.preview.h) {
+    cardBgFull[key] = url
+    return
+  }
+  if (cardBgPreloading.has(url)) return
+  cardBgPreloading.add(url)
+  const img = new Image()
+  img.decoding = 'async'
+  img.onload = () => {
+    cardBgPreloading.delete(url)
+    // 尺寸 / 主题 / 头像可能在下载期间又变了：只认「仍然等于当前 full URL」的那一次
+    if (cardBgFullUrlOf(card) === url) cardBgFull[key] = url
+  }
+  img.onerror = () => {
+    cardBgPreloading.delete(url)
+  }
+  img.src = url
+}
+
+/** persons 清单按 id 索引（只在清单变化时重建） */
+const personById = computed(() => {
+  const map = {}
+  for (const p of persons.value) {
+    if (p && p.id != null) map[String(p.id)] = p
+  }
+  return map
+})
+
+/**
+ * 头像版本（URL 里的 v）：头像来源一变，URL 就变（否则浏览器会用 immutable 缓存里的旧图）
+ *
+ * <p>P5.92：v 取的是**服务端渲染源的身份**（avatarKind:avatarRef），不是卡片上那张展示用头像的 URL。
+ * 以前用展示 URL 哈希，13 张卡里有 7 张在「详情晚到、展示头像从相册封面升级成显式头像」时
+ * v 变化 → 同一个 URL 的图被重新请求一遍（实测多出 7 个请求，首屏多 30–60ms）。
+ * 展示 URL 会变，渲染源不会 —— 站长改头像时 details 里的 avatarRef 变化，v 照样跟着变。</p>
+ */
 function avatarVersionOf(card) {
-  const av = (card && card.avatar) || {}
-  return avatarVersion(av.ref || av.url || '')
+  const id = card && card.id != null ? String(card.id) : ''
+  const detail = id ? details[id] : null
+  const person = id ? personById.value[id] : null
+  const sourceKey = (node) =>
+    node && (node.avatarKind || node.avatarRef) ? String(node.avatarKind || '') + ':' + String(node.avatarRef || '') : ''
+  const key = sourceKey(detail) || sourceKey(person) || ((card && card.avatar && card.avatar.url) || '')
+  return avatarVersion(key)
 }
 
 /** 拖动滑块时的本地近似（只加不减；变小只能等新图） */
@@ -965,6 +1081,7 @@ function markCardBgFailed(card) {
   const key = String(card.key)
   cardBgFailed[key] = true
   delete bgReady[key]
+  delete cardBgFull[key]
   nextTick(refreshBgGeom)
 }
 
@@ -974,30 +1091,93 @@ function resetCardBg(card) {
   const key = String(card.key)
   delete cardBgFailed[key]
   delete bgReady[key]
+  delete cardBgFull[key]
 }
 
-/** 读 .pw-bg 的实际像素盒子 → cardBgPx[key]（只在真的变了才写，避免无意义重渲染） */
+/**
+ * 读 .pw-bg 的实际像素盒子 → cardBgPx[key]（只在真的变了才写，避免无意义重渲染）
+ *
+ * <p>P5.92：布局一帧到位就量 —— 卡片高度由 grid 的 {@code grid-auto-rows: 1fr} 统一决定，
+ * 挂载后一个 rAF 里 {@code getBoundingClientRect} 拿到的宽度已经是最终值。以前这里等
+ * 200ms「布局稳定」，结果就是首屏第 200ms 才开始发第一张背景图。低清/高清两段式之后，
+ * 早量一次的代价只是「万一尺寸又变了，低清那张构图略有偏差」，不再是白渲染一张正式图。</p>
+ */
 function measureCardBg() {
   cardBgMeasureTimer = null
   const wall = wallRef.value
   if (!wall) return
   const dpr = typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1
+  const byKey = {}
+  for (const card of cards.value) {
+    if (card && card.key != null) byKey[String(card.key)] = card
+  }
   wall.querySelectorAll('.pw-card').forEach((node) => {
     const key = String(node.getAttribute('data-card-key') || '')
     const bg = node.querySelector('.pw-bg')
     if (!key || !bg) return
-    const size = cardBgSize(bg.clientWidth, bg.clientHeight, dpr)
-    if (!size) return
+    const full = cardBgSize(bg.clientWidth, bg.clientHeight, dpr)
+    if (!full) return
     const prev = cardBgPx[key]
-    if (prev && prev.w === size.w && prev.h === size.h) return
-    cardBgPx[key] = size
+    if (prev && prev.full.w === full.w && prev.full.h === full.h) return
+    // 占位尺寸只定一次：它只是「先让我看见」，尺寸抖动不值得再发一轮 2–4KB 的小图
+    cardBgPx[key] = { full, preview: (prev && prev.preview) || cardBgPreview(full) }
   })
+  // 正式图不在这里发：等布局静默一小段（资料 chip 晚到会把卡高从 84 撑到 ~104，
+  // 早发一次就是一张注定被丢弃的正式图 = 后端白渲染一次）。低清那张当帧就发。
+  scheduleCardBgFull()
 }
 
-/** 尺寸变化防抖 200ms：拖动窗口时不逐帧换 URL（每个新尺寸都是一次服务端渲染） */
+/**
+ * 尺寸变化防抖（拖动窗口时不逐帧换 URL：每个新尺寸都是一次服务端渲染）
+ *
+ * <p>P5.92 起它只管**之后**的变化：首屏那次量尺寸由 onMounted 的 rAF 直接触发，
+ * 不再等这 200ms。150ms 是「窗口拖拽停手后」的合理手感，不影响首屏。</p>
+ */
+const CARD_BG_SETTLE_MS = 150
+
+/**
+ * 正式图的「布局静默」等待：最后一次量尺寸之后 100ms 没有新尺寸才请求高清
+ *
+ * <p>这不是人为拖延首屏 —— 首屏此刻已经有低清图在屏幕上了；这 100ms 只为避免
+ * 「资料 chip 晚到把卡高 84 撑到 104」时白渲染一张用不上的正式图。</p>
+ */
+const CARD_BG_FULL_QUIET_MS = 100
+
+let cardBgFullTimer = null
+
+function scheduleCardBgFull(delay) {
+  if (cardBgFullTimer) clearTimeout(cardBgFullTimer)
+  cardBgFullTimer = setTimeout(preloadAllCardBgFull, delay == null ? CARD_BG_FULL_QUIET_MS : delay)
+}
+
+function preloadAllCardBgFull() {
+  cardBgFullTimer = null
+  for (const card of cards.value) preloadCardBgFull(card)
+}
+
+/**
+ * P5.93：**参数变了也要重新排一次正式图预载**
+ *
+ * <p>P5.92 两段式（先 240 宽占位、再正式图）只把「排正式图」挂在 {@code measureCardBg} 后面，
+ * 而 {@code measureCardBg} 是被**尺寸变化**触发的。于是「保存一次背景调整」「拖完模糊滑块」
+ * 「切主题」「换头像」这些**只改参数、不改尺寸**的路径一个都不会去取正式图 ——
+ * 卡片停在 240 宽的低清图上（还被拉伸到 333 CSS px），看起来比弹层预览软一大截，
+ * 这正是用户说的「预览和应用后不一样」的第二个来源。</p>
+ *
+ * <p>所以盯住「所有卡片正式图 URL 拼起来的那一串」：任何参数变化都会让它变，
+ * 变了就排一次预载（同 URL 的 {@code preloadCardBgFull} 自己会跳过）。
+ * 只读 cardBgPx / 参数，不读 cardBgFull，所以写 cardBgFull 不会反过来触发自己。</p>
+ */
+watch(
+  () => cards.value.map((card) => cardBgFullUrlOf(card)).join('|'),
+  () => {
+    if (cards.value.length) scheduleCardBgFull(120)
+  }
+)
+
 function scheduleCardBgMeasure(delay) {
   if (cardBgMeasureTimer) clearTimeout(cardBgMeasureTimer)
-  cardBgMeasureTimer = setTimeout(measureCardBg, delay == null ? 200 : delay)
+  cardBgMeasureTimer = setTimeout(measureCardBg, delay == null ? CARD_BG_SETTLE_MS : delay)
 }
 
 /** 主题切换：暗色 / --bg-2 都进 URL，换主题就要换图（同一张卡最多两份缓存） */
@@ -1085,6 +1265,7 @@ function applyLocalAvatar(id, patch) {
   // P5.90：头像换了 → 服务端图也要重新取（URL 里的 v 变了），失败标记一并清掉
   delete cardBgFailed[key]
   delete bgReady[key]
+  delete cardBgFull[key]
   return () => {
     if (had) details[key] = before
     else delete details[key]
@@ -1277,7 +1458,7 @@ onBeforeUnmount(() => {
 
     <div v-else class="pp-wall" ref="wallRef">
       <a
-        v-for="c in cards"
+        v-for="(c, cardIndex) in cards"
         :key="c.key"
         class="pw-card"
         :class="{ 'has-bg': !!bgSrcOf(c), 'has-tone': !!toneOf(c) }"
@@ -1285,6 +1466,8 @@ onBeforeUnmount(() => {
         :data-bg-geom="bgGeomOf(c)"
         :data-bg-adjust="bgAdjustAttrOf(c)"
         :data-card-bg="useCardBgOf(c) ? (cardBgUrlOf(c) || 'measuring') : 'fallback'"
+        :data-card-bg-stage="cardBgStageOf(c)"
+        :data-card-bg-full="useCardBgOf(c) ? cardBgFullUrlOf(c) : ''"
         :data-bg="bgSrcOf(c) ? '1' : '0'"
         :data-tone="toneOf(c)"
         :href="'#/media/person/' + encodeURIComponent(c.id !== '' && c.id != null ? c.id : c.name)"
@@ -1310,7 +1493,8 @@ onBeforeUnmount(() => {
               :src="cardBgUrlOf(c)"
               :style="cardBgFilterOf(c) ? { filter: cardBgFilterOf(c) } : null"
               alt=""
-              loading="lazy"
+              :loading="cardIndex < 4 ? 'eager' : 'lazy'"
+              :fetchpriority="cardIndex < 4 ? 'high' : null"
               decoding="async"
               @load="markCardBgLoaded(c)"
               @error="markCardBgFailed(c)"
@@ -1408,6 +1592,12 @@ onBeforeUnmount(() => {
       :box-w="bgAdjustDialog.boxW"
       :box-h="bgAdjustDialog.boxH"
       :adjust="bgAdjustDialog.adjust"
+      :person-id="bgAdjustDialog.personId"
+      :avatar-v="bgAdjustDialog.avatarV"
+      :card-url="bgAdjustDialog.cardUrl"
+      :blur="bgBlur"
+      :dark="themeDark"
+      :bg-hex="themeBgHex"
       :has-default="!!bgAdjustDefault"
       :default-adjust="bgAdjustDefault"
       :owner="policy.isOwner.value"
@@ -1787,7 +1977,8 @@ onBeforeUnmount(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pw-bg-img {
+  .pw-bg-img,
+  .pw-bg-card {
     transition: none;
   }
   .pw-card:hover .pw-bg,
@@ -1804,12 +1995,16 @@ onBeforeUnmount(() => {
   height: 56px;
 }
 
+/* P5.93：两个小圆钮不再「叠着」—— 尺寸收到 20px、贴边 -3px。
+   算得出来：≤768 档头像盒只有 40px，22px × 2 + 上下各 -4px 的溢出 = 44 > 40，
+   两个按钮垂直方向只剩 4px 缝（实测就是这么被看成「重叠」的）；
+   20px / -3px 则是 40 − 20 − 20 = 6px 缝，且距卡片内边缘 9 − 3 = 6px，两档都够。 */
 .pw-change {
   position: absolute;
-  right: -4px;
-  bottom: -4px;
-  width: 22px;
-  height: 22px;
+  right: -3px;
+  bottom: -3px;
+  width: 20px;
+  height: 20px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1839,15 +2034,16 @@ onBeforeUnmount(() => {
   color: var(--accent);
 }
 
-/* P5.88：「⛶ 调背景」—— 与「换」同一套小圆钮，挂在头像右上角（「换」在右下角，两者不重叠）。
-   卡片 hover 就出现（入口要能被发现），头像自己 hover / 聚焦时同样常亮。
-   调整按钮只改 CSS 变量，不参与卡片布局：等高、3 chip、375 单列都不受影响。 */
+/* P5.88：「⛶ 调背景」—— 与「换」同一套小圆钮，挂在头像右上角（「换」在右下角）。
+   P5.93：与「换」一起收到 20px / -3px（原因见上一条 .pw-change 的算式），
+   两钮垂直间距 6px、都不越出卡片内边缘、也不碰右侧 .pw-body 的文字。
+   调整按钮只改 URL，不参与卡片布局：等高、3 chip、375 单列都不受影响。 */
 .pw-adjust {
   position: absolute;
-  right: -4px;
-  top: -4px;
-  width: 22px;
-  height: 22px;
+  right: -3px;
+  top: -3px;
+  width: 20px;
+  height: 20px;
   display: inline-flex;
   align-items: center;
   justify-content: center;

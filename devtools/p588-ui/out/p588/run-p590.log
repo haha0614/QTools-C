@@ -1,0 +1,141 @@
+后端在线：http://127.0.0.1:8081
+dev server: http://127.0.0.1:56506
+
+=== 0 环境 / 清空存储 / 基线 ===
+  PASS 0.1 人物墙渲染完成（>=11 张有背景的卡）
+  背景形态 = card（P5.90 服务端单图）
+  卡片 13 张（有背景 13）· 列数 4 · chip 13 个
+  目标卡 key=125 自动几何 imgW=0 imgH=undefined tx=undefined ty=undefined crop=(undefined,undefined)
+  卡片盒 rect=[193,64,333.25,101.7] client=333x102
+  三层 rect sharp=[193,64,333.25,101.7] blur=[193,64,333.25,101.7] fog=[193,64,333.25,101.7]
+  PASS 0.2 初始无调整（data-bg-adjust 为空）
+  PASS 0.3 卡片等高（103.7–103.7）  -- 0px
+
+=== A 入口：hover 出现、「⛶ 调背景」可点，点击不跳详情 ===
+  PASS A1 卡片上有「⛶ 调背景」按钮  -- {"opacity":"1","rect":[243,81.84,22,22],"title":"调整背景位置与缩放","text":"⛶"}
+  hover 后按钮 opacity=1 rect=[243,81.84,22,22] text="⛶"
+  PASS A2 hover 后按钮可见（opacity=1）
+  PASS A3 按钮尺寸可用（22×22）
+  PASS A4 点击打开调整弹层
+  PASS A5 点调整按钮**不**跳详情（@click.stop 生效）  -- /media/persons → /media/persons
+  弹层面板尺寸 [512.5,348.86,560,502.27]
+  PASS A6 弹层宽 = min(560px, 92vw)  -- 560px
+  SKIP (P5.90 单图：几何在服务端) A7 弹层里三层图都在
+  预览盒 [532.5,442.86,520,159.27] 预览 imgW=381.33 scale=100%  缩放 1.00× · 偏移 (dx 0, dy 0) px
+  PASS A8 预览与卡片同比例（0.31 vs 0.31）
+  SKIP (P5.90 单图：几何在服务端) A9 预览三层 rect 逐像素一致
+  SKIP (P5.90 单图：几何在服务端) A10 预览 100% = 自动尺寸（381.33 vs 预览自动 0）
+  PASS A11 初始偏移为 0  -- dx 0 / dy 0
+
+=== B 拖拽平移：预览图位移 = 鼠标位移，dx/dy 实时变化 ===
+  拖拽 (-70, 34)px
+  预览 sharp rect：[733.8,281.69,381.33,678.77] → [666.2,315.14,381.33,678.77]
+  读数：缩放 1.00× · 偏移 (dx 0, dy 0) px  →  缩放 1.00× · 偏移 (dx -43.3, dy +21.4) px
+  PASS B1 拖拽后预览图位移 ≈ 鼠标位移（吸附 1% 内）  -- -67.6,33.45
+  PASS B2 dx / dy 读数实时变化  -- dx 0 → dx -43.3 ； dy 0 → dy +21.4
+  SKIP (P5.90 单图：几何在服务端) B3 拖拽后预览三层 rect 仍一致
+
+=== C 缩放滑块 50% / 100% / 300%：预览与卡片 imgW ===
+  PASS C0 「重置为自动」把缩放 / 偏移归零  -- 缩放 1.00× · 偏移 (dx 0, dy 0) px
+  滑块 50% → 预览 imgW=190.66（期望 0）读数 缩放 0.50× · 偏移 (dx 0, dy 0) px
+  SKIP (P5.90 单图：几何在服务端) C1 50% 预览 imgW = 预览自动 × 0.5
+    保存后卡片 data-bg-adjust=0.5,0,0 rect=[193,64,333.25,101.7] computed width=333.25px
+  SKIP (P5.90 单图：几何在服务端) C2 50% 卡片 image 宽 = 自动 imgW × 0.5
+  SKIP (P5.90 单图：几何在服务端) C3 卡片 computed width 与 rect 一致
+  PASS C4 localStorage 里 scale = 0.5  -- {"scale":0.5,"dx":0,"dy":0}
+  滑块 100% → 预览 imgW=381.33（期望 0）读数 缩放 1.00× · 偏移 (dx 0, dy 0) px
+  SKIP (P5.90 单图：几何在服务端) C1 100% 预览 imgW = 预览自动 × 1
+    保存后卡片 data-bg-adjust= rect=[193,64,333.25,101.7] computed width=333.25px
+  SKIP (P5.90 单图：几何在服务端) C2 100% 卡片 image 宽 = 自动 imgW × 1
+  SKIP (P5.90 单图：几何在服务端) C3 卡片 computed width 与 rect 一致
+  PASS C4 localStorage 里 scale = 1（自动 = 不落库）  -- null
+  滑块 300% → 预览 imgW=1143.98（期望 0）读数 缩放 3.00× · 偏移 (dx 0, dy 0) px
+  SKIP (P5.90 单图：几何在服务端) C1 300% 预览 imgW = 预览自动 × 3
+    保存后卡片 data-bg-adjust=3,0,0 rect=[193,64,333.25,101.7] computed width=333.25px
+  SKIP (P5.90 单图：几何在服务端) C2 300% 卡片 image 宽 = 自动 imgW × 3
+  SKIP (P5.90 单图：几何在服务端) C3 卡片 computed width 与 rect 一致
+  PASS C4 localStorage 里 scale = 3  -- {"scale":3,"dx":0,"dy":0}
+
+=== D 拖拽 + 缩放一起保存：立即应用 + 刷新后仍在 + 三层一致 ===
+  保存的调整（弹层读数）：缩放 1.60× · 偏移 (dx +30, dy -14.3) px
+  卡片 data-bg-adjust=1.6,0.09,-0.14
+  卡片 rect sharp=[193,64,333.25,101.7] blur=[193,64,333.25,101.7] fog=[193,64,333.25,101.7]
+  卡片 transform=none --pw-img-tx/ty=/
+  PASS D1 缩放 1.6 已落到卡片（立即应用，无需刷新）  -- 1.6
+  SKIP (P5.90 单图：几何在服务端) D2 卡片 imgW = 自动 × 1.6
+  SKIP (P5.90 单图：几何在服务端) D3 tx = 自动 tx + dx × 卡片宽
+  SKIP (P5.90 单图：几何在服务端) D4 ty = 自动 ty + dy × 卡片高
+  SKIP (P5.90 单图：几何在服务端) D5 调整后三层 rect 逐像素一致（±0.5px）
+  SKIP (P5.90 单图：几何在服务端) D6 三层 computed transform 完全相同
+  SKIP (P5.90 单图：几何在服务端) D7 --pw-img-tx/ty 与下发几何一致
+  三层 transform 期望 matrix(1, 0, 0, 1, undefined, undefined)
+  localStorage[ms.person.bgAdjust.v1] = {"125":{"scale":1.6,"dx":0.09,"dy":-0.14}}
+  PASS D7 刷新后墙面仍就绪
+  刷新后 data-bg-adjust=1.6,0.09,-0.14 rect=[193,64,333.25,101.7] transform=none
+  PASS D8 刷新后调整仍在（localStorage 回读一致）  -- 1.6,0.09,-0.14
+  SKIP (P5.90 单图：几何在服务端) D9 刷新后 rect 与保存前一致（±1px）
+  SKIP (P5.90 单图：几何在服务端) D10 刷新后三层 rect 仍一致
+  PASS D11 localStorage 值刷新前后一字不差  -- {"125":{"scale":1.6,"dx":0.09,"dy":-0.14}}
+
+=== E 重置为自动：回到 76% / 50% 锚点几何（±1px） ===
+  PASS E1 弹层回到 1.00× / 偏移 0  -- 缩放 1.00× · 偏移 (dx 0, dy 0) px
+  重置后 data-bg-adjust="" rect=[193,64,333.25,101.7]
+  基线自动 rect=[193,64,333.25,101.7] imgW=0 tx=undefined
+  PASS E2 重置为自动不写库（data-bg-adjust 空）
+  SKIP (P5.90 单图：几何在服务端) E3 重置后 rect = 自动几何 rect（±1px）
+  裁剪中心 = (NaN, NaN)  卡片盒 333x102
+  SKIP (P5.90 单图：几何在服务端) E4 裁剪中心 x = 76%（±1px）
+  SKIP (P5.90 单图：几何在服务端) E5 裁剪中心 y = 50%（±1px）
+  PASS E6 重置后在存储里被删掉（不留 scale 1 的垃圾）  -- {}
+
+=== F 「设为所有卡片默认」生效到其它卡，并可清除 ===
+  PASS F1 「设为所有卡片默认」已勾选
+  localStorage[ms.person.bgAdjust.default] = {"scale":1.5,"dx":0.04,"dy":0.08}
+  PASS F2 全局默认写进 ms.person.bgAdjust.default  -- {"scale":1.5,"dx":0.04,"dy":0.08}
+  另一张卡 122 data-bg-adjust=1.5,0.04,0.08
+  另一张卡 112 data-bg-adjust=1.5,0.04,0.08
+  PASS F3 其它卡按全局默认缩放 1.5
+  SKIP (P5.90 单图：几何在服务端) F4 其它卡 imgW = 它的自动 imgW × 1.5
+  SKIP (P5.90 单图：几何在服务端) F5 其它卡三层 rect 也一致
+  PASS F6 本卡同时保留逐人记录（逐人 > 默认）  -- {"scale":1.5,"dx":0.04,"dy":0.08}
+  清除全局默认后 default=""  另一张卡 adjust=""
+  PASS F7 「清除全局默认」删掉该键
+  SKIP (P5.90 单图：几何在服务端) F8 清除后其它卡回到自动几何
+
+=== G 约束不变：卡片等高 / chip 数 / 模糊滑块 / reduced-motion ===
+  PASS G1 调整后卡片仍等高  -- 0px
+  PASS G2 chip 数不变（13）  -- 13
+  PASS G3 列数 / 卡片数不变  -- 4 / 13
+  3 chip 卡 key=122 chip=3 → 3 高 103.7 → 103.7
+  PASS G3b 3 chip 卡 chip 数与高度不变  -- 3 / 103.7px
+  .pw-adjust computed = absolute/22px/22px
+  PASS G3c 「⛶」是绝对定位，不参与卡片排版  -- absolute/22px/22px
+  模糊滑块 0 → {"mode":"card","value":"/api/media/person/125/card-bg?w=332&h=102&s=1.5&dx=0.04&dy=0.08&blur=0&d=0&bg=ffffff&v=1n5fmdj"} ； 20 → {"mode":"card","value":"/api/media/person/125/card-bg?w=332&h=102&s=1.5&dx=0.04&dy=0.08&blur=20&d=0&bg=ffffff&v=1n5fmdj"
+  PASS G4 模糊滑块 → 松手后 URL 的 blur=0 / 20（服务端重新渲染）
+  prefers-reduced-motion: reduce → .pw-bg-img transition=0s .pw-adjust transition=0s
+  PASS G5 reduced-motion 下 .pw-bg-img 无过渡  -- 0s
+  PASS G6 reduced-motion 下新增的 ⛶ 按钮无过渡  -- 0s
+
+=== H 无背景卡的调整按钮不存在 ===
+  PASS H1 「⛶」按钮数 = 有背景卡数（13）  -- 13
+  强制头像失败后 key=112 → {"hasBg":false,"hasBtn":false,"dataBg":"0","initial":"M"}
+  PASS H2 没有背景图的卡上「⛶」不渲染（首字占位卡）  -- hasBg=false hasBtn=false
+
+=== I 375 单列 + 亮暗截图 ===
+  PASS I1 375 宽度墙面就绪
+  PASS I2 375 仍是单列（列数 1）
+  375 弹层面板 [16,154.25,328,471.5] 预览 [31,268.25,298,90.5]
+  PASS I3 375 下弹层宽 ≤ 92vw  -- 328px
+  PASS I4 弹层不越出视口  -- 16 + 328
+  PASS I5 暗色 1600 墙面就绪
+  暗色下调整后的卡 data-bg-adjust=1.8,0.08,0.06 rect=[193,64,333.25,101.7]
+  SKIP (P5.90 单图：几何在服务端) I6 暗色下同样三层一致
+
+=== J 点卡片正文仍跳详情（调整按钮没有拦住点击） ===
+  PASS J1 点卡片正文跳到人物详情  -- /media/person/125
+
+=== 汇总 ===
+  断言 45 通过 / 45 共
+  PASS Z1 全程无页面异常
+
+PASS 46/46

@@ -20,6 +20,8 @@
  * 后端在参数缺省时才回落到人物已保存的 bg_scale/bg_dx/bg_dy，两条口径互不冲突。
  */
 
+import { TARGET_X, TARGET_Y } from './personBgImage.js'
+
 /** 后端同值上限（IMediaPersonCardBgService.MAX_W / MAX_H）：超出按比例缩，不报错 */
 export const CARD_BG_MAX_W = 1200
 export const CARD_BG_MAX_H = 600
@@ -55,6 +57,25 @@ export function cardBgSize(cssW, cssH, dpr) {
   if (!(w > 0) || !(h > 0)) return null
   const ratio = Math.min(CARD_BG_MAX_DPR, Math.max(1, Number(dpr) || 1))
   return { w: evenPx(w * ratio, CARD_BG_MAX_W), h: evenPx(h * ratio, CARD_BG_MAX_H) }
+}
+
+/** 低清占位宽度上限（P5.92 首屏秒出）：240 宽 ≈ 每张 2–4KB，后端渲染 10–30ms 而不是 60–200ms */
+export const CARD_BG_PREVIEW_W = 240
+
+/**
+ * 低清占位尺寸（P5.92）：由正式尺寸等比缩出来，宽夹到 {@link CARD_BG_PREVIEW_W}
+ *
+ * <p>为什么从正式尺寸缩、不另外算：等比才能保证占位图和正式图**构图逐像素一致**，
+ * 换图时只有清晰度变化、没有位移跳动。</p>
+ *
+ * @param {{w:number,h:number}|null} full 正式尺寸（{@link cardBgSize} 的结果）
+ * @returns {{w:number,h:number}|null} 正式尺寸本身就不合法时 null
+ */
+export function cardBgPreview(full) {
+  if (!full || !(Number(full.w) > 0) || !(Number(full.h) > 0)) return null
+  const w = evenPx(Math.min(Number(full.w), CARD_BG_PREVIEW_W), CARD_BG_MAX_W)
+  const h = evenPx(Math.round((Number(full.h) * w) / Number(full.w)), CARD_BG_MAX_H)
+  return { w, h }
 }
 
 /** 头像版本（进 URL 的 v 参数）：换了头像 → 版本变 → 浏览器不会拿旧图 */
@@ -127,4 +148,69 @@ export function extraBlur(committed, preview) {
 export function cardBgFilterCss(committed, preview) {
   const d = extraBlur(committed, preview)
   return d > 0 ? 'blur(' + d + 'px)' : ''
+}
+
+/* ---------------------------------------- P5.93 弹层预览：与卡片同一个服务端端点 */
+
+/**
+ * 预览要下发的 blur（服务端的单位是**输出像素**）
+ *
+ * <p>服务端 {@code gaussianBlur(photo, w, h, blurPx)} 的半径是「这张出图上的像素数」：
+ * 同样 blur=6，出 656 宽和出 1040 宽在画面上占的比例不同。弹层预览盒（约 520 宽）比卡片
+ * （约 328 宽）宽，直接照抄卡片的 blur 会让预览的模糊永远比卡片轻一档 —— 这是「预览≠应用」
+ * 的一部分。所以要按出图宽度等比换算，再夹到后端值域 0–20。</p>
+ *
+ * @param {number} committed 卡片此刻用的模糊半径（滑块值，卡片出图口径）
+ * @param {number} previewOutW 预览的出图宽度（px）
+ * @param {number} cardOutW 卡片的出图宽度（px）；量不出来时按同一口径（不换算）
+ * @returns {number} 0–20 的整数
+ */
+export function previewBlur(committed, previewOutW, cardOutW) {
+  const b = Number(committed)
+  const pw = Number(previewOutW)
+  const cw = Number(cardOutW)
+  if (!Number.isFinite(b) || b <= 0) return 0
+  const ratio = pw > 0 && cw > 0 ? pw / cw : 1
+  return Math.max(0, Math.min(20, Math.round(b * ratio)))
+}
+
+/**
+ * 拖动 / 拉滑块到「真图还没回来」这段空窗期的即时近似
+ *
+ * <p>服务端图有 180–400ms 的延迟，拖动期间必须立刻有反馈，否则手感是「卡住」。
+ * 用一次仿射把**已经显示的那张图**（参数快照 shown）推到草稿 draft 的构图：</p>
+ *
+ * <pre>
+ *   k  = draft.scale / shown.scale
+ *   tx = (draft.dx − k × shown.dx) × boxW      ty 同理（用 boxH）
+ * </pre>
+ *
+ * <p>推导：几何满足 {@code tx = boxW × TARGET_X − imgW × cropX + dx × boxW}，把 imgW 乘 k 后
+ * 两式相减就是这个平移量；缩放原点取自动几何钉的裁剪中心 {@code (TARGET_X, TARGET_Y)}。
+ * 垫底色 / 柔光不参与变换（真图到了会重画整张），所以这只是「近似」——它只活 160ms。</p>
+ *
+ * @returns {{k:number,tx:number,ty:number,originX:number,originY:number}|null} 没有可见差异 → null（不写 style）
+ */
+export function transientTransform(shown, draft, boxW, boxH, targetX = TARGET_X, targetY = TARGET_Y) {
+  const w = Number(boxW)
+  const h = Number(boxH)
+  if (!(w > 0) || !(h > 0) || !shown || !draft) return null
+  const s0 = Number(shown.scale)
+  const s1 = Number(draft.scale)
+  const x0 = Number(shown.dx)
+  const y0 = Number(shown.dy)
+  const x1 = Number(draft.dx)
+  const y1 = Number(draft.dy)
+  if (![s0, s1, x0, y0, x1, y1].every((v) => Number.isFinite(v)) || !(s0 > 0)) return null
+  const k = s1 / s0
+  const tx = (x1 - k * x0) * w
+  const ty = (y1 - k * y0) * h
+  if (Math.abs(k - 1) < 0.002 && Math.abs(tx) < 0.25 && Math.abs(ty) < 0.25) return null
+  return {
+    k: Math.round(k * 10000) / 10000,
+    tx: Math.round(tx * 100) / 100,
+    ty: Math.round(ty * 100) / 100,
+    originX: w * targetX,
+    originY: h * targetY
+  }
 }
