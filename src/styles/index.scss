@@ -104,3 +104,52 @@ a {
     width: 100%;
   }
 }
+
+/* ---------- el-dialog 统一不溢出（P6.05） ----------
+   站端只有「关于本站」等少数弹窗走 Element 的 el-dialog。Element 默认
+   margin-top: 15vh + 内容不限高，矮视口（1280×720）或窄屏（375×812）下
+   底部按钮会被顶出视口。这里统一成「上下留白 + max-height 限高」，
+   header / footer 常驻，只让 body 滚。 */
+.el-dialog:not(.is-fullscreen) {
+  margin: 24px auto !important;
+  max-height: calc(100vh - 48px);
+  max-width: calc(100vw - 48px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.el-dialog:not(.is-fullscreen) > .el-dialog__header,
+.el-dialog:not(.is-fullscreen) > .el-dialog__footer {
+  flex: 0 0 auto;
+}
+
+.el-dialog:not(.is-fullscreen) > .el-dialog__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.el-drawer {
+  max-height: 100vh;
+}
+
+.el-drawer > .el-drawer__header,
+.el-drawer > .el-drawer__footer {
+  flex: 0 0 auto;
+}
+
+.el-drawer > .el-drawer__body {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 768px) {
+  .el-dialog:not(.is-fullscreen) {
+    margin: 12px auto !important;
+    max-height: calc(100vh - 24px);
+    max-width: calc(100vw - 24px);
+  }
+}

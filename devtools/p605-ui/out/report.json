@@ -1,0 +1,402 @@
+{
+  "passed": 30,
+  "failures": [],
+  "rows": [
+    {
+      "key": "auth-dialog",
+      "name": "登录 / 注册悬浮窗",
+      "viewport": "1600x900",
+      "status": "PASS",
+      "after": {
+        "sel": ".qt-auth-dialog",
+        "innerW": 1600,
+        "innerH": 900,
+        "rect": {
+          "left": 0,
+          "top": 0,
+          "right": 1585,
+          "bottom": 900,
+          "width": 1585,
+          "height": 900
+        },
+        "bottomOver": 0,
+        "fits": true,
+        "clipped": [],
+        "scroller": null,
+        "lastBlock": null,
+        "primary": {
+          "text": "登录",
+          "top": 462.7,
+          "bottom": 502.7,
+          "inViewport": true,
+          "hit": true
+        },
+        "pass": true
+      },
+      "shots": [
+        "C-auth-dialog-1600x900-after.png"
+      ]
+    },
+    {
+      "key": "avatar-dialog",
+      "name": "换头像",
+      "viewport": "1600x900",
+      "status": "PASS",
+      "after": {
+        "sel": ".pa-panel",
+        "innerW": 1600,
+        "innerH": 900,
+        "rect": {
+          "left": 432.5,
+          "top": 90,
+          "right": 1152.5,
+          "bottom": 810,
+          "width": 720,
+          "height": 720
+        },
+        "bottomOver": -90,
+        "fits": true,
+        "clipped": [],
+        "scroller": {
+          "cls": "pa-body",
+          "scrollH": 1020,
+          "clientH": 572,
+          "overflowY": "auto",
+          "reachedBottom": true
+        },
+        "lastBlock": {
+          "text": "images 73 张写真 45 张",
+          "top": -253,
+          "bottom": 729,
+          "height": 982,
+          "fullyVisible": false,
+          "endReachable": true
+        },
+        "primary": {
+          "text": "取消",
+          "top": 766,
+          "bottom": 799,
+          "inViewport": true,
+          "hit": true
+        },
+        "pass": true
+      },
+      "shots": [
+        "C-avatar-dialog-1600x900-after.png"
+      ]
+    },
+    {
+      "key": "bg-adjust-dialog",
+      "name": "调背景",
+      "viewport": "1600x900",
+      "status": "PASS",
+      "after": {
+        "sel": ".pba-panel",
+        "innerW": 1600,
+        "innerH": 900,
+        "rect": {
+          "left": 512.5,
+          "top": 198.9,
+          "right": 1072.5,
+          "bottom": 701.1,
+          "width": 560,
+          "height": 502.3
+        },
+        "bottomOver": -198.9,
+        "fits": true,
+        "clipped": [],
+        "scroller": null,
+        "lastBlock": null,
+        "primary": {
+          "text": "保存",
+          "top": 659.1,
+          "bottom": 690.1,
+          "inViewport": true,
+          "hit": true
+        },
+        "pass": true
+      },
+      "shots": [
+        "C-bg-adjust-dialog-1600x900-after.png"
+      ]
+    },
+    {
+      "key": "playlist-manage",
+      "name": "播放列表管理",
+      "viewport": "1600x900",
+      "status": "SKIP",
+      "reason": "页面求值异常: Error: 找不到 [data-pl-act=\"manage\"]；候选=\n    at Object.center (<anonymous>:23:21)\n    at <anonymous>:1:8"
+    },
+    {
+      "key": "lightbox",
+      "name": "大图查看",
+      "viewport": "1600x900",
+      "status": "SKIP",
+      "reason": "页面求值异常: Error: 等待超时: {\"wait\":{\"sel\":\"button.cell\",\"timeout\":30000}}\n    at Object.step (<anonymous>:38:11)"
+    },
+    {
+      "key": "auth-dialog",
+      "name": "登录 / 注册悬浮窗",
+      "viewport": "1280x720",
+      "status": "PASS",
+      "after": {
+        "sel": ".qt-auth-dialog",
+        "innerW": 1280,
+        "innerH": 720,
+        "rect": {
+          "left": 0,
+          "top": 0,
+          "right": 1265,
+          "bottom": 720,
+          "width": 1265,
+          "height": 720
+        },
+        "bottomOver": 0,
+        "fits": true,
+        "clipped": [],
+        "scroller": null,
+        "lastBlock": null,
+        "primary": {
+          "text": "登录",
+          "top": 372.7,
+          "bottom": 412.7,
+          "inViewport": true,
+          "hit": true
+        },
+        "pass": true
+      },
+      "shots": [
+        "C-auth-dialog-1280x720-after.png"
+      ]
+    },
+    {
+      "key": "avatar-dialog",
+      "name": "换头像",
+      "viewport": "1280x720",
+      "status": "PASS",
+      "after": {
+        "sel": ".pa-panel",
+        "innerW": 1280,
+        "innerH": 720,
+        "rect": {
+          "left": 272.5,
+          "top": 72,
+          "right": 992.5,
+          "bottom": 648,
+          "width": 720,
+          "height": 576
+        },
+        "bottomOver": -72,
+        "fits": true,
+        "clipped": [],
+        "scroller": {
+          "cls": "pa-body",
+          "scrollH": 1020,
+          "clientH": 428,
+          "overflowY": "auto",
+          "reachedBottom": true
+        },
+        "lastBlock": {
+          "text": "images 73 张写真 45 张",
+          "top": -415,
+          "bottom": 567,
+          "height": 982,
+          "fullyVisible": false,
+          "endReachable": true
+        },
+        "primary": {
+          "text": "取消",
+          "top": 604,
+          "bottom": 637,
+          "inViewport": true,
+          "hit": true
+        },
+        "pass": true
+      },
+      "shots": [
+        "C-avatar-dialog-1280x720-after.png"
+      ]
+    },
+    {
+      "key": "bg-adjust-dialog",
+      "name": "调背景",
+      "viewport": "1280x720",
+      "status": "PASS",
+      "after": {
+        "sel": ".pba-panel",
+        "innerW": 1280,
+        "innerH": 720,
+        "rect": {
+          "left": 352.5,
+          "top": 111,
+          "right": 912.5,
+          "bottom": 609,
+          "width": 560,
+          "height": 498.1
+        },
+        "bottomOver": -111,
+        "fits": true,
+        "clipped": [],
+        "scroller": null,
+        "lastBlock": null,
+        "primary": {
+          "text": "保存",
+          "top": 567,
+          "bottom": 598,
+          "inViewport": true,
+          "hit": true
+        },
+        "pass": true
+      },
+      "shots": [
+        "C-bg-adjust-dialog-1280x720-after.png"
+      ]
+    },
+    {
+      "key": "playlist-manage",
+      "name": "播放列表管理",
+      "viewport": "1280x720",
+      "status": "SKIP",
+      "reason": "页面求值异常: Error: 找不到 [data-pl-act=\"manage\"]；候选=\n    at Object.center (<anonymous>:23:21)\n    at <anonymous>:1:8"
+    },
+    {
+      "key": "lightbox",
+      "name": "大图查看",
+      "viewport": "1280x720",
+      "status": "SKIP",
+      "reason": "页面求值异常: Error: 等待超时: {\"wait\":{\"sel\":\"button.cell\",\"timeout\":30000}}\n    at Object.step (<anonymous>:38:11)"
+    },
+    {
+      "key": "auth-dialog",
+      "name": "登录 / 注册悬浮窗",
+      "viewport": "375x812",
+      "status": "PASS",
+      "after": {
+        "sel": ".qt-auth-dialog",
+        "innerW": 375,
+        "innerH": 812,
+        "rect": {
+          "left": 0,
+          "top": 0,
+          "right": 360,
+          "bottom": 812,
+          "width": 360,
+          "height": 812
+        },
+        "bottomOver": 0,
+        "fits": true,
+        "clipped": [],
+        "scroller": null,
+        "lastBlock": null,
+        "primary": {
+          "text": "登录",
+          "top": 239.6,
+          "bottom": 279.6,
+          "inViewport": true,
+          "hit": true
+        },
+        "pass": true
+      },
+      "shots": [
+        "C-auth-dialog-375x812-after.png"
+      ]
+    },
+    {
+      "key": "avatar-dialog",
+      "name": "换头像",
+      "viewport": "375x812",
+      "status": "PASS",
+      "after": {
+        "sel": ".pa-panel",
+        "innerW": 375,
+        "innerH": 812,
+        "rect": {
+          "left": 16,
+          "top": 81.2,
+          "right": 344,
+          "bottom": 730.8,
+          "width": 328,
+          "height": 649.6
+        },
+        "bottomOver": -81.2,
+        "fits": true,
+        "clipped": [],
+        "scroller": {
+          "cls": "pa-body",
+          "scrollH": 1004,
+          "clientH": 502,
+          "overflowY": "auto",
+          "reachedBottom": true
+        },
+        "lastBlock": {
+          "text": "images 73 张写真 45 张",
+          "top": -315.8,
+          "bottom": 650.2,
+          "height": 966,
+          "fullyVisible": false,
+          "endReachable": true
+        },
+        "primary": {
+          "text": "取消",
+          "top": 686.8,
+          "bottom": 719.8,
+          "inViewport": true,
+          "hit": true
+        },
+        "pass": true
+      },
+      "shots": [
+        "C-avatar-dialog-375x812-after.png"
+      ]
+    },
+    {
+      "key": "bg-adjust-dialog",
+      "name": "调背景",
+      "viewport": "375x812",
+      "status": "PASS",
+      "after": {
+        "sel": ".pba-panel",
+        "innerW": 375,
+        "innerH": 812,
+        "rect": {
+          "left": 16,
+          "top": 168.9,
+          "right": 344,
+          "bottom": 643.1,
+          "width": 328,
+          "height": 474.2
+        },
+        "bottomOver": -168.9,
+        "fits": true,
+        "clipped": [],
+        "scroller": null,
+        "lastBlock": null,
+        "primary": {
+          "text": "保存",
+          "top": 601.1,
+          "bottom": 632.1,
+          "inViewport": true,
+          "hit": true
+        },
+        "pass": true
+      },
+      "shots": [
+        "C-bg-adjust-dialog-375x812-after.png"
+      ]
+    },
+    {
+      "key": "playlist-manage",
+      "name": "播放列表管理",
+      "viewport": "375x812",
+      "status": "SKIP",
+      "reason": "页面求值异常: Error: 找不到 [data-pl-act=\"manage\"]；候选=\n    at Object.center (<anonymous>:23:21)\n    at <anonymous>:1:8"
+    },
+    {
+      "key": "lightbox",
+      "name": "大图查看",
+      "viewport": "375x812",
+      "status": "SKIP",
+      "reason": "页面求值异常: Error: 等待超时: {\"wait\":{\"sel\":\"button.cell\",\"timeout\":30000}}\n    at Object.step (<anonymous>:38:11)"
+    }
+  ]
+}

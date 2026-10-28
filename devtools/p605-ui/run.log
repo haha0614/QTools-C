@@ -1,0 +1,53 @@
+
+== 视口 1600x900
+  PASS 登录 / 注册悬浮窗 @1600x900 面底部在视口内  -- bottom=900 innerH=900 over=0
+  PASS 登录 / 注册悬浮窗 @1600x900 内容没有被 overflow:hidden 切掉  -- []
+  PASS 登录 / 注册悬浮窗 @1600x900 主按钮可点  -- {"text":"登录","top":462.7,"bottom":502.7,"inViewport":true,"hit":true}
+  PASS 换头像 @1600x900 面底部在视口内  -- bottom=810 innerH=900 over=-90
+  PASS 换头像 @1600x900 内容没有被 overflow:hidden 切掉  -- []
+  PASS 换头像 @1600x900 主按钮可点  -- {"text":"取消","top":766,"bottom":799,"inViewport":true,"hit":true}
+  PASS 换头像 @1600x900 内容滚到底最后一段可见  -- {"text":"images 73 张写真 45 张","top":-253,"bottom":729,"height":982,"fullyVisible":false,"endReachable":true}
+  PASS 调背景 @1600x900 面底部在视口内  -- bottom=701.1 innerH=900 over=-198.9
+  PASS 调背景 @1600x900 内容没有被 overflow:hidden 切掉  -- []
+  PASS 调背景 @1600x900 主按钮可点  -- {"text":"保存","top":659.1,"bottom":690.1,"inViewport":true,"hit":true}
+  SKIP 播放列表管理 — 页面求值异常: Error: 找不到 [data-pl-act="manage"]；候选=
+    at Object.center (<anonymous>:23:21)
+    at <anonymous>:1:8
+  SKIP 大图查看 — 页面求值异常: Error: 等待超时: {"wait":{"sel":"button.cell","timeout":30000}}
+    at Object.step (<anonymous>:38:11)
+
+== 视口 1280x720
+  PASS 登录 / 注册悬浮窗 @1280x720 面底部在视口内  -- bottom=720 innerH=720 over=0
+  PASS 登录 / 注册悬浮窗 @1280x720 内容没有被 overflow:hidden 切掉  -- []
+  PASS 登录 / 注册悬浮窗 @1280x720 主按钮可点  -- {"text":"登录","top":372.7,"bottom":412.7,"inViewport":true,"hit":true}
+  PASS 换头像 @1280x720 面底部在视口内  -- bottom=648 innerH=720 over=-72
+  PASS 换头像 @1280x720 内容没有被 overflow:hidden 切掉  -- []
+  PASS 换头像 @1280x720 主按钮可点  -- {"text":"取消","top":604,"bottom":637,"inViewport":true,"hit":true}
+  PASS 换头像 @1280x720 内容滚到底最后一段可见  -- {"text":"images 73 张写真 45 张","top":-415,"bottom":567,"height":982,"fullyVisible":false,"endReachable":true}
+  PASS 调背景 @1280x720 面底部在视口内  -- bottom=609 innerH=720 over=-111
+  PASS 调背景 @1280x720 内容没有被 overflow:hidden 切掉  -- []
+  PASS 调背景 @1280x720 主按钮可点  -- {"text":"保存","top":567,"bottom":598,"inViewport":true,"hit":true}
+  SKIP 播放列表管理 — 页面求值异常: Error: 找不到 [data-pl-act="manage"]；候选=
+    at Object.center (<anonymous>:23:21)
+    at <anonymous>:1:8
+  SKIP 大图查看 — 页面求值异常: Error: 等待超时: {"wait":{"sel":"button.cell","timeout":30000}}
+    at Object.step (<anonymous>:38:11)
+
+== 视口 375x812
+  PASS 登录 / 注册悬浮窗 @375x812 面底部在视口内  -- bottom=812 innerH=812 over=0
+  PASS 登录 / 注册悬浮窗 @375x812 内容没有被 overflow:hidden 切掉  -- []
+  PASS 登录 / 注册悬浮窗 @375x812 主按钮可点  -- {"text":"登录","top":239.6,"bottom":279.6,"inViewport":true,"hit":true}
+  PASS 换头像 @375x812 面底部在视口内  -- bottom=730.8 innerH=812 over=-81.2
+  PASS 换头像 @375x812 内容没有被 overflow:hidden 切掉  -- []
+  PASS 换头像 @375x812 主按钮可点  -- {"text":"取消","top":686.8,"bottom":719.8,"inViewport":true,"hit":true}
+  PASS 换头像 @375x812 内容滚到底最后一段可见  -- {"text":"images 73 张写真 45 张","top":-315.8,"bottom":650.2,"height":966,"fullyVisible":false,"endReachable":true}
+  PASS 调背景 @375x812 面底部在视口内  -- bottom=643.1 innerH=812 over=-168.9
+  PASS 调背景 @375x812 内容没有被 overflow:hidden 切掉  -- []
+  PASS 调背景 @375x812 主按钮可点  -- {"text":"保存","top":601.1,"bottom":632.1,"inViewport":true,"hit":true}
+  SKIP 播放列表管理 — 页面求值异常: Error: 找不到 [data-pl-act="manage"]；候选=
+    at Object.center (<anonymous>:23:21)
+    at <anonymous>:1:8
+  SKIP 大图查看 — 页面求值异常: Error: 等待超时: {"wait":{"sel":"button.cell","timeout":30000}}
+    at Object.step (<anonymous>:38:11)
+
+PASS 30/30
