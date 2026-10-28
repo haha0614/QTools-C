@@ -156,7 +156,7 @@ const OPS = (key) => '(function(){var c=document.querySelector(\'.pw-card[data-c
 /* ------------------------------------------------- d 对比度: DPR2 截图 -> canvas 取样 */
 const LUMA_FN = 'function lum(d,i){function f(v){v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)}return 0.2126*f(d[i])+0.7152*f(d[i+1])+0.0722*f(d[i+2])}'
 /** 钮内「字形 vs 圆盘」对比度：只取圆的**内接方框**（边长 12 CSS px，居中）—— 圆外四角的卡片图不参与。
- *  底色取 p10（钮底被整体 0.45 压过之后的实际底色；用中位数会被 CJK 字形笔画抬高一截），
+ *  底色取 p10（钮底被整体 0.55 压过之后的实际底色；用中位数会被 CJK 字形笔画抬高一截），
  *  字形取 p98，比值按 WCAG 相对亮度公式 (L1+0.05)/(L2+0.05)。 */
 async function measureContrast(pngBase64, clip, centers) {
   const expr = '(function(){return new Promise(function(res,rej){' +
@@ -220,13 +220,13 @@ for (const [w, h, tag] of [[1600, 1200, '1600'], [1200, 900, '1200'], [375, 812,
 facts.layout = layoutFacts
 
 /* ============================================================ b 不透明度 / 触发面 */
-head('b 不透明度 0.45 与触发面（头像 → 换；整卡 → ⛶）')
+head('b 不透明度 0.55 与触发面（头像 → 换；整卡 → ⛶）')
 await viewport(1600, 1200, 1)
 await openWall('light')
 const keyB = (await evaluate(PROBE)).filter((r) => r.adj && r.chg)[0].key
 await parkMouse(); await sleep(250)
 const restOp = await evaluate(OPS(keyB))
-ok(restOp.adj === '0.45' && restOp.chg === '0.45', 'b1 静止态两钮 computed opacity 都是 0.45', JSON.stringify(restOp))
+ok(restOp.adj === '0.55' && restOp.chg === '0.55', 'b1 静止态两钮 computed opacity 都是 0.55', JSON.stringify(restOp))
 
 const avatarBox = await evaluate(SEL(keyB, '.pw-avatar-wrap'))
 await hoverAt(avatarBox.cx, avatarBox.cy); await sleep(250)
@@ -238,7 +238,7 @@ const nameBox = await evaluate(SEL(keyB, '.pw-name'))
 await hoverAt(nameBox.cx, nameBox.cy); await sleep(250)
 const onCard = await evaluate(OPS(keyB))
 ok(parseFloat(onCard.adj) >= 0.85, 'b4 卡片 hover（非头像）→「⛶」≥0.85（整卡触发面）', onCard.adj)
-ok(onCard.chg === '0.45', 'b5 卡片 hover 但没碰头像 →「换」仍 0.45（P5.98 的整卡触发已撤销）', onCard.chg)
+ok(onCard.chg === '0.55', 'b5 卡片 hover 但没碰头像 →「换」仍 0.55（P5.98 的整卡触发已撤销）', onCard.chg)
 
 const adjBox = await evaluate(SEL(keyB, '.pw-adjust'))
 await hoverAt(adjBox.cx, adjBox.cy); await sleep(250)

@@ -1,0 +1,53 @@
+[p590] attempt 1: 数据可见，开跑 2026-10-28T01:39:38.375Z
+[p590] attempt 1 exit=1
+
+[p590] attempt 2: 数据可见，开跑 2026-10-28T01:40:20.153Z
+[p590] attempt 2 exit=1
+
+[p590] attempt 3: 数据可见，开跑 2026-10-28T01:41:02.003Z
+[p590] attempt 3 exit=1
+
+[p590] attempt 4: 数据可见，开跑 2026-10-28T01:41:43.783Z
+[p590] attempt 4 exit=1
+
+[p590] => FAILED
+[p593] attempt 1: 数据可见，开跑 2026-10-28T01:42:25.609Z
+[p593] attempt 1 exit=2
+  PASS d1 墙上每卡最多 2 个 card-bg 请求（P5.92 两段式：240 占位 + 正式），弹层预览不额外挂在墙上  -- 26 请求 / 13 卡
+  PASS d2 没有「预览尺寸(520+)」的请求混进墙上（预览只在弹层里发）  -- 0 个
+  PASS d3 模糊滑块改 12 -> 卡片 URL blur=12  -- blur=12
+  PASS d4 弹层预览跟着模糊滑块走（blur 等比换算）  -- card=12(332) 预览=19(520) 期望 19
+  PASS d5 blur=12 时预览与卡片仍一致  -- MAE=1.48/255（max 29）
+PASS 60/60
+[p593] attempt 2: 数据可见，开跑 2026-10-28T01:43:06.988Z
+[p593] attempt 2 exit=0
+  PASS d7 375 + 暗色下预览与卡片仍一致  -- MAE=1.39（预览 312x94 / 卡片 340x102）
+  PASS d8 打桩生效（拦到 card-bg）  -- 26 个
+  PASS d9 端点 500 -> 卡片退回三层 .pw-bg-img  -- 39 层 / 13 卡
+  PASS d10 端点 500 -> 弹层预览退回三层 CSS（还能调）  -- {"card":false,"sharp":1,"blur":1,"fog":1}
+  PASS d11 页面无 console 错误
+PASS 66/66
+[p593] => OK
+[p594] attempt 1: 数据可见，开跑 2026-10-28T01:43:59.201Z
+[p594] attempt 1 exit=1
+
+[p594] attempt 2: 数据可见，开跑 2026-10-28T01:43:59.341Z
+[p594] attempt 2 exit=1
+
+[p594] attempt 3: 数据可见，开跑 2026-10-28T01:43:59.478Z
+[p594] attempt 3 exit=1
+
+[p594] attempt 4: 数据可见，开跑 2026-10-28T01:43:59.610Z
+[p594] attempt 4 exit=1
+
+[p594] => FAILED
+[p598] attempt 1: 数据可见，开跑 2026-10-28T01:43:59.742Z
+[p598] attempt 1 exit=0
+  PASS f3 卡片仍挂服务端预渲染背景图（.pw-bg-card）  -- 13 张
+  PASS f4 背景 URL 仍带 w/h 参数（预渲染逻辑未变）  -- 13/13
+  PASS f5 每卡背景请求 ≤2（占位 + 正式），与 P5.90 口径一致  -- 最多 2 次
+  PASS f6 全程没有残留的调背景弹层
+  PASS f7 页面无 console 错误 / 未捕获异常
+PASS 63/63
+[p598] => OK
+ALL DONE

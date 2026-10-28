@@ -144,8 +144,8 @@
     },
     "opacity": {
       "rest": {
-        "adj": "0.45",
-        "chg": "0.45",
+        "adj": "0.55",
+        "chg": "0.55",
         "adjBorder": "rgba(255, 255, 255, 0.24)",
         "chgBorder": "rgba(255, 255, 255, 0.24)"
       },
@@ -157,13 +157,13 @@
       },
       "onCard": {
         "adj": "1",
-        "chg": "0.45",
+        "chg": "0.55",
         "adjBorder": "rgba(255, 255, 255, 0.24)",
         "chgBorder": "rgba(255, 255, 255, 0.24)"
       },
       "onAdj": {
         "adj": "1",
-        "chg": "0.45",
+        "chg": "0.55",
         "adjBorder": "rgb(64, 158, 255)",
         "chgBorder": "rgba(255, 255, 255, 0.24)"
       },
@@ -230,192 +230,192 @@
           {
             "key": "125",
             "adj": {
-              "disc": 0.089,
-              "glyph": 0.461,
-              "ratio": 3.68
+              "disc": 0.075,
+              "glyph": 0.519,
+              "ratio": 4.55
             },
             "chg": {
-              "disc": 0.012,
-              "glyph": 0.791,
-              "ratio": 13.64
+              "disc": 0.011,
+              "glyph": 0.805,
+              "ratio": 14.02
             },
-            "adjBg": "rgb(22, 24, 28)",
+            "adjBg": "rgba(22, 24, 28, 0.92)",
             "adjColor": "rgb(242, 243, 245)"
           },
           {
             "key": "122",
             "adj": {
-              "disc": 0.046,
-              "glyph": 0.33,
-              "ratio": 3.96
+              "disc": 0.04,
+              "glyph": 0.398,
+              "ratio": 4.97
             },
             "chg": {
-              "disc": 0.192,
-              "glyph": 0.806,
-              "ratio": 3.54
+              "disc": 0.159,
+              "glyph": 0.816,
+              "ratio": 4.14
             },
-            "adjBg": "rgb(22, 24, 28)",
+            "adjBg": "rgba(22, 24, 28, 0.92)",
             "adjColor": "rgb(242, 243, 245)"
           },
           {
             "key": "124",
             "adj": {
-              "disc": 0.033,
-              "glyph": 0.302,
-              "ratio": 4.22
+              "disc": 0.03,
+              "glyph": 0.379,
+              "ratio": 5.38
             },
             "chg": {
-              "disc": 0.031,
-              "glyph": 0.654,
-              "ratio": 8.69
+              "disc": 0.028,
+              "glyph": 0.68,
+              "ratio": 9.39
             },
-            "adjBg": "rgb(22, 24, 28)",
+            "adjBg": "rgba(22, 24, 28, 0.92)",
             "adjColor": "rgb(242, 243, 245)"
           },
           {
             "key": "123",
             "adj": {
-              "disc": 0.047,
-              "glyph": 0.425,
-              "ratio": 4.89
+              "disc": 0.041,
+              "glyph": 0.477,
+              "ratio": 5.78
             },
             "chg": {
-              "disc": 0.057,
-              "glyph": 0.729,
-              "ratio": 7.26
+              "disc": 0.059,
+              "glyph": 0.746,
+              "ratio": 7.32
             },
-            "adjBg": "rgb(22, 24, 28)",
+            "adjBg": "rgba(22, 24, 28, 0.92)",
             "adjColor": "rgb(242, 243, 245)"
           },
           {
             "key": "119",
             "adj": {
-              "disc": 0.113,
-              "glyph": 0.535,
-              "ratio": 3.59
+              "disc": 0.096,
+              "glyph": 0.585,
+              "ratio": 4.34
             },
             "chg": {
-              "disc": 0.204,
-              "glyph": 0.799,
-              "ratio": 3.35
+              "disc": 0.169,
+              "glyph": 0.809,
+              "ratio": 3.91
             },
-            "adjBg": "rgb(22, 24, 28)",
+            "adjBg": "rgba(22, 24, 28, 0.92)",
             "adjColor": "rgb(242, 243, 245)"
           },
           {
             "key": "115",
             "adj": {
               "disc": 0.006,
-              "glyph": 0.167,
-              "ratio": 3.85
+              "glyph": 0.242,
+              "ratio": 5.18
             },
             "chg": {
-              "disc": 0.028,
-              "glyph": 0.79,
-              "ratio": 10.82
+              "disc": 0.025,
+              "glyph": 0.798,
+              "ratio": 11.27
             },
-            "adjBg": "rgb(22, 24, 28)",
+            "adjBg": "rgba(22, 24, 28, 0.92)",
             "adjColor": "rgb(242, 243, 245)"
           }
         ],
-        "minAdj": 3.59,
-        "minChg": 3.35
+        "minAdj": 4.34,
+        "minChg": 3.91
       },
       "dark": {
         "rows": [
           {
             "key": "125",
             "adj": {
-              "disc": 0.089,
-              "glyph": 0.461,
-              "ratio": 3.68
+              "disc": 0.075,
+              "glyph": 0.519,
+              "ratio": 4.55
             },
             "chg": {
-              "disc": 0.012,
-              "glyph": 0.266,
-              "ratio": 5.12
+              "disc": 0.011,
+              "glyph": 0.341,
+              "ratio": 6.41
             },
-            "adjBg": "rgb(22, 24, 28)",
+            "adjBg": "rgba(22, 24, 28, 0.92)",
             "adjColor": "rgb(242, 243, 245)"
           },
           {
             "key": "122",
             "adj": {
-              "disc": 0.046,
-              "glyph": 0.33,
-              "ratio": 3.96
+              "disc": 0.04,
+              "glyph": 0.398,
+              "ratio": 4.97
             },
             "chg": {
-              "disc": 0.019,
-              "glyph": 0.717,
-              "ratio": 11.15
+              "disc": 0.018,
+              "glyph": 0.723,
+              "ratio": 11.41
             },
-            "adjBg": "rgb(22, 24, 28)",
+            "adjBg": "rgba(22, 24, 28, 0.92)",
             "adjColor": "rgb(242, 243, 245)"
           },
           {
             "key": "124",
             "adj": {
-              "disc": 0.033,
-              "glyph": 0.302,
-              "ratio": 4.22
+              "disc": 0.03,
+              "glyph": 0.379,
+              "ratio": 5.38
             },
             "chg": {
-              "disc": 0.019,
-              "glyph": 0.409,
-              "ratio": 6.62
+              "disc": 0.018,
+              "glyph": 0.478,
+              "ratio": 7.81
             },
-            "adjBg": "rgb(22, 24, 28)",
+            "adjBg": "rgba(22, 24, 28, 0.92)",
             "adjColor": "rgb(242, 243, 245)"
           },
           {
             "key": "123",
             "adj": {
-              "disc": 0.047,
-              "glyph": 0.425,
-              "ratio": 4.89
+              "disc": 0.041,
+              "glyph": 0.477,
+              "ratio": 5.78
             },
             "chg": {
-              "disc": 0.038,
-              "glyph": 0.368,
-              "ratio": 4.74
+              "disc": 0.034,
+              "glyph": 0.442,
+              "ratio": 5.88
             },
-            "adjBg": "rgb(22, 24, 28)",
+            "adjBg": "rgba(22, 24, 28, 0.92)",
             "adjColor": "rgb(242, 243, 245)"
           },
           {
             "key": "119",
             "adj": {
-              "disc": 0.113,
-              "glyph": 0.535,
-              "ratio": 3.59
+              "disc": 0.096,
+              "glyph": 0.585,
+              "ratio": 4.34
             },
             "chg": {
-              "disc": 0.019,
-              "glyph": 0.749,
-              "ratio": 11.65
+              "disc": 0.018,
+              "glyph": 0.771,
+              "ratio": 12.16
             },
-            "adjBg": "rgb(22, 24, 28)",
+            "adjBg": "rgba(22, 24, 28, 0.92)",
             "adjColor": "rgb(242, 243, 245)"
           },
           {
             "key": "115",
             "adj": {
               "disc": 0.006,
-              "glyph": 0.167,
-              "ratio": 3.85
+              "glyph": 0.242,
+              "ratio": 5.18
             },
             "chg": {
-              "disc": 0.02,
-              "glyph": 0.262,
-              "ratio": 4.49
+              "disc": 0.018,
+              "glyph": 0.333,
+              "ratio": 5.65
             },
-            "adjBg": "rgb(22, 24, 28)",
+            "adjBg": "rgba(22, 24, 28, 0.92)",
             "adjColor": "rgb(242, 243, 245)"
           }
         ],
-        "minAdj": 3.59,
-        "minChg": 4.49
+        "minAdj": 4.34,
+        "minChg": 5.65
       }
     },
     "requests": {

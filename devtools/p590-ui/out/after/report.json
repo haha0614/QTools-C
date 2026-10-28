@@ -1,6 +1,11 @@
 {
-  "passed": 30,
-  "failures": [],
+  "passed": 26,
+  "failures": [
+    "e2 视口一变就产生新尺寸的冷渲染 -> 0 个新 URL",
+    "e3 冷渲染比命中慢（缓存确实在起作用） -> 2.4ms vs 0ms",
+    "f2 请求 500 的卡片退回三层 .pw-bg-img -> 0 张",
+    "f3 兜底的三层真的把原图加载出来了 -> null"
+  ],
   "facts": {
     "wide": {
       "theme": "light",
@@ -391,6 +396,16 @@
           "duration": 0
         },
         {
+          "url": "/api/media/person/122/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=192ndov",
+          "size": 0,
+          "duration": 0
+        },
+        {
+          "url": "/api/media/person/124/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=8fo3m1",
+          "size": 0,
+          "duration": 0
+        },
+        {
           "url": "/api/media/person/119/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1r5evxi",
           "size": 0,
           "duration": 0
@@ -436,92 +451,82 @@
           "duration": 0
         },
         {
-          "url": "/api/media/person/122/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=192ndov",
-          "size": 2675,
-          "duration": 38
-        },
-        {
-          "url": "/api/media/person/124/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=8fo3m1",
-          "size": 2960,
-          "duration": 37.3
-        },
-        {
           "url": "/api/media/person/123/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=19ow5e1",
-          "size": 3622,
-          "duration": 37.7
-        },
-        {
-          "url": "/api/media/person/125/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1vche51",
-          "size": 3959,
-          "duration": 30.1
-        },
-        {
-          "url": "/api/media/person/115/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=rl823f",
-          "size": 4739,
-          "duration": 19.1
-        },
-        {
-          "url": "/api/media/person/119/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1r5evxi",
-          "size": 3401,
-          "duration": 22.9
-        },
-        {
-          "url": "/api/media/person/124/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=8fo3m1",
-          "size": 4163,
-          "duration": 23.6
+          "size": 0,
+          "duration": 0
         },
         {
           "url": "/api/media/person/122/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=192ndov",
           "size": 3644,
-          "duration": 25.5
+          "duration": 17
+        },
+        {
+          "url": "/api/media/person/125/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1vche51",
+          "size": 3959,
+          "duration": 29
+        },
+        {
+          "url": "/api/media/person/124/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=8fo3m1",
+          "size": 4163,
+          "duration": 17.2
+        },
+        {
+          "url": "/api/media/person/115/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=rl823f",
+          "size": 4739,
+          "duration": 14
+        },
+        {
+          "url": "/api/media/person/119/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1r5evxi",
+          "size": 3401,
+          "duration": 13.8
         },
         {
           "url": "/api/media/person/123/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=19ow5e1",
           "size": 5227,
-          "duration": 32.3
-        },
-        {
-          "url": "/api/media/person/111/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1gb354d",
-          "size": 4334,
-          "duration": 40.3
+          "duration": 17.2
         },
         {
           "url": "/api/media/person/117/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1n6mulp",
           "size": 5759,
-          "duration": 45.7
-        },
-        {
-          "url": "/api/media/person/116/card-bg?w=332&h=102&s=1.31&dx=0.08&dy=0.01&blur=6&d=0&bg=ffffff&v=hypve4",
-          "size": 4440,
-          "duration": 38.8
-        },
-        {
-          "url": "/api/media/person/114/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1hz3sz",
-          "size": 3267,
-          "duration": 41.2
+          "duration": 33.2
         },
         {
           "url": "/api/media/person/118/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=dowcfi",
           "size": 5003,
-          "duration": 50.5
+          "duration": 33.5
+        },
+        {
+          "url": "/api/media/person/114/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1hz3sz",
+          "size": 3267,
+          "duration": 33
+        },
+        {
+          "url": "/api/media/person/116/card-bg?w=332&h=102&s=1.31&dx=0.08&dy=0.01&blur=6&d=0&bg=ffffff&v=hypve4",
+          "size": 4440,
+          "duration": 33.7
+        },
+        {
+          "url": "/api/media/person/111/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1gb354d",
+          "size": 4334,
+          "duration": 34.1
         },
         {
           "url": "/api/media/person/120/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1rieejw",
           "size": 4160,
-          "duration": 51
+          "duration": 41.4
         },
         {
           "url": "/api/media/person/112/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1py5u4u",
           "size": 4127,
-          "duration": 67.1
+          "duration": 49.9
         }
       ],
       "nav": {
-        "dcl": 78.7,
-        "load": 80.1
+        "dcl": 53.1,
+        "load": 55.1
       }
     },
-    "blurSwitchMs": 1751,
+    "blurSwitchMs": 1738,
     "warm": [
       {
         "url": "/api/media/person/125/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1vche51",
@@ -576,82 +581,17 @@
       {
         "url": "/api/media/person/122/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=192ndov",
         "size": 0,
-        "duration": 0
+        "duration": 10.4
       },
       {
         "url": "/api/media/person/124/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=8fo3m1",
         "size": 0,
-        "duration": 0
+        "duration": 10.3
       },
       {
         "url": "/api/media/person/123/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=19ow5e1",
         "size": 0,
-        "duration": 0
-      },
-      {
-        "url": "/api/media/person/125/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1vche51",
-        "size": 0,
-        "duration": 3.8
-      },
-      {
-        "url": "/api/media/person/122/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=192ndov",
-        "size": 0,
-        "duration": 4
-      },
-      {
-        "url": "/api/media/person/124/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=8fo3m1",
-        "size": 0,
-        "duration": 3.9
-      },
-      {
-        "url": "/api/media/person/123/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=19ow5e1",
-        "size": 0,
-        "duration": 4.1
-      },
-      {
-        "url": "/api/media/person/119/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1r5evxi",
-        "size": 0,
-        "duration": 4.2
-      },
-      {
-        "url": "/api/media/person/115/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=rl823f",
-        "size": 0,
-        "duration": 4.3
-      },
-      {
-        "url": "/api/media/person/111/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1gb354d",
-        "size": 0,
-        "duration": 4.7
-      },
-      {
-        "url": "/api/media/person/117/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1n6mulp",
-        "size": 0,
-        "duration": 4.8
-      },
-      {
-        "url": "/api/media/person/114/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1hz3sz",
-        "size": 0,
-        "duration": 5
-      },
-      {
-        "url": "/api/media/person/116/card-bg?w=332&h=102&s=1.31&dx=0.08&dy=0.01&blur=6&d=0&bg=ffffff&v=hypve4",
-        "size": 0,
-        "duration": 6.2
-      },
-      {
-        "url": "/api/media/person/118/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=dowcfi",
-        "size": 0,
-        "duration": 6.3
-      },
-      {
-        "url": "/api/media/person/120/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1rieejw",
-        "size": 0,
-        "duration": 7.1
-      },
-      {
-        "url": "/api/media/person/112/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1py5u4u",
-        "size": 0,
-        "duration": 8.8
+        "duration": 10.3
       }
     ],
     "cold": [
@@ -708,152 +648,22 @@
       {
         "url": "/api/media/person/122/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=192ndov",
         "size": 0,
-        "duration": 0
+        "duration": 10.4
       },
       {
         "url": "/api/media/person/124/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=8fo3m1",
         "size": 0,
-        "duration": 0
+        "duration": 10.3
       },
       {
         "url": "/api/media/person/123/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=19ow5e1",
         "size": 0,
-        "duration": 0
-      },
-      {
-        "url": "/api/media/person/125/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1vche51",
-        "size": 0,
-        "duration": 3.8
-      },
-      {
-        "url": "/api/media/person/122/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=192ndov",
-        "size": 0,
-        "duration": 4
-      },
-      {
-        "url": "/api/media/person/124/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=8fo3m1",
-        "size": 0,
-        "duration": 3.9
-      },
-      {
-        "url": "/api/media/person/123/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=19ow5e1",
-        "size": 0,
-        "duration": 4.1
-      },
-      {
-        "url": "/api/media/person/119/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1r5evxi",
-        "size": 0,
-        "duration": 4.2
-      },
-      {
-        "url": "/api/media/person/115/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=rl823f",
-        "size": 0,
-        "duration": 4.3
-      },
-      {
-        "url": "/api/media/person/111/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1gb354d",
-        "size": 0,
-        "duration": 4.7
-      },
-      {
-        "url": "/api/media/person/117/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1n6mulp",
-        "size": 0,
-        "duration": 4.8
-      },
-      {
-        "url": "/api/media/person/114/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1hz3sz",
-        "size": 0,
-        "duration": 5
-      },
-      {
-        "url": "/api/media/person/116/card-bg?w=332&h=102&s=1.31&dx=0.08&dy=0.01&blur=6&d=0&bg=ffffff&v=hypve4",
-        "size": 0,
-        "duration": 6.2
-      },
-      {
-        "url": "/api/media/person/118/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=dowcfi",
-        "size": 0,
-        "duration": 6.3
-      },
-      {
-        "url": "/api/media/person/120/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1rieejw",
-        "size": 0,
-        "duration": 7.1
-      },
-      {
-        "url": "/api/media/person/112/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1py5u4u",
-        "size": 0,
-        "duration": 8.8
-      },
-      {
-        "url": "/api/media/person/125/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1vche51",
-        "size": 3948,
-        "duration": 73.1
-      },
-      {
-        "url": "/api/media/person/122/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=192ndov",
-        "size": 3613,
-        "duration": 50.9
-      },
-      {
-        "url": "/api/media/person/124/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=8fo3m1",
-        "size": 4112,
-        "duration": 53.1
-      },
-      {
-        "url": "/api/media/person/123/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=19ow5e1",
-        "size": 5142,
-        "duration": 54.2
-      },
-      {
-        "url": "/api/media/person/119/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1r5evxi",
-        "size": 3374,
-        "duration": 63.3
-      },
-      {
-        "url": "/api/media/person/115/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=rl823f",
-        "size": 4632,
-        "duration": 67.8
-      },
-      {
-        "url": "/api/media/person/111/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1gb354d",
-        "size": 4381,
-        "duration": 104.6
-      },
-      {
-        "url": "/api/media/person/117/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1n6mulp",
-        "size": 5724,
-        "duration": 116.3
-      },
-      {
-        "url": "/api/media/person/114/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1hz3sz",
-        "size": 3252,
-        "duration": 115.9
-      },
-      {
-        "url": "/api/media/person/116/card-bg?w=328&h=102&s=1.31&dx=0.08&dy=0.01&blur=6&d=0&bg=ffffff&v=hypve4",
-        "size": 4331,
-        "duration": 116.5
-      },
-      {
-        "url": "/api/media/person/118/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=dowcfi",
-        "size": 4947,
-        "duration": 141
-      },
-      {
-        "url": "/api/media/person/120/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1rieejw",
-        "size": 4146,
-        "duration": 118.8
-      },
-      {
-        "url": "/api/media/person/112/card-bg?w=328&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1py5u4u",
-        "size": 4117,
-        "duration": 163.8
+        "duration": 10.3
       }
     ],
-    "warmAvgMs": 2.6,
-    "coldAvgMs": 95.3,
+    "warmAvgMs": 2.4,
+    "coldAvgMs": 0,
     "paused": 13,
-    "fellBack": 13
+    "fellBack": 0
   }
 }

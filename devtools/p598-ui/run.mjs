@@ -355,7 +355,7 @@ for (const [w, h, tag] of [[1600, 1200, '1600'], [1200, 900, '1200'], [375, 812,
   }
   ok(inView.length > 0 && !!sample, 'a' + tag + '0 量到同时有「换 / ⛶」的卡', inView.length + ' 张在视口内（共 ' + (all || []).length + ' 张）')
   // P6.01：两钮静止 opacity 0.45；hover 文字区只点亮「⛶」（整卡触发面），「换」的触发面回退到头像
-  ok(sample && sample.adjOp === '1' && Number(sample.chgOp) === 0.45, 'a' + tag + '1 hover 文字区：⛶ 亮到 1、换 保持静止 0.45（P6.01 触发面）', sample ? sample.adjOp + '/' + sample.chgOp : 'n/a')
+  ok(sample && sample.adjOp === '1' && Number(sample.chgOp) === 0.55, 'a' + tag + '1 hover 文字区：⛶ 亮到 1、换 保持静止 0.55（P6.01 触发面）', sample ? sample.adjOp + '/' + sample.chgOp : 'n/a')
   ok(badOverlap.length === 0, 'a' + tag + '2 两钮与姓名 / 数量 / chips / 最近更新 / 文字块都不相交（换↔头像盒的角落重叠按 P6.01 豁免）', badOverlap.length ? badOverlap.slice(0, 6).join(',') : '0 处相交（逐卡全量）')
   ok(worstGapAdjChg >= 20, 'a' + tag + '3 两钮彼此相隔很远（对角 ≥20px）', worstGapAdjChg + 'px')
   // P6.01：⛶ 按用户要求更靠角（距卡片外缘 4–5px）；换 仍在头像盒内、离卡片四边 ≥6px

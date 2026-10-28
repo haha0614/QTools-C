@@ -2083,18 +2083,17 @@ onBeforeUnmount(() => {
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.24);
   border-radius: 50%;
-  /* P6.01：**近黑底 + 近白字**（两主题同一套）。原因见文件末「P6.01 对比度实测」：
-     0.45 的整体不透明度会把「钮底 / 字色」一起往卡片图上拉，主题白底（--bg-2 在白档是 #fff）
-     在亮色卡上压不住字形 —— 逐卡实测最小只有 1.74:1（D 卡片的亮背景更差）。
-     近黑不透明底 + 近白字是唯一在**每张卡、两个主题**都 ≥3:1 的组合（实测 3.14–4.57:1）。 */
-  background: #16181c;
+  /* P6.01：**近黑底（rgba(22,24,28,.92)）+ 近白字**（两主题同一套）。理由见 devtools/p601-ui/REPORT.md §4：
+     主题白底 + 灰字在 0.45/0.55 的整体不透明度下会被卡片图拉走，亮图卡上只有 1.74:1；
+     近黑（近乎不透明，留 8% 透）是这个自发光强度下唯一在**每张卡、两个主题**都 ≥3:1 的底色。 */
+  background: rgba(22, 24, 28, 0.92);
   color: #f2f3f5;
   font-size: 11px;
   line-height: 1;
   text-align: center;
   cursor: pointer;
-  /* P6.01：静止态 0.45（可用但低调）；hover 到 1（≥0.85 的可读下限）。 */
-  opacity: 0.45;
+  /* P6.01：静止态 0.55（低调但看得见）；hover 到 1（≥0.85 的可读下限）。 */
+  opacity: 0.55;
   transition: opacity 0.12s, border-color 0.12s, color 0.12s;
 }
 
@@ -2133,14 +2132,14 @@ onBeforeUnmount(() => {
   border: 1px solid rgba(255, 255, 255, 0.24);
   border-radius: 50%;
   /* P6.01：与「换」同一套近黑底 / 近白字（理由同上） */
-  background: #16181c;
+  background: rgba(22, 24, 28, 0.92);
   color: #f2f3f5;
   font-size: 11px;
   line-height: 1;
   text-align: center;
   cursor: pointer;
-  /* P6.01：静止态 0.45；hover（整卡 / 钮自身）升到 1。 */
-  opacity: 0.45;
+  /* P6.01：静止态 0.55；hover（整卡 / 钮自身）升到 1。 */
+  opacity: 0.55;
   transition: opacity 0.12s, border-color 0.12s, color 0.12s;
 }
 

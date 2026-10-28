@@ -223,7 +223,20 @@ const PROBE = `
 
 async function openWall() {
   await goto('/media/persons')
-  const ready = await waitFor("!!document.querySelector('.pw-card')", 20000)
+  let ready = await waitFor("!!document.querySelector('.pw-card')", 20000)
+  // P6.01 记：vite 冷启动首次编译时，全站后端探测（GET /api/toolInfo/list，3s 超时、连续 2 次失败 → 离线）
+  // 会被编译期的一次整页 reload 打断，页面落到「后端服务暂不可用」占位页（BackendOfflinePage），
+  // 表现就是「人物墙没渲染出来」——和卡片代码无关（PersonsPage 根本没挂载）。
+  // 这里按人类操作走一次「重试」按钮（AppShell 的 retryNow 会立刻补探一次，成功即回在线），
+  // 再退一步整页重载。真离线时这两步都不会成功，断言口径不变。
+  for (let attempt = 0; attempt < 3 && !ready; attempt++) {
+    await evaluate("(function(){var bs=[].slice.call(document.querySelectorAll('button'));for(var i=0;i<bs.length;i++){if((bs[i].textContent||'').indexOf('重试')>=0){bs[i].click();return true}}return false})()")
+    ready = await waitFor("!!document.querySelector('.pw-card')", 8000)
+    if (!ready) {
+      await send('Page.reload', { ignoreCache: false })
+      ready = await waitFor("!!document.querySelector('.pw-card')", 15000)
+    }
+  }
   if (!ready) throw new Error('人物墙没渲染出来')
   // 先确认「有没有东西可看」：P5.78 的访客可见性会把主库对未登录访客整个 404（连头像都没有），
   // 那种状态下所有断言都会假失败 —— 直接说清楚原因，别让人去猜渲染管线

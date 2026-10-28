@@ -1,0 +1,47 @@
+
+== a 每张卡 = 1 个 card-bg <img>，没有三层
+  PASS a1 至少有背景卡  -- 13 张
+  PASS a2 每张有背景的卡都是服务端图  -- 13/13
+  PASS a3 没有任何三层 .pw-bg-img  -- layerCount 合计 0
+  PASS a4 卡片不再写 --pw-img-* 几何变量（没有 JS 几何）
+  PASS a5 每张卡都有 src  -- 13 个 src
+  PASS a6 每张卡的 URL 互不相同（含 id + 头像版本）  -- 13 个不同 URL
+  PASS a7 请求数 ≤ 卡数 × 2（P5.92 两段式：240 占位 + 正式图）  -- perf 13 / src 13
+  PASS a8 图片自然尺寸 = URL 里的 w（服务端按请求像素出图）  -- 240x74 / 240x74 / 240x74
+
+== b/g 截图（1600 / 375 × 亮 / 暗）
+  PASS g1 暗色主题生效  -- dark
+  PASS g2 暗色主题下 URL 带 d=1（柔光按暗色混）
+  PASS g3 375 宽也有服务端图  -- 13 张
+
+== c 「⛶」弹层改缩放并保存 → URL 换新、图真的换了
+  PASS c1 弹层打开
+  PASS c2 弹层预览有内容（预渲染后仍能量到自然尺寸）
+  PASS c3 缩放滑块改成 150%  -- 150%
+  PASS c4 保存后 URL 换成新参数  -- /api/media/person/125/card-bg?w=240&h=74&s=1.5&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1vche51 ...
+  PASS c5 URL 里 s=1.5  -- /api/media/person/125/card-bg?w=240&h=74&s=1.5&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1vche51
+  PASS c6 新图加载成功  -- [240,74]
+
+== d 拖滑块：拖动期 CSS 近似、松手 300ms 内换新图
+  PASS d1 拖动期只有 CSS 近似 blur(12-6=6px)  -- blur(6px)
+  PASS d2 拖动期不换 URL（不重新渲染）
+  PASS d3 松手后 URL 里 blur=12  -- /api/media/person/125/card-bg?w=240&h=74&s=1&dx=0&dy=0&blur=12&d=0&bg=ffffff&v=1
+  PASS d4 新图到位后撤掉 CSS 近似  -- none
+  PASS d5 新图加载成功
+  PASS d6 换图在可接受延迟内（含 300ms 防抖）  -- 1739ms
+
+== e 命中缓存 vs 首次生成的首屏 timing
+  PASS e1 全部命中服务端缓存（每张 < 400ms，含 dev server 转发）  -- max 0.0ms
+  FAIL e2 视口一变就产生新尺寸的冷渲染 -> 0 个新 URL
+  实测：命中平均 0ms，冷渲染平均 0ms
+  FAIL e3 冷渲染比命中慢（缓存确实在起作用） -> 0ms vs 0ms
+
+== f 端点打桩 500 → 这一张卡退回三层方案
+  PASS f1 打桩生效（拦到了 card-bg 请求）  -- 13 个
+  FAIL f2 请求 500 的卡片退回三层 .pw-bg-img -> 0 张
+  FAIL f3 兜底的三层真的把原图加载出来了 -> null
+
+页面 console 错误：无
+  PASS f4 页面无 console 错误
+
+FAIL 26/30

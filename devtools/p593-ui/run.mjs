@@ -427,7 +427,6 @@ for (const [w, h, tag] of [[1600, 1200, '1600'], [1280, 900, '1280'], [768, 900,
   const chgEdge = margins(m.chg, m.card)
   const minAdjEdge = Math.min(adjEdge.left, adjEdge.top, adjEdge.right, adjEdge.bottom)
   const minChgEdge = Math.min(chgEdge.left, chgEdge.top, chgEdge.right, chgEdge.bottom)
-  const minEdge = Math.min(minAdjEdge, minChgEdge)
   const overlapText = intersects(m.adj, m.name) || intersects(m.chg, m.name) || intersects(m.adj, m.body) || intersects(m.chg, m.body)
   console.log(
     '  [' + tag + '] ' + m.cards + ' 张 / ' + m.cols + ' 列 · 卡 ' + m.card.w + 'x' + m.card.h + ' · 钮 ' + m.adj.w + 'x' + m.adj.h +
