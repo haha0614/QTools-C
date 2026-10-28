@@ -244,6 +244,11 @@ import {
   writeAdjustMap
 } from './personBgAdjust.js'
 import PersonBgAdjustDialog from './PersonBgAdjustDialog.vue'
+// P6.09：内容分级筛选条 + 全站状态源（视频站 / 图片站 / 人物页共用同一份状态与 hash）
+import RatingFilterBar from './RatingFilterBar.vue'
+import { useRatingFilter } from './useRatingFilter.js'
+import { RATING_ALL } from './contentRating.js'
+import { buildPersonRatings, countPersonsByRating, matchesPersonRating } from './personRating.js'
 
 const api = useMediaApi()
 const tk = useMediaTrack()
@@ -265,6 +270,38 @@ const keyword = ref('')
 const avatarFailed = reactive({})
 /** 索引统计（人名 → 数量 / 封面 / mtime）；索引取不到时为 null，卡片按详情兜底 */
 const wallIndex = ref(null)
+/** 索引原文档（P6.09）：分级筛选要按「人物在该档下有没有可见作品」判定，数据源是 people[].byRating */
+const indexDoc = ref(null)
+
+/* --------------------------------------------------------- P6.09 内容分级（全局单值） */
+const {
+  rating,
+  availableRatings,
+  barVisible: ratingBarVisible,
+  setRating: applyRating,
+  setRatingOptions,
+  optionsWithCounts: ratingOptionsWithCounts
+} = useRatingFilter()
+
+/** 人物名 → {分级: 可见作品数}：优先后端 people[].byRating，老索引从 albums / videos 反推 */
+const personRatings = computed(() => buildPersonRatings(indexDoc.value))
+
+/** 真人（剔掉「未归类」这类占位实体）：过滤与计数都从这份算，与 visible 同一套剔除规则 */
+const realPersons = computed(() => persons.value.filter((p) => !isPlaceholderPerson(p)))
+
+/** 分级筛选是否生效：影响顶部副标题文案与空态 */
+const ratingFilterOn = computed(() => rating.value !== RATING_ALL)
+
+/** chip 计数 = 该档下有可见作品的人物数（不是作品数，也不是筛选后的卡片数） */
+const ratingBarOptions = computed(() =>
+  ratingOptionsWithCounts(
+    countPersonsByRating(
+      realPersons.value,
+      personRatings.value,
+      availableRatings.value.map((o) => o.value)
+    )
+  )
+)
 /** 单人详情（键 = 人物 id 字符串）：avatarPath / avatarKind+avatarRef+avatarUrl + 资料字段 + 计数兜底 */
 const details = reactive({})
 /** 换头像弹层（整页只有一个实例；卡片 hover 的「换」按钮负责打开并指定人物） */
@@ -315,13 +352,35 @@ function sortPersons(list) {
  */
 const visible = computed(() => {
   const q = keyword.value.trim().toLowerCase()
-  const list = sortPersons(persons.value.filter((p) => !isPlaceholderPerson(p)))
+  // P6.09：先按分级筛（只留「在该档下有可见作品」的人物），再叠搜索词 —— 两个维度是「与」
+  const map = personRatings.value
+  const picked = rating.value
+  let list = sortPersons(realPersons.value)
+  if (picked !== RATING_ALL) {
+    list = list.filter((p) => matchesPersonRating(map, p && p.name, picked))
+  }
   if (!q) return list
   return list.filter((p) => {
     const name = String((p && p.name) || '').toLowerCase()
     const alias = String((p && (p.alias || p.aliases)) || '').toLowerCase()
     return name.indexOf(q) >= 0 || alias.indexOf(q) >= 0
   })
+})
+
+/**
+ * 顶部副标题（P6.09）：筛选生效时说「筛选后 N 位人物」，
+ * 卡片上的计数仍是**完整口径**（不因筛选而变）——两者说的不是一件事。
+ */
+const subText = computed(() => {
+  const n = visible.value.length
+  if (ratingFilterOn.value) return '筛选后 ' + n + ' 位人物'
+  return n + ' 位' + (keyword.value ? '（已过滤）' : '')
+})
+
+/** 空态文案（P6.09）：分级筛空了 / 关键词没命中 / 库真的空，三种说法不能混 */
+const emptyText = computed(() => {
+  if (ratingFilterOn.value) return '该分级下暂无人物'
+  return persons.value.length ? '没有匹配的人物，换个关键词试试' : '还没有人物数据'
 })
 
 /** 根节点状态：loading > unavailable > empty > ready */
@@ -1366,11 +1425,15 @@ function loadWallIndex() {
   return api
     .getIndex({ silent: true })
     .then((idx) => {
+      indexDoc.value = idx || null
       wallIndex.value = buildWallIndex(idx)
       indexStats.value = (idx && idx.stats) || null
       indexOk.value = true
+      // P6.09：可见分级由索引决定（登录 / 退出会变）；当前档位若因此不可见，状态源自行回落 all
+      setRatingOptions((idx && Array.isArray(idx.ratings)) ? idx.ratings : [])
     })
     .catch(() => {
+      indexDoc.value = null
       wallIndex.value = null
       indexOk.value = false
     })
@@ -1451,9 +1514,17 @@ onBeforeUnmount(() => {
     <header class="pp-head">
       <div class="pp-head-left">
         <h1 class="pp-title">人物</h1>
-        <span v-if="uiState === 'ready' && !guestHidden" class="pp-sub">{{ visible.length }} 位{{ keyword ? '（已过滤）' : '' }}</span>
+        <span v-if="uiState === 'ready' && !guestHidden" class="pp-sub" data-role="pp-sub">{{ subText }}</span>
       </div>
       <div class="pp-head-right">
+        <!-- P6.09：内容分级筛选（全局单值，与视频站 / 图片站同一份状态）。计数 = 各档下有人物的人数 -->
+        <RatingFilterBar
+          v-if="ratingBarVisible"
+          :options="ratingBarOptions"
+          :model-value="rating"
+          :total="realPersons.length"
+          @change="applyRating"
+        />
         <input v-model="keyword" class="pp-search" type="search" placeholder="搜索人物名…" autocomplete="off" />
         <button class="pp-btn" type="button" :disabled="loading" @click="load">刷新</button>
         <!-- P5.72：背景模糊度 —— 0–20px 步长 1，拖动实时生效（只改 CSS 变量），值写 localStorage -->
@@ -1491,7 +1562,7 @@ onBeforeUnmount(() => {
     <GuestHiddenEmpty v-else-if="uiState === 'empty' && guestHidden" @refresh="load" />
 
     <p v-else-if="uiState === 'empty'" class="pp-state" data-role="empty">
-      {{ persons.length ? '没有匹配的人物，换个关键词试试' : '还没有人物数据' }}
+      {{ emptyText }}
     </p>
 
     <GuestHiddenEmpty v-else-if="guestHidden" @refresh="load" />

@@ -9,7 +9,9 @@
 | 埋点 | `src/composables/useMediaTrack.js` | 单例：`page_view` / `dwell` / `play` / `play_end` 上报，`page_view` + `toolVisit` 自动上报，`pagehide`/`visibilitychange` 自动结算 |
 | 数据 | `src/composables/useMediaApi.js` | `/api/media/*` 接口封装 + 资源 URL 构造（缩略图 / 预览图 / 原文件 / 转码流 / 字幕） |
 | 样式 | `src/views/media/mediaTheme.scss` | 把媒体站变量名（`--bg/--fg/--line/--accent` …）映射到 `--qt-*`，亮暗自动跟随 |
-| 兜底 | `src/views/media/guestHidden.js` + `GuestHiddenEmpty.vue` | **P5.95**：未登录访客的内容被「仅登录可见」挡住时（索引里没有任何内容条目）给专门空态「当前为空。站长可能将内容设为「仅登录可见」——登录后即可查看。」+ 登录 / 刷新；判定是纯函数，单测 `guestHidden.test.mjs` |
+| 分级状态 | `src/views/media/useRatingFilter.js`（纯规则在 `contentRating.js`） | **P6.09**：三页共用的分级筛选单例（`all/general/guidance/restricted`），hash `#rating=` + `localStorage['ms.rating']` 双写，可见性变化自动回落；UI 组件 `RatingFilterBar.vue`；单测 `contentRating.test.mjs` |
+| 人物分级 | `src/views/media/personRating.js` | **P6.09**：人物 → 分级的判定（优先索引 `people[].byRating`，老索引从 albums / videos 反推），单测 `personRating.test.mjs` |
+| 兜底 | `src/views/media/guestHidden.js` + `GuestHiddenEmpty.vue` **P5.95**：未登录访客的内容被「仅登录可见」挡住时（索引里没有任何内容条目）给专门空态「当前为空。站长可能将内容设为「仅登录可见」——登录后即可查看。」+ 登录 / 刷新；判定是纯函数，单测 `guestHidden.test.mjs` |
 
 ## 新页面如何接入
 

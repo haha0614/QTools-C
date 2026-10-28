@@ -169,12 +169,12 @@
             @toggle="onToggleQuick"
             @toggle-unsafe="state.unsafe = !state.unsafe"
           />
-          <!-- P5.99：内容分级筛选。只有 ≥2 个可见分级时才出现（后端 ratings[] 已按访客筛过） -->
-          <RatingFilter
-            v-if="showRatingFilter"
-            :options="ratingOptions"
-            :selected="state.ratings"
-            @toggle="onToggleRating"
+          <!-- P6.09：内容分级筛选（全局单值，写 hash + localStorage）。只有 ≥2 个可见分级时才出现 -->
+          <RatingFilterBar
+            v-if="ratingBarVisible"
+            :options="ratingBarOptions"
+            :model-value="rating"
+            @change="onRatingChange"
           />
         </div>
 
@@ -302,12 +302,12 @@
               @toggle="onToggleQuick"
               @toggle-unsafe="state.unsafe = !state.unsafe"
             />
-            <!-- P5.99：移动端同一份分级筛选（与桌面同一条筛选条的口径） -->
-            <RatingFilter
-              v-if="showRatingFilter"
-              :options="ratingOptions"
-              :selected="state.ratings"
-              @toggle="onToggleRating"
+            <!-- P6.09：移动端同一份分级筛选（与桌面同一条筛选条、同一份状态） -->
+            <RatingFilterBar
+              v-if="ratingBarVisible"
+              :options="ratingBarOptions"
+              :model-value="rating"
+              @change="onRatingChange"
             />
           </div>
         </template>
@@ -467,8 +467,10 @@ import { clearAllLocalSynopsis } from './video/synopsisLocal'
 // P4.3：标记按 videoId 的前端缓存（站端没有匿名读 meta 的接口时的替代方案）
 import { readMarkerCache, writeMarkerCache } from '@/composables/useMarkerCache'
 import FilterSidebar from './video/FilterSidebar.vue'
-import RatingFilter from './RatingFilter.vue'
-import { matchesRating, showRatingFilter as showRatingFilterOf, ratingLabel as ratingLabelOf } from './contentRating.js'
+// P6.09：分级筛选条与状态源改为全站共用（图片站 / 人物页同一个组件、同一份状态）
+import RatingFilterBar from './RatingFilterBar.vue'
+import { useRatingFilter } from './useRatingFilter.js'
+import { RATING_ALL, countByRating, matchesRating, ratingLabel as ratingLabelOf, readRatingHash } from './contentRating.js'
 import SavedFilters from './video/SavedFilters.vue'
 import QuickFilters from './video/QuickFilters.vue'
 import VideoCard from './video/VideoCard.vue'
@@ -881,8 +883,8 @@ function parseHash(hash) {
   )
   // 工作室（P5-A）：hash 段名 studio，JSON 名称数组
   st.studios = readJsonList(p.get('studio'))
-  // 内容分级（P5.99）：hash 段名 rating，逗号分隔的分级值
-  st.ratings = readCsv(p.get('rating'), null)
+  // 内容分级（P6.09）：hash 段名仍是 rating，但**不在这里解析** —— 状态由 useRatingFilter 统一管
+  //（它同时读 hash 与 localStorage，并在索引到达后校验可见性）。这里留空，由镜像 watch 填值。
   if (p.get('unsafe') === '1') st.unsafe = true
   const play = p.get('play')
   if (play) st.play = play // 播放深链 /#play=<videoId>
@@ -1276,18 +1278,32 @@ const quickGroups = [
   { field: 'sizes', items: SIZE_BUCKETS }
 ]
 
+/* ---------------------------------------------------------------- P6.09 内容分级（全局单值） */
 /**
- * 内容分级（P5.99）：{@code [{value,label,count}]}，来自索引的 {@code ratings[]}。
+ * 状态本体在 {@link useRatingFilter}（全站单例）：hash {@code #rating=xxx} > localStorage > all，
+ * 三页共用同一份，改一页三页都变、刷新不丢。本页只负责接线：
  *
- * 后端已经按「当前访客可见 + 该档确实有条目」筛过一遍：
- * 未登录不可见的那一档根本不在数组里，所以前端不需要、也<b>不应该</b>自己再查策略表。
+ *   1. 索引到达后把 {@code ratings[]} 交给它（可见分级变了 → 筛选条自动增删，非法档位自动回落）；
+ *   2. 把当前档位**镜像**成 {@code state.ratings}（数组，0 或 1 项）—— 既有的
+ *      filterVideos / 已选 chip / 保存筛选 / 角标计数全都不必改一行；
+ *   3. chip 计数按 videos 全集算（「限制级 (102)」= 库里有 102 部，不是筛选后的条数）。
  */
-const ratingOptions = ref([])
-/** 只有一个可见分级时不渲染筛选条（规则在 contentRating.js：与图片站共用同一份） */
-const showRatingFilter = computed(() => showRatingFilterOf(ratingOptions.value))
+const {
+  rating,
+  barVisible: ratingBarVisible,
+  setRating: applyRating,
+  setRatingOptions,
+  optionsWithCounts: ratingOptionsWithCounts
+} = useRatingFilter()
 
-function onToggleRating(value) {
-  toggleIn(state.ratings || (state.ratings = []), value)
+/** 本页可见分级 + 本页计数（视频数，不带后端「视频 + 相册」合计口径） */
+const ratingBarOptions = computed(() => ratingOptionsWithCounts(countByRating(videos.value)))
+
+/** state.ratings 是派生态：唯一写入口是 applyRating，任何地方都不要直接改它 */
+watch(rating, (v) => { state.ratings = v === RATING_ALL ? [] : [v] }, { immediate: true })
+
+function onRatingChange(value) {
+  applyRating(value)
 }
 
 /** id → 续播秒数 */
@@ -1821,7 +1837,7 @@ const activeEntries = computed(() => {
   if (state.q) out.push({ kind: 'q', key: '', label: '搜索：' + state.q })
   for (const c of state.cats) out.push({ kind: 'cat', key: c, label: c })
   for (const r of state.ratings || []) {
-    out.push({ kind: 'rating', key: r, label: '分级：' + ratingLabelOf(ratingOptions.value, r) })
+    out.push({ kind: 'rating', key: r, label: '分级：' + ratingLabelOf(ratingBarOptions.value, r) })
   }
   for (const f of Object.keys(state.facets)) {
     const names = state.facets[f] || []
@@ -2189,6 +2205,11 @@ watch([filterSig, () => state.play], writeHash)
 function onHashChange() {
   // 只在外部（手改地址栏 / 前进后退）改动时同步，避免与 writeHash 互相触发
   const next = parseHash(window.location.hash)
+  // P6.09：分级不归 parseHash 管（全站状态源统一读写）。外部动了 rating 段就先让状态跟上，
+  // 然后把镜像值填回 next —— 否则接下来的 Object.assign 会用空数组把当前档位抹掉。
+  const hashRating = readRatingHash(window.location.hash) || RATING_ALL
+  if (hashRating !== rating.value) applyRating(hashRating)
+  next.ratings = rating.value === RATING_ALL ? [] : [rating.value]
   if (buildHash(next) === buildHash(state)) return
   const wantPlay = next.play || ''
   const playChanged = wantPlay !== (state.play || '')
@@ -2290,6 +2311,8 @@ function clearAll() {
   Object.assign(state, defaultState())
   state.play = play || ''
   searchInput.value = ''
+  // P6.09：「清空」连分级一起清（否则 hash / localStorage 里还留着上一次的档位，刷新又回来）
+  applyRating(RATING_ALL)
 }
 
 /* =========================================================================
@@ -2368,7 +2391,7 @@ const suggestSavedName = computed(() => {
   for (const k of state.durs) parts.push(bucketLabel(DUR_BUCKETS, k))
   for (const k of state.sizes) parts.push(bucketLabel(SIZE_BUCKETS, k))
   for (const n of state.studios || []) parts.push(n)
-  for (const r of state.ratings || []) parts.push(ratingLabelOf(ratingOptions.value, r))
+  for (const r of state.ratings || []) parts.push(ratingLabelOf(ratingBarOptions.value, r))
   for (const f of Object.keys(state.facets || {})) for (const n of state.facets[f] || []) parts.push(n)
   if (state.unsafe) parts.push('可能无法播放')
   if (state.sort && state.sortPinned) {
@@ -2414,6 +2437,9 @@ function onApplySavedFilter(item) {
   Object.assign(state, next)
   state.play = play || ''
   searchInput.value = state.q
+  // P6.09：保存筛选里的 ratings 是「单元素数组」（老数据也可能是多值）——取第一个落到全局状态，
+  // 不能只改 state（那样 hash / localStorage / 其它两页都不知道这次改动）
+  applyRating(next.ratings.length ? next.ratings[0] : RATING_ALL)
   showToast('已应用筛选「' + item.name + '」')
   if (isMobile.value) closeDrawer()
 }
@@ -3116,7 +3142,8 @@ async function loadIndex() {
     const idx = await api.getIndex({ silent: true })
     videos.value = (idx && idx.videos) || []
     facetOrder.value = (idx && idx.facetOrder) || []
-    ratingOptions.value = (idx && Array.isArray(idx.ratings)) ? idx.ratings : []
+    // P6.09：可见分级交给全站状态源（当前档位若因此不可见，它会自己回落 all 并清 hash）
+    setRatingOptions((idx && Array.isArray(idx.ratings)) ? idx.ratings : [])
     indexStats.value = (idx && idx.stats) || null
     indexOk.value = true
     loading.value = false
@@ -3145,7 +3172,7 @@ async function reloadForAuth() {
     const idx = await api.getIndex({ silent: true })
     videos.value = (idx && idx.videos) || []
     facetOrder.value = (idx && idx.facetOrder) || []
-    ratingOptions.value = (idx && Array.isArray(idx.ratings)) ? idx.ratings : []
+    setRatingOptions((idx && Array.isArray(idx.ratings)) ? idx.ratings : [])
     indexStats.value = (idx && idx.stats) || null
     indexOk.value = true
     errorMsg.value = ''

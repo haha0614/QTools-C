@@ -22,9 +22,10 @@ import GuestHiddenEmpty from './GuestHiddenEmpty.vue'
 import { isGuestHiddenEmpty } from './guestHidden.js'
 import AlbumCard from './photos/AlbumCard.vue'
 import PhotoLightbox from './photos/PhotoLightbox.vue'
-// P5.99：内容分级筛选条（与视频页同一个组件；只有 ≥2 个可见分级时才渲染）
-import RatingFilter from './RatingFilter.vue'
-import { matchesRating, showRatingFilter as showRatingFilterOf } from './contentRating.js'
+// P6.09：内容分级筛选条与状态源全站共用（视频站 / 图片站 / 人物页同一份状态，hash + localStorage 持久化）
+import RatingFilterBar from './RatingFilterBar.vue'
+import { useRatingFilter } from './useRatingFilter.js'
+import { RATING_ALL, countByRating, matchesFilterValue } from './contentRating.js'
 
 /** 接口 + 资源 URL 唯一出口（/api/media/*、thumb/preview/file 地址） */
 const api = useMediaApi()
@@ -573,10 +574,17 @@ function ssSet(k, v) {
 const albumsRaw = ref([])
 /** 索引里的人物节点全集（与 albumsRaw 配套；留一份原始值避免重复请求） */
 const indexPeopleRaw = ref(null)
-/** 内容分级筛选（P5.99）：{@code [{value,label,count}]}，来自索引 ratings[]（后端已按访客可见性筛过） */
-const ratingOptions = ref([])
-/** 当前选中的分级值：空数组 = 不筛 */
-const ratingFilter = ref([])
+/**
+ * 内容分级筛选（P6.09）：状态本体在 {@link useRatingFilter}（全站单例）。
+ * 本页只：① 把索引 ratings[] 交给它；② 按**相册**的 contentRating 过滤；③ 用自己的相册数做 chip 计数。
+ */
+const {
+  rating,
+  barVisible: ratingBarVisible,
+  setRating: applyRating,
+  setRatingOptions,
+  optionsWithCounts: ratingOptionsWithCounts
+} = useRatingFilter()
 const albums = ref([])
 const peopleBase = ref([])
 const people = ref([])
@@ -1382,36 +1390,41 @@ function applyPeopleSort() {
 function applyIndex(data) {
   albumsRaw.value = data && Array.isArray(data.albums) ? data.albums : []
   indexPeopleRaw.value = (data && data.people) || null
-  // P5.99：评分筛选条的数据源同样随索引刷新（登录 / 退出后可见分级会变）
-  ratingOptions.value = data && Array.isArray(data.ratings) ? data.ratings : []
-  const keep = ratingFilter.value.filter((v) => ratingOptions.value.some((o) => o.value === v))
-  if (keep.length !== ratingFilter.value.length) ratingFilter.value = keep
+  // P6.09：可见分级随索引刷新（登录 / 退出后变多或变少）；当前档位若因此不可见，状态源会自行回落 all
+  setRatingOptions(data && Array.isArray(data.ratings) ? data.ratings : [])
   applyRatingFilter()
   state.dataComplete = hasPeopleData(data)
 }
 
-/** 分级筛选 → 相册全集 + 人物分组（只有这一条链路，别处不要再从 albumsRaw 重建一遍） */
+/**
+ * 分级筛选 → 相册全集 + 人物分组（只有这一条链路，别处不要再从 albumsRaw 重建一遍）。
+ *
+ * 口径：按**相册**的 contentRating 过滤（不是照片）—— 一本册子只有一个分级，册内照片继承它，
+ * 与后端「整册分级收紧则整册不输出」同方向。
+ */
 function applyRatingFilter() {
-  const picked = ratingFilter.value
-  albums.value = picked.length ? albumsRaw.value.filter((a) => matchesRating(a, picked)) : albumsRaw.value
+  const picked = rating.value
+  albums.value = picked === RATING_ALL ? albumsRaw.value : albumsRaw.value.filter((a) => matchesFilterValue(a, picked))
   peopleBase.value = resolvePeople(albums.value, indexPeopleRaw.value)
   buildPersonOf()
   applyPeopleSort()
 }
 
-/** 分级 chip 点击：切换一档并重画墙面（筛选只影响这一屏，不改 URL —— 与人物 / 搜索这些维度不同，它不写深链） */
-function onToggleRating(value) {
-  const arr = ratingFilter.value.slice()
-  const at = arr.indexOf(value)
-  if (at >= 0) arr.splice(at, 1)
-  else arr.push(value)
-  ratingFilter.value = arr
+// 三页共享的分级状态：在人物页或视频页改档位，回到本页（或本页正开着）都要立刻跟着变
+watch(rating, () => {
   applyRatingFilter()
   refreshWall(false)
-}
+})
 
-/** 只有一个可见分级时整条不渲染（规则在 contentRating.js：与视频页共用同一份） */
-const showRatingFilter = computed(() => showRatingFilterOf(ratingOptions.value))
+/** 本页 chip 计数：按相册全集算（与「视频 + 相册」合计的后端口径不同，这里只说本页有多少本） */
+const ratingBarOptions = computed(() => ratingOptionsWithCounts(countByRating(albumsRaw.value)))
+
+/** 「该分级下没有相册」与「全站没有相册」是两件事：前者是筛选结果，后者是库真的空 */
+const albumEmptyText = computed(() => {
+  if (!albumsRaw.value.length) return '全站没有相册'
+  if (rating.value !== RATING_ALL) return '该分级下没有相册'
+  return '没有匹配的相册'
+})
 
 async function loadIndex(first) {
   try {
@@ -1736,14 +1749,12 @@ onBeforeUnmount(() => {
             <option v-for="o in PEOPLE_OPTS" :key="o.v" :value="o.v">{{ o.label }}</option>
           </select>
         </label>
-        <!-- P5.99：内容分级筛选。计数不显示：索引的 ratings[].count 是「视频 + 相册」合计，
-             在本页（只看相册）显示会让人以为这里真有那么多套 -->
-        <RatingFilter
-          v-if="showRatingFilter"
-          :options="ratingOptions"
-          :selected="ratingFilter"
-          :show-count="false"
-          @toggle="onToggleRating"
+        <!-- P6.09：内容分级筛选（全局单值，与视频站 / 人物页同一份状态）。计数 = 本页相册数 -->
+        <RatingFilterBar
+          v-if="ratingBarVisible"
+          :options="ratingBarOptions"
+          :model-value="rating"
+          @change="applyRating"
         />
       </div>
 
@@ -1810,8 +1821,9 @@ onBeforeUnmount(() => {
       </div>
 
       <div v-if="view === 'flat'" ref="flatSentinelEl" class="sentinel" aria-hidden="true"></div>
-      <p v-if="view === 'flat' && !flatItemsAll.length && !guestHiddenEmpty" class="empty">没有匹配的相册</p>
-      <p v-else-if="view === 'group' && !wallModel.sections && !loading && !guestHiddenEmpty" class="empty">没有匹配的相册</p>
+      <!-- P6.09：空态分两种 —— 该分级下没有相册（换个档位就能看到） / 全站没有相册（库真的空） -->
+      <p v-if="view === 'flat' && !flatItemsAll.length && !guestHiddenEmpty" class="empty" data-role="empty">{{ albumEmptyText }}</p>
+      <p v-else-if="view === 'group' && !wallModel.sections && !loading && !guestHiddenEmpty" class="empty" data-role="empty">{{ albumEmptyText }}</p>
     </main>
 
     <!-- ================= 册内网格（原 photos.html 的 section#albumView） ================= -->

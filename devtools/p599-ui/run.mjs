@@ -297,14 +297,16 @@ async function main() {
   await viewport(1600, 1000)
 
   /* ================================================================ 1 站端分级筛选条 */
-  head('1. 站端视频库：三档都可见 → 分级筛选条出现（3 个 chip）')
+  head('1. 站端视频库：三档都可见 → 分级筛选条出现（全部 + 3 档 = 4 个 chip，P6.09 起单值）')
   await goto(ORIGIN + '/media', 2600)
   await waitFor("document.querySelectorAll('.grid > *:not(.grid-sentinel)').length > 0", 25000)
   const s1 = await siteProbe()
   facts.siteAllVisible = s1
   ok(s1.filterPresent, '分级筛选条出现（data-testid=rating-filter）')
-  ok(s1.chipValues.sort().join(',') === 'rating-chip-general,rating-chip-guidance,rating-chip-restricted',
-    '三个 chip = 大众 / 家长指导 / 限制级', s1.chipValues.join(','))
+  // P6.09：分级筛选改为「全局单值 + 持久化」—— 多一个「全部」chip，其余三档照旧
+  //（点已选中的那一档 = 回到全部，与旧的 toggle 语义等价）
+  ok(s1.chipValues.sort().join(',') === 'rating-chip-all,rating-chip-general,rating-chip-guidance,rating-chip-restricted',
+    '四个 chip = 全部 / 大众 / 家长指导 / 限制级', s1.chipValues.join(','))
   ok(s1.chipLabels.join('|').indexOf('大众级') >= 0 && s1.chipLabels.join('|').indexOf('家长指导级') >= 0,
     'chip 文案带中文分级名', s1.chipLabels.join(' | '))
   await shot('site-media-rating-filter-3')

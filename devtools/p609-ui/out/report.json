@@ -1,0 +1,915 @@
+{
+  "passed": 66,
+  "failures": [],
+  "facts": {
+    "index": {
+      "built": "2026年10月27日 17:22:06",
+      "stats": {
+        "videos": 138,
+        "albums": 169,
+        "photos": 8722,
+        "posters": 138,
+        "people": 10
+      },
+      "ratings": [
+        {
+          "value": "general",
+          "label": "大众级",
+          "count": 103
+        },
+        {
+          "value": "guidance",
+          "label": "家长指导级",
+          "count": 204
+        }
+      ],
+      "videos": {
+        "all": 138,
+        "general": 91,
+        "guidance": 47
+      },
+      "albums": {
+        "all": 169,
+        "general": 12,
+        "guidance": 157
+      },
+      "photos": {
+        "all": 8722,
+        "general": 332,
+        "guidance": 8390
+      },
+      "persons": {
+        "all": 10,
+        "general": 1,
+        "guidance": 10
+      }
+    },
+    "a0": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-all",
+          "text": "全部 138",
+          "on": true,
+          "pressed": "true"
+        },
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 91",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 47",
+          "on": false,
+          "pressed": "false"
+        }
+      ],
+      "hash": "#sort=progress",
+      "ls": null,
+      "countTexts": [
+        "显示 138 / 138"
+      ],
+      "stat": "",
+      "empty": "",
+      "sub": "",
+      "pwCards": 0,
+      "pwCounts": [],
+      "videoCards": 96,
+      "albumCards": 0,
+      "barRect": {
+        "left": 1205.796875,
+        "right": 1488.546875,
+        "width": 282.75
+      }
+    },
+    "a1": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-all",
+          "text": "全部 138",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 91",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 47",
+          "on": true,
+          "pressed": "true"
+        }
+      ],
+      "hash": "#rating=guidance&sort=progress",
+      "ls": "guidance",
+      "countTexts": [
+        "显示 47 / 138"
+      ],
+      "stat": "",
+      "empty": "",
+      "sub": "",
+      "pwCards": 0,
+      "pwCounts": [],
+      "videoCards": 47,
+      "albumCards": 0,
+      "barRect": {
+        "left": 1205.796875,
+        "right": 1488.546875,
+        "width": 282.75
+      }
+    },
+    "a2": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-all",
+          "text": "全部 138",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 91",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 47",
+          "on": true,
+          "pressed": "true"
+        }
+      ],
+      "hash": "#rating=guidance&sort=progress",
+      "ls": "guidance",
+      "countTexts": [
+        "显示 47 / 138"
+      ],
+      "stat": "",
+      "empty": "",
+      "sub": "",
+      "pwCards": 0,
+      "pwCounts": [],
+      "videoCards": 47,
+      "albumCards": 0,
+      "barRect": {
+        "left": 1205.796875,
+        "right": 1488.546875,
+        "width": 282.75
+      }
+    },
+    "b1": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-all",
+          "text": "全部 169",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 12",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 157",
+          "on": true,
+          "pressed": "true"
+        }
+      ],
+      "hash": "#s=photos-desc&p=albums-desc",
+      "ls": "guidance",
+      "countTexts": [],
+      "stat": "共 157 本相册 / 8390 张 · 当前 4 节 17 本 · 2071 张",
+      "empty": "",
+      "sub": "",
+      "pwCards": 0,
+      "pwCounts": [],
+      "videoCards": 0,
+      "albumCards": 17,
+      "barRect": {
+        "left": 1306.03125,
+        "right": 1569,
+        "width": 262.96875
+      }
+    },
+    "b1flat": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-all",
+          "text": "全部 169",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 12",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 157",
+          "on": true,
+          "pressed": "true"
+        }
+      ],
+      "hash": "#s=photos-desc&p=albums-desc&v=flat&fs=random",
+      "ls": "guidance",
+      "countTexts": [],
+      "stat": "共 8390 张 · 全部图片 · 🎲 随机（单图） · 已渲染 240 张",
+      "empty": "",
+      "sub": "",
+      "pwCards": 0,
+      "pwCounts": [],
+      "videoCards": 0,
+      "albumCards": 0,
+      "barRect": {
+        "left": 1306.03125,
+        "right": 1569,
+        "width": 262.96875
+      }
+    },
+    "b2": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-all",
+          "text": "全部 10",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 1",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 10",
+          "on": true,
+          "pressed": "true"
+        }
+      ],
+      "hash": "#rating=guidance",
+      "ls": "guidance",
+      "countTexts": [],
+      "stat": "",
+      "empty": "",
+      "sub": "筛选后 10 位人物",
+      "pwCards": 10,
+      "pwCounts": [
+        "75 部视频 · 2 本相册 · 118 张照片",
+        "0 部视频 · 1 本相册 · 2 张照片",
+        "0 部视频 · 1 本相册 · 48 张照片",
+        "0 部视频 · 143 本相册 · 7851 张照片",
+        "0 部视频 · 1 本相册 · 2 张照片",
+        "0 部视频 · 1 本相册 · 33 张照片",
+        "0 部视频 · 1 本相册 · 6 张照片",
+        "0 部视频 · 1 本相册 · 6 张照片",
+        "0 部视频 · 1 本相册 · 14 张照片",
+        "0 部视频 · 3 本相册 · 381 张照片"
+      ],
+      "videoCards": 0,
+      "albumCards": 0,
+      "barRect": {
+        "left": 845.59375,
+        "right": 1115,
+        "width": 269.40625
+      }
+    },
+    "c1": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-all",
+          "text": "全部 10",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 1",
+          "on": true,
+          "pressed": "true"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 10",
+          "on": false,
+          "pressed": "false"
+        }
+      ],
+      "hash": "#rating=general",
+      "ls": "general",
+      "countTexts": [],
+      "stat": "",
+      "empty": "",
+      "sub": "筛选后 1 位人物",
+      "pwCards": 1,
+      "pwCounts": [
+        "75 部视频 · 2 本相册 · 118 张照片"
+      ],
+      "videoCards": 0,
+      "albumCards": 0,
+      "barRect": {
+        "left": 845.59375,
+        "right": 1115,
+        "width": 269.40625
+      }
+    },
+    "c2": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-all",
+          "text": "全部 138",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 91",
+          "on": true,
+          "pressed": "true"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 47",
+          "on": false,
+          "pressed": "false"
+        }
+      ],
+      "hash": "#rating=general&sort=dur-asc",
+      "ls": "general",
+      "countTexts": [
+        "显示 91 / 138"
+      ],
+      "stat": "",
+      "empty": "",
+      "sub": "",
+      "pwCards": 0,
+      "pwCounts": [],
+      "videoCards": 48,
+      "albumCards": 0,
+      "barRect": {
+        "left": 1205.796875,
+        "right": 1488.546875,
+        "width": 282.75
+      }
+    },
+    "c3": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-all",
+          "text": "全部 169",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 12",
+          "on": true,
+          "pressed": "true"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 157",
+          "on": false,
+          "pressed": "false"
+        }
+      ],
+      "hash": "#s=title-desc&p=albums-desc",
+      "ls": "general",
+      "countTexts": [],
+      "stat": "共 12 本相册 / 332 张 · 当前 2 节 7 本 · 183 张",
+      "empty": "",
+      "sub": "",
+      "pwCards": 0,
+      "pwCounts": [],
+      "videoCards": 0,
+      "albumCards": 7,
+      "barRect": {
+        "left": 1279.578125,
+        "right": 1569,
+        "width": 289.421875
+      }
+    },
+    "d1": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-all",
+          "text": "全部 169",
+          "on": true,
+          "pressed": "true"
+        },
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 12",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 157",
+          "on": false,
+          "pressed": "false"
+        }
+      ],
+      "hash": "#s=title-desc&p=albums-desc",
+      "ls": null,
+      "countTexts": [],
+      "stat": "共 169 本相册 / 8722 张 · 当前 4 节 21 本 · 1002 张",
+      "empty": "",
+      "sub": "",
+      "pwCards": 0,
+      "pwCounts": [],
+      "videoCards": 0,
+      "albumCards": 21,
+      "barRect": {
+        "left": 1307.390625,
+        "right": 1569,
+        "width": 261.609375
+      }
+    },
+    "d2": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-all",
+          "text": "全部 169",
+          "on": true,
+          "pressed": "true"
+        },
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 12",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 157",
+          "on": false,
+          "pressed": "false"
+        }
+      ],
+      "hash": "#s=title-desc&p=albums-desc&v=flat&fs=random",
+      "ls": null,
+      "countTexts": [],
+      "stat": "共 8722 张 · 全部图片 · 🎲 随机（单图） · 已渲染 240 张",
+      "empty": "",
+      "sub": "",
+      "pwCards": 0,
+      "pwCounts": [],
+      "videoCards": 0,
+      "albumCards": 0,
+      "barRect": {
+        "left": 1307.390625,
+        "right": 1569,
+        "width": 261.609375
+      }
+    },
+    "d3": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-all",
+          "text": "全部 138",
+          "on": true,
+          "pressed": "true"
+        },
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 91",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 47",
+          "on": false,
+          "pressed": "false"
+        }
+      ],
+      "hash": "#sort=size-asc",
+      "ls": null,
+      "countTexts": [
+        "显示 138 / 138"
+      ],
+      "stat": "",
+      "empty": "",
+      "sub": "",
+      "pwCards": 0,
+      "pwCounts": [],
+      "videoCards": 48,
+      "albumCards": 0,
+      "barRect": {
+        "left": 1205.796875,
+        "right": 1488.546875,
+        "width": 282.75
+      }
+    },
+    "d4": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-all",
+          "text": "全部 10",
+          "on": true,
+          "pressed": "true"
+        },
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 1",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 10",
+          "on": false,
+          "pressed": "false"
+        }
+      ],
+      "hash": "",
+      "ls": null,
+      "countTexts": [],
+      "stat": "",
+      "empty": "",
+      "sub": "10 位",
+      "pwCards": 10,
+      "pwCounts": [
+        "75 部视频 · 2 本相册 · 118 张照片",
+        "0 部视频 · 1 本相册 · 2 张照片",
+        "0 部视频 · 1 本相册 · 48 张照片",
+        "0 部视频 · 143 本相册 · 7851 张照片",
+        "0 部视频 · 1 本相册 · 2 张照片",
+        "0 部视频 · 1 本相册 · 33 张照片",
+        "0 部视频 · 1 本相册 · 6 张照片",
+        "0 部视频 · 1 本相册 · 6 张照片",
+        "0 部视频 · 1 本相册 · 14 张照片",
+        "0 部视频 · 3 本相册 · 381 张照片"
+      ],
+      "videoCards": 0,
+      "albumCards": 0,
+      "barRect": {
+        "left": 845.59375,
+        "right": 1115,
+        "width": 269.40625
+      }
+    },
+    "overlap": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-all",
+          "text": "全部 138",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 91",
+          "on": true,
+          "pressed": "true"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 47",
+          "on": false,
+          "pressed": "false"
+        }
+      ],
+      "hash": "#q=%E4%BA%A4%E9%80%9A&rating=general&sort=dur-asc",
+      "ls": "general",
+      "countTexts": [
+        "显示 5 / 138"
+      ],
+      "stat": "",
+      "empty": "",
+      "sub": "",
+      "pwCards": 0,
+      "pwCounts": [],
+      "videoCards": 5,
+      "albumCards": 0,
+      "barRect": {
+        "left": 1205.796875,
+        "right": 1488.546875,
+        "width": 282.75
+      }
+    },
+    "clearAll": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-all",
+          "text": "全部 138",
+          "on": true,
+          "pressed": "true"
+        },
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 91",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 47",
+          "on": false,
+          "pressed": "false"
+        }
+      ],
+      "hash": "",
+      "ls": null,
+      "countTexts": [
+        "显示 138 / 138"
+      ],
+      "stat": "",
+      "empty": "",
+      "sub": "",
+      "pwCards": 0,
+      "pwCounts": [],
+      "videoCards": 96,
+      "albumCards": 0,
+      "barRect": {
+        "left": 1205.796875,
+        "right": 1488.546875,
+        "width": 282.75
+      }
+    },
+    "before": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 103",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 204",
+          "on": false,
+          "pressed": "false"
+        }
+      ],
+      "hash": "#rating=restricted&sort=res-asc",
+      "ls": null,
+      "countTexts": [
+        "显示 0 / 138"
+      ],
+      "stat": "",
+      "empty": "",
+      "sub": "",
+      "pwCards": 0,
+      "pwCounts": [],
+      "videoCards": 0,
+      "albumCards": 0,
+      "barRect": {
+        "left": 1205.796875,
+        "right": 1427.859375,
+        "width": 222.0625
+      }
+    },
+    "after": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-all",
+          "text": "全部 138",
+          "on": true,
+          "pressed": "true"
+        },
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 91",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 47",
+          "on": false,
+          "pressed": "false"
+        }
+      ],
+      "hash": "#sort=name-desc",
+      "ls": "restricted",
+      "countTexts": [
+        "显示 138 / 138"
+      ],
+      "stat": "",
+      "empty": "",
+      "sub": "",
+      "pwCards": 0,
+      "pwCounts": [],
+      "videoCards": 138,
+      "albumCards": 0,
+      "barRect": {
+        "left": 1205.796875,
+        "right": 1488.546875,
+        "width": 282.75
+      }
+    },
+    "f1": {
+      "bar": false,
+      "chips": [],
+      "hash": "#sort=name-desc",
+      "ls": "restricted",
+      "countTexts": [
+        "显示 138 / 138"
+      ],
+      "stat": "",
+      "empty": "",
+      "sub": "",
+      "pwCards": 0,
+      "pwCounts": [],
+      "videoCards": 138,
+      "albumCards": 0,
+      "barRect": null
+    },
+    "f2": {
+      "bar": false,
+      "chips": [],
+      "hash": "#s=title-desc&p=albums-asc",
+      "ls": "restricted",
+      "countTexts": [],
+      "stat": "共 169 本相册 / 8722 张 · 当前 4 节 21 本 · 896 张",
+      "empty": "",
+      "sub": "",
+      "pwCards": 0,
+      "pwCounts": [],
+      "videoCards": 0,
+      "albumCards": 21,
+      "barRect": null
+    },
+    "f3": {
+      "bar": false,
+      "chips": [],
+      "hash": "",
+      "ls": "restricted",
+      "countTexts": [],
+      "stat": "",
+      "empty": "",
+      "sub": "10 位",
+      "pwCards": 10,
+      "pwCounts": [
+        "75 部视频 · 2 本相册 · 118 张照片",
+        "0 部视频 · 1 本相册 · 2 张照片",
+        "0 部视频 · 1 本相册 · 48 张照片",
+        "0 部视频 · 143 本相册 · 7851 张照片",
+        "0 部视频 · 1 本相册 · 2 张照片",
+        "0 部视频 · 1 本相册 · 33 张照片",
+        "0 部视频 · 1 本相册 · 6 张照片",
+        "0 部视频 · 1 本相册 · 6 张照片",
+        "0 部视频 · 1 本相册 · 14 张照片",
+        "0 部视频 · 3 本相册 · 381 张照片"
+      ],
+      "videoCards": 0,
+      "albumCards": 0,
+      "barRect": null
+    },
+    "narrowVideo": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-all",
+          "text": "全部 138",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 91",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 47",
+          "on": true,
+          "pressed": "true"
+        }
+      ],
+      "hash": "#rating=guidance&sort=recent",
+      "ls": "guidance",
+      "countTexts": [
+        "显示 47 / 138"
+      ],
+      "stat": "",
+      "empty": "",
+      "sub": "",
+      "pwCards": 0,
+      "pwCounts": [],
+      "videoCards": 47,
+      "albumCards": 0,
+      "barRect": {
+        "left": 12,
+        "right": 287.78125,
+        "width": 275.78125
+      }
+    },
+    "narrowPhotos": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-all",
+          "text": "全部 169",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 12",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 157",
+          "on": true,
+          "pressed": "true"
+        }
+      ],
+      "hash": "#s=bytes-desc&p=name-desc",
+      "ls": "guidance",
+      "countTexts": [],
+      "stat": "共 157 本相册 / 8390 张 · 当前 4 节 8 本 · 1488 张",
+      "empty": "",
+      "sub": "",
+      "pwCards": 0,
+      "pwCounts": [],
+      "videoCards": 0,
+      "albumCards": 8,
+      "barRect": {
+        "left": 232.3125,
+        "right": 365,
+        "width": 132.6875
+      }
+    },
+    "narrowPersons": {
+      "bar": true,
+      "chips": [
+        {
+          "id": "rating-chip-all",
+          "text": "全部 10",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-general",
+          "text": "大众级 1",
+          "on": false,
+          "pressed": "false"
+        },
+        {
+          "id": "rating-chip-guidance",
+          "text": "家长指导级 10",
+          "on": true,
+          "pressed": "true"
+        }
+      ],
+      "hash": "#rating=guidance",
+      "ls": "guidance",
+      "countTexts": [],
+      "stat": "",
+      "empty": "",
+      "sub": "筛选后 10 位人物",
+      "pwCards": 10,
+      "pwCounts": [
+        "75 部视频 · 2 本相册 · 118 张照片",
+        "0 部视频 · 1 本相册 · 2 张照片",
+        "0 部视频 · 1 本相册 · 48 张照片",
+        "0 部视频 · 143 本相册 · 7851 张照片",
+        "0 部视频 · 1 本相册 · 2 张照片",
+        "0 部视频 · 1 本相册 · 33 张照片",
+        "0 部视频 · 1 本相册 · 6 张照片",
+        "0 部视频 · 1 本相册 · 6 张照片",
+        "0 部视频 · 1 本相册 · 14 张照片",
+        "0 部视频 · 3 本相册 · 381 张照片"
+      ],
+      "videoCards": 0,
+      "albumCards": 0,
+      "barRect": {
+        "left": 16,
+        "right": 180.3125,
+        "width": 164.3125
+      }
+    }
+  }
+}
