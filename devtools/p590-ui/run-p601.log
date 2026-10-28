@@ -1,0 +1,9 @@
+file:///E:/111/project/QTools/QTools-C/devtools/p590-ui/run.mjs:227
+  if (!ready) throw new Error('人物墙没渲染出来')
+                    ^
+
+Error: 人物墙没渲染出来
+    at openWall (file:///E:/111/project/QTools/QTools-C/devtools/p590-ui/run.mjs:227:21)
+    at async file:///E:/111/project/QTools/QTools-C/devtools/p590-ui/run.mjs:245:1
+
+Node.js v24.21.0

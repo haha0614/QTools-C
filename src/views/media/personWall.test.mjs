@@ -377,6 +377,26 @@ eq(buildCard({ id: 122, name: '娜娜' }, { detail: { photoCount: 0, videoCount:
 eq(buildCard({ id: 122, name: '娜娜' }, { stats: { albums: 0, photos: 0, videos: 14, coverRel: '', posterId: 'v1', posterDur: 600, mtime: 0 }, detail: { photoCount: 0 }, urls }).avatar.kind,
   'frame', 'P5.65：无 coverPath 时取帧档照旧')
 
+/* --------------- P5.99：头像来自「对当前访客不可见」的内容 --------------- */
+
+// 后端在「站长挑的头像属于不可见内容」时回 avatarHidden=true + avatarUrl=null；
+// 这时必须直接走首字占位，**不能**拿相册封面 / 视频帧顶上（换一张无关的图会让人以为头像被换掉了）。
+const HIDDEN = buildCard({ id: 114, name: '唐翩翩' }, {
+  detail: { avatarHidden: true, avatarUrl: null, avatarPath: null, coverPath: 'thumbs/p/a004/0000.jpg', photoCount: 33 },
+  stats: { albums: 1, photos: 33, videos: 0, coverRel: 'thumbs/p/a004/0000.jpg', posterId: 'v9', posterDur: 600, mtime: 0 },
+  urls
+})
+eq(HIDDEN.avatar.kind, 'initial', 'P5.99：avatarHidden=true → 首字占位（不回落相册封面 / 视频帧）')
+eq(HIDDEN.avatar.url, '', 'P5.99：avatarHidden=true → 不发任何图片请求')
+
+// 老后端（没有这个键）行为不变：仍是「手动头像 → 相册封面 → 视频帧 → 首字」
+const NOFLAG = buildCard({ id: 114, name: '唐翩翩' }, {
+  detail: { avatarUrl: null, avatarPath: null, coverPath: 'thumbs/p/a004/0000.jpg', photoCount: 33 },
+  stats: { albums: 1, photos: 33, videos: 0, coverRel: 'thumbs/p/a004/0000.jpg', posterId: '', posterDur: 0, mtime: 0 },
+  urls
+})
+eq(NOFLAG.avatar.kind, 'album', 'P5.99：没有 avatarHidden 时仍是原四级回退（行为不变）')
+
 /* ---------------------------------- 结果 ---------------------------------- */
 
 if (failures.length) {

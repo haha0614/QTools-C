@@ -2,8 +2,8 @@
   PersonDetailPage.vue —— 媒体站「人物详情」（P3-B）
   路由：/media/person/:id
   数据：GET /api/media/person/{id}（名称 / 头像 / 计数）
-        GET /api/media/person/{id}/videos?page=&size=（分页，复用 VideoCard 渲染）
-        GET /api/media/person/{id}/albums?page=&size=（分页，复用 AlbumCard 渲染）
+        GET /api/media/person/{id}/videos?page=1&size=（复用 VideoCard 渲染）
+        GET /api/media/person/{id}/albums?page=1&size=（复用 AlbumCard 渲染）
   降级：任一接口 404 / 连接失败 → 对应区块显示「人物数据暂不可用」，页面不白屏、不抛异常。
   深链：卡片点击沿用既有约定 —— 视频 -> /media#play=<id>，相册 -> /media/photos#album=<id>。
   主题：.media-scope + mediaTheme.scss（局部模式），只用 --bg/--fg/--line/--accent 等映射变量。
@@ -17,9 +17,22 @@
          视频内容帧 → 首字占位），所以两页的优先级永远一致：stats 用本页已加载的 albums[0].cover /
          videos[0].{id,dur} 现拼，不额外发请求（P5.60：视频档由「预生成封面」改成「内容帧」，
          取帧落点 t = 时长 × 0.3 的整秒）。入口只在编辑策略 full 档渲染。
+  P5.98（用户需求 2）：「视频 159 直接铺满很长一列 + 分页」——本轮选**方案 b**：
+  区块折叠成 1–2 行 + 末尾「查看全部 N 个视频」，点开在原页展开、可「收起」，状态记在
+  sessionStorage（ms.person.detail.expand.<personId>.videos / .albums）；页内「上一页 / 下一页」整组删除。
+    · 行数：视口 ≤768 → 1 行（375 手机档）；>768 → 2 行。相册区恒 1 行。
+      列数由浏览器算（.pd-grid-* 是 auto-fill + minmax()），页面读 grid-template-columns 的轨道数，
+      再乘行数得到「折叠显示张数」—— 保证整行、不留半行（不是用 max-height 硬裁）。
+    · 请求：折叠态首屏只要 24 条（够 2 行 × 最多 8 列）；展开态按总数补一次，
+      后端 size 上限 200（实测 size=500 回 size=200）。二次请求只在「超宽屏一行超过 24 张」时发生。
+    · 展开 / 收起不改路由；展开是真渲染全部卡片（不是预览、不跳页）。
+    · 「查看全部」只在**真藏着**东西时出现（真实数据相册 2 本在一行里装得下 → 不出按钮，不放空按钮）。
+    · 规则 / 值域 / 键名全在 personDetailExpand.js，单测 personDetailExpand.test.mjs；
+      真浏览器实测（行数 / 卡片数 / 高度 / 展开 / 收起 / 刷新恢复 / 375 / 打桩 12 本相册）见
+      devtools/p598-ui/REPORT.md。
 -->
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMediaApi } from '@/composables/useMediaApi'
 import { useMediaTrack } from '@/composables/useMediaTrack'
@@ -34,6 +47,18 @@ import { useMediaEditPolicy } from '@/composables/useMediaEditPolicy'
 import { clearPersonAvatar, errorText, setPersonAvatar } from './video/personApi'
 // P5.35：把「来源 = 本人物 + 本页展示顺序」交给播放页（顺序走 sessionStorage 快照，见 openVideo）
 import { CTX_PERSON, writeContextSnapshot } from './video/playbackContext'
+// P5.98：折叠 / 展开的唯一实现（行数规则、可见张数、请求批量、sessionStorage 键；单测 personDetailExpand.test.mjs）
+import {
+  ALBUM_MAX_ROWS,
+  columnsOf,
+  hiddenCount,
+  initialSize,
+  maxRowsForViewport,
+  needSize,
+  readExpand,
+  visibleCount,
+  writeExpand
+} from './personDetailExpand.js'
 
 const api = useMediaApi()
 const tk = useMediaTrack()
@@ -46,25 +71,37 @@ const { toasts, push: showToast } = usePageToast()
 // P5.60：与人物墙同一套 —— 视频档用内容帧（/api/media/frame/<id>?t=<时长×0.3 的整秒>&w=400）
 const URLS = { thumbOf: api.thumbUrlFromRel, frameOf: (id, sec) => api.frameUrl(id, sec, 400) }
 
-const PAGE_SIZE = 12
 const NOT_READY = '人物数据暂不可用：后端人物接口尚未就绪'
+/** P5.98：列数兜底用的栅格参数 —— 与下面 .pd-grid-video / .pd-grid-album 的 minmax() 保持一致 */
+const GRID_GAP = 12
+const VIDEO_MIN_COLS = 210
+const ALBUM_MIN_COLS = 170
 
 const personId = ref('')
 const person = ref(null)
 const personLoading = ref(true)
 const personErr = ref('')
 
+/* P5.98：分页状态整组删除（videoPage / albumPage）—— 区块不再翻页，
+   改成「折叠显示 1–2 行 + 查看全部 N 个视频 / 收起」，展开态记在 sessionStorage。 */
 const videos = ref([])
 const videoTotal = ref(0)
-const videoPage = ref(1)
 const videoLoading = ref(false)
 const videoErr = ref('')
+const videoExpanded = ref(false)
+/** 浏览器算出来的一行几张（量 .pd-grid-video 的 grid-template-columns） */
+const videoCols = ref(1)
+/** 折叠时显示几行（≤768 视口 1 行，其余 2 行） */
+const videoRows = ref(2)
+const videoGridRef = ref(null)
 
 const albums = ref([])
 const albumTotal = ref(0)
-const albumPage = ref(1)
 const albumLoading = ref(false)
 const albumErr = ref('')
+const albumExpanded = ref(false)
+const albumCols = ref(1)
+const albumGridRef = ref(null)
 
 function toNum(v) {
   const n = Number(v)
@@ -129,51 +166,142 @@ function loadPerson() {
     })
 }
 
-function loadVideos(page) {
-  if (page) videoPage.value = page
+/* ------------------------------------------------------------------ P5.98 折叠 / 展开
+ * 需求：视频区默认最多 1–2 行（按视口宽度定行数）+「查看全部 N 个视频」→ 展开 / 收起；
+ *       相册区同样最多 1 行 +「查看全部 N 个相册」；页内「上一页 / 下一页」整组删除。
+ * 行数、可见张数、请求批量、持久化键全部来自 personDetailExpand.js（单测同名 .test.mjs）。
+ * 为什么要先量列数：栅格是 auto-fill + minmax()，一行几张由浏览器算，
+ * 只有读到 .pd-grid-* 的 grid-template-columns 才能保证「整行显示、不留半行」。
+ */
+
+/** 一次请求 size 条（第 1 页即可 —— 折叠态显示的就是总列表的前 N 条，顺序不变） */
+async function loadVideos(size) {
   videoLoading.value = true
   videoErr.value = ''
-  api
-    .listPersonVideos(personId.value, { page: videoPage.value, size: PAGE_SIZE }, { silent: true })
-    .then((res) => {
-      const out = normalizePage(res)
-      videos.value = out.rows
-      videoTotal.value = out.total
-    })
-    .catch((err) => {
-      videos.value = []
-      videoTotal.value = 0
-      videoErr.value = isNotReady(err) ? NOT_READY : '视频列表加载失败：' + ((err && err.message) || '请求失败')
-    })
-    .finally(() => {
-      videoLoading.value = false
-    })
+  try {
+    const out = normalizePage(await api.listPersonVideos(personId.value, { page: 1, size }, { silent: true }))
+    videos.value = out.rows
+    videoTotal.value = out.total
+  } catch (err) {
+    videos.value = []
+    videoTotal.value = 0
+    videoErr.value = isNotReady(err) ? NOT_READY : '视频列表加载失败：' + ((err && err.message) || '请求失败')
+  } finally {
+    videoLoading.value = false
+    scheduleMeasure()
+  }
 }
 
-function loadAlbums(page) {
-  if (page) albumPage.value = page
+async function loadAlbums(size) {
   albumLoading.value = true
   albumErr.value = ''
-  api
-    .listPersonAlbums(personId.value, { page: albumPage.value, size: PAGE_SIZE }, { silent: true })
-    .then((res) => {
-      const out = normalizePage(res)
-      albums.value = out.rows
-      albumTotal.value = out.total
-    })
-    .catch((err) => {
-      albums.value = []
-      albumTotal.value = 0
-      albumErr.value = isNotReady(err) ? NOT_READY : '相册列表加载失败：' + ((err && err.message) || '请求失败')
-    })
-    .finally(() => {
-      albumLoading.value = false
-    })
+  try {
+    const out = normalizePage(await api.listPersonAlbums(personId.value, { page: 1, size }, { silent: true }))
+    albums.value = out.rows
+    albumTotal.value = out.total
+  } catch (err) {
+    albums.value = []
+    albumTotal.value = 0
+    albumErr.value = isNotReady(err) ? NOT_READY : '相册列表加载失败：' + ((err && err.message) || '请求失败')
+  } finally {
+    albumLoading.value = false
+    scheduleMeasure()
+  }
 }
 
-function pageCount(total) {
-  return Math.max(1, Math.ceil(toNum(total) / PAGE_SIZE))
+/** 折叠态渲染几张（整行，不含被藏起来的） */
+const videoVisibleCount = computed(() => visibleCount(videoCols.value, videoRows.value, videoTotal.value))
+/** 折叠态还藏着几张：0 → 「查看全部」按钮不出现（数据本来就装得下一屏） */
+const videoHidden = computed(() => hiddenCount(videoCols.value, videoRows.value, videoTotal.value))
+const visibleVideos = computed(() => (videoExpanded.value ? videos.value : videos.value.slice(0, videoVisibleCount.value)))
+/** 展开后仍没拿全（总数超过后端 size 上限 200）→ 明确提示，不静默截断 */
+const videoTruncated = computed(() => videoExpanded.value && videos.value.length < videoTotal.value)
+
+const albumVisibleCount = computed(() => visibleCount(albumCols.value, ALBUM_MAX_ROWS, albumTotal.value))
+const albumHidden = computed(() => hiddenCount(albumCols.value, ALBUM_MAX_ROWS, albumTotal.value))
+const visibleAlbums = computed(() => (albumExpanded.value ? albums.value : albums.value.slice(0, albumVisibleCount.value)))
+const albumTruncated = computed(() => albumExpanded.value && albums.value.length < albumTotal.value)
+
+function sessionStore() {
+  try {
+    return typeof window !== 'undefined' && window.sessionStorage ? window.sessionStorage : null
+  } catch (e) {
+    return null
+  }
 }
+
+/** 量两处栅格的列数 + 视口行数（window.innerWidth 决定折叠行数） */
+function measureGrids() {
+  videoRows.value = maxRowsForViewport(typeof window !== 'undefined' ? window.innerWidth : 0)
+  const vEl = videoGridRef.value
+  videoCols.value = columnsOf(vEl ? getComputedStyle(vEl).gridTemplateColumns : '', vEl ? vEl.clientWidth : 0, VIDEO_MIN_COLS, GRID_GAP)
+  const aEl = albumGridRef.value
+  albumCols.value = columnsOf(aEl ? getComputedStyle(aEl).gridTemplateColumns : '', aEl ? aEl.clientWidth : 0, ALBUM_MIN_COLS, GRID_GAP)
+}
+
+let measuring = false
+/** 量一次，然后按需补请求（首屏 24 条，超宽屏一行超过 24 时补到整屏张数） */
+async function measureAndTopUp() {
+  if (measuring) return
+  measuring = true
+  try {
+    measureGrids()
+    const needV = needSize(videoExpanded.value, videoVisibleCount.value, videos.value.length, videoTotal.value)
+    if (needV > 0) await loadVideos(needV)
+    const needA = needSize(albumExpanded.value, albumVisibleCount.value, albums.value.length, albumTotal.value)
+    if (needA > 0) await loadAlbums(needA)
+  } finally {
+    measuring = false
+  }
+}
+
+/** 数据 / 栅格变化后都排一次「量 + 补」，nextTick 保证量的是渲染后的真实盒子 */
+function scheduleMeasure() {
+  nextTick(() => {
+    measureAndTopUp()
+  })
+}
+
+async function expandVideos() {
+  videoExpanded.value = true
+  writeExpand(sessionStore(), personId.value, 'videos', true)
+  const need = needSize(true, 0, videos.value.length, videoTotal.value)
+  if (need > 0) await loadVideos(need)
+}
+
+function collapseVideos() {
+  videoExpanded.value = false
+  writeExpand(sessionStore(), personId.value, 'videos', false)
+}
+
+async function expandAlbums() {
+  albumExpanded.value = true
+  writeExpand(sessionStore(), personId.value, 'albums', true)
+  const need = needSize(true, 0, albums.value.length, albumTotal.value)
+  if (need > 0) await loadAlbums(need)
+}
+
+function collapseAlbums() {
+  albumExpanded.value = false
+  writeExpand(sessionStore(), personId.value, 'albums', false)
+}
+
+/* 视口 / 栅格变了就重新量（列数或行数一变，折叠态该显示的张数跟着变） */
+let gridObserver = null
+function observeGrids() {
+  if (!gridObserver) return
+  gridObserver.disconnect()
+  if (videoGridRef.value) gridObserver.observe(videoGridRef.value)
+  if (albumGridRef.value) gridObserver.observe(albumGridRef.value)
+}
+function onViewportResize() {
+  scheduleMeasure()
+}
+
+watch([videoGridRef, albumGridRef], () => {
+  observeGrids()
+  scheduleMeasure()
+})
 
 /** sessionStorage 取用（隐私模式 / 非浏览器环境取不到 → null，快照写不进去就退化成「无来源」） */
 function contextStore() {
@@ -341,16 +469,24 @@ function loadAll() {
   person.value = null
   avatarBroken.value = false
   avatarDialog.open = false
-  videoPage.value = 1
-  albumPage.value = 1
+  // P5.98：展开态从 sessionStorage 恢复（同标签页刷新 / 返回仍在；换人物各记一份键）
+  videoExpanded.value = readExpand(sessionStore(), personId.value, 'videos')
+  albumExpanded.value = readExpand(sessionStore(), personId.value, 'albums')
+  videos.value = []
+  videoTotal.value = 0
+  albums.value = []
+  albumTotal.value = 0
   loadPerson()
-  loadVideos(1)
-  loadAlbums(1)
+  // 折叠态只拉一小批（24），展开恢复态直接要满
+  loadVideos(initialSize(videoExpanded.value))
+  loadAlbums(initialSize(albumExpanded.value))
 }
 
 onMounted(() => {
   tk.pageView()
   policy.loadEditPolicy()
+  if (typeof ResizeObserver !== 'undefined') gridObserver = new ResizeObserver(() => scheduleMeasure())
+  if (typeof window !== 'undefined') window.addEventListener('resize', onViewportResize)
   loadAll()
 })
 
@@ -363,6 +499,11 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  if (gridObserver) {
+    gridObserver.disconnect()
+    gridObserver = null
+  }
+  if (typeof window !== 'undefined') window.removeEventListener('resize', onViewportResize)
   tk.dwell()
 })
 </script>
@@ -400,53 +541,87 @@ onBeforeUnmount(() => {
       </div>
     </header>
 
-    <!-- 视频网格 -->
-    <section class="pd-sec">
+    <!-- 视频网格（P5.98：折叠 1–2 行 → 「查看全部 N 个视频」/「收起」，页内分页删除） -->
+    <section class="pd-sec" data-role="pd-sec-videos">
       <div class="pd-sec-head">
         <h2>视频<em v-if="videoTotal">（{{ videoTotal }}）</em></h2>
-        <div v-if="pageCount(videoTotal) > 1" class="pd-pager">
-          <button type="button" :disabled="videoPage <= 1" @click="loadVideos(videoPage - 1)">上一页</button>
-          <span>{{ videoPage }} / {{ pageCount(videoTotal) }}</span>
-          <button type="button" :disabled="videoPage >= pageCount(videoTotal)" @click="loadVideos(videoPage + 1)">下一页</button>
-        </div>
+        <span v-if="videoTotal" class="pd-sec-note" data-role="pd-video-shown">
+          显示 {{ visibleVideos.length }} / {{ videoTotal }}
+        </span>
       </div>
-      <p v-if="videoLoading" class="pd-state">视频加载中…</p>
+      <p v-if="videoLoading && !videos.length" class="pd-state">视频加载中…</p>
       <p v-else-if="videoErr" class="pd-state pd-state-err">{{ videoErr }}</p>
       <p v-else-if="!videos.length" class="pd-state">这位人物名下还没有视频</p>
-      <div v-else class="pd-grid pd-grid-video">
-        <VideoCard
-          v-for="v in videos"
-          :key="v.id"
-          :video="v"
-          :persons="v.persons || []"
-          @open="openVideo"
-          @person="openPerson"
-        />
-      </div>
+      <template v-else>
+        <div ref="videoGridRef" class="pd-grid pd-grid-video" data-role="pd-video-grid">
+          <VideoCard
+            v-for="v in visibleVideos"
+            :key="v.id"
+            :video="v"
+            :persons="v.persons || []"
+            @open="openVideo"
+            @person="openPerson"
+          />
+        </div>
+        <div v-if="videoHidden > 0 || videoExpanded" class="pd-more">
+          <button
+            v-if="!videoExpanded"
+            type="button"
+            class="pd-more-btn"
+            data-role="pd-expand-videos"
+            @click="expandVideos"
+          >
+            查看全部 {{ videoTotal }} 个视频
+          </button>
+          <button v-else type="button" class="pd-more-btn" data-role="pd-collapse-videos" @click="collapseVideos">
+            收起
+          </button>
+          <span v-if="videoTruncated" class="pd-more-note" data-role="pd-video-truncated">
+            一次最多取 200 个，这里先显示前 {{ videos.length }} 个
+          </span>
+        </div>
+      </template>
     </section>
 
-    <!-- 相册网格 -->
-    <section class="pd-sec">
+    <!-- 相册网格（P5.98：折叠 1 行 → 「查看全部 N 个相册」/「收起」；数量本来就装得下一行时不出按钮） -->
+    <section class="pd-sec" data-role="pd-sec-albums">
       <div class="pd-sec-head">
         <h2>相册<em v-if="albumTotal">（{{ albumTotal }}）</em></h2>
-        <div v-if="pageCount(albumTotal) > 1" class="pd-pager">
-          <button type="button" :disabled="albumPage <= 1" @click="loadAlbums(albumPage - 1)">上一页</button>
-          <span>{{ albumPage }} / {{ pageCount(albumTotal) }}</span>
-          <button type="button" :disabled="albumPage >= pageCount(albumTotal)" @click="loadAlbums(albumPage + 1)">下一页</button>
-        </div>
+        <span v-if="albumTotal" class="pd-sec-note" data-role="pd-album-shown">
+          显示 {{ visibleAlbums.length }} / {{ albumTotal }}
+        </span>
       </div>
-      <p v-if="albumLoading" class="pd-state">相册加载中…</p>
+      <p v-if="albumLoading && !albums.length" class="pd-state">相册加载中…</p>
       <p v-else-if="albumErr" class="pd-state pd-state-err">{{ albumErr }}</p>
       <p v-else-if="!albums.length" class="pd-state">这位人物名下还没有相册</p>
-      <div v-else class="pd-grid pd-grid-album">
-        <AlbumCard
-          v-for="a in albums"
-          :key="a.id"
-          :album="a"
-          :person="personName()"
-          @open="openAlbum"
-        />
-      </div>
+      <template v-else>
+        <div ref="albumGridRef" class="pd-grid pd-grid-album" data-role="pd-album-grid">
+          <AlbumCard
+            v-for="a in visibleAlbums"
+            :key="a.id"
+            :album="a"
+            :person="personName()"
+            @open="openAlbum"
+          />
+        </div>
+        <div v-if="albumHidden > 0 || albumExpanded" class="pd-more">
+          <button
+            v-if="!albumExpanded"
+            type="button"
+            class="pd-more-btn"
+            data-role="pd-expand-albums"
+            @click="expandAlbums"
+          >
+            查看全部 {{ albumTotal }} 个相册
+          </button>
+          <button v-else type="button" class="pd-more-btn" data-role="pd-collapse-albums" @click="collapseAlbums">
+            收起
+          </button>
+          <span v-if="albumTruncated" class="pd-more-note" data-role="pd-album-truncated">
+            一次最多取 200 个，这里先显示前 {{ albums.length }} 个
+          </span>
+        </div>
+      </template>
     </section>
 
     <!-- P5.48 换头像弹层：与人物墙同一个组件（两个 tab + 恢复自动） -->
@@ -632,32 +807,43 @@ onBeforeUnmount(() => {
   color: var(--fg-dim);
 }
 
-.pd-pager {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12.5px;
+/* 区块标题右侧的小字（P5.98）：「显示 14 / 159」—— 替代原来那排「上一页 / N / 下一页」 */
+.pd-sec-note {
+  font-size: 12px;
   color: var(--fg-dim);
+  font-variant-numeric: tabular-nums;
 }
 
-.pd-pager button {
-  padding: 4px 10px;
+/* P5.98：「查看全部 N 个视频 / 收起」—— 贴在折叠区末尾（栅格下方居中），不再翻页 */
+.pd-more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.pd-more-btn {
+  padding: 6px 16px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--bg-3);
-  color: var(--fg-dim);
-  font-size: 12.5px;
+  color: var(--fg);
+  font-size: 13px;
   cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
 }
 
-.pd-pager button:hover:not(:disabled) {
+.pd-more-btn:hover,
+.pd-more-btn:focus-visible {
   border-color: var(--accent);
   color: var(--accent);
 }
 
-.pd-pager button:disabled {
-  opacity: 0.5;
-  cursor: default;
+.pd-more-note {
+  font-size: 12px;
+  color: var(--fg-dim);
 }
 
 .pd-state {

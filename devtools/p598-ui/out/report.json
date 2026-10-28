@@ -1,0 +1,330 @@
+{
+  "passed": 60,
+  "failures": [],
+  "facts": {
+    "darkTheme": {
+      "dark": true,
+      "bg": "color(srgb 0.380392 0.679216 0.990588)"
+    },
+    "layout": {
+      "375": {
+        "cards": 13,
+        "inView": 6,
+        "card": {
+          "l": 16,
+          "t": 154,
+          "r": 359,
+          "b": 258,
+          "w": 343,
+          "h": 104
+        },
+        "adj": {
+          "l": 331,
+          "t": 162,
+          "r": 351,
+          "b": 182,
+          "w": 20,
+          "h": 20
+        },
+        "chg": {
+          "l": 331,
+          "t": 230,
+          "r": 351,
+          "b": 250,
+          "w": 20,
+          "h": 20
+        },
+        "avatar": {
+          "l": 27,
+          "t": 186,
+          "r": 67,
+          "b": 226,
+          "w": 40,
+          "h": 40
+        },
+        "body": {
+          "l": 75,
+          "t": 175.98,
+          "r": 324,
+          "b": 236.02,
+          "w": 249,
+          "h": 60.03
+        },
+        "worstEdge": 8,
+        "gapAdjChg": 48,
+        "adjOp": "1",
+        "chgOp": "1",
+        "diagonal": true
+      },
+      "1200": {
+        "cards": 13,
+        "inView": 13,
+        "card": {
+          "l": 192,
+          "t": 62,
+          "r": 509.66,
+          "b": 166,
+          "w": 317.66,
+          "h": 104
+        },
+        "adj": {
+          "l": 481.66,
+          "t": 70,
+          "r": 501.66,
+          "b": 90,
+          "w": 20,
+          "h": 20
+        },
+        "chg": {
+          "l": 481.66,
+          "t": 138,
+          "r": 501.66,
+          "b": 158,
+          "w": 20,
+          "h": 20
+        },
+        "avatar": {
+          "l": 205,
+          "t": 86,
+          "r": 261,
+          "b": 142,
+          "w": 56,
+          "h": 56
+        },
+        "body": {
+          "l": 271,
+          "t": 83.64,
+          "r": 472.66,
+          "b": 144.34,
+          "w": 201.66,
+          "h": 60.7
+        },
+        "worstEdge": 8,
+        "gapAdjChg": 48,
+        "adjOp": "1",
+        "chgOp": "1",
+        "diagonal": true
+      },
+      "1600": {
+        "cards": 13,
+        "inView": 13,
+        "card": {
+          "l": 192,
+          "t": 62,
+          "r": 527.25,
+          "b": 166,
+          "w": 335.25,
+          "h": 104
+        },
+        "adj": {
+          "l": 499.25,
+          "t": 70,
+          "r": 519.25,
+          "b": 90,
+          "w": 20,
+          "h": 20
+        },
+        "chg": {
+          "l": 499.25,
+          "t": 138,
+          "r": 519.25,
+          "b": 158,
+          "w": 20,
+          "h": 20
+        },
+        "avatar": {
+          "l": 205,
+          "t": 86,
+          "r": 261,
+          "b": 142,
+          "w": 56,
+          "h": 56
+        },
+        "body": {
+          "l": 271,
+          "t": 83.64,
+          "r": 490.25,
+          "b": 144.34,
+          "w": 219.25,
+          "h": 60.7
+        },
+        "worstEdge": 8,
+        "gapAdjChg": 48,
+        "adjOp": "1",
+        "chgOp": "1",
+        "diagonal": true
+      }
+    },
+    "videosCollapsed": {
+      "grid": {
+        "cards": 12,
+        "rows": 2,
+        "cols": 6,
+        "gridH": 479.88,
+        "gridW": 1377,
+        "cardH": 233.94,
+        "scrollH": 480,
+        "clientH": 480,
+        "pageH": 1200,
+        "docH": 1200
+      },
+      "btn": {
+        "text": "查看全部 159 个视频",
+        "w": 153.9,
+        "h": 33
+      },
+      "note": "显示 12 / 159",
+      "pageH": 1200
+    },
+    "videosExpanded": {
+      "grid": {
+        "cards": 159,
+        "rows": 27,
+        "cols": 6,
+        "gridH": 6628.31,
+        "gridW": 1377,
+        "cardH": 233.94,
+        "scrollH": 6628,
+        "clientH": 6628,
+        "pageH": 7236,
+        "docH": 7236
+      },
+      "btn": {
+        "text": "收起",
+        "w": 60,
+        "h": 33
+      },
+      "pageH": 7236
+    },
+    "videosRecollapsed": {
+      "grid": {
+        "cards": 12,
+        "rows": 2,
+        "cols": 6,
+        "gridH": 479.88,
+        "gridW": 1377,
+        "cardH": 233.94,
+        "scrollH": 480,
+        "clientH": 480,
+        "pageH": 1200,
+        "docH": 1200
+      },
+      "btn": {
+        "text": "查看全部 159 个视频",
+        "w": 153.9,
+        "h": 33
+      },
+      "key": null
+    },
+    "albumsCollapsed": {
+      "grid": {
+        "cards": 2,
+        "rows": 1,
+        "cols": 7,
+        "gridH": 332.03,
+        "gridW": 1377,
+        "cardH": 332.03,
+        "scrollH": 332,
+        "clientH": 332,
+        "pageH": 1200,
+        "docH": 1200
+      },
+      "btn": null
+    },
+    "albumsStub": {
+      "grid": {
+        "cards": 7,
+        "rows": 1,
+        "cols": 7,
+        "gridH": 332.05,
+        "gridW": 1377,
+        "cardH": 332.05,
+        "scrollH": 332,
+        "clientH": 332,
+        "pageH": 1200,
+        "docH": 1200
+      },
+      "btn": {
+        "text": "查看全部 12 个相册",
+        "w": 146.7,
+        "h": 33
+      },
+      "paused": 1
+    },
+    "albumsExpanded": {
+      "grid": {
+        "cards": 12,
+        "rows": 3,
+        "cols": 7,
+        "gridH": 676.09,
+        "gridW": 1377,
+        "cardH": 332.05,
+        "scrollH": 676,
+        "clientH": 676,
+        "pageH": 1477,
+        "docH": 1477
+      },
+      "btn": {
+        "text": "收起",
+        "w": 60,
+        "h": 33
+      }
+    },
+    "mobileCollapsed": {
+      "grid": {
+        "cards": 2,
+        "rows": 1,
+        "cols": 2,
+        "gridH": 176.19,
+        "gridW": 343,
+        "cardH": 176.19,
+        "scrollH": 176,
+        "clientH": 176,
+        "pageH": 860,
+        "docH": 860
+      },
+      "btn": {
+        "text": "查看全部 159 个视频",
+        "w": 153.9,
+        "h": 33
+      },
+      "albums": {
+        "cards": 2,
+        "rows": 1,
+        "cols": 2,
+        "gridH": 297.98,
+        "gridW": 343,
+        "cardH": 297.98,
+        "scrollH": 298,
+        "clientH": 298,
+        "pageH": 860,
+        "docH": 860
+      }
+    },
+    "mobileExpanded": {
+      "grid": {
+        "cards": 159,
+        "rows": 80,
+        "cols": 2,
+        "gridH": 15043,
+        "gridW": 343,
+        "cardH": 176.19,
+        "scrollH": 15043,
+        "clientH": 15043,
+        "pageH": 15665,
+        "docH": 15665
+      }
+    },
+    "avatarDialog": {
+      "cancel": true
+    },
+    "cardBg": {
+      "entries": 26,
+      "cards": 13,
+      "urls": 13,
+      "withWH": 13,
+      "maxPerCard": 2,
+      "sample": "/api/media/person/125/card-bg?w=332&h=102&s=1&dx=0&dy=0&blur=6&d=0&bg=ffffff&v=1vche51"
+    }
+  }
+}

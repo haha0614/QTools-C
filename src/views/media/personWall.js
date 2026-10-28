@@ -355,6 +355,12 @@ export function frameCandidateSeconds(dur, round) {
  */
 export function avatarOf(person, detail, stats, urls) {
   const u = urls || {}
+  // P5.99：站长挑的头像来自「对当前访客不可见」的内容 → 后端回 avatarHidden=true。
+  // 这时**直接给默认头像（首字占位）**，不再拿相册封面 / 视频帧顶上：换一张无关的图
+  // 会让人以为「头像换了一个」，而要求是「不可见就显示默认头像」。
+  if (detail && (detail.avatarHidden === true || detail.avatar_hidden === true)) {
+    return { url: '', kind: 'initial' }
+  }
   const explicit = explicitAvatarUrl(detail)
   if (explicit) return { url: explicit, kind: 'profile' }
   // P5.65：详情接口（personNode）直接给「名下第一个相册的封面」时优先用它 ——

@@ -193,12 +193,27 @@
      规则 / 值域 / LRU / 预设全在 personBgAdjust.js，单测 personBgAdjust.test.mjs。
    · 不变：卡片等高、3 chip、点击跳详情、375 单列、模糊滑块、prefers-reduced-motion 无过渡。
      实测见 devtools/p588-ui/REPORT.md（真浏览器拖拽 / 滑块 / 保存 / 刷新 / 全局默认 / 三层 ±0.5px）。
+  P5.98（用户需求 1）：「人物卡片背景的调整按钮不要放在头像旁，放在卡片的某一个角落」——
+  选**对角方案**：⛶ 调背景 → 卡片**右上角**，换 → 卡片**右下角**（另一方案「都放右下、横向排列」
+  在 280px 最窄卡上两钮 + 角标沟要挤掉约 50px 文字宽，3 chip 行会被压到 2 行，故不取）。
+    · 尺寸沿用 20px；贴边 7px（距卡片外缘 8px，含 1px 边框）。
+    · **右侧 24px 角标沟**（.pw-card padding-right 12 → 36；≤768 档 10 → 34）：文字区右边界与钮左边界
+      恒有 7–9px 空隙 → 钮矩形与 .pw-name / .pw-counts / .pw-chips / .pw-recent 的矩形横向分离，
+      任何视口都不相交；头像在左侧 12px 起，与两钮横向也不可能重叠；卡片自身 overflow: hidden。
+    · 触发面从「头像 hover」放大到「整卡 hover / focus-within」—— 钮已经不在头像上了。
+    · 不变：data-role（bg-adjust-open / avatar-change）、点击 @click.stop.prevent 不跳详情、
+      每卡背景预渲染 URL 逻辑（本轮一行未动，仍 ≤2 请求/卡，见 devtools/p590-ui）。
+      实测（1600 / 1200 / 375 三档 rect 数值 + 截图）见 devtools/p598-ui/REPORT.md。
 -->
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMediaApi } from '@/composables/useMediaApi'
 import { useMediaTrack } from '@/composables/useMediaTrack'
+import { useAppAuth } from '@/composables/useAppAuth'
+// P5.95：未登录 + 索引里一条内容都没有 → 专门空态 / 置顶提示（判定纯函数与文案在 guestHidden.js / GuestHiddenEmpty.vue）
+import GuestHiddenEmpty from './GuestHiddenEmpty.vue'
+import { isGuestHiddenEmpty } from './guestHidden.js'
 // P5.45：卡片信息（头像 / 数量 / 资料 chip / 最近更新）的唯一实现在 personWall.js
 import { buildCard, buildWallIndex, explicitAvatarUrl, isPlaceholderPerson, parseAvatarRef, personKey } from './personWall.js'
 // P5.48：手动头像 —— 弹层 + 两个写接口 + 站端编辑策略闸门 + 页面级提示
@@ -240,6 +255,11 @@ const { toasts, push: showToast } = usePageToast()
 const persons = ref([])
 const loading = ref(true)
 const errText = ref('')
+/** 站级登录态（P5.95）：专门空态只在未登录时出现 */
+const auth = useAppAuth()
+/** 索引 stats / 接口是否成功（P5.95）：只服务于「库对这个访客是不是真的空」这一个判断 */
+const indexStats = ref(null)
+const indexOk = ref(false)
 const keyword = ref('')
 /** 头像加载失败的人物（失败后退回首字母占位，不显示碎图）；键 = personWall 的卡片 key */
 const avatarFailed = reactive({})
@@ -310,6 +330,15 @@ const uiState = computed(() => {
   if (errText.value) return 'unavailable'
   if (!visible.value.length) return 'empty'
   return 'ready'
+})
+
+/**
+ * P5.95：未登录访客的人物墙被「仅登录可见」清空时，用专门空态替掉「还没有人物数据」。
+ * 接口失败（uiState === 'unavailable'）不算：那时 errText 非空，走的是既有兜底态。
+ */
+const guestHidden = computed(() => {
+  if (errText.value) return false
+  return isGuestHiddenEmpty({ loggedIn: !!auth.state.token, ok: indexOk.value, stats: indexStats.value })
 })
 
 /** 一条卡片就是一次纯函数调用（索引统计 + 详情 + URL 构造），模板只做 v-for */
@@ -1338,9 +1367,12 @@ function loadWallIndex() {
     .getIndex({ silent: true })
     .then((idx) => {
       wallIndex.value = buildWallIndex(idx)
+      indexStats.value = (idx && idx.stats) || null
+      indexOk.value = true
     })
     .catch(() => {
       wallIndex.value = null
+      indexOk.value = false
     })
 }
 
@@ -1399,6 +1431,11 @@ onMounted(() => {
   load()
 })
 
+// 登录态一变就重取：登录后人物该立刻出现，专门空态随之消失（退出则反过来）
+watch(() => auth.state.token, () => {
+  load()
+})
+
 onBeforeUnmount(() => {
   tk.dwell()
   if (cardObserver) cardObserver.disconnect()
@@ -1414,7 +1451,7 @@ onBeforeUnmount(() => {
     <header class="pp-head">
       <div class="pp-head-left">
         <h1 class="pp-title">人物</h1>
-        <span v-if="uiState === 'ready'" class="pp-sub">{{ visible.length }} 位{{ keyword ? '（已过滤）' : '' }}</span>
+        <span v-if="uiState === 'ready' && !guestHidden" class="pp-sub">{{ visible.length }} 位{{ keyword ? '（已过滤）' : '' }}</span>
       </div>
       <div class="pp-head-right">
         <input v-model="keyword" class="pp-search" type="search" placeholder="搜索人物名…" autocomplete="off" />
@@ -1448,9 +1485,16 @@ onBeforeUnmount(() => {
       <button class="pp-btn" type="button" @click="load">重试</button>
     </div>
 
+    <!-- P5.95：未登录访客的内容被「仅登录可见」挡住时 → 专门空态（文案 + 登录 + 刷新）。
+         两种情况都提示：① 一个人物都没有（替掉普通空态）；② 人物接口仍返回行、但索引里一条内容都没有
+         （此时卡片全是空壳 —— 头像 / 背景 404 的那种形态，提示置顶说明原因）。 -->
+    <GuestHiddenEmpty v-else-if="uiState === 'empty' && guestHidden" @refresh="load" />
+
     <p v-else-if="uiState === 'empty'" class="pp-state" data-role="empty">
       {{ persons.length ? '没有匹配的人物，换个关键词试试' : '还没有人物数据' }}
     </p>
+
+    <GuestHiddenEmpty v-else-if="guestHidden" @refresh="load" />
 
     <div v-else class="pp-wall" ref="wallRef">
       <a
@@ -1541,18 +1585,9 @@ onBeforeUnmount(() => {
             />
             <template v-else>{{ c.initial }}</template>
           </span>
-          <!-- P5.88：hover 才出现的「⛶ 调背景」—— 手动设置背景图位置与缩放（无背景图的卡不渲染） -->
-          <button
-            v-if="bgSrcOf(c)"
-            class="pw-adjust"
-            type="button"
-            title="调整背景位置与缩放"
-            data-role="bg-adjust-open"
-            @click.stop.prevent="openBgAdjust(c)"
-          >
-            ⛶
-          </button>
-          <!-- P5.48：hover 头像才出现的小「换」按钮；off / local 档整块不渲染 -->
+          <!-- P6.01（修正 P5.98）：「换」**回到头像盒右下角**（P5.48 / P5.93 原位 right/bottom -3px、20px 圆钮），
+               触发面也跟着回退成「头像 hover / focus-within 即亮」。只有不透明度按用户要求压低（见 .pw-change）。
+               P5.98 把它跟「⛶ 调背景」一起挪到卡片角上，是理解偏差 —— 用户只要求挪调背景这一个钮。 -->
           <button
             v-if="canChangeAvatar(c)"
             class="pw-change"
@@ -1574,6 +1609,20 @@ onBeforeUnmount(() => {
           </span>
           <span v-if="c.recent" class="pw-recent">{{ c.recent }}</span>
         </span>
+        <!-- P6.01（修正 P5.98）：只有「⛶ 调背景」留在卡片右上角（P5.98 把它挪出头像是对的），
+             并**更靠角**（right/top 3px → 距卡片外缘 4px）；「换」已回头像盒右下角（见上）。
+             20px 圆钮 + 卡片右侧 12px 角标沟（见 .pw-card 的 padding），两钮与文字矩形 0 相交
+             （实测见 devtools/p601-ui）。触发面仍是整卡 hover / focus-within —— 它不在头像上。 -->
+        <button
+          v-if="bgSrcOf(c)"
+          class="pw-adjust"
+          type="button"
+          title="调整背景位置与缩放"
+          data-role="bg-adjust-open"
+          @click.stop.prevent="openBgAdjust(c)"
+        >
+          ⛶
+        </button>
       </a>
     </div>
 
@@ -1798,7 +1847,13 @@ onBeforeUnmount(() => {
      + 20 padding + 2 border，四舍五入。所有卡都 ≥ 104、内容都 ≤ 104，
      所以首帧与稳定帧的 .pw-bg 盒子逐像素相同（clientHeight 恒 102 → URL 恒 w=332&h=102）。 */
   min-height: 104px;
-  padding: 10px 12px;
+  /* P6.01：撤销 P5.98 的 24px 角标沟 —— 那条通道是为**两个**卡片角钮留的，现在只剩右上角一个，
+     且「换」已回头像盒右下角（不在文字带上）。
+     右侧精确算过再定：**完全恢复 12px 是不行的**（实测 ⛶ rect 与 .pw-name / .pw-body 相交 11×13px，
+     见 devtools/p601-ui）。20px 钮贴边 3px + 1px 边框 → 钮左缘恒在「卡片外缘 − 24px」，
+     所以 content 右缘必须 ≤ 卡片外缘 − 24px ⇒ padding-right ≥ 23px；取 24px（= 原 12px + **12px 沟**，留 1px 缝）。
+     相对 P5.98 的 36px，文字区**回收 12px**；再小就会压到姓名行（几何上不可能同时「20px 钮 + 4px 贴角 + 0 相交」）。 */
+  padding: 10px 24px 10px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius, 10px);
   background: var(--bg-2);
@@ -2011,14 +2066,14 @@ onBeforeUnmount(() => {
   height: 56px;
 }
 
-/* P5.93：两个小圆钮不再「叠着」—— 尺寸收到 20px、贴边 -3px。
-   算得出来：≤768 档头像盒只有 40px，22px × 2 + 上下各 -4px 的溢出 = 44 > 40，
-   两个按钮垂直方向只剩 4px 缝（实测就是这么被看成「重叠」的）；
-   20px / -3px 则是 40 − 20 − 20 = 6px 缝，且距卡片内边缘 9 − 3 = 6px，两档都够。 */
+/* P6.01（修正 P5.98）：用户只让挪「⛶ 调背景」，「换」**回到头像盒右下角**（P5.48 / P5.93 原位）：
+   right/bottom -3px，20px 圆钮 —— 两档头像（56 / 40）外溢量都是 3px，钮骑在头像圆的右下角上、不盖脸。
+   与 P5.98 的另一处差别只有不透明度：静止 0.45（低调但看得见），头像 hover / 钮自身 hover 升到 1。 */
 .pw-change {
   position: absolute;
   right: -3px;
   bottom: -3px;
+  z-index: 3;
   width: 20px;
   height: 20px;
   display: inline-flex;
@@ -2026,38 +2081,48 @@ onBeforeUnmount(() => {
   justify-content: center;
   box-sizing: border-box;
   padding: 0;
-  border: 1px solid var(--line-2);
+  border: 1px solid rgba(255, 255, 255, 0.24);
   border-radius: 50%;
-  background: var(--bg-2);
-  color: var(--fg-dim);
+  /* P6.01：**近黑底 + 近白字**（两主题同一套）。原因见文件末「P6.01 对比度实测」：
+     0.45 的整体不透明度会把「钮底 / 字色」一起往卡片图上拉，主题白底（--bg-2 在白档是 #fff）
+     在亮色卡上压不住字形 —— 逐卡实测最小只有 1.74:1（D 卡片的亮背景更差）。
+     近黑不透明底 + 近白字是唯一在**每张卡、两个主题**都 ≥3:1 的组合（实测 3.14–4.57:1）。 */
+  background: #16181c;
+  color: #f2f3f5;
   font-size: 11px;
   line-height: 1;
   text-align: center;
   cursor: pointer;
-  opacity: 0;
+  /* P6.01：静止态 0.45（可用但低调）；hover 到 1（≥0.85 的可读下限）。 */
+  opacity: 0.45;
   transition: opacity 0.12s, border-color 0.12s, color 0.12s;
 }
 
+/* P6.01：触发面回退到 **头像**（P5.48 原样）—— 钮挂在头像盒右下角，hover / 键盘 focus 头像即亮到 1。 */
 .pw-avatar-wrap:hover .pw-change,
-.pw-avatar-wrap:focus-within .pw-change {
-  opacity: 1;
-}
-
+.pw-avatar-wrap:focus-within .pw-change,
 .pw-change:hover,
 .pw-change:focus-visible {
   opacity: 1;
+}
+
+/* P6.01：钮自身 hover / focus 只加描边与字色（不透明度已经是 1）。 */
+.pw-change:hover,
+.pw-change:focus-visible {
   border-color: var(--accent);
   color: var(--accent);
 }
 
-/* P5.88：「⛶ 调背景」—— 与「换」同一套小圆钮，挂在头像右上角（「换」在右下角）。
-   P5.93：与「换」一起收到 20px / -3px（原因见上一条 .pw-change 的算式），
-   两钮垂直间距 6px、都不越出卡片内边缘、也不碰右侧 .pw-body 的文字。
+/* P5.88 / P5.98 / P6.01：「⛶ 调背景」—— 与「换」同一套小圆钮；
+   P5.98 起它挂在**卡片右上角**（不再是头像右上角，用户认可的正是这一半），
+   P6.01 再往角里收 4px：贴边 3px + 1px 边框 = **距卡片外缘 4px**（用户要求「再靠角落一点」）。
+   到文字区恒有 ≥1px 空隙（右侧 12px 角标沟，见 .pw-card 的 padding），也不与头像相交。
    调整按钮只改 URL，不参与卡片布局：等高、3 chip、375 单列都不受影响。 */
 .pw-adjust {
   position: absolute;
-  right: -3px;
-  top: -3px;
+  right: 3px;
+  top: 3px;
+  z-index: 3;
   width: 20px;
   height: 20px;
   display: inline-flex;
@@ -2065,33 +2130,37 @@ onBeforeUnmount(() => {
   justify-content: center;
   box-sizing: border-box;
   padding: 0;
-  border: 1px solid var(--line-2);
+  border: 1px solid rgba(255, 255, 255, 0.24);
   border-radius: 50%;
-  background: var(--bg-2);
-  color: var(--fg-dim);
+  /* P6.01：与「换」同一套近黑底 / 近白字（理由同上） */
+  background: #16181c;
+  color: #f2f3f5;
   font-size: 11px;
   line-height: 1;
   text-align: center;
   cursor: pointer;
-  opacity: 0;
+  /* P6.01：静止态 0.45；hover（整卡 / 钮自身）升到 1。 */
+  opacity: 0.45;
   transition: opacity 0.12s, border-color 0.12s, color 0.12s;
 }
 
+/* P6.01：钮在卡片角上、不在头像上 → 触发面仍是**整张卡片**（hover / 键盘 focus-within 都可）。 */
 .pw-card:hover .pw-adjust,
+.pw-card:focus-within .pw-adjust,
 .pw-card:focus-visible .pw-adjust,
-.pw-avatar-wrap:hover .pw-adjust,
-.pw-avatar-wrap:focus-within .pw-adjust {
+.pw-adjust:hover,
+.pw-adjust:focus-visible {
   opacity: 1;
 }
 
 .pw-adjust:hover,
 .pw-adjust:focus-visible {
-  opacity: 1;
   border-color: var(--accent);
   color: var(--accent);
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .pw-change,
   .pw-adjust {
     transition: none;
   }
@@ -2198,7 +2267,8 @@ onBeforeUnmount(() => {
 
   .pw-card {
     gap: 8px;
-    padding: 9px 10px;
+    /* P6.01：窄屏同一条沟（24px；原为 P5.98 的 34px）—— 40px 头像档同样实测算出 23px 是 0 相交下界 */
+    padding: 9px 24px 9px 10px;
   }
 
   .pw-avatar-wrap {

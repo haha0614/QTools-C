@@ -1,0 +1,148 @@
+{
+  "passed": 28,
+  "failures": [],
+  "facts": {
+    "guestStats": {
+      "videos": 0,
+      "albums": 1,
+      "photos": 0,
+      "posters": 0,
+      "people": 0
+    },
+    "guest_media": {
+      "present": true,
+      "text": "当前为空。站长可能将内容设为「仅登录可见」——登录后即可查看。",
+      "loginText": "登录",
+      "refreshText": "刷新",
+      "innerText": "当前为空。站长可能将内容设为「仅登录可见」——登录后即可查看。 登录 刷新",
+      "body": "青兔工具箱 工具 首页 全部工具 媒体 视频库 图片站 人物 暗色模式 GitHub 登录 显示 0 / 0 添加序（默认） 名称 A→Z 标题 Z→A 时长 ↓ 时长 ↑ 体积 ↓ 体积 ↑ 分辨率 高→低 分辨率 低→高 最近观看 有进度优先 🎲 随机排序 清空 加入播放列表 ⚡ 批量生成简介 撤销上次批量 选择 筛选 ▾ 播放列表 全部 ▾ <1 分 1-5 分 5-15 分 15-60 分 >60 分 ≥4K 2K 1080p 720p 更低 <100MB 100MB-1GB >1GB ⚠ 可能无法播放 ",
+      "cards": 0,
+      "videoCards": 0,
+      "albums": 0,
+      "emptyText": ""
+    },
+    "guest_photos": {
+      "present": true,
+      "text": "当前为空。站长可能将内容设为「仅登录可见」——登录后即可查看。",
+      "loginText": "登录",
+      "refreshText": "刷新",
+      "innerText": "当前为空。站长可能将内容设为「仅登录可见」——登录后即可查看。 登录 刷新",
+      "body": "青兔工具箱 工具 首页 全部工具 媒体 视频库 图片站 人物 暗色模式 GitHub 登录 图片站相册 排序 张数多→少 张数少→多 体积大→小 体积小→大 标题 A→Z 标题 Z→A 🎲 随机 分组 全部图片 视频库 › 全部 1 念念 1 人物 套数多→少 套数少→多 人物名 A→Z 人物名 Z→A 🎲 随机 当前为空。站长可能将内容设为「仅登录可见」——登录后即可查看。 登录 刷新",
+      "cards": 0,
+      "videoCards": 0,
+      "albums": 0,
+      "emptyText": ""
+    },
+    "guest_persons": {
+      "present": true,
+      "text": "当前为空。站长可能将内容设为「仅登录可见」——登录后即可查看。",
+      "loginText": "登录",
+      "refreshText": "刷新",
+      "innerText": "当前为空。站长可能将内容设为「仅登录可见」——登录后即可查看。 登录 刷新",
+      "body": "青兔工具箱 工具 首页 全部工具 媒体 视频库 图片站 人物 暗色模式 GitHub 登录 人物 刷新 背景模糊 6px 当前为空。站长可能将内容设为「仅登录可见」——登录后即可查看。 登录 刷新",
+      "cards": 0,
+      "videoCards": 0,
+      "albums": 0,
+      "emptyText": ""
+    },
+    "dialog": {
+      "open": true,
+      "reason": "登录后可查看站长设为「仅登录可见」的内容"
+    },
+    "appLogin": {
+      "ok": true,
+      "role": "owner"
+    },
+    "loggedin_media": {
+      "present": false,
+      "text": "",
+      "loginText": "",
+      "refreshText": "",
+      "innerText": "",
+      "body": "青兔工具箱 工具 首页 全部工具 媒体 视频库 图片站 人物 暗色模式 GitHub 个人中心 Qing 管理后台 显示 239 / 239 添加序（默认） 名称 A→Z 标题 Z→A 时长 ↓ 时长 ↑ 体积 ↓ 体积 ↑ 分辨率 高→低 分辨率 低→高 最近观看 有进度优先 🎲 随机排序 清空 加入播放列表 ⚡ 批量生成简介 撤销上次批量 选择 筛选 ▾ 播放列表 全部 ▾ <1 分 1-5 分 5-15 分 15-60 分 >60 分 ≥4K 2K 1080p 720p 更低 <100MB 100MB-1G",
+      "cards": 0,
+      "videoCards": 48,
+      "albums": 0,
+      "emptyText": ""
+    },
+    "loggedin_photos": {
+      "present": false,
+      "text": "",
+      "loginText": "",
+      "refreshText": "",
+      "innerText": "",
+      "body": "青兔工具箱 工具 首页 全部工具 媒体 视频库 图片站 人物 暗色模式 GitHub 个人中心 Qing 管理后台 图片站相册 排序 张数多→少 张数少→多 体积大→小 体积小→大 标题 A→Z 标题 Z→A 🎲 随机 分组 全部图片 视频库 › 全部 193 念念 144 未归类 36 Machi马吉 3 素人 2 梨霜儿 1 喵小吉 Aeolian-2 1 是小逗逗 1 唐翩翩 1 小鱼 1 桜井宁宁 1 玥儿玥er 1 人物 套数多→少 套数少→多 人物名 A→Z 人物名 Z→A 🎲 随机 共 193 本",
+      "cards": 0,
+      "videoCards": 0,
+      "albums": 25,
+      "emptyText": ""
+    },
+    "loggedin_persons": {
+      "present": false,
+      "text": "",
+      "loginText": "",
+      "refreshText": "",
+      "innerText": "",
+      "body": "青兔工具箱 工具 首页 全部工具 媒体 视频库 图片站 人物 暗色模式 GitHub 个人中心 Qing 管理后台 人物 13 位 刷新 背景模糊 6px 素 换 素人 159 部视频 · 2 本相册 · 118 张照片 最近 2026-10-21 娜 换 娜娜（nana） 14 部视频 · 0 本相册 · 0 张照片 国籍 中国 族裔 亚洲 性别 女 最近 2026-07-23 深 换 深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜） 2 部视频 · 0 本相册 · 0 张照片 身高 158cm 三围",
+      "cards": 13,
+      "videoCards": 0,
+      "albums": 0,
+      "emptyText": ""
+    },
+    "loggedinOrdinaryEmpty": {
+      "present": false,
+      "text": "",
+      "loginText": "",
+      "refreshText": "",
+      "innerText": "",
+      "body": "青兔工具箱 工具 首页 全部工具 媒体 视频库 图片站 人物 暗色模式 GitHub 个人中心 Qing 管理后台 人物 刷新 背景模糊 6px 没有匹配的人物，换个关键词试试",
+      "cards": 0,
+      "videoCards": 0,
+      "albums": 0,
+      "emptyText": "没有匹配的人物，换个关键词试试"
+    },
+    "openStats": {
+      "videos": 239,
+      "albums": 193,
+      "photos": 9913,
+      "posters": 239,
+      "people": 13
+    },
+    "open_media": {
+      "present": false,
+      "text": "",
+      "loginText": "",
+      "refreshText": "",
+      "innerText": "",
+      "body": "青兔工具箱 工具 首页 全部工具 媒体 视频库 图片站 人物 暗色模式 GitHub 登录 显示 239 / 239 添加序（默认） 名称 A→Z 标题 Z→A 时长 ↓ 时长 ↑ 体积 ↓ 体积 ↑ 分辨率 高→低 分辨率 低→高 最近观看 有进度优先 🎲 随机排序 清空 加入播放列表 ⚡ 批量生成简介 撤销上次批量 选择 筛选 ▾ 播放列表 全部 ▾ <1 分 1-5 分 5-15 分 15-60 分 >60 分 ≥4K 2K 1080p 720p 更低 <100MB 100MB-1GB >1GB ⚠ 可能无",
+      "cards": 0,
+      "videoCards": 48,
+      "albums": 0,
+      "emptyText": ""
+    },
+    "open_photos": {
+      "present": false,
+      "text": "",
+      "loginText": "",
+      "refreshText": "",
+      "innerText": "",
+      "body": "青兔工具箱 工具 首页 全部工具 媒体 视频库 图片站 人物 暗色模式 GitHub 登录 图片站相册 排序 张数多→少 张数少→多 体积大→小 体积小→大 标题 A→Z 标题 Z→A 🎲 随机 分组 全部图片 视频库 › 全部 193 梨霜儿 1 喵小吉 Aeolian-2 1 念念 144 是小逗逗 1 素人 2 唐翩翩 1 未归类 36 小鱼 1 桜井宁宁 1 玥儿玥er 1 Machi马吉 3 人物 套数多→少 套数少→多 人物名 A→Z 人物名 Z→A 🎲 随机 共 193 本相册 / 18930 张",
+      "cards": 0,
+      "videoCards": 0,
+      "albums": 25,
+      "emptyText": ""
+    },
+    "open_persons": {
+      "present": false,
+      "text": "",
+      "loginText": "",
+      "refreshText": "",
+      "innerText": "",
+      "body": "青兔工具箱 工具 首页 全部工具 媒体 视频库 图片站 人物 暗色模式 GitHub 登录 人物 13 位 刷新 背景模糊 6px ⛶ 换 素人 159 部视频 · 2 本相册 · 118 张照片 最近 2026-10-21 ⛶ 换 娜娜（nana） 14 部视频 · 0 本相册 · 0 张照片 国籍 中国 族裔 亚洲 性别 女 最近 2026-07-23 ⛶ 换 深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜） 2 部视频 · 0 本相册 · 0 张照片 身高 158cm 三围 B87.8 / W63",
+      "cards": 13,
+      "videoCards": 0,
+      "albums": 0,
+      "emptyText": ""
+    }
+  }
+}

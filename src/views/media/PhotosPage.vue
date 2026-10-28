@@ -16,8 +16,15 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useMediaApi } from '@/composables/useMediaApi'
 import { useMediaTrack } from '@/composables/useMediaTrack'
+import { useAppAuth } from '@/composables/useAppAuth'
+// P5.95：未登录 + 索引里一条内容都没有 → 专门空态（判定纯函数与文案在 guestHidden.js / GuestHiddenEmpty.vue）
+import GuestHiddenEmpty from './GuestHiddenEmpty.vue'
+import { isGuestHiddenEmpty } from './guestHidden.js'
 import AlbumCard from './photos/AlbumCard.vue'
 import PhotoLightbox from './photos/PhotoLightbox.vue'
+// P5.99：内容分级筛选条（与视频页同一个组件；只有 ≥2 个可见分级时才渲染）
+import RatingFilter from './RatingFilter.vue'
+import { matchesRating, showRatingFilter as showRatingFilterOf } from './contentRating.js'
 
 /** 接口 + 资源 URL 唯一出口（/api/media/*、thumb/preview/file 地址） */
 const api = useMediaApi()
@@ -562,6 +569,14 @@ function ssSet(k, v) {
    页面状态
    ========================================================================================= */
 
+/** 索引里的相册全集（未过分级筛选）：{@code albums} 是它按当前分级筛过的那份 */
+const albumsRaw = ref([])
+/** 索引里的人物节点全集（与 albumsRaw 配套；留一份原始值避免重复请求） */
+const indexPeopleRaw = ref(null)
+/** 内容分级筛选（P5.99）：{@code [{value,label,count}]}，来自索引 ratings[]（后端已按访客可见性筛过） */
+const ratingOptions = ref([])
+/** 当前选中的分级值：空数组 = 不筛 */
+const ratingFilter = ref([])
 const albums = ref([])
 const peopleBase = ref([])
 const people = ref([])
@@ -583,6 +598,11 @@ const prevOpen = reactive({})
 
 const loading = ref(true)
 const fatalMsg = ref('')
+/** 站级登录态（P5.95）：专门空态只在未登录时出现 */
+const auth = useAppAuth()
+/** 索引 stats / 接口是否成功（P5.95）：只服务于「库对这个访客是不是真的空」这一个判断 */
+const indexStats = ref(null)
+const indexOk = ref(false)
 
 const album = ref(null)
 const albumLoaded = ref(0)
@@ -1360,18 +1380,46 @@ function applyPeopleSort() {
 }
 
 function applyIndex(data) {
-  albums.value = data && Array.isArray(data.albums) ? data.albums : []
-  peopleBase.value = resolvePeople(albums.value, data && data.people)
+  albumsRaw.value = data && Array.isArray(data.albums) ? data.albums : []
+  indexPeopleRaw.value = (data && data.people) || null
+  // P5.99：评分筛选条的数据源同样随索引刷新（登录 / 退出后可见分级会变）
+  ratingOptions.value = data && Array.isArray(data.ratings) ? data.ratings : []
+  const keep = ratingFilter.value.filter((v) => ratingOptions.value.some((o) => o.value === v))
+  if (keep.length !== ratingFilter.value.length) ratingFilter.value = keep
+  applyRatingFilter()
   state.dataComplete = hasPeopleData(data)
+}
+
+/** 分级筛选 → 相册全集 + 人物分组（只有这一条链路，别处不要再从 albumsRaw 重建一遍） */
+function applyRatingFilter() {
+  const picked = ratingFilter.value
+  albums.value = picked.length ? albumsRaw.value.filter((a) => matchesRating(a, picked)) : albumsRaw.value
+  peopleBase.value = resolvePeople(albums.value, indexPeopleRaw.value)
   buildPersonOf()
   applyPeopleSort()
 }
+
+/** 分级 chip 点击：切换一档并重画墙面（筛选只影响这一屏，不改 URL —— 与人物 / 搜索这些维度不同，它不写深链） */
+function onToggleRating(value) {
+  const arr = ratingFilter.value.slice()
+  const at = arr.indexOf(value)
+  if (at >= 0) arr.splice(at, 1)
+  else arr.push(value)
+  ratingFilter.value = arr
+  applyRatingFilter()
+  refreshWall(false)
+}
+
+/** 只有一个可见分级时整条不渲染（规则在 contentRating.js：与视频页共用同一份） */
+const showRatingFilter = computed(() => showRatingFilterOf(ratingOptions.value))
 
 async function loadIndex(first) {
   try {
     const data = await api.getIndex()
     if (disposed) return
     applyIndex(data)
+    indexStats.value = (data && data.stats) || null
+    indexOk.value = true
     loading.value = false
     if (!albums.value.length) {
       setFatal('data/index.json 里没有相册')
@@ -1381,12 +1429,34 @@ async function loadIndex(first) {
     onRoute()
     if (!state.dataComplete) watchPeople()
   } catch (e) {
+    indexOk.value = false
     if (first) {
       loading.value = false
       setFatal('无法加载 /api/media/index：' + e.message)
     }
   }
 }
+
+/**
+ * P5.95：未登录访客的相册墙被「仅登录可见」清空时，用专门空态替掉
+ * 「没有匹配的相册」与底部那条 `data/index.json 里没有相册` 的致命提示 ——
+ * 那条提示在开关被关掉时会把人引向「数据真的没了」的误判。接口失败（indexOk=false）仍走既有兜底态。
+ */
+const guestHiddenEmpty = computed(() => isGuestHiddenEmpty({
+  loggedIn: !!auth.state.token,
+  ok: indexOk.value,
+  stats: indexStats.value
+}))
+
+/** P5.95：专门空态上的「刷新」—— 重取索引并重画，失败静默（与 loadIndex 的非首屏路径一致） */
+function refreshFromGuestHint() {
+  loadIndex(false)
+}
+
+// 登录态一变就重取：登录后内容该立刻出现，专门空态随之消失（退出则反过来）
+watch(() => auth.state.token, () => {
+  loadIndex(false)
+})
 
 /** index.json 可能稍后才补上 people/person：每 20 秒探一次，最多 12 分钟（photo.js:1829-1845） */
 function watchPeople() {
@@ -1666,12 +1736,25 @@ onBeforeUnmount(() => {
             <option v-for="o in PEOPLE_OPTS" :key="o.v" :value="o.v">{{ o.label }}</option>
           </select>
         </label>
+        <!-- P5.99：内容分级筛选。计数不显示：索引的 ratings[].count 是「视频 + 相册」合计，
+             在本页（只看相册）显示会让人以为这里真有那么多套 -->
+        <RatingFilter
+          v-if="showRatingFilter"
+          :options="ratingOptions"
+          :selected="ratingFilter"
+          :show-count="false"
+          @toggle="onToggleRating"
+        />
       </div>
 
-      <p class="stat">{{ wallStat }}</p>
+      <p v-if="!guestHiddenEmpty" class="stat">{{ wallStat }}</p>
+
+      <!-- P5.95：未登录访客的内容被「仅登录可见」挡住时，这条提示置顶（在相册墙之前）——
+           否则页面只会是「缺缩略图的空壳相册」，正是事故里最难判断的那种形态 -->
+      <GuestHiddenEmpty v-if="guestHiddenEmpty" @refresh="refreshFromGuestHint" />
 
       <!-- 分组视图 -->
-      <div v-if="view === 'group'" ref="wallEl" class="wall">
+      <div v-if="view === 'group' && !guestHiddenEmpty" ref="wallEl" class="wall">
         <template v-for="item in wallModel.items" :key="item.sec.key">
           <div
             class="phead"
@@ -1702,7 +1785,7 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- 全部图片视图（单图平铺，分批插入） -->
-      <div v-else class="flat">
+      <div v-else-if="!guestHiddenEmpty" class="flat">
         <button
           v-for="it in flatVisible"
           :key="it.a.id + '#' + it.i"
@@ -1727,8 +1810,8 @@ onBeforeUnmount(() => {
       </div>
 
       <div v-if="view === 'flat'" ref="flatSentinelEl" class="sentinel" aria-hidden="true"></div>
-      <p v-if="view === 'flat' && !flatItemsAll.length" class="empty">没有匹配的相册</p>
-      <p v-else-if="view === 'group' && !wallModel.sections && !loading" class="empty">没有匹配的相册</p>
+      <p v-if="view === 'flat' && !flatItemsAll.length && !guestHiddenEmpty" class="empty">没有匹配的相册</p>
+      <p v-else-if="view === 'group' && !wallModel.sections && !loading && !guestHiddenEmpty" class="empty">没有匹配的相册</p>
     </main>
 
     <!-- ================= 册内网格（原 photos.html 的 section#albumView） ================= -->
@@ -1792,7 +1875,7 @@ onBeforeUnmount(() => {
       @toggle-fav="toggleLbFav"
     />
 
-    <div v-if="fatalMsg" class="fatal">{{ fatalMsg }}</div>
+    <div v-if="fatalMsg && !guestHiddenEmpty" class="fatal">{{ fatalMsg }}</div>
 
   </div>
 </template>

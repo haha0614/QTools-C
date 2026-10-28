@@ -1,0 +1,260 @@
+{
+  "passed": 48,
+  "failures": [],
+  "facts": {
+    "person": {
+      "id": "125",
+      "name": "素人",
+      "albums": [
+        "a158",
+        "a159"
+      ],
+      "videoCount": 159
+    },
+    "videos": {
+      "v1": "1150485cd5ad",
+      "v2": "b1c4bafb2114",
+      "v3": "a407d35a83f1",
+      "v1Title": "2026年10月20日判断一辆车的价值"
+    },
+    "albums": {
+      "a1": "a004",
+      "a2": "a005"
+    },
+    "siteAllVisible": {
+      "filterPresent": true,
+      "chipLabels": [
+        "大众级 429",
+        "家长指导级 1",
+        "限制级 2"
+      ],
+      "chipValues": [
+        "rating-chip-general",
+        "rating-chip-guidance",
+        "rating-chip-restricted"
+      ],
+      "activeChips": [],
+      "videos": 48,
+      "cards": 48,
+      "hash": "#sort=res-asc"
+    },
+    "siteRestrictedOnly": {
+      "filterPresent": true,
+      "chipLabels": [
+        "大众级 429",
+        "家长指导级 1",
+        "限制级 2"
+      ],
+      "chipValues": [
+        "rating-chip-general",
+        "rating-chip-guidance",
+        "rating-chip-restricted"
+      ],
+      "activeChips": [
+        "rating-chip-restricted"
+      ],
+      "videos": 1,
+      "cards": 1,
+      "hash": "#rating=restricted&sort=res-asc"
+    },
+    "siteRestrictedIndex": {
+      "videos": 1,
+      "chip": "限制级\n2",
+      "total": 239
+    },
+    "siteOneRating": {
+      "filterPresent": false,
+      "chipLabels": [],
+      "chipValues": [],
+      "activeChips": [],
+      "videos": 48,
+      "cards": 48,
+      "hash": "#sort=size-desc"
+    },
+    "photosAll": {
+      "filterPresent": true,
+      "chipLabels": [
+        "大众级",
+        "家长指导级",
+        "限制级"
+      ],
+      "chipValues": [
+        "rating-chip-general",
+        "rating-chip-guidance",
+        "rating-chip-restricted"
+      ],
+      "activeChips": [],
+      "videos": 0,
+      "cards": 0,
+      "hash": "#s=title-desc&p=name-desc"
+    },
+    "photosFilter": {
+      "before": 25,
+      "after": 2
+    },
+    "personsAllHidden": {
+      "state": "wall",
+      "count": 11,
+      "names": [
+        "娜娜（nana）",
+        "深田咏美（深田詠美（中华圈）、ソナ、天海こころ、保坂夢莉亜）",
+        "河北彩花（河北彩伽（原艺名）、萌名（音乐活动名义））",
+        "梨霜儿",
+        "喵小吉 Aeolian-2",
+        "念念",
+        "是小逗逗",
+        "小鱼",
+        "桜井宁宁",
+        "玥儿玥er",
+        "Machi马吉"
+      ],
+      "avatarKinds": [
+        "profile",
+        "profile",
+        "profile",
+        "profile",
+        "profile",
+        "profile",
+        "profile",
+        "profile",
+        "profile",
+        "profile",
+        "profile"
+      ],
+      "counts": [
+        "14 部视频 · 0 本相册 · 0 张照片",
+        "2 部视频 · 0 本相册 · 0 张照片",
+        "1 部视频 · 0 本相册 · 0 张照片",
+        "0 部视频 · 1 本相册 · 2 张照片",
+        "0 部视频 · 1 本相册 · 48 张照片",
+        "0 部视频 · 144 本相册 · 9017 张照片",
+        "0 部视频 · 1 本相册 · 2 张照片",
+        "0 部视频 · 1 本相册 · 6 张照片",
+        "0 部视频 · 1 本相册 · 6 张照片",
+        "0 部视频 · 1 本相册 · 14 张照片",
+        "0 部视频 · 3 本相册 · 381 张照片"
+      ],
+      "imgs": [
+        "/api/media/frame/485470e2cc08?t=93&w=480&crop=0.2708,0.0000,0.3375,0.6000",
+        "/api/media/frame/046839cff1cd?t=1472&w=480&crop=0.3333,0.0000,0.2979,0.5296",
+        "/api/media/frame/d1d123208f95?t=59&w=480&crop=0.3208,0.0000,0.3375,0.6000",
+        "/api/media/thumb/p/a153/0000?crop=0.0984,0.0469,0.2740,0.3656",
+        "/api/media/thumb/p/a005/0000?crop=0.1221,0.0656,0.7277,0.4844",
+        "/api/media/thumb/p/a165/0015?crop=0.2301,0.0812,0.4178,0.2781",
+        "/api/media/thumb/p/a151/0000?crop=0.7346,0.0000,0.1916,0.3406",
+        "/api/media/thumb/p/a006/0002",
+        "/api/media/thumb/p/a152/0001?crop=0.4613,0.0500,0.2014,0.2687",
+        "/api/media/thumb/p/a154/0000?crop=0.3528,0.0000,0.3403,0.5094",
+        "/api/media/thumb/p/a163/0000?crop=0.1875,0.0219,0.6000,0.4500"
+      ]
+    },
+    "personsPartial": {
+      "idx": 3,
+      "counts": "0 部视频 · 1 本相册 · 73 张照片",
+      "avatar": "album"
+    },
+    "personsAvatarFallback": {
+      "avatar": "initial",
+      "img": ""
+    },
+    "adminVideoTable": {
+      "headers": [
+        "",
+        "封面",
+        "标题",
+        "路径",
+        "分类",
+        "清晰度",
+        "时长",
+        "体积",
+        "编码",
+        "分级",
+        "状态",
+        "派生资源",
+        "操作",
+        "",
+        "封面",
+        "标题",
+        "物理目录",
+        "人物",
+        "图片数",
+        "体积",
+        "分级",
+        "状态",
+        "操作",
+        "类型",
+        "名称",
+        "原路径",
+        "大小",
+        "删除时间",
+        "操作"
+      ],
+      "selects": 10,
+      "firstText": "大众级"
+    },
+    "adminInlineEdit": {
+      "firstRowIndex": 0,
+      "guidanceVideoId": "228d89042327"
+    },
+    "adminReload": {
+      "texts": [
+        "家长指导级",
+        "大众级",
+        "大众级",
+        "大众级",
+        "大众级",
+        "大众级"
+      ],
+      "hasGuidance": true
+    },
+    "adminAlbumTable": {
+      "headers": [
+        "",
+        "封面",
+        "标题",
+        "路径",
+        "分类",
+        "清晰度",
+        "时长",
+        "体积",
+        "编码",
+        "分级",
+        "状态",
+        "派生资源",
+        "操作",
+        "",
+        "封面",
+        "标题",
+        "物理目录",
+        "人物",
+        "图片数",
+        "体积",
+        "分级",
+        "状态",
+        "操作",
+        "类型",
+        "名称",
+        "原路径",
+        "大小",
+        "删除时间",
+        "操作"
+      ],
+      "selects": 10,
+      "boxes": 20
+    },
+    "adminBatch": {
+      "before": 2,
+      "after": 3
+    },
+    "policyUi": {
+      "text": "分级与可见性 未登录访客对每一档内容的可见性；与上面的「未登录可见」（库根）叠加：两者都通过才看得见。 大众级 未登录可见 家长指导级 未登录可见 限制级 未登录可见 关掉某一档后：未登录访客的索引里不会出现该档内容，直链一律 404，站点的分级筛选里也不再出现这一档； 只剩一档可见时，站点不再显示分级筛选。",
+      "switches": 3,
+      "states": [
+        true,
+        true,
+        true
+      ]
+    },
+    "policyDb": "general\t1\r\nguidance\t1\r\nrestricted\t0"
+  }
+}

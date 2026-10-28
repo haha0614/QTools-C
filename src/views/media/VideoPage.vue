@@ -169,6 +169,13 @@
             @toggle="onToggleQuick"
             @toggle-unsafe="state.unsafe = !state.unsafe"
           />
+          <!-- P5.99：内容分级筛选。只有 ≥2 个可见分级时才出现（后端 ratings[] 已按访客筛过） -->
+          <RatingFilter
+            v-if="showRatingFilter"
+            :options="ratingOptions"
+            :selected="state.ratings"
+            @toggle="onToggleRating"
+          />
         </div>
 
         <div v-if="activeEntries.length" class="chips chips-sm active-chips">
@@ -227,7 +234,10 @@
           <div ref="sentinelEl" class="grid-sentinel"></div>
         </div>
 
-        <div v-if="!view.length" class="empty">{{ emptyText }}</div>
+        <!-- P5.95：未登录访客的库被「仅登录可见」清空时，给专门空态（文案 + 登录 + 刷新），
+             而不是「没有符合条件的视频」这种会让人以为数据没了的普通空态 -->
+        <GuestHiddenEmpty v-if="!view.length && guestHidden" @refresh="reloadForAuth" />
+        <div v-else-if="!view.length" class="empty">{{ emptyText }}</div>
       </main>
     </div>
 
@@ -291,6 +301,13 @@
               :unsafe="state.unsafe"
               @toggle="onToggleQuick"
               @toggle-unsafe="state.unsafe = !state.unsafe"
+            />
+            <!-- P5.99：移动端同一份分级筛选（与桌面同一条筛选条的口径） -->
+            <RatingFilter
+              v-if="showRatingFilter"
+              :options="ratingOptions"
+              :selected="state.ratings"
+              @toggle="onToggleRating"
             />
           </div>
         </template>
@@ -429,6 +446,10 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } 
 import { useRoute, useRouter } from 'vue-router'
 import { useMediaApi } from '@/composables/useMediaApi'
 import { useMediaTrack } from '@/composables/useMediaTrack'
+import { useAppAuth } from '@/composables/useAppAuth'
+// P5.95：未登录 + 索引里一条内容都没有 → 专门的「可能被站长关了未登录可见」空态（判定纯函数在 guestHidden.js）
+import GuestHiddenEmpty from './GuestHiddenEmpty.vue'
+import { isGuestHiddenEmpty } from './guestHidden.js'
 import { useMediaEditPolicy, LEVEL_OFF, HINT_OFF, HINT_LOCAL } from '@/composables/useMediaEditPolicy'
 import {
   localOrgVersion,
@@ -446,6 +467,8 @@ import { clearAllLocalSynopsis } from './video/synopsisLocal'
 // P4.3：标记按 videoId 的前端缓存（站端没有匿名读 meta 的接口时的替代方案）
 import { readMarkerCache, writeMarkerCache } from '@/composables/useMarkerCache'
 import FilterSidebar from './video/FilterSidebar.vue'
+import RatingFilter from './RatingFilter.vue'
+import { matchesRating, showRatingFilter as showRatingFilterOf, ratingLabel as ratingLabelOf } from './contentRating.js'
 import SavedFilters from './video/SavedFilters.vue'
 import QuickFilters from './video/QuickFilters.vue'
 import VideoCard from './video/VideoCard.vue'
@@ -496,6 +519,12 @@ import {
 
 const api = useMediaApi()
 const tk = useMediaTrack()
+/** 站级登录态（P5.95）：专门空态只在「未登录」时出现，登录后立刻退回普通空态 */
+const auth = useAppAuth()
+/** 索引 stats（P5.95）：唯一的用途是判断「库对这个访客是不是真的空」 */
+const indexStats = ref(null)
+/** 索引接口这次是否成功（P5.95）：失败走既有错误文案，绝不用「站长关了可见」解释一次请求失败 */
+const indexOk = ref(false)
 
 /* =========================================================================
    常量与纯函数区（逐条对齐 app.js，Node 下可直接单测）
@@ -653,9 +682,12 @@ function filterVideos(videos, st) {
   const ress = s.ress && s.ress.length ? s.ress : null
   const sizes = s.sizes && s.sizes.length ? s.sizes : null
   const studios = s.studios && s.studios.length ? s.studios : null
+  // 内容分级（P5.99）：同组内「或」，与其它条件「与」；条目没有 contentRating 时按 general 兜底
+  const ratings = s.ratings && s.ratings.length ? s.ratings : null
   const out = []
   for (const v of videos) {
     if (cats && cats.indexOf(v.folder) < 0) continue
+    if (!matchesRating(v, ratings)) continue
     // 工作室（P5-A）：索引 videos[].studios 是名称数组，命中任意一个即可（同 facet 的「或」，组间「与」）
     if (studios) {
       const own = videoStudioNames(v)
@@ -796,6 +828,8 @@ function defaultState() {
     sizes: [],
     // 工作室筛选（P5-A）：名称数组，与分类 / facet 同为「与」关系
     studios: [],
+    // 内容分级筛选（P5.99）：分级值数组，同为「与」关系；空 = 不筛
+    ratings: [],
     unsafe: false,
     sort: 'added',
     sortPinned: false,
@@ -847,6 +881,8 @@ function parseHash(hash) {
   )
   // 工作室（P5-A）：hash 段名 studio，JSON 名称数组
   st.studios = readJsonList(p.get('studio'))
+  // 内容分级（P5.99）：hash 段名 rating，逗号分隔的分级值
+  st.ratings = readCsv(p.get('rating'), null)
   if (p.get('unsafe') === '1') st.unsafe = true
   const play = p.get('play')
   if (play) st.play = play // 播放深链 /#play=<videoId>
@@ -884,6 +920,7 @@ function buildHash(st) {
     p.set('f', JSON.stringify(o))
   }
   if (s.studios && s.studios.length) p.set('studio', JSON.stringify(s.studios))
+  if (s.ratings && s.ratings.length) p.set('rating', s.ratings.join(','))
   if (s.durs && s.durs.length) p.set('dur', s.durs.join(','))
   if (s.ress && s.ress.length) p.set('res', s.ress.join(','))
   if (s.sizes && s.sizes.length) p.set('size', s.sizes.join(','))
@@ -1238,6 +1275,20 @@ const quickGroups = [
   { field: 'ress', items: RES_TIERS },
   { field: 'sizes', items: SIZE_BUCKETS }
 ]
+
+/**
+ * 内容分级（P5.99）：{@code [{value,label,count}]}，来自索引的 {@code ratings[]}。
+ *
+ * 后端已经按「当前访客可见 + 该档确实有条目」筛过一遍：
+ * 未登录不可见的那一档根本不在数组里，所以前端不需要、也<b>不应该</b>自己再查策略表。
+ */
+const ratingOptions = ref([])
+/** 只有一个可见分级时不渲染筛选条（规则在 contentRating.js：与图片站共用同一份） */
+const showRatingFilter = computed(() => showRatingFilterOf(ratingOptions.value))
+
+function onToggleRating(value) {
+  toggleIn(state.ratings || (state.ratings = []), value)
+}
 
 /** id → 续播秒数 */
 const posMap = ref({})
@@ -1709,7 +1760,8 @@ const isMobile = ref(mq ? mq.matches : false)
 
 /** 「筛选」按钮角标：抽屉里所有已选项之和（分类 + facet + 快捷 + 异常码），搜索词不算 */
 const filterBadgeCount = computed(() => {
-  let n = state.cats.length + state.durs.length + state.ress.length + state.sizes.length + (state.studios || []).length
+  let n = state.cats.length + state.durs.length + state.ress.length + state.sizes.length
+    + (state.studios || []).length + (state.ratings || []).length
   if (state.unsafe) n += 1
   for (const f of Object.keys(state.facets || {})) n += (state.facets[f] || []).length
   return n
@@ -1730,6 +1782,15 @@ const emptyText = computed(() => {
     return plView.value.ids.length ? '这个播放列表里的视频都被当前筛选挡掉了' : '这个播放列表还没有视频'
   }
   return '没有符合条件的视频'
+})
+
+/**
+ * P5.95：站端兜底提示 —— 未登录 && 索引成功 && stats 全 0 时，把「普通空态」换成
+ * 「可能是站长关闭了未登录可见」。接口失败（errorMsg 非空）一律不算：那是另一种事故。
+ */
+const guestHidden = computed(() => {
+  if (errorMsg.value) return false
+  return isGuestHiddenEmpty({ loggedIn: !!auth.state.token, ok: indexOk.value, stats: indexStats.value })
 })
 
 /** 排序上下文：最近观看顺序 / 续播位置 / 本次会话固定的随机名次 */
@@ -1759,6 +1820,9 @@ const activeEntries = computed(() => {
   if (state.pl) out.push({ kind: 'pl', key: String(state.pl), label: '播放列表：' + plFilterName.value + '（按列表顺序）' })
   if (state.q) out.push({ kind: 'q', key: '', label: '搜索：' + state.q })
   for (const c of state.cats) out.push({ kind: 'cat', key: c, label: c })
+  for (const r of state.ratings || []) {
+    out.push({ kind: 'rating', key: r, label: '分级：' + ratingLabelOf(ratingOptions.value, r) })
+  }
   for (const f of Object.keys(state.facets)) {
     const names = state.facets[f] || []
     for (const n of names) out.push({ kind: 'facet', facet: f, name: n, key: '', label: f + '：' + n })
@@ -2214,7 +2278,8 @@ function removeActive(x) {
   } else if (x.kind === 'studio') {
     const arr = state.studios || (state.studios = [])
     toggleIn(arr, x.name)
-  } else if (x.kind === 'dur') toggleIn(state.durs, x.key)
+  } else if (x.kind === 'rating') toggleIn(state.ratings || (state.ratings = []), x.key)
+  else if (x.kind === 'dur') toggleIn(state.durs, x.key)
   else if (x.kind === 'res') toggleIn(state.ress, x.key)
   else if (x.kind === 'size') toggleIn(state.sizes, x.key)
   else if (x.kind === 'unsafe') state.unsafe = false
@@ -2282,6 +2347,7 @@ function currentFilterParams() {
   if (state.sizes.length) out.sizes = state.sizes.slice()
   // 工作室（P5-A）：与其它筛选一样进「保存筛选」的 params
   if ((state.studios || []).length) out.studios = state.studios.slice()
+  if ((state.ratings || []).length) out.ratings = state.ratings.slice()
   if (state.unsafe) out.unsafe = true
   if (state.sort) out.sort = state.sort
   return out
@@ -2302,6 +2368,7 @@ const suggestSavedName = computed(() => {
   for (const k of state.durs) parts.push(bucketLabel(DUR_BUCKETS, k))
   for (const k of state.sizes) parts.push(bucketLabel(SIZE_BUCKETS, k))
   for (const n of state.studios || []) parts.push(n)
+  for (const r of state.ratings || []) parts.push(ratingLabelOf(ratingOptions.value, r))
   for (const f of Object.keys(state.facets || {})) for (const n of state.facets[f] || []) parts.push(n)
   if (state.unsafe) parts.push('可能无法播放')
   if (state.sort && state.sortPinned) {
@@ -2338,6 +2405,7 @@ function onApplySavedFilter(item) {
   next.ress = pickKeys(p.ress, RES_TIERS)
   next.sizes = pickKeys(p.sizes, SIZE_BUCKETS)
   next.studios = Array.isArray(p.studios) ? p.studios.map(String) : []
+  next.ratings = Array.isArray(p.ratings) ? p.ratings.map(String) : []
   next.unsafe = !!p.unsafe
   if (p.sort && SORTS.some((s) => s.key === p.sort)) {
     next.sort = p.sort
@@ -3048,6 +3116,9 @@ async function loadIndex() {
     const idx = await api.getIndex({ silent: true })
     videos.value = (idx && idx.videos) || []
     facetOrder.value = (idx && idx.facetOrder) || []
+    ratingOptions.value = (idx && Array.isArray(idx.ratings)) ? idx.ratings : []
+    indexStats.value = (idx && idx.stats) || null
+    indexOk.value = true
     loading.value = false
     await nextTick()
     restoreScroll()
@@ -3055,9 +3126,38 @@ async function loadIndex() {
     openFromHash()
   } catch (err) {
     loading.value = false
+    indexOk.value = false
     errorMsg.value = '索引加载失败：' + (err && err.message ? err.message : err)
   }
 }
+
+/**
+ * P5.95：登录 / 退出后按新的可见性重取索引，并重画列表。
+ *
+ * <p>与 {@link loadIndex} 的差别就是「不碰播放器与滚动位置」：用户可能正在看片，登录只是让他
+ * 多看到几个根下的内容，不该把正在播的视频重开一遍（loadIndex 里的 openFromHash 会开播）。
+ * 失败保持当前画面：拿不到新数据时旧的列表比空网格更有用。</p>
+ *
+ * <p>「刷新」按钮也走这里：同一个动作，不该有两套实现。</p>
+ */
+async function reloadForAuth() {
+  try {
+    const idx = await api.getIndex({ silent: true })
+    videos.value = (idx && idx.videos) || []
+    facetOrder.value = (idx && idx.facetOrder) || []
+    ratingOptions.value = (idx && Array.isArray(idx.ratings)) ? idx.ratings : []
+    indexStats.value = (idx && idx.stats) || null
+    indexOk.value = true
+    errorMsg.value = ''
+  } catch (err) {
+    /* 静默：见上 */
+  }
+}
+
+// 登录态一变（登录 / 退出 / 401 清 token）就重取：专门空态与内容都靠它实时跟着走
+watch(() => auth.state.token, () => {
+  reloadForAuth()
+})
 
 /**
  * 人物列表（P3-B）：给筛选抽屉的「人物」分组取服务端数据。

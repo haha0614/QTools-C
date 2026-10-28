@@ -1,0 +1,314 @@
+{
+  "origin": "http://127.0.0.1:18097",
+  "db": "qtools_p599_tmp",
+  "steps": [
+    {
+      "step": "A",
+      "data": {
+        "v1": "23338f857d8f",
+        "v2": "4b15c39500a0",
+        "v3": "1a864893c77b",
+        "v4": "de4a94547c92",
+        "a1": "a004",
+        "a2": "a005",
+        "batch": {
+          "kind": "video",
+          "rating": "general",
+          "label": "大众级",
+          "requested": 2,
+          "matched": 2,
+          "updated": 2
+        }
+      }
+    },
+    {
+      "step": "B1",
+      "data": {
+        "ratings": [
+          {
+            "value": "general",
+            "label": "大众级",
+            "count": 429
+          },
+          {
+            "value": "guidance",
+            "label": "家长指导级",
+            "count": 1
+          },
+          {
+            "value": "restricted",
+            "label": "限制级",
+            "count": 2
+          }
+        ],
+        "stats": {
+          "videos": 239,
+          "albums": 193,
+          "photos": 9913,
+          "posters": 239,
+          "people": 13
+        }
+      }
+    },
+    {
+      "step": "B2",
+      "data": {
+        "guestRatings": [
+          {
+            "value": "general",
+            "label": "大众级",
+            "count": 429
+          },
+          {
+            "value": "guidance",
+            "label": "家长指导级",
+            "count": 1
+          }
+        ],
+        "guestStats": {
+          "videos": 238,
+          "albums": 192,
+          "photos": 9880,
+          "posters": 238,
+          "people": 12
+        },
+        "userStats": {
+          "videos": 239,
+          "albums": 193,
+          "photos": 9913,
+          "posters": 239,
+          "people": 13
+        }
+      }
+    },
+    {
+      "step": "C",
+      "data": {
+        "guestRatings": [
+          {
+            "value": "general",
+            "label": "大众级",
+            "count": 429
+          }
+        ],
+        "userRatings": [
+          {
+            "value": "general",
+            "label": "大众级",
+            "count": 429
+          },
+          {
+            "value": "guidance",
+            "label": "家长指导级",
+            "count": 1
+          },
+          {
+            "value": "restricted",
+            "label": "限制级",
+            "count": 2
+          }
+        ]
+      }
+    },
+    {
+      "step": "D",
+      "data": {
+        "rootId": "1",
+        "videoInRoot": "00b0143dfc10"
+      }
+    },
+    {
+      "step": "E1",
+      "data": {
+        "personId": "125",
+        "guestListHas": false,
+        "detailStatus": 404
+      }
+    },
+    {
+      "step": "E2",
+      "data": {
+        "node": {
+          "id": 125,
+          "name": "素人",
+          "alias": null,
+          "useCount": 159,
+          "avatarKind": null,
+          "avatarRef": null,
+          "avatarUrl": null,
+          "isPlaceholder": false,
+          "videoCount": 0,
+          "albumCount": 1,
+          "photoCount": 73
+        },
+        "detail": {
+          "id": 125,
+          "name": "素人",
+          "alias": null,
+          "note": "非真实人物（库内兜底行）：没有演员的视频默认归到这一行——服务层常量 MediaPersonServiceImpl.AMATEUR_NAME，建行与存量归位见 QTools/doc/media_amateur_person.sql。绑定规则：提交的演员里只要有素人以外的任何人物就自动剔除素人，清空则回到素人。故不填职业/国籍/出生年/身高/三围/社交账号等资料字段。（保留说明：人物页照常展示 —— 无演员视频的兜底人物，不是相册容器。）（P5.62：原「未归类」相册容器的 2 本相册 a158 images 73 张 / a159 写真 45 张，共 118 张照片，已并入本行，容器行已删除；见 doc/media_person_merge_uncategorized.sql。）",
+          "isPlaceholder": false,
+          "avatarPath": null,
+          "avatarKind": null,
+          "avatarRef": null,
+          "avatarUrl": null,
+          "gender": null,
+          "birthday": null,
+          "useCount": 159,
+          "videoCount": 0,
+          "albumCount": 1,
+          "photoCount": 73,
+          "coverPath": "thumbs/p/a158/0000.jpg"
+        }
+      }
+    },
+    {
+      "step": "E4",
+      "data": {
+        "node": {
+          "id": 125,
+          "name": "素人",
+          "alias": null,
+          "useCount": 159,
+          "avatarKind": null,
+          "avatarRef": null,
+          "avatarUrl": null,
+          "avatarHidden": true,
+          "isPlaceholder": false,
+          "videoCount": 159,
+          "albumCount": 0,
+          "photoCount": 0
+        },
+        "detail": {
+          "id": 125,
+          "name": "素人",
+          "alias": null,
+          "note": "非真实人物（库内兜底行）：没有演员的视频默认归到这一行——服务层常量 MediaPersonServiceImpl.AMATEUR_NAME，建行与存量归位见 QTools/doc/media_amateur_person.sql。绑定规则：提交的演员里只要有素人以外的任何人物就自动剔除素人，清空则回到素人。故不填职业/国籍/出生年/身高/三围/社交账号等资料字段。（保留说明：人物页照常展示 —— 无演员视频的兜底人物，不是相册容器。）（P5.62：原「未归类」相册容器的 2 本相册 a158 images 73 张 / a159 写真 45 张，共 118 张照片，已并入本行，容器行已删除；见 doc/media_person_merge_uncategorized.sql。）",
+          "isPlaceholder": false,
+          "avatarPath": null,
+          "avatarKind": null,
+          "avatarRef": null,
+          "avatarUrl": null,
+          "gender": null,
+          "birthday": null,
+          "useCount": 159,
+          "videoCount": 159,
+          "albumCount": 0,
+          "photoCount": 0,
+          "coverVideoId": "1d74d2cc5d20",
+          "avatarHidden": true
+        }
+      }
+    },
+    {
+      "step": "F",
+      "data": {
+        "stats": {
+          "videos": 239,
+          "albums": 193,
+          "photos": 9913,
+          "posters": 239,
+          "people": 13
+        },
+        "persons": 13
+      }
+    }
+  ],
+  "checks": {},
+  "passed": 82,
+  "failures": [],
+  "facts": {
+    "baseline": {
+      "videos": 239,
+      "albums": 193,
+      "photos": 9913,
+      "posters": 239,
+      "people": 13
+    },
+    "videos": {
+      "v1": "23338f857d8f",
+      "v2": "4b15c39500a0",
+      "v3": "1a864893c77b",
+      "v4": "de4a94547c92"
+    },
+    "albums": {
+      "a1": "a004",
+      "a2": "a005"
+    },
+    "b_all_visible": {
+      "ratings": [
+        {
+          "value": "general",
+          "label": "大众级",
+          "count": 429
+        },
+        {
+          "value": "guidance",
+          "label": "家长指导级",
+          "count": 1
+        },
+        {
+          "value": "restricted",
+          "label": "限制级",
+          "count": 2
+        }
+      ],
+      "stats": {
+        "videos": 239,
+        "albums": 193,
+        "photos": 9913,
+        "posters": 239,
+        "people": 13
+      }
+    },
+    "b_restricted_hidden": {
+      "guestRatings": [
+        {
+          "value": "general",
+          "label": "大众级",
+          "count": 429
+        },
+        {
+          "value": "guidance",
+          "label": "家长指导级",
+          "count": 1
+        }
+      ],
+      "guestStats": {
+        "videos": 238,
+        "albums": 192,
+        "photos": 9880,
+        "posters": 238,
+        "people": 12
+      },
+      "userStats": {
+        "videos": 239,
+        "albums": 193,
+        "photos": 9913,
+        "posters": 239,
+        "people": 13
+      }
+    },
+    "root": {
+      "rootId": "1",
+      "rootName": "主库",
+      "videoId": "00b0143dfc10"
+    },
+    "person": {
+      "id": "125",
+      "name": "素人",
+      "albums": "2",
+      "videos": "159",
+      "albumIds": [
+        "a158",
+        "a159"
+      ],
+      "videoIdsCount": 159,
+      "avatar": {
+        "visibleAlbum": "a158",
+        "visibleSeq": "0",
+        "restrictedAlbum": "a159",
+        "restrictedSeq": "0"
+      }
+    }
+  }
+}

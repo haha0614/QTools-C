@@ -425,14 +425,19 @@ for (const [w, h, tag] of [[1600, 1200, '1600'], [1280, 900, '1280'], [768, 900,
   const gap = gapOf(m.adj, m.chg)
   const adjEdge = margins(m.adj, m.card)
   const chgEdge = margins(m.chg, m.card)
-  const minEdge = Math.min(adjEdge.left, adjEdge.top, adjEdge.right, adjEdge.bottom, chgEdge.left, chgEdge.top, chgEdge.right, chgEdge.bottom)
+  const minAdjEdge = Math.min(adjEdge.left, adjEdge.top, adjEdge.right, adjEdge.bottom)
+  const minChgEdge = Math.min(chgEdge.left, chgEdge.top, chgEdge.right, chgEdge.bottom)
+  const minEdge = Math.min(minAdjEdge, minChgEdge)
   const overlapText = intersects(m.adj, m.name) || intersects(m.chg, m.name) || intersects(m.adj, m.body) || intersects(m.chg, m.body)
   console.log(
     '  [' + tag + '] ' + m.cards + ' 张 / ' + m.cols + ' 列 · 卡 ' + m.card.w + 'x' + m.card.h + ' · 钮 ' + m.adj.w + 'x' + m.adj.h +
-      ' · 间距 ' + gap + 'px · 最小贴边 ' + minEdge + 'px · ⛶ ' + JSON.stringify(m.adj) + ' · 换 ' + JSON.stringify(m.chg)
+      ' · 间距 ' + gap + 'px · 贴边 ⛶ ' + minAdjEdge + 'px / 换 ' + minChgEdge + 'px · ⛶ ' + JSON.stringify(m.adj) + ' · 换 ' + JSON.stringify(m.chg)
   )
   ok(gap >= 6, 'a' + tag + '1 两钮矩形不相交且间距 >= 6px', gap + 'px')
-  ok(minEdge >= 6, 'a' + tag + '2 两钮距卡片边缘都 >= 6px', '最小 ' + minEdge + 'px；⛶ ' + JSON.stringify(adjEdge) + '；换 ' + JSON.stringify(chgEdge))
+  // P6.01：⛶ 调背景 按用户要求**更靠角**（贴边 3px + 1px 边框 → 距卡片外缘 4–5px），
+  // 「换」回到头像盒右下角 —— 所以原来的「两钮都 ≥6px」拆成两条：换 ≥6px、⛶ 落在 4–5px。
+  ok(minChgEdge >= 6, 'a' + tag + '2 「换」距卡片边缘 >= 6px', '最小 ' + minChgEdge + 'px；' + JSON.stringify(chgEdge))
+  ok(minAdjEdge >= 3.5 && minAdjEdge <= 5.2, 'a' + tag + '2b 「⛶」贴角：距卡片外缘 4–5px（P6.01）', '最小 ' + minAdjEdge + 'px；' + JSON.stringify(adjEdge))
   ok(!overlapText, 'a' + tag + '3 两钮都不与标题 / 正文文字重叠', 'name=' + JSON.stringify(m.name) + ' body=' + JSON.stringify(m.body))
   ok(
     m.adj.l >= m.card.l && m.adj.r <= m.card.r && m.adj.t >= m.card.t && m.adj.b <= m.card.b &&
