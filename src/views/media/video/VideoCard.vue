@@ -113,6 +113,9 @@
           >{{ t.name }}</span
         >
         <span v-if="restTagCount" class="cm-tag cm-more" :title="restTagText">+{{ restTagCount }}</span>
+        <!-- P6.85：没有标签时显示灰色「无」——和管理端列表一致，提醒这条还没打标签 -->
+        <span v-if="!normTags.length" class="cm-tag cm-tag-none" title="还没有打标签"
+          data-testid="card-tag-none">无</span>
       </div>
     </div>
     <!-- P5.1：卡片右下角「加入播放列表」入口。整个入口 @keydown.stop，
@@ -530,7 +533,13 @@ const shownTags = computed(() => normTags.value.slice(0, 2))
 const restTagCount = computed(() => Math.max(0, normTags.value.length - 2))
 
 /** P5.6：组织信息行是否渲染 —— 本地徽标 / 评分 / 标签任一存在才渲染（都没有时不留空行） */
-const hasMetaRow = computed(() => props.local || props.rating > 0 || shownTags.value.length > 0)
+/**
+ * 元信息行是否渲染（P6.85）
+ *
+ * <p>原来"三者全无就不显示这一行"；现在改成**永远显示**——因为没标签时要显示灰色「无」，
+ * 那本身就是提醒（这一行不出现反而是"看不出有没有标签"）。</p>
+ */
+const hasMetaRow = computed(() => true)
 const restTagText = computed(() => normTags.value.slice(2).map((t) => t.name).join(' / '))
 
 const durText = computed(() => fmtDur(props.video.dur))
@@ -609,7 +618,7 @@ function resBadge(w) {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 
@@ -790,6 +799,7 @@ function resBadge(w) {
   opacity: 0.7;
 }
 
+.cm-tag-none { opacity: 0.6; border-style: dashed; }
 .cm-tag {
   flex: 0 1 auto;
   min-width: 0;
