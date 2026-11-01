@@ -112,6 +112,20 @@ function thumbUrl(albumId, i) {
   return api.photoThumbUrl(albumId, i)
 }
 
+/**
+ * P6.60：「全部图片」用——优先拿这张图的 content_hash 拼内容寻址 URL。
+ *
+ * <p>按 seq（{@code /thumb/p/<album>/<pad4(i)>}）定位的问题：seq 会随人工排序 / 移入移出漂移，
+ * 而缩略图响应是 {@code immutable} 长缓存，同一个 URL 先后指向不同的图 → 浏览器永远不回源，
+ * 于是出现「缩略图是这张、点开是另一张」，甚至把已经被分级挡掉的图显示出来。</p>
+ */
+function flatThumbUrl(it) {
+  if (!it || !it.a) return ''
+  const ps = photosOf(it.a)
+  const p = ps.length ? ps[Math.min(Math.max(0, Number(it.i) || 0), ps.length - 1)] : null
+  return thumbUrl(it.a.id, (p && p.hash) || it.i)
+}
+
 /** 2000px 预览档（photo.js:102） */
 function previewUrl(albumId, i) {
   return api.photoPreviewUrl(albumId, i)
@@ -1210,8 +1224,34 @@ function openLightbox(i) {
   pushRecentPhoto() // 打开即上报最近浏览
 }
 
+/**
+ * 「全部图片」视图里点开一张：记下来路的 hash，关闭灯箱时原样退回去
+ *
+ * <p>2026-10-29 反馈：在全部图片页点开一张再关掉，会落在那张图所在相册页，而不是回到全部图片。
+ * 因为点开的动作本身是「进相册 + 开灯箱」，关灯箱只清了序号、没退出相册。</p>
+ */
+let flatReturnHash = ''
+
+function openFlatCell(item) {
+  if (!item || !item.a || item.i == null) return
+  flatReturnHash = location.hash || wallHash()
+  openAlbum(item.a.id, item.i)
+}
+
 function closeLightbox() {
   lbOpen.value = false
+  if (flatReturnHash) {
+    // 从全部图片进来的：退出相册、把 hash 也退回来（replaceState 不触发 hashchange，手动回墙）
+    const back = flatReturnHash
+    flatReturnHash = ''
+    backToWall(false)
+    try {
+      history.replaceState(null, '', back)
+    } catch {
+      location.hash = back
+    }
+    return
+  }
   syncHash(null) // Esc/关闭 → 退回 #album=<id>
 }
 
@@ -1369,6 +1409,19 @@ function onRoute() {
 
 const PEOPLE_WATCH_ROUNDS = 36
 const state = { dataComplete: false, watchRounds: 0 }
+
+/** P6.29：fatal 态的退路：优先回上一页（人物作品页 / 首页），没有历史就回图片站首页 */
+function goBackFromFatal() {
+  try {
+    if (window.history && window.history.length > 1) {
+      window.history.back()
+      return
+    }
+  } catch (err) {
+    /* 忽略，走下面的兜底 */
+  }
+  window.location.assign('/media/photos')
+}
 
 function setFatal(msg) {
   fatalMsg.value = msg
@@ -1805,9 +1858,9 @@ onBeforeUnmount(() => {
           :data-album="it.a.id"
           :data-i="it.i"
           :title="it.a.title + ' #' + (it.i + 1)"
-          @click="openAlbum(it.a.id, it.i)"
+          @click="openFlatCell(it)"
         >
-          <img :src="thumbUrl(it.a.id, it.i)" loading="lazy" decoding="async" alt="" @error="onFlatCellError" />
+          <img :src="flatThumbUrl(it)" loading="lazy" decoding="async" alt="" @error="onFlatCellError" />
           <span
             class="fav"
             :class="{ on: isFav(it.a.id, it.i) }"
@@ -1887,7 +1940,11 @@ onBeforeUnmount(() => {
       @toggle-fav="toggleLbFav"
     />
 
-    <div v-if="fatalMsg && !guestHiddenEmpty" class="fatal">{{ fatalMsg }}</div>
+    <div v-if="fatalMsg && !guestHiddenEmpty" class="fatal">
+      {{ fatalMsg }}
+      <!-- P6.29：相册不存在（链接过期 / 没有可见性）时给一条退路，不要把人困在图片站 -->
+      <button type="button" class="fatal-back" @click="goBackFromFatal">返回上一页</button>
+    </div>
 
   </div>
 </template>
@@ -2159,7 +2216,7 @@ onBeforeUnmount(() => {
 .fcell img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 
@@ -2397,6 +2454,16 @@ onBeforeUnmount(() => {
 }
 
 /* ---------- 致命错误条 ---------- */
+.fatal-back {
+  margin-left: 12px;
+  padding: 2px 10px;
+  font-size: 12px;
+  color: var(--el-color-primary, #409eff);
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 10px;
+  cursor: pointer;
+}
 .fatal {
   position: fixed;
   left: 16px;
@@ -2550,7 +2617,7 @@ onBeforeUnmount(() => {
   .cell img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
   }
 
   .cell.broken {
@@ -2610,3 +2677,5 @@ onBeforeUnmount(() => {
   }
 }
 </style>
+
+
