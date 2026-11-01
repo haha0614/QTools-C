@@ -729,6 +729,12 @@ export function videoThumbUrl(id) {
 
 /** 图片缩略图：photo.js:101 `MEDIA + '/thumb/p/' + albumId + '/' + pad4(i)` */
 export function photoThumbUrl(albumId, i) {
+  // P6.67：第二个参数如果本来就是 content_hash（16 位 hex），直接走 800 宽的 p8 路由；
+  // 服务端对「还没生成 p8」的图会回退 400 宽的 p/，所以调用方可以无条件优先 p8。
+  const raw = String(i == null ? '' : i)
+  if (/^[0-9a-f]{16}$/i.test(raw)) {
+    return API_BASE + '/media/thumb/p8/' + encodeURIComponent(raw.toLowerCase())
+  }
   return API_BASE + '/media/thumb/p/' + encodeURIComponent(String(albumId == null ? '' : albumId)) + '/' + pad4(i)
 }
 
@@ -743,7 +749,8 @@ export function photoThumbUrl(albumId, i) {
  */
 export function photoThumbUrlByHash(hash) {
   const h = String(hash == null ? '' : hash).trim()
-  return h ? API_BASE + '/media/thumb/p/' + encodeURIComponent(h) : ''
+  // P6.67：800 宽档（服务端回退到 400 宽那张，不会 404）
+  return h ? API_BASE + '/media/thumb/p8/' + encodeURIComponent(h) : ''
 }
 
 /** 图片预览档（2000px）：同理优先按哈希 */
@@ -863,6 +870,8 @@ export function photoPreviewUrl(albumId, i) {
  */
 export function thumbUrlFromRel(rel) {
   const s = String(rel == null ? '' : rel)
+  // 后端封面路径可能是 thumbs/p8/<hash>.jpg（800 宽）或 thumbs/p/<hash>.jpg（400 宽），
+  // 去掉 thumbs/ 前缀后正好对应 /media/thumb/<子目录>/<名字> 两档路由。
   if (s.indexOf('thumbs/') === 0) return API_BASE + '/media/thumb/' + s.slice(7).replace(/\.jpg$/i, '')
   return mediaFileUrl(s)
 }
