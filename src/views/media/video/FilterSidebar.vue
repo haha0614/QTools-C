@@ -1,5 +1,6 @@
 <!--
-  FilterSidebar.vue —— 筛选抽屉的内容体（分类 chips + 快捷筛选插槽 + facet 折叠组）
+  FilterSidebar.vue —— 筛选抽屉的内容体（快捷筛选插槽 + facet 折叠组）
+  P6.84：「分类 chips」已下线（分类=路径第一段，与标签重复）；props 仍保留仅为兼容父级传参。
   来源：index.html:14-25 的 DOM + app.js renderCats (662-670) / renderFacetGroups (672-692) /
         syncFacetUI (695-715) / facetGroups 的 change+input 监听 (1361-1388)。
   与原页的差异：原页只同步勾选态不重建 DOM 以保住折叠与搜索框状态；Vue 用局部状态（openMap / searchMap）
@@ -8,25 +9,11 @@
 <template>
   <div class="fs-scope">
     <div ref="scrollEl" class="side-scroll">
-      <section class="fgroup fgroup-cat">
-        <div class="fgroup-head">
-          <h2>分类</h2>
-          <em>{{ catNames.length }} 个</em>
-        </div>
-        <div class="chips">
-          <button
-            v-for="c in catNames"
-            :key="c"
-            class="chip"
-            :class="{ on: selectedCats.indexOf(c) >= 0 }"
-            type="button"
-            :aria-pressed="selectedCats.indexOf(c) >= 0"
-            @click="emit('toggle-cat', c)"
-          >
-            {{ c }}<em>{{ catCounts[c] || 0 }}</em>
-          </button>
-        </div>
-      </section>
+      <!-- P6.84：「分类」分组下线。它只是 rel_path 的第一段（服务器 scan-media.js:763 写入的 folder），
+           卡片和播放器里都已经显示「目录」，作为筛选维度与标签重复；
+           语义筛选统一交给标签（卡片上的标签徽标 = video.tags）。
+           注意：props（catNames / catCounts / selectedCats）与父级的 cats 过滤链路**暂时保留**，
+           只是不再渲染这个分组——这样既不动播放上下文的口径，也不会让父子属性落成 DOM attribute。 -->
 
       <!-- 工作室（P5-A）：独立分组，数据源 GET /api/media/studios（服务端计数），
            接口未就绪时回落到索引 videos[].studios 现推并给出提示；两者都没有则整组不渲染。 -->
