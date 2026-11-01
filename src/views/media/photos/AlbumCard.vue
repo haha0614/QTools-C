@@ -23,8 +23,18 @@ const props = defineProps({
 const emit = defineEmits(['open'])
 const api = useMediaApi()
 
-/** 封面缩略图（等价 photo.js thumbUrl(id, 0)） */
-const coverUrl = computed(() => api.photoThumbUrl(props.album.id, 0))
+/**
+ * 封面缩略图（P6.61）
+ *
+ * <p>优先用索引给的 {@code album.cover}——它已经是「这本册这次可见的第一张图」的内容寻址路径
+ * （{@code thumbs/p/<hash>.jpg}），转成 {@code /api/media/thumb/p/<hash>} 后内容与 URL 一一对应；
+ * 拿不到才回退老的 {@code photoThumbUrl(id, 0)}（按 seq 定位，会被 immutable 缓存坑）。</p>
+ */
+const coverUrl = computed(() => {
+  const rel = props.album && props.album.cover
+  if (rel && String(rel).indexOf('thumbs/') === 0) return api.thumbUrlFromRel(rel)
+  return api.photoThumbUrl(props.album.id, 0)
+})
 const loaded = ref(false)
 const broken = ref(false)
 
@@ -123,7 +133,7 @@ const onOpen = () => emit('open', props.album.id)
 .coverImg {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
   opacity: 0;
   transition: opacity 0.18s ease;

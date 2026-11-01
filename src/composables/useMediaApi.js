@@ -733,6 +733,26 @@ export function photoThumbUrl(albumId, i) {
 }
 
 /**
+ * P6.61：按**内容哈希**取缩略图 —— 站端唯一应该优先用的形式。
+ *
+ * <p>老写法按 {@code <albumId>/<pad4(seq)>} 定位有两个坑：seq 会随人工排序 / 移入移出漂移，
+ * 而缩略图响应带 {@code immutable} 长缓存 —— 同一个 URL 先后指向不同的图，浏览器永不回源，
+ * 于是「缩略图是这张、点开是另一张」，甚至把已被分级/审核挡掉的内容显示出来。</p>
+ *
+ * <p>内容寻址的 URL 里就是内容本身：内容一变 URL 就变，缓存反而变成优点。</p>
+ */
+export function photoThumbUrlByHash(hash) {
+  const h = String(hash == null ? '' : hash).trim()
+  return h ? API_BASE + '/media/thumb/p/' + encodeURIComponent(h) : ''
+}
+
+/** 图片预览档（2000px）：同理优先按哈希 */
+export function photoPreviewUrlByHash(hash) {
+  const h = String(hash == null ? '' : hash).trim()
+  return h ? API_BASE + '/media/preview/p/' + encodeURIComponent(h) : ''
+}
+
+/**
  * 视频精灵图：20 列 × 20 行（400 格），每格 160×90，成品 3200×1800（thumbs/s/<content_hash>.jpg）
  * 后端：GET /api/media/sprite/{id}，产物不存在即 404 —— 调用方先用 hasSprite 判断
  */
@@ -893,7 +913,11 @@ export function subUrl(rel) {
 export function itemThumbUrl(item) {
   if (!item) return ''
   if (item.thumb && typeof item.thumb === 'string') return thumbUrlFromRel(item.thumb)
-  if (item.kind === 'photo') return photoThumbUrl(item.album || '', item.i)
+  // P6.61：收藏 / 最近浏览项带 content_hash 时优先内容寻址（否则老 URL 会张冠李戴）
+  if (item.kind === 'photo') {
+    const byHash = photoThumbUrlByHash(item.hash)
+    return byHash || photoThumbUrl(item.album || '', item.i)
+  }
   if (item.id) return videoThumbUrl(item.id)
   return ''
 }
@@ -963,6 +987,8 @@ const mediaApi = {
   frameAvatarUrl,
   frameExactUrl,
   photoThumbUrl,
+  photoThumbUrlByHash,
+  photoPreviewUrlByHash,
   photoPreviewUrl,
   thumbUrlFromRel,
   mediaFileUrl,
