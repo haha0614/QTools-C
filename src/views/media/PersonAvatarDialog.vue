@@ -6,7 +6,7 @@
   三个 tab：
     1) 从相册挑选 —— 该人物名下相册的缩略图网格（每行 6 张）。相册按 IntersectionObserver **懒加载**：
        滚到哪本相册才去 GET /api/media/album/{id} 拿它的 photos[]，首屏只发 1-2 个请求；
-       每本相册最多渲染 PHOTO_PER_ALBUM 张（防止 144 册 × 100 张把 DOM 撑爆）。
+       每本相册默认渲染全部图片（P6.08：以前写死 24 张，73 张的册只能看到 24 张）；只有超过 PHOTO_HARD_CAP=600 张的超大册才截断并提示。
        点选即裁剪 → emit('save', { kind:'photo', ref:'<albumId>:<seq>[#crop=…]' })
     2) 图片地址 —— 输入 http(s):// 或 data:image/ 地址，带预览与基本校验（同后端同规则）。
     3) 从视频画面（P5.64）—— 该人物名下视频的横向缩略条（默认选第一个）→ 选中视频抽 **6 帧候选**
@@ -45,8 +45,8 @@ const emit = defineEmits(['close', 'save', 'clear'])
 const api = useMediaApi()
 
 /** 一次最多列多少本相册（滚到底为止），每本相册最多渲染多少张图 */
-const ALBUM_PAGE_SIZE = 12
-const PHOTO_PER_ALBUM = 24
+const ALBUM_PAGE_SIZE = 200
+const PHOTO_HARD_CAP = 600
 /** 图片地址列宽上限：与 media_person.avatar_ref VARCHAR(512) 对齐 */
 const REF_MAX = 512
 
@@ -148,7 +148,7 @@ async function loadPhotos(albumId) {
     const body = unwrap(await api.getAlbum(key, { silent: true }))
     const photos = Array.isArray(body && body.photos) ? body.photos : []
     const rows = photos
-      .slice(0, PHOTO_PER_ALBUM)
+      .slice(0, PHOTO_HARD_CAP)
       .map((p) => {
         const seq = Number(p && p.i != null ? p.i : p.seq)
         return { seq, url: Number.isFinite(seq) && seq >= 0 ? api.photoThumbUrl(key, seq) : '' }
@@ -1144,7 +1144,7 @@ onBeforeUnmount(() => {
   border: 2px solid transparent;
   border-radius: 6px;
   background: var(--bg-3);
-  aspect-ratio: 1;
+  aspect-ratio: 3 / 2;
   overflow: hidden;
   cursor: pointer;
 }
@@ -1161,7 +1161,7 @@ onBeforeUnmount(() => {
 .pa-cell img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 
@@ -1217,7 +1217,7 @@ onBeforeUnmount(() => {
 .pa-preview img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 
@@ -1408,7 +1408,7 @@ onBeforeUnmount(() => {
 .pa-video-cover img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 

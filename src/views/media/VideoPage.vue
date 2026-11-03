@@ -2675,6 +2675,12 @@ function closePlayer() {
     state.play = ''
     writeHash()
   }
+  // 从人物页点进来的：关掉播放器要回人物页，而不是留在视频库（2026-10-29 反馈）。
+  // 只认 query 里的 pid —— 深链复制到新标签页也能回去；没有 pid 时保持原行为。
+  const pid = route.query.pid
+  if (route.query.from === CTX_PERSON && pid) {
+    router.push('/media/person/' + encodeURIComponent(String(pid))).catch(() => {})
+  }
 }
 
 /**

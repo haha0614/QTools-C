@@ -42,6 +42,12 @@ function removeStorage(key) {
   }
 }
 
+/** P6.27：登录态变化后整页刷新（索引、收藏、列表都按账号算，不能只改内存里的 token） */
+function reloadSoon() {
+  if (typeof window === 'undefined') return
+  setTimeout(() => { try { window.location.reload() } catch (err) { /* 忽略 */ } }, 60)
+}
+
 /** 全局唯一的登录态 */
 const state = reactive({
   token: (typeof localStorage !== 'undefined' && localStorage.getItem(TOKEN_KEY)) || '',
@@ -96,6 +102,9 @@ async function doLogin(identifier, password) {
   try {
     const res = await appAuthApi.login({ identifier, password })
     applySession(res)
+    // P6.27：登录后必须让页面重新取一次索引 —— 索引里有「按账号上限过滤」的结果，
+    // 不刷新会继续显示未登录时那份（反之登出同理）。整页刷新最省事也最不会漏。
+    reloadSoon()
     return res
   } finally {
     state.loading = false
@@ -163,7 +172,24 @@ async function fetchMe() {
     }
     return state.user
   } catch (err) {
-    if (err && err.status === 401) clearAuth()
+    if (err && err.status === 401) {
+      clearAuth()
+      return null
+    }
+    // P6.26：非 401 失败（后端重启 / 网络抖动）不能只留 token —— 那会变成
+    // 「界面显示未登录、接口却带着登录态」的鬼状态（分级筛选因此看起来没生效）。
+    // 重试一次；仍拿不到用户就按「会话不可用」清掉 token，保证界面与接口口径一致。
+    try {
+      const me = await appAuthApi.getMe()
+      if (me && typeof me === 'object') {
+        state.user = me
+        writeStorage(USER_KEY, JSON.stringify(me))
+        return me
+      }
+    } catch (retryErr) {
+      if (retryErr && retryErr.status === 401) clearAuth()
+    }
+    if (!state.user) clearAuth()
     return null
   } finally {
     state.loading = false
@@ -183,6 +209,8 @@ async function doLogout() {
   } finally {
     clearAuth()
     state.restored = true
+    // P6.27：登出后整页刷新：索引/收藏/播放列表都是按账号算的，留在内存里会「登出了还看得见」
+    reloadSoon()
   }
 }
 
@@ -203,3 +231,6 @@ export function useAppAuth() {
 }
 
 export default auth
+
+
+

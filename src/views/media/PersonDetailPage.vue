@@ -331,7 +331,8 @@ function openVideo(id) {
   }
   router.push({
     path: '/media',
-    query: { from: CTX_PERSON, pname: personName() },
+    // pid 是**人物** id（不是视频 id）：播放页据此知道「关掉播放器该回哪个人物页」
+    query: { from: CTX_PERSON, pname: personName(), pid: String(personId.value) },
     hash: '#play=' + encodeURIComponent(String(id))
   })
 }
