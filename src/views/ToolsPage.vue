@@ -23,6 +23,7 @@ const CATEGORIES = [
   { key: 'encode', label: '编码' },
   { key: 'generate', label: '生成' },
   { key: 'security', label: '安全' },
+  { key: 'dev', label: '开发' },
   { key: 'media', label: '媒体' }
 ]
 
@@ -34,7 +35,7 @@ const SORT_OPTIONS = [
 
 // 后端 tool_info 暂无分类字段，与首页保持同一口径：先按工具 id 硬编码映射
 //（1/2 → 文本、3 → 安全、4 → 媒体）；后端补上 category 字段后改为直接读 item.category 即可删掉本表。
-const CATEGORY_BY_ID = { 1: 'text', 2: 'text', 3: 'security', 4: 'media', 5: 'encode', 6: 'encode' }
+const CATEGORY_BY_ID = { 1: 'text', 2: 'text', 3: 'security', 4: 'media', 5: 'encode', 6: 'encode', 7: 'dev', 8: 'dev' }
 
 // 内置兜底数据：接口不可用时使用，id 与后端 tool_info 对齐以便沿用 id → 分类映射
 const FALLBACK_TOOLS = [
@@ -93,6 +94,24 @@ const FALLBACK_TOOLS = [
     icon: 'Switch',
     category: 'encode',
     sort: 6
+  },
+  {
+    id: 7,
+    toolName: '正则测试',
+    toolDesc: '实时匹配高亮、捕获组与替换预览',
+    toolRoute: '/tool/regex',
+    icon: 'Search',
+    category: 'dev',
+    sort: 7
+  },
+  {
+    id: 8,
+    toolName: 'Cron 表达式解析',
+    toolDesc: '看懂 5 字段 cron，推演接下来几次执行时间',
+    toolRoute: '/tool/cron',
+    icon: 'Timer',
+    category: 'dev',
+    sort: 8
   }
 ]
 

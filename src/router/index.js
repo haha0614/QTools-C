@@ -64,6 +64,18 @@ const routes = [
         component: () => import('../views/tool/CodecTool.vue'),
         meta: { title: 'Base64 / URL 编解码' }
       },
+      {
+        path: 'tool/regex',
+        name: 'ToolRegex',
+        component: () => import('../views/tool/RegexTool.vue'),
+        meta: { title: '正则测试' }
+      },
+      {
+        path: 'tool/cron',
+        name: 'ToolCron',
+        component: () => import('../views/tool/CronTool.vue'),
+        meta: { title: 'Cron 解析' }
+      },
 
       // ---------- 媒体站（手写静态页 → Vue，迁移中） ----------
       // 路由挂在 /media 下。服务端已配合改成「真实文件优先、其余回落 SPA」：

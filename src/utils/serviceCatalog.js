@@ -23,7 +23,9 @@ export const OFFLINE_TOOL_ROUTES = Object.freeze([
   '/tool/text-count',
   '/tool/pwd-gen',
   '/tool/timestamp',
-  '/tool/codec'
+  '/tool/codec',
+  '/tool/regex',
+  '/tool/cron'
 ])
 
 /** 兜底：后端下发的路由带尾斜杠 / 查询串时也能命中 */
