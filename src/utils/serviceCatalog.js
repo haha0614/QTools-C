@@ -16,7 +16,15 @@
  */
 
 /** 纯前端运算的工具路由（离线工具白名单） */
-export const OFFLINE_TOOL_ROUTES = Object.freeze(['/tool/json', '/tool/text-count', '/tool/pwd-gen'])
+/* P6.262：新工具（时间戳 / 编解码）同样纯浏览器运算，加入白名单后才会被归到「离线工具」分组，
+   否则会被当成「在线服务」——那样在后台挂掉时还会被禁用，实际它根本不需要后端。 */
+export const OFFLINE_TOOL_ROUTES = Object.freeze([
+  '/tool/json',
+  '/tool/text-count',
+  '/tool/pwd-gen',
+  '/tool/timestamp',
+  '/tool/codec'
+])
 
 /** 兜底：后端下发的路由带尾斜杠 / 查询串时也能命中 */
 export function normalizeRoute(route) {

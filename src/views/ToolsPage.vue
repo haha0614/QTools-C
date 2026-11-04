@@ -34,7 +34,7 @@ const SORT_OPTIONS = [
 
 // 后端 tool_info 暂无分类字段，与首页保持同一口径：先按工具 id 硬编码映射
 //（1/2 → 文本、3 → 安全、4 → 媒体）；后端补上 category 字段后改为直接读 item.category 即可删掉本表。
-const CATEGORY_BY_ID = { 1: 'text', 2: 'text', 3: 'security', 4: 'media' }
+const CATEGORY_BY_ID = { 1: 'text', 2: 'text', 3: 'security', 4: 'media', 5: 'encode', 6: 'encode' }
 
 // 内置兜底数据：接口不可用时使用，id 与后端 tool_info 对齐以便沿用 id → 分类映射
 const FALLBACK_TOOLS = [
@@ -44,6 +44,7 @@ const FALLBACK_TOOLS = [
     toolDesc: 'JSON格式化、压缩、语法校验',
     toolRoute: '/tool/json',
     icon: 'Document',
+    category: 'text',
     sort: 1
   },
   {
@@ -52,6 +53,7 @@ const FALLBACK_TOOLS = [
     toolDesc: '统计汉字、字符、行数，可清除空格',
     toolRoute: '/tool/text-count',
     icon: 'EditPen',
+    category: 'text',
     sort: 2
   },
   {
@@ -60,6 +62,7 @@ const FALLBACK_TOOLS = [
     toolDesc: '自定义长度，支持大小写、数字、符号',
     toolRoute: '/tool/pwd-gen',
     icon: 'Key',
+    category: 'security',
     sort: 3
   },
   {
@@ -69,8 +72,27 @@ const FALLBACK_TOOLS = [
     toolDesc: '视频与图片库：卡片墙、相册分组、收藏与断点续播',
     toolRoute: '/media',
     icon: 'VideoCamera',
+    category: 'media',
     sort: 100,
     external: true
+  },
+  {
+    id: 5,
+    toolName: '时间戳转换',
+    toolDesc: 'Unix 时间戳与日期互转，支持时区与偏移量',
+    toolRoute: '/tool/timestamp',
+    icon: 'Clock',
+    category: 'encode',
+    sort: 5
+  },
+  {
+    id: 6,
+    toolName: 'Base64 / URL 编解码',
+    toolDesc: 'Base64、URL、HTML 实体互转，支持文件与图片',
+    toolRoute: '/tool/codec',
+    icon: 'Switch',
+    category: 'encode',
+    sort: 6
   }
 ]
 

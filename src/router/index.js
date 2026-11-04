@@ -52,6 +52,18 @@ const routes = [
         component: () => import('../views/tool/PwdGen.vue'),
         meta: { title: '随机密码生成' }
       },
+      {
+        path: 'tool/timestamp',
+        name: 'ToolTimestamp',
+        component: () => import('../views/tool/TimestampTool.vue'),
+        meta: { title: '时间戳转换' }
+      },
+      {
+        path: 'tool/codec',
+        name: 'ToolCodec',
+        component: () => import('../views/tool/CodecTool.vue'),
+        meta: { title: 'Base64 / URL 编解码' }
+      },
 
       // ---------- 媒体站（手写静态页 → Vue，迁移中） ----------
       // 路由挂在 /media 下。服务端已配合改成「真实文件优先、其余回落 SPA」：
