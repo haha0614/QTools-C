@@ -2,8 +2,13 @@
   PersonDetailPage.vue —— 媒体站「人物详情」（P3-B）
   路由：/media/person/:id
   数据：GET /api/media/person/{id}（名称 / 头像 / 计数）
-        GET /api/media/person/{id}/videos?page=1&size=（复用 VideoCard 渲染）
-        GET /api/media/person/{id}/albums?page=1&size=（复用 AlbumCard 渲染）
+        GET /api/media/person/{id}/videos?page=1&size=&rating=（复用 VideoCard 渲染）
+        GET /api/media/person/{id}/albums?page=1&size=&rating=（复用 AlbumCard 渲染）
+        GET /api/media/ratings（P6.99：深链直达时补登记「本访客可见哪几档」）
+  P6.99：分级筛选。本页接全站唯一的分级状态（useRatingFilter），把当前档位当 rating 参数发给后端
+         两个分页接口，并在标题右侧渲染同一条 RatingFilterBar —— 视频站 / 图片站 / 人物墙都有的
+         那条筛选必须在这一页也有，否则「选了大众级、人物页却还在铺限制级视频」就是一处静默失效。
+         计数口径也随之改为区块自己的 total（筛选后的数），不再用人物行上的全量计数。
   降级：任一接口 404 / 连接失败 → 对应区块显示「人物数据暂不可用」，页面不白屏、不抛异常。
   深链：卡片点击沿用既有约定 —— 视频 -> /media#play=<id>，相册 -> /media/photos#album=<id>。
   主题：.media-scope + mediaTheme.scss（局部模式），只用 --bg/--fg/--line/--accent 等映射变量。
@@ -40,8 +45,11 @@ import VideoCard from './video/VideoCard.vue'
 import AlbumCard from './photos/AlbumCard.vue'
 // P5.48：头像优先级与人物墙**同一份实现**（手动 → 历史 avatarPath → 相册首图 → 视频内容帧 → 首字占位）
 import { avatarOf, parseAvatarRef, profileFacts } from './personWall.js'
+import { RATING_ALL } from './contentRating.js'
+import { useRatingFilter } from './useRatingFilter.js'
 import PersonAvatarDialog from './PersonAvatarDialog.vue'
 import PageToast from './PageToast.vue'
+import RatingFilterBar from './RatingFilterBar.vue'
 import { usePageToast } from './usePageToast.js'
 import { useMediaEditPolicy } from '@/composables/useMediaEditPolicy'
 import { clearPersonAvatar, errorText, setPersonAvatar } from './video/personApi'
@@ -71,6 +79,16 @@ const { toasts, push: showToast } = usePageToast()
 // P5.60：与人物墙同一套 —— 视频档用内容帧（/api/media/frame/<id>?t=<时长×0.3 的整秒>&w=400）
 const URLS = { thumbOf: api.thumbUrlFromRel, frameOf: (id, sec) => api.frameUrl(id, sec, 400) }
 
+/**
+ * P6.99：分级筛选 —— 与视频站 / 图片站 / 人物墙共用同一个全局单例（useRatingFilter），
+ * 本页只做三件事：把当前档位当查询参数发给后端、把筛选条渲染出来、深链直达时补齐可见档位登记
+ * （{@link ensureRatingOptions}，轻量接口 {@code /api/media/ratings}，不拉整包索引）。
+ * 可见档位未知时 {@link ratingParam} 一律退化成「不筛」，不会把整页筛成空。
+ */
+const { rating, availableRatings, barVisible, setRating, setRatingOptions } = useRatingFilter()
+/** 当前访客已知道可见档位时，才把档位发给后端（未知名 = 不筛，权限仍由服务端 guestRootFilter 兜住） */
+const ratingParam = computed(() => (availableRatings.value.length && rating.value !== RATING_ALL ? rating.value : ''))
+
 const NOT_READY = '人物数据暂不可用：后端人物接口尚未就绪'
 /** P5.98：列数兜底用的栅格参数 —— 与下面 .pd-grid-video / .pd-grid-album 的 minmax() 保持一致 */
 const GRID_GAP = 12
@@ -88,6 +106,8 @@ const videos = ref([])
 const videoTotal = ref(0)
 const videoLoading = ref(false)
 const videoErr = ref('')
+/** 区块 total 是否可信（加载成功过）：头部计数据此决定用筛选口径还是人物行上的全量计数 */
+const videoLoaded = ref(false)
 const videoExpanded = ref(false)
 /** 浏览器算出来的一行几张（量 .pd-grid-video 的 grid-template-columns） */
 const videoCols = ref(1)
@@ -99,6 +119,7 @@ const albums = ref([])
 const albumTotal = ref(0)
 const albumLoading = ref(false)
 const albumErr = ref('')
+const albumLoaded = ref(false)
 const albumExpanded = ref(false)
 const albumCols = ref(1)
 const albumGridRef = ref(null)
@@ -135,10 +156,18 @@ const personName = () => {
   return p.name || ('#' + personId.value)
 }
 
+/**
+ * 头部计数：「视频 N · 相册 M」
+ *
+ * <p>P6.99：区块加载成功后改用**区块自己的 total** —— 它是分级筛选后的口径，
+ * 与下面网格、「查看全部 N 个」用的是同一个数。仍用人物行上的全量计数会在选了一档
+ * 筛选时出现「头部 131 部 / 区块 63 部」这种两套口径并列的错觉（用户反馈过同类问题）。
+ * 加载失败时保持人物行的原值，避免把「后端没响应」显示成「这个人没有作品」。</p>
+ */
 function countsText() {
   const p = person.value || {}
-  const v = toNum(p.videoCount != null ? p.videoCount : p.video_count)
-  const a = toNum(p.albumCount != null ? p.albumCount : p.album_count)
+  const v = videoLoaded.value ? videoTotal.value : toNum(p.videoCount != null ? p.videoCount : p.video_count)
+  const a = albumLoaded.value ? albumTotal.value : toNum(p.albumCount != null ? p.albumCount : p.album_count)
   return '视频 ' + v + ' · 相册 ' + a
 }
 
@@ -174,17 +203,26 @@ function loadPerson() {
  * 只有读到 .pd-grid-* 的 grid-template-columns 才能保证「整行显示、不留半行」。
  */
 
+/** 把当前分级筛选并进查询参数（不筛时原样返回，URL 上不出现 rating=） */
+function withRating(params) {
+  return ratingParam.value ? Object.assign({}, params, { rating: ratingParam.value }) : params
+}
+
 /** 一次请求 size 条（第 1 页即可 —— 折叠态显示的就是总列表的前 N 条，顺序不变） */
 async function loadVideos(size) {
   videoLoading.value = true
   videoErr.value = ''
   try {
-    const out = normalizePage(await api.listPersonVideos(personId.value, { page: 1, size }, { silent: true }))
+    const out = normalizePage(
+      await api.listPersonVideos(personId.value, withRating({ page: 1, size }), { silent: true })
+    )
     videos.value = out.rows
     videoTotal.value = out.total
+    videoLoaded.value = true
   } catch (err) {
     videos.value = []
     videoTotal.value = 0
+    videoLoaded.value = false
     videoErr.value = isNotReady(err) ? NOT_READY : '视频列表加载失败：' + ((err && err.message) || '请求失败')
   } finally {
     videoLoading.value = false
@@ -196,12 +234,16 @@ async function loadAlbums(size) {
   albumLoading.value = true
   albumErr.value = ''
   try {
-    const out = normalizePage(await api.listPersonAlbums(personId.value, { page: 1, size }, { silent: true }))
+    const out = normalizePage(
+      await api.listPersonAlbums(personId.value, withRating({ page: 1, size }), { silent: true })
+    )
     albums.value = out.rows
     albumTotal.value = out.total
+    albumLoaded.value = true
   } catch (err) {
     albums.value = []
     albumTotal.value = 0
+    albumLoaded.value = false
     albumErr.value = isNotReady(err) ? NOT_READY : '相册列表加载失败：' + ((err && err.message) || '请求失败')
   } finally {
     albumLoading.value = false
@@ -475,20 +517,53 @@ function loadAll() {
   albumExpanded.value = readExpand(sessionStore(), personId.value, 'albums')
   videos.value = []
   videoTotal.value = 0
+  videoLoaded.value = false
   albums.value = []
   albumTotal.value = 0
+  albumLoaded.value = false
   loadPerson()
   // 折叠态只拉一小批（24），展开恢复态直接要满
   loadVideos(initialSize(videoExpanded.value))
   loadAlbums(initialSize(albumExpanded.value))
 }
 
-onMounted(() => {
+/**
+ * 登记「本访客可见哪几档」（P6.99）
+ *
+ * <p>正常路径是从人物墙 / 图片站 / 视频站点进来，那些页面已经用索引 {@code ratings[]} 登记过，
+ * 这里直接返回。深链直达（书签 / 刷新 / 分享）时全局状态里一条档位都没有，
+ * 结果是：刷新前选了「大众级」，刷新后页面悄悄按「不筛」重取，筛选看起来"没生效"。
+ * 所以这一步补齐：拿轻量接口 {@code /api/media/ratings}（不是整包索引）登记可见档位。</p>
+ *
+ * <p>接口失败不阻断渲染：availableRatings 空 → {@link ratingParam} 退化成「不筛」，
+ * 页面照常显示服务端允许的全部内容（权限那条路由后端兜住）。</p>
+ */
+async function ensureRatingOptions() {
+  if (availableRatings.value.length) return
+  try {
+    const list = await api.getRatings({ silent: true })
+    const body = list && list.data != null ? list.data : list
+    if (Array.isArray(body) && body.length) setRatingOptions(body)
+  } catch (err) {
+    /* 老后端没有这条接口 / 网络失败：保持「不知道可见档位」，按不筛处理 */
+  }
+}
+
+onMounted(async () => {
   tk.pageView()
   policy.loadEditPolicy()
   if (typeof ResizeObserver !== 'undefined') gridObserver = new ResizeObserver(() => scheduleMeasure())
   if (typeof window !== 'undefined') window.addEventListener('resize', onViewportResize)
+  await ensureRatingOptions()
   loadAll()
+})
+
+/* P6.99：切分级 = 换一份筛选后的数据集。两个区块都按「当前展开态」重取，
+   折叠态一次只要一小批；总数随之下发（头部计数与「查看全部 N 个」都跟着变）。 */
+watch(rating, () => {
+  if (!personId.value) return
+  loadVideos(initialSize(videoExpanded.value))
+  loadAlbums(initialSize(albumExpanded.value))
 })
 
 // 同页切换人物（人物墙 -> 另一个人物）时重载，不整页刷新
@@ -540,6 +615,12 @@ onBeforeUnmount(() => {
           </span>
         </p>
       </div>
+      <!-- P6.99：分级筛选（全局单值，与视频站 / 图片站 / 人物墙同一份状态）。
+           本页不显示各档计数：计数得对整份名下作品算，而这里只有分页数据，
+           给个错数字比不给更糟 —— 所以 show-count=false，「全部」也不带数字。 -->
+      <div v-if="barVisible && !personErr" class="pd-head-right" data-role="pd-rating">
+        <RatingFilterBar :options="availableRatings" :model-value="rating" :show-count="false" @change="setRating" />
+      </div>
     </header>
 
     <!-- 视频网格（P5.98：折叠 1–2 行 → 「查看全部 N 个视频」/「收起」，页内分页删除） -->
@@ -552,7 +633,9 @@ onBeforeUnmount(() => {
       </div>
       <p v-if="videoLoading && !videos.length" class="pd-state">视频加载中…</p>
       <p v-else-if="videoErr" class="pd-state pd-state-err">{{ videoErr }}</p>
-      <p v-else-if="!videos.length" class="pd-state">这位人物名下还没有视频</p>
+      <p v-else-if="!videos.length" class="pd-state">
+        {{ ratingParam ? '当前分级筛选下没有视频' : '这位人物名下还没有视频' }}
+      </p>
       <template v-else>
         <div ref="videoGridRef" class="pd-grid pd-grid-video" data-role="pd-video-grid">
           <VideoCard
@@ -594,7 +677,9 @@ onBeforeUnmount(() => {
       </div>
       <p v-if="albumLoading && !albums.length" class="pd-state">相册加载中…</p>
       <p v-else-if="albumErr" class="pd-state pd-state-err">{{ albumErr }}</p>
-      <p v-else-if="!albums.length" class="pd-state">这位人物名下还没有相册</p>
+      <p v-else-if="!albums.length" class="pd-state">
+        {{ ratingParam ? '当前分级筛选下没有相册' : '这位人物名下还没有相册' }}
+      </p>
       <template v-else>
         <div ref="albumGridRef" class="pd-grid pd-grid-album" data-role="pd-album-grid">
           <AlbumCard
@@ -655,6 +740,13 @@ onBeforeUnmount(() => {
   gap: 12px;
   flex-wrap: wrap;
   margin-bottom: 16px;
+}
+
+/* P6.99：筛选条靠右（.pd-head 已有 flex-wrap，窄屏会自己掉到下一行） */
+.pd-head-right {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
 }
 
 .pd-back {

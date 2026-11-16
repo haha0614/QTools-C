@@ -47,6 +47,7 @@ import {
   itemThumbUrl
 } from '@/composables/useMediaApi'
 import { useMediaTrack } from '@/composables/useMediaTrack'
+import { fetchUserItems, toggleFav } from '@/utils/webUserItem'
 import { useAppAuth } from '@/composables/useAppAuth'
 // P5.70：未登录时的「登录」不再是链接，改为在当前位置打开全站登录悬浮窗
 import { useAuthDialog } from '@/composables/useAuthDialog'
@@ -69,6 +70,37 @@ const auth = useAppAuth()
 // ========== 页面数据态 ==========
 const profile = ref({ nick: '我', avatar: null })
 const favorites = ref([])
+/** 每日大赛（内容聚合工具）的收藏 / 浏览记录——接口不同，但归一成和媒体项一样的形状后合并展示 */
+const toolFavs = ref([])
+const toolSeen = ref([])
+
+/** 工具行 → 个人中心列表项（kind='tool'，靠 id 跳工具详情页） */
+function asToolItems(rows) {
+  return (Array.isArray(rows) ? rows : []).map((row) => ({
+    kind: 'tool',
+    id: row.id,
+    title: row.title,
+    cover: row.cover || '',
+    date: row.publishedAt || '',
+    category: row.category || ''
+  }))
+}
+
+/** 两个工具列表都失败静默：工具页自己也能看，个人中心不该因为它整块报错 */
+async function loadToolItems() {
+  try {
+    const fav = await fetchUserItems('fav', 1, 24)
+    toolFavs.value = asToolItems(fav && fav.rows)
+  } catch (err) {
+    toolFavs.value = []
+  }
+  try {
+    const seen = await fetchUserItems('seen', 1, 24)
+    toolSeen.value = asToolItems(seen && seen.rows)
+  } catch (err) {
+    toolSeen.value = []
+  }
+}
 const recentVideos = ref([])
 const recentPhotos = ref([])
 
@@ -118,6 +150,29 @@ const savedGrad = ref(readSavedGrad())
 const gradIndex = computed(() => savedGrad.value || hashGrad(profile.value.nick))
 const avatarGradClass = computed(() => (avatarIsImage.value ? '' : 'mm-g' + gradIndex.value))
 
+// ========== 分组折叠 ==========
+/**
+ * 每个（区块 + 平台）分组默认只占一行，横向滑动查看；点「展开全部」才铺开成网格。
+ * 不这么做的话浏览记录一多，个人中心会拉到几十屏。
+ */
+const openGroups = ref(new Set())
+
+function groupKey(secKey, label) {
+  return secKey + '|' + label
+}
+
+function isGroupOpen(secKey, label) {
+  return openGroups.value.has(groupKey(secKey, label))
+}
+
+function toggleGroup(secKey, label) {
+  const key = groupKey(secKey, label)
+  const next = new Set(openGroups.value)
+  if (next.has(key)) next.delete(key)
+  else next.add(key)
+  openGroups.value = next
+}
+
 // ========== 列表分组 ==========
 /**
  * 收藏项 / 最近浏览项的唯一键，用于 v-for 的 key 与取消收藏定位
@@ -125,6 +180,7 @@ const avatarGradClass = computed(() => (avatarIsImage.value ? '' : 'mm-g' + grad
  */
 function favKey(item) {
   if (!item) return ''
+  if (item.kind === 'tool') return 'tool:' + (item.id || '')
   if (item.kind === 'photo') {
     const seq = parseInt(item.i != null ? item.i : item.seq, 10) || 0
     return 'photo:' + (item.album || '') + '#' + seq
@@ -136,7 +192,14 @@ function favKey(item) {
  * 列表项的落地页地址
  * 视频 → /media#play=<id>（视频库按 hash 打开播放器）；图片 → /media/photos#album=<相册>&i=<序号>。
  */
+/** 列表缩略图：每日大赛用它自己的封面，媒体项继续走媒体的缩略图规则 */
+function thumbOf(item) {
+  if (!item) return ''
+  return item.kind === 'tool' ? item.cover || '' : itemThumbUrl(item)
+}
+
 function itemHref(item) {
+  if (item && item.kind === 'tool') return '/tool/mrds/post/' + encodeURIComponent(item.id || '')
   if (item && item.kind === 'photo') {
     const seq = parseInt(item.i != null ? item.i : item.seq, 10) || 0
     return '/media/photos#album=' + encodeURIComponent(item.album || '') + '&i=' + seq
@@ -154,13 +217,14 @@ const sections = computed(() => [
     key: 'fav',
     title: '收藏',
     mode: 'fav',
-    empty: '还没有收藏：在视频库 / 图片站点星标即可收藏',
-    countText: `视频 ${favVideos.value.length} · 图片 ${favPhotos.value.length}`,
+    empty: '还没有收藏：在视频库 / 图片站点星标，或在每日大赛点 ☆ 即可收藏',
+    countText: `视频 ${favVideos.value.length} · 图片 ${favPhotos.value.length} · 每日大赛 ${toolFavs.value.length}`,
     errorText: favError.value ? '收藏加载失败，请重试。' : '',
-    total: favVideos.value.length + favPhotos.value.length,
+    total: favVideos.value.length + favPhotos.value.length + toolFavs.value.length,
     groups: [
       { label: '视频', items: favVideos.value },
-      { label: '图片', items: favPhotos.value }
+      { label: '图片', items: favPhotos.value },
+      { label: '每日大赛', items: toolFavs.value }
     ]
   },
   {
@@ -169,12 +233,13 @@ const sections = computed(() => [
     title: '最近浏览',
     mode: 'recent',
     empty: '还没有浏览记录',
-    countText: `视频 ${recentVideos.value.length} · 图片 ${recentPhotos.value.length}`,
+    countText: `视频 ${recentVideos.value.length} · 图片 ${recentPhotos.value.length} · 每日大赛 ${toolSeen.value.length}`,
     errorText: recentError.value ? '最近浏览加载失败，请重试。' : '',
-    total: recentVideos.value.length + recentPhotos.value.length,
+    total: recentVideos.value.length + recentPhotos.value.length + toolSeen.value.length,
     groups: [
       { label: '视频', items: recentVideos.value },
-      { label: '图片', items: recentPhotos.value }
+      { label: '图片', items: recentPhotos.value },
+      { label: '每日大赛', items: toolSeen.value }
     ]
   }
 ])
@@ -264,6 +329,17 @@ async function load() {
  * 完整用户对象里的 favorites 为准对齐；DELETE /api/media/fav 是幂等接口。
  */
 async function removeFav(item) {
+  // 每日大赛的收藏在另一张表：先乐观摘掉，再调工具接口
+  if (item && item.kind === 'tool') {
+    toolFavs.value = toolFavs.value.filter((x) => String(x.id) !== String(item.id))
+    try {
+      await toggleFav(item.id, false)
+    } catch (err) {
+      showNotice('取消收藏失败，请重试')
+      loadToolItems()
+    }
+    return
+  }
   const key = favKey(item)
   const seq = parseInt(item.i != null ? item.i : item.seq, 10) || 0
   favorites.value = favorites.value.filter((f) => favKey(f) !== key)
@@ -539,6 +615,7 @@ onMounted(() => {
   // 埋点：page_view（targetType 'page' / targetKey '/me'），停留时长由 useMediaTrack 自动结算
   tk.pageView(PAGE_KEY)
   load()
+  loadToolItems()
   document.addEventListener('keydown', onKeydown)
 
   // 登录态恢复策略与 Account.vue:74-92 一致，只是失败时不跳登录页：
@@ -646,15 +723,26 @@ onUnmounted(() => {
             <div v-if="group.items.length" class="me-g">
               <h3 class="me-g__h">
                 {{ group.label }}<em>{{ group.items.length }}</em>
+                <button
+                  v-if="group.items.length > 1"
+                  type="button"
+                  class="me-g__more"
+                  @click="toggleGroup(sec.key, group.label)"
+                >
+                  {{ isGroupOpen(sec.key, group.label) ? '收起' : '展开全部 ' + group.items.length }}
+                </button>
               </h3>
-              <ul class="mm-list">
+              <ul
+                class="mm-list"
+                :class="isGroupOpen(sec.key, group.label) ? 'mm-list--grid' : 'mm-list--row'"
+              >
                 <li v-for="item in group.items" :key="favKey(item)" class="mm-item">
                   <!-- 站内深链：视频跳到视频库并打开播放器，图片跳到图片站并开灯箱 -->
                   <router-link class="mm-link" :to="itemHref(item)" :title="item.title || ''">
                     <span class="mm-th">
                       <img
-                        v-if="itemThumbUrl(item)"
-                        :src="itemThumbUrl(item)"
+                        v-if="thumbOf(item)"
+                        :src="thumbOf(item)"
                         alt=""
                         loading="lazy"
                         decoding="async"
@@ -666,7 +754,7 @@ onUnmounted(() => {
                       ></i>
                     </span>
                     <span class="mm-t">{{
-                      item.title || (item.kind === 'photo' ? '图片' : '视频')
+                      item.title || (item.kind === 'photo' ? '图片' : (item.kind === 'tool' ? '每日大赛条目' : '视频'))
                     }}</span>
                   </router-link>
                   <!-- 星标只在收藏分组出现：取消收藏 -->
@@ -1124,6 +1212,23 @@ onUnmounted(() => {
 }
 
 /* 分组标题后的数量 */
+.me-g__more {
+  margin-left: 8px;
+  padding: 1px 8px;
+  font-size: 11px;
+  line-height: 1.6;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg-dim);
+  cursor: pointer;
+}
+
+.me-g__more:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .me-g__h em {
   margin-left: 4px;
   font-style: normal;
@@ -1134,12 +1239,30 @@ onUnmounted(() => {
 
 /* ---------- 卡片列表 ---------- */
 .mm-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 10px;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* 默认态：单行横向滑动（个人中心不能被浏览记录拉成几十屏） */
+.mm-list--row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+
+.mm-list--row > .mm-item {
+  flex: 0 0 150px;
+}
+
+/* 展开后：原有的网格平铺 */
+.mm-list--grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
 }
 
 .mm-item {
@@ -1560,4 +1683,12 @@ onUnmounted(() => {
     font-size: 22px;
   }
 }
+
+/* ---------- 每日大赛收藏（内容聚合工具）：横向缩略图列表 ---------- */
+.me-tool-list { display: flex; gap: 10px; overflow-x: auto; padding: 4px 0 6px; scrollbar-width: thin; }
+.me-tool-card { flex: 0 0 132px; text-decoration: none; color: inherit; }
+.me-tool-cover { display: block; width: 100%; aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden; background: #1b2027; }
+.me-tool-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.me-tool-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 6px; font-size: 12px; line-height: 1.4; }
+.me-tool-meta { display: block; margin-top: 2px; font-size: 11px; opacity: .6; }
 </style>

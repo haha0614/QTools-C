@@ -19,7 +19,7 @@
         @click="emit('open', it.id)"
       >
         <span class="rthumb">
-          <img :src="api.videoThumbUrl(it.id)" alt="" loading="lazy" decoding="async" />
+          <img :src="api.videoThumbUrl(it.id, it.poster)" alt="" loading="lazy" decoding="async" />
           <i v-if="pctOf(it) > 0" class="rprog" :style="{ width: pctOf(it) + '%' }"></i>
         </span>
         <span class="rtitle">{{ it.title }}</span>

@@ -43,13 +43,30 @@ function videoNames(video) {
   return list(video && video.persons).map(labelOf).filter(Boolean)
 }
 
-function bump(map, name, rating, n) {
+/** 一档的计数形状：{videos, albums, photos}（P6.99：人物墙在筛选下要显示与详情页一致的三个数） */
+function emptyBucket() {
+  return { videos: 0, albums: 0, photos: 0 }
+}
+
+/**
+ * 把一档的计数累加进人物的 slot
+ *
+ * 兼容两种后端形态：
+ *   · 新版 {@code {videos, albums, photos}}（P6.99）；
+ *   · 旧版数字（只有「有多少件作品」，没有拆分）→ 全部记到 albums，仅用于「有没有作品」的判定。
+ */
+function bump(map, name, rating, n, bucket) {
   let slot = map.get(name)
   if (!slot) {
     slot = Object.create(null)
     map.set(name, slot)
   }
-  slot[rating] = (slot[rating] || 0) + n
+  const cur = slot[rating] || emptyBucket()
+  const value = bucket || { albums: n }
+  cur.videos += num(value.videos)
+  cur.albums += num(value.albums)
+  cur.photos += num(value.photos)
+  slot[rating] = cur
 }
 
 /**
@@ -70,8 +87,10 @@ export function buildPersonRatings(index) {
     if (!name || !byRating || typeof byRating !== 'object') continue
     fromBackend = true
     for (const key of Object.keys(byRating)) {
-      const n = num(byRating[key])
-      if (n > 0) bump(map, name, key, n)
+      const raw = byRating[key]
+      const bucket = raw && typeof raw === 'object' ? raw : null
+      const n = bucket ? num(bucket.videos) + num(bucket.albums) : num(raw)
+      if (n > 0) bump(map, name, key, n, bucket)
     }
   }
   if (fromBackend) return map
@@ -79,11 +98,12 @@ export function buildPersonRatings(index) {
   // 2) 兜底：老索引没有 byRating → 从可见相册 / 视频反推（索引里没有的条目本来就不该计入）
   for (const album of list(doc.albums)) {
     const rating = ratingOf(album)
-    for (const name of albumNames(album)) bump(map, name, rating, 1)
+    const bucket = { albums: 1, photos: num(album.count) }
+    for (const name of albumNames(album)) bump(map, name, rating, 1, bucket)
   }
   for (const video of list(doc.videos)) {
     const rating = ratingOf(video)
-    for (const name of videoNames(video)) bump(map, name, rating, 1)
+    for (const name of videoNames(video)) bump(map, name, rating, 1, { videos: 1 })
   }
   return map
 }
@@ -99,7 +119,21 @@ export function buildPersonRatings(index) {
 export function personRatingCount(map, name, rating) {
   if (!map || typeof map.get !== 'function') return 0
   const slot = map.get(text(name))
-  return slot ? num(slot[rating]) : 0
+  const bucket = slot ? slot[rating] : null
+  return bucket ? num(bucket.videos) + num(bucket.albums) : 0
+}
+
+/**
+ * 该人物在指定分级下的三个数（人物墙在筛选态下显示它们，与人物页的分页 total 同源同数）
+ *
+ * @returns {{videos:number, albums:number, photos:number}|null} 该档下没有作品 → null
+ */
+export function personRatingBucket(map, name, rating) {
+  if (!map || typeof map.get !== 'function') return null
+  const slot = map.get(text(name))
+  const bucket = slot ? slot[rating] : null
+  if (!bucket || num(bucket.videos) + num(bucket.albums) <= 0) return null
+  return { videos: num(bucket.videos), albums: num(bucket.albums), photos: num(bucket.photos) }
 }
 
 /**

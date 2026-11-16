@@ -9,18 +9,22 @@ import {
   buildPersonRatings,
   countPersonsByRating,
   matchesPersonRating,
+  personRatingBucket,
   personRatingCount
 } from './personRating.js'
 
-/** 后端 P6.09 的形态：people[].byRating 只含 > 0 的档位 */
+/**
+ * 后端 P6.99 的形态：people[].byRating 只含 > 0 的档位，每档是
+ * {@code {videos, albums, photos}}（人物页分页 total 的同一份来源）
+ */
 const INDEX_BACKEND = {
   ratings: [
     { value: 'general', label: '大众级', count: 3 },
     { value: 'guidance', label: '家长指导级', count: 1 }
   ],
   people: [
-    { name: '念念', count: 2, videos: 1, byRating: { general: 2, guidance: 1 } },
-    { name: '小林', count: 1, videos: 0, byRating: { general: 1 } }
+    { name: '念念', count: 2, videos: 1, byRating: { general: { albums: 2, videos: 0, photos: 58 }, guidance: { albums: 1, videos: 0, photos: 30 } } },
+    { name: '小林', count: 1, videos: 0, byRating: { general: { albums: 1, videos: 0, photos: 5 } } }
   ],
   albums: [{ id: 'a1', person: '念念', contentRating: 'general' }],
   videos: [{ id: 'v1', persons: [{ id: 1, name: '念念' }], contentRating: 'guidance' }]
@@ -38,12 +42,31 @@ const INDEX_LEGACY = {
 
 test('buildPersonRatings：后端 byRating 优先（口径直接采用，不再二次推导）', () => {
   const map = buildPersonRatings(INDEX_BACKEND)
-  assert.deepEqual({ ...map.get('念念') }, { general: 2, guidance: 1 })
-  assert.deepEqual({ ...map.get('小林') }, { general: 1 })
+  assert.deepEqual({ ...map.get('念念') }, {
+    general: { videos: 0, albums: 2, photos: 58 },
+    guidance: { videos: 0, albums: 1, photos: 30 }
+  })
+  assert.deepEqual({ ...map.get('小林') }, { general: { videos: 0, albums: 1, photos: 5 } })
   // 相册 / 视频里那一份**不参与**（否则念念会变成 general 3 / guidance 2）
   assert.equal(personRatingCount(map, '念念', 'general'), 2)
   assert.equal(personRatingCount(map, '念念', 'guidance'), 1)
   assert.equal(personRatingCount(map, '念念', 'restricted'), 0)
+})
+
+test('personRatingBucket：卡片上要显示的三个数与人物页分页 total 同源', () => {
+  const map = buildPersonRatings(INDEX_BACKEND)
+  assert.deepEqual(personRatingBucket(map, '念念', 'general'), { videos: 0, albums: 2, photos: 58 })
+  assert.deepEqual(personRatingBucket(map, '小林', 'general'), { videos: 0, albums: 1, photos: 5 })
+  // 该档下没有作品 → null（调用方据此显示 0，而不是拿完整口径硬凑）
+  assert.equal(personRatingBucket(map, '念念', 'restricted'), null)
+  assert.equal(personRatingBucket(map, '不存在的人', 'general'), null)
+})
+
+test('buildPersonRatings：旧后端只给数字也认（按「册」折算，只用于有没有作品的判定）', () => {
+  const legacyNumeric = { people: [{ name: '念念', byRating: { general: 2 } }] }
+  const map = buildPersonRatings(legacyNumeric)
+  assert.equal(personRatingCount(map, '念念', 'general'), 2)
+  assert.deepEqual(personRatingBucket(map, '念念', 'general'), { videos: 0, albums: 2, photos: 0 })
 })
 
 test('buildPersonRatings：老索引没有 byRating → 从可见相册 / 视频反推', () => {

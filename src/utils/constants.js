@@ -30,5 +30,7 @@ export const APP_INTRO = `${APP_INFO.name}是一个纯前端运算的在线工�
 export const FALLBACK_TOOL_IDS = {
   '/tool/json': 1,
   '/tool/text-count': 2,
-  '/tool/pwd-gen': 3
+  '/tool/pwd-gen': 3,
+  '/tool/watermark': 9,
+  '/tool/mrds': 10
 }

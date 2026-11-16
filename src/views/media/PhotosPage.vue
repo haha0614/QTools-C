@@ -710,7 +710,11 @@ function singleSection(g) {
     key: g.name,
     name: g.name,
     title: g.name,
-    meta: count + ' 套 · ' + photos + ' 张',
+    meta:
+      count + ' 套 · ' + photos + ' 张' +
+      (Number(g.totalCount) > count
+        ? '（名下共 ' + Number(g.totalCount) + ' 套，当前筛选下可见 ' + count + ' 套）'
+        : ''),
     members: [g],
     albums: g.albums,
     count: count,
@@ -801,7 +805,17 @@ const wallModel = computed(() => {
     const all = searching || open === 'all'
     const hidden = open === 'off' && !searching
     const visible = hidden ? [] : all ? list : list.slice(0, cols.value)
-    items.push({ sec: sec, open: open, searching: searching, canMore: all || list.length > cols.value, visible: visible })
+    // 表头数字必须等于这一节真正能渲染的相册数：上游 people[].count 是「名下总数」，
+    // 不含分级筛选，直接用它会出现「写 137 套、只渲染 2 张」。
+    const shownPhotos = list.reduce((s, it) => s + (Number(it.a.count) || 0), 0)
+    const secView = Object.assign({}, sec, {
+      count: list.length,
+      photos: shownPhotos,
+      meta:
+        list.length + ' 套 · ' + shownPhotos + ' 张' +
+        (Number(sec.count) > list.length ? '（名下共 ' + Number(sec.count) + ' 套，当前筛选下可见 ' + list.length + ' 套）' : '')
+    })
+    items.push({ sec: secView, open: open, searching: searching, canMore: all || list.length > cols.value, visible: visible })
     sections += 1
     cards += visible.length
     visible.forEach((it) => {

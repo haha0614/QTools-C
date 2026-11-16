@@ -553,6 +553,17 @@ export function listPersons(options) {
   return mediaRequest({ url: '/persons', silent: opt.silent !== false })
 }
 
+/**
+ * 当前访问者可见的内容分级（P6.99）：[{value,label}]，不带 count
+ *
+ * 后端：GET /api/media/ratings —— 轻量版「索引 ratings[]」，
+ * 供那些拿不到整包索引的页面（人物详情深链直达）渲染分级筛选条。
+ */
+export function getRatings(options) {
+  const opt = options || {}
+  return mediaRequest({ url: '/ratings', silent: opt.silent !== false })
+}
+
 /** 单个人物 后端：GET /api/media/person/{id} */
 export function getPerson(id, options) {
   const opt = options || {}
@@ -722,8 +733,21 @@ function pad4(n) {
   return String(n == null ? '' : n).padStart(4, '0')
 }
 
-/** 视频缩略图：app.js:862 `${API}/thumb/v/${v.id}`（profile.js:84 同规则） */
-export function videoThumbUrl(id) {
+/**
+ * 视频缩略图。
+ *
+ * <p>P6.61 约定「内容哈希优先」在这里同样成立：服务端 `/media/thumb/v/<key>` 对
+ * <b>内容哈希</b> 一律命中，而对部分老 id 会 404（老命名的 thumbs/v/<id>.jpg 反而触发 404）。
+ * 所以只要能拿到 `poster`（形如 `thumbs/v/<16位hash>.jpg`），就用哈希；拿不到才退回 id。</p>
+ *
+ * @param {string} id 视频 id
+ * @param {string} [poster] 索引里的 poster 相对路径，可为空
+ */
+export function videoThumbUrl(id, poster) {
+  const matched = /thumbs\/v\/([0-9a-f]{16})\.jpg/i.exec(String(poster == null ? '' : poster))
+  if (matched) {
+    return API_BASE + '/media/thumb/v/' + matched[1].toLowerCase()
+  }
   return API_BASE + '/media/thumb/v/' + encodeURIComponent(String(id == null ? '' : id))
 }
 
@@ -927,7 +951,7 @@ export function itemThumbUrl(item) {
     const byHash = photoThumbUrlByHash(item.hash)
     return byHash || photoThumbUrl(item.album || '', item.i)
   }
-  if (item.id) return videoThumbUrl(item.id)
+  if (item.id) return videoThumbUrl(item.id, item.poster)
   return ''
 }
 
@@ -973,6 +997,7 @@ const mediaApi = {
   deleteFilter,
   // 人物（P3-B）
   listPersons,
+  getRatings,
   getPerson,
   listPersonVideos,
   listPersonAlbums,

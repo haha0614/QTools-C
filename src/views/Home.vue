@@ -42,7 +42,7 @@ const GUIDE_STEPS = [
 
 // 后端 tool_info 暂无分类字段，先按工具 id 硬编码映射（1/2 → 文本、3 → 安全、4 → 媒体）；
 // 后续后端补上 category 字段后改为直接读 item.category，删除这张映射表即可。
-const CATEGORY_BY_ID = { 1: 'text', 2: 'text', 3: 'security', 4: 'media', 5: 'encode', 6: 'encode', 7: 'dev', 8: 'dev' }
+const CATEGORY_BY_ID = { 1: 'text', 2: 'text', 3: 'security', 4: 'media', 5: 'encode', 6: 'encode', 7: 'dev', 8: 'dev', 9: 'media' }
 
 // 内置兜底数据：接口不可用时使用，id 与后端 tool_info 对齐以便沿用 id → 分类映射
 const FALLBACK_TOOLS = [
@@ -119,6 +119,15 @@ const FALLBACK_TOOLS = [
     icon: 'Timer',
     category: 'dev',
     sort: 8
+  },
+  {
+    id: 9,
+    toolName: '抖音去水印',
+    toolDesc: '粘贴抖音分享链接，取回无水印原片直链',
+    toolRoute: '/tool/watermark',
+    icon: 'Download',
+    category: 'media',
+    sort: 9
   }
 ]
 

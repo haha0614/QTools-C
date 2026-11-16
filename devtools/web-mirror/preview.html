@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>工具原型 · 内容聚合</title>
+<style>
+  :root{--bg:#0f1115;--panel:#161a20;--line:#252b34;--fg:#e8ecf2;--dim:#8b94a3;--accent:#3b82f6;--accent-soft:#1e3a8a33}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+  header{position:sticky;top:0;z-index:5;background:rgba(15,17,21,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:14px 24px}
+  .h1{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:600}
+  .badge{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:#93c5fd}
+  .badge.ok{background:#16a34a22;color:#86efac}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  .chip{font-size:12px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--dim);cursor:pointer}
+  .chip.on{background:var(--accent-soft);border-color:transparent;color:#93c5fd}
+  input.search{margin-left:auto;width:240px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:#1b2027;color:var(--fg);outline:none}
+  main{padding:18px 24px 20px}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;transition:.18s;display:flex;flex-direction:column}
+  .card:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .cover{position:relative;aspect-ratio:16/10;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:13px;letter-spacing:.5px}
+  .play{position:absolute;right:10px;bottom:10px;width:30px;height:30px;border-radius:50%;background:rgba(8,10,14,.62);border:1px solid rgba(255,255,255,.28);display:flex;align-items:center;justify-content:center;font-size:11px}
+  .body{padding:10px 12px 12px}
+  .title{font-size:13.5px;line-height:1.45;height:2.9em;overflow:hidden}
+  .tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+  .tag{font-size:10.5px;padding:1px 7px;border-radius:999px;background:#ffffff14;color:#cfd6e2}
+  .meta{margin-top:8px;color:var(--dim);font-size:11.5px;display:flex;justify-content:space-between}
+  .mask{position:fixed;inset:0;background:rgba(6,8,12,.72);display:none;align-items:center;justify-content:center;padding:24px;z-index:20}
+  .mask.on{display:flex}
+  .sheet{width:min(880px,100%);max-height:calc(100vh - 48px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px}
+  .player{aspect-ratio:16/9;background:radial-gradient(120% 120% at 30% 20%,#1d2430,#0b0e13);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--dim);border-bottom:1px solid var(--line);text-align:center;padding:0 20px}
+  .player .big{width:64px;height:64px;border-radius:50%;border:1px solid #ffffff2e;display:flex;align-items:center;justify-content:center;font-size:20px;color:#e8ecf2}
+  .detail{padding:16px 18px 20px}
+  .detail h2{margin:0 0 8px;font-size:17px;line-height:1.5}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .btn{padding:7px 14px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--dim);font-size:13px;cursor:pointer}
+  .foot{padding:0 24px 40px;color:var(--dim);font-size:12px;line-height:1.9}
+</style>
+</head>
+<body>
+<header>
+  <div class="h1">每日大赛 · 内容聚合 <span class="badge">原型</span> <span class="badge ok">无广告</span></div>
+  <div class="filters" id="filters"></div>
+</header>
+<main><div class="grid" id="grid"></div></main>
+<div class="foot">
+  这是<b>承载页原型</b>：内容来自源站，但页面是我们自己的 —— 去广告、我们的分类与标签、我们的收藏与播放进度。<br>
+  正式版接播放代理：点播放时后端实时换取签名地址，前端用我们自己的播放器播放（倍速 / 记忆进度 / 画中画）。<br>
+  数据：本轮真实抓取的 30 条条目（标题、标签、日期、分类均来自源站，封面暂用色块占位）。
+</div>
+<div class="mask" id="mask"><div class="sheet">
+  <div class="player"><div class="big">▶</div><div>播放器接这里：后端取签名 m3u8 → 反代分片 → hls.js</div></div>
+  <div class="detail">
+    <h2 id="dTitle"></h2>
+    <div class="tags" id="dTags"></div>
+    <div class="row"><span class="tag" id="dMeta"></span></div>
+    <div class="row">
+      <button class="btn">☆ 收藏（待接）</button>
+      <button class="btn">⬇ 下载入库（待接）</button>
+      <button class="btn">⏱ 继续上次进度（待接）</button>
+      <button class="btn" id="dClose">关闭</button>
+    </div>
+  </div>
+</div></div>
+<script>
+const ITEMS = [{"id":"201831","title":"以我之名，为LPL加油","category":"投稿原创","tags":["LPL","电竞","BLG"],"date":"2026-11-14","hue":3},{"id":"201159","title":"推特高颜值福利姬 小小绘 性感女神臣服金主舔脚侍奉 后入爆操翘臀抖乳不停","category":"投稿原创","tags":["推特","美乳","福利姬","高颜值"],"date":"2026-11-10","hue":27},{"id":"201977","title":"我们是冠军！BLG史上最有含金量的冠军 一穿四全灭韩王 登顶世界之巅！","category":"投稿原创","tags":["LPL","英雄联盟","BLG","世界冠军"],"date":"2026-11-15","hue":181},{"id":"193721","title":"广纳精英人才 共建AI成人短剧创作团队","category":"投稿原创","tags":[],"date":"2026-09-17","hue":13},{"id":"201545","title":"推特萝莉福利姬 占星猫 长文自爆父亲出轨母重病 被迫下海卖片赚医药费","category":"投稿原创","tags":["推特","自慰","萝莉","下海"],"date":"2026-11-12","hue":325},{"id":"201954","title":"日本地雷妹凌晨推特直播跳楼 坐在六楼栏杆后仰坠落 一声巨响后原地去世！","category":"投稿原创","tags":["直播","跳楼","日本","推特"],"date":"2026-11-14","hue":42},{"id":"201821","title":"初代网红夫妻 高迪与大美离婚 出轨视频曝光 十一年相伴终成原告被告！","category":"投稿原创","tags":["网红","吃瓜","出轨"],"date":"2026-11-14","hue":193},{"id":"200843","title":"内娱人气女明星 田曦薇 身穿一袭白裙犹如仙女下凡 网友拍到疑似走光完整视频流出","category":"投稿原创","tags":["吃瓜","走光","演员","热搜"],"date":"2026-11-07","hue":199},{"id":"201424","title":"健身房小仙女不听劝 乱丢哑铃被腕豪哥劝告 爆发冲突被邦邦两拳当场放到！","category":"投稿原创","tags":["吃瓜","小仙女","健身房","冲突"],"date":"2026-11-11","hue":32},{"id":"201973","title":"每日大赛-nide_xiaogou主题大赛","category":"投稿原创","tags":["巨乳","直播","自慰","白虎"],"date":"2026-11-14","hue":329},{"id":"201426","title":"校园爆料！变态男同学课堂PPT公开人生目标被爱我的女生物理吃掉 剖腹取肝挖眼球炒熟 雌堕切魔丸发帖求吃","category":"投稿原创","tags":["大学生","吃瓜","热搜","病娇男"],"date":"2026-11-11","hue":138},{"id":"201350","title":"OnlyFans台湾巨乳女神 辛尤里和童帝的初次海边约会与厨房性爱体验","category":"投稿原创","tags":["Onlyfans","巨乳","约会","辛尤里"],"date":"2026-11-11","hue":70},{"id":"201135","title":"陕西西安沣东新城 猛人驾驶挖掘机直冲政务服务中心一顿狂拆 现场多人围观","category":"投稿原创","tags":["吃瓜","热搜","陕西","挖掘机"],"date":"2026-11-09","hue":195},{"id":"200781","title":"抖音霸王龙舞步转场挑战爆火 福利姬姐姐们裸舞混入 场面失控彻底崩坏！","category":"投稿原创","tags":["抖音","吃瓜","露出","裸舞"],"date":"2026-11-06","hue":153},{"id":"201069","title":"LOL英雄联盟S16全球总决赛 BLG鏖战四局3-1终结T1晋级 一朝破局顶峰相见","category":"投稿原创","tags":["LPL","热搜","电竞","英雄联盟"],"date":"2026-11-09","hue":297},{"id":"201040","title":"OnlyFans巨乳福利姬 Npxvip 11.8 订阅新作 白丝美腿大开自慰 炮机猛插粉穴淫水泄闸狂喷","category":"投稿原创","tags":["Onlyfans","巨乳","福利姬","白虎"],"date":"2026-11-09","hue":200},{"id":"200950","title":"AI成人短剧 存在感:零 第10集 杨小姐面试会议室被隐形男主趴桌猛操 强撑演戏独白泪流满面","category":"投稿原创","tags":["明星","白虎","高颜值","AI"],"date":"2026-11-08","hue":110},{"id":"200612","title":"香港情侣三周年纪念日 男友浪漫亮出女友出轨证据 纯爱战士心碎得无声","category":"投稿原创","tags":["网红","香港","出轨","谢彦祖"],"date":"2026-11-06","hue":196},{"id":"200413","title":"MyFans日本约炮大神 kuzu 携手女同姐妹花万圣节狂欢 穿戴式假屌暴击嫩穴！","category":"投稿原创","tags":["约炮","3p","日本","姐妹花"],"date":"2026-11-04","hue":89},{"id":"200897","title":"赛友投稿 山西榆次大学城小情侣做爱不拉窗帘 被女赛友全程拍摄！","category":"投稿原创","tags":["情侣","大学生","吃瓜","偷拍"],"date":"2026-11-07","hue":181},{"id":"201436","title":"每日大赛-群交主题大赛","category":"投稿原创","tags":["反差","少妇","母狗","淫乱"],"date":"2026-11-11","hue":308},{"id":"47559","title":"每日大赛 最新网址 牢记回家路 解决吃瓜看片难题","category":"投稿原创","tags":[],"date":"2024-05-25","hue":267},{"id":"199930","title":"日本涩谷万圣节 红西装小丑与哈莉奎茵停车场做爱 口爆后入玩的不亦乐乎 完整视频曝光！","category":"投稿原创","tags":["吃瓜","野战","偷拍","户外"],"date":"2026-11-01","hue":50},{"id":"161308","title":"每日大赛2025原创自拍视频合作计划","category":"投稿原创","tags":[],"date":"2025-12-15","hue":44},{"id":"201976","title":"OnlyFans越南高颜值网黄 yuumeilyn虞梅 化身性感小狐妖 户外跪姿挑逗诱惑至极","category":"投稿原创","tags":["Onlyfans","网黄","高颜值","越南"],"date":"2026-11-15","hue":128},{"id":"201980","title":"推特日本福利姬 BlueMoon COS绝区零维琳娜 手口侍奉掰腿打桩浓精射满骚穴","category":"投稿原创","tags":["日本","推特","美乳","福利姬"],"date":"2026-11-15","hue":340},{"id":"201982","title":"推特高颜值TS伪娘 怡华 化身甜软小女仆吃鸡深喉 大屌后入爆操肛门内射外溢","category":"投稿原创","tags":["TS","伪娘","推特","高颜值"],"date":"2026-11-15","hue":86},{"id":"201984","title":"糖心Vlog极品网红 小悠yo COS阿芙浓精灌穴 肉棒深插水润蜜穴无套内射色气十足","category":"投稿原创","tags":["白虎","COS","糖心vlog","小悠yo"],"date":"2026-11-15","hue":192},{"id":"201828","title":"步兵统领PMV混剪 精选AV合集6 持续暴力玩虐女优 日式配音韵味拉满","category":"投稿原创","tags":["PMV","潮喷","AV","混剪"],"date":"2026-11-15","hue":204},{"id":"201921","title":"国产精品约炮 杏吧蓝天 约到18岁精神小妹黄毛萝莉 狠插紧致蜜穴内射灌满","category":"投稿原创","tags":["约炮","国产","精神小妹","杏吧"],"date":"2026-11-15","hue":93}];
+const CATS = ['全部'].concat(Array.from(new Set(ITEMS.map(function (i) { return i.category; }))));
+const TAGS = Array.from(new Set(ITEMS.flatMap(function (i) { return i.tags; }))).slice(0, 14);
+var cat = '全部', tag = '', q = '';
+var filters = document.getElementById('filters');
+
+function renderFilters() {
+  filters.innerHTML = '';
+  CATS.forEach(function (c) {
+    var b = document.createElement('button');
+    b.className = 'chip' + (c === cat && !tag ? ' on' : '');
+    b.textContent = c;
+    b.onclick = function () { cat = c; tag = ''; renderFilters(); render(); };
+    filters.appendChild(b);
+  });
+  var sep = document.createElement('span');
+  sep.style.cssText = 'width:1px;height:16px;background:#252b34;margin:0 4px';
+  filters.appendChild(sep);
+  TAGS.forEach(function (t) {
+    var b = document.createElement('button');
+    b.className = 'chip' + (t === tag ? ' on' : '');
+    b.textContent = '#' + t;
+    b.onclick = function () { tag = tag === t ? '' : t; renderFilters(); render(); };
+    filters.appendChild(b);
+  });
+  var s = document.createElement('input');
+  s.className = 'search';
+  s.placeholder = '搜索标题 / 标签…';
+  s.value = q;
+  s.oninput = function (e) { q = e.target.value.trim(); render(); };
+  filters.appendChild(s);
+}
+
+function render() {
+  var grid = document.getElementById('grid');
+  var list = ITEMS.filter(function (i) {
+    var okCat = cat === '全部' || i.category === cat;
+    var okTag = !tag || i.tags.indexOf(tag) >= 0;
+    var okQ = !q || i.title.indexOf(q) >= 0 || i.tags.some(function (t) { return t.indexOf(q) >= 0; });
+    return okCat && okTag && okQ;
+  });
+  grid.innerHTML = list.map(function (i) {
+    var c1 = 'hsl(' + i.hue + ',45%,26%)';
+    var c2 = 'hsl(' + ((i.hue + 40) % 360) + ',40%,16%)';
+    return '<div class="card" data-id="' + i.id + '">' +
+      '<div class="cover" style="background:linear-gradient(135deg,' + c1 + ',' + c2 + ')"><span>' + i.category + '</span><span class="play">▶</span></div>' +
+      '<div class="body"><div class="title">' + i.title + '</div>' +
+      '<div class="tags">' + i.tags.map(function (t) { return '<span class="tag">#' + t + '</span>'; }).join('') + '</div>' +
+      '<div class="meta"><span>#' + i.id + '</span><span>' + i.date + '</span></div></div></div>';
+  }).join('');
+  Array.prototype.forEach.call(grid.querySelectorAll('.card'), function (el) {
+    el.onclick = function () { open(el.getAttribute('data-id')); };
+  });
+}
+
+function open(id) {
+  var i = ITEMS.filter(function (x) { return x.id === id; })[0];
+  if (!i) return;
+  document.getElementById('dTitle').textContent = i.title;
+  document.getElementById('dTags').innerHTML = i.tags.map(function (t) { return '<span class="tag">#' + t + '</span>'; }).join('');
+  document.getElementById('dMeta').textContent = i.category + ' · ' + i.date + ' · 源站 id ' + i.id;
+  document.getElementById('mask').classList.add('on');
+}
+
+document.getElementById('mask').onclick = function (e) { if (e.target.id === 'mask') this.classList.remove('on'); };
+document.getElementById('dClose').onclick = function () { document.getElementById('mask').classList.remove('on'); };
+renderFilters();
+render();
+</script>
+</body>
+</html>

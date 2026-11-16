@@ -33,6 +33,11 @@ const api = useMediaApi()
 const coverUrl = computed(() => {
   const rel = props.album && props.album.cover
   if (rel && String(rel).indexOf('thumbs/') === 0) return api.thumbUrlFromRel(rel)
+  // 没有 cover 时优先用「册内第一张图的内容哈希」走 p8：
+  // 按 seq 定位（photoThumbUrl(id, 0)）会因 seq 漂移 / 该册序号不从 0 开始而 404 →「缺少缩略图」。
+  const photos = Array.isArray(props.album && props.album.photos) ? props.album.photos : []
+  const withHash = photos.find((x) => x && /^[0-9a-f]{16}$/i.test(String(x.hash || '')))
+  if (withHash) return api.photoThumbUrl(props.album.id, String(withHash.hash))
   return api.photoThumbUrl(props.album.id, 0)
 })
 const loaded = ref(false)

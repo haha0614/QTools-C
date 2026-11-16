@@ -76,6 +76,26 @@ const routes = [
         component: () => import('../views/tool/CronTool.vue'),
         meta: { title: 'Cron 解析' }
       },
+      {
+        path: 'tool/watermark',
+        name: 'ToolWatermark',
+        component: () => import('../views/tool/WatermarkTool.vue'),
+        meta: { title: '抖音去水印' }
+      },
+      {
+        // P6.110：内容聚合（承载页是我们自己的，内容来自源站）
+        path: 'tool/mrds',
+        name: 'ToolMrds',
+        component: () => import('../views/tool/MrdsTool.vue'),
+        meta: { title: '每日大赛' }
+      },
+      {
+        // P6.112：条目深链（与列表弹窗共用 MrdsDetail，刷新/分享都不丢）
+        path: 'tool/mrds/post/:id',
+        name: 'ToolMrdsPost',
+        component: () => import('../views/tool/MrdsPostPage.vue'),
+        meta: { title: '条目详情' }
+      },
 
       // ---------- 媒体站（手写静态页 → Vue，迁移中） ----------
       // 路由挂在 /media 下。服务端已配合改成「真实文件优先、其余回落 SPA」：
@@ -163,8 +183,11 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
-  // 每次切换路由回到顶部（#tools 等锚点的滚动由 AppShell 负责：首页索引要等接口数据渲染）
-  scrollBehavior() {
+  // 每次切换路由回到顶部（#tools 等锚点的滚动由 AppShell 负责：首页索引要等接口数据渲染）。
+  // 例外：带 restore=1 的是「从整页详情返回列表」，位置由列表页自己恢复，
+  // 这里不能抢先滚到 0（之前就是它把恢复好的位置又顶回顶部的）。
+  scrollBehavior(to) {
+    if (to.query && to.query.restore === '1') return false
     return { top: 0 }
   }
 })

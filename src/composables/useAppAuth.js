@@ -42,6 +42,23 @@ function removeStorage(key) {
   }
 }
 
+/* P6.99：把 token 同步到同源 cookie —— <img src> 不会带 Authorization 头，
+   不这么做的话封面 / 头像 / 缩略图都是匿名请求，登录用户看自己的
+   guidance / restricted 相册时图片一律 404（头像变首字、卡片没背景）。
+   后端 BearerTokens 在没有 Authorization 头时读这个 cookie。 */
+const TOKEN_COOKIE = 'qtools_app_token'
+
+function syncTokenCookie(token) {
+  if (typeof document === 'undefined') return
+  try {
+    const value = token ? encodeURIComponent(token) : ''
+    const maxAge = token ? 7 * 24 * 3600 : 0
+    document.cookie = TOKEN_COOKIE + '=' + value + '; Path=/; Max-Age=' + maxAge + '; SameSite=Lax'
+  } catch {
+    /* cookie 写不进去（被禁用）：图片退回匿名口径，页面本身不受影响 */
+  }
+}
+
 /** P6.27：登录态变化后整页刷新（索引、收藏、列表都按账号算，不能只改内存里的 token） */
 function reloadSoon() {
   if (typeof window === 'undefined') return
@@ -55,6 +72,10 @@ const state = reactive({
   loading: false,
   restored: false
 })
+
+// 页面加载时补一次：老会话（只写过 localStorage）刷新后 cookie 也要跟上，
+// 否则这一屏的图片仍然按匿名请求发出去。
+syncTokenCookie(state.token)
 
 /** 角色变化后刷新站端策略（失败静默：拿不到就按旧口径走，不影响主流程） */
 function refreshRolePolicy() {
@@ -71,6 +92,7 @@ function clearAuth() {
   state.token = ''
   state.user = null
   removeStorage(TOKEN_KEY)
+  syncTokenCookie('')
   removeStorage(USER_KEY)
   refreshRolePolicy()
 }
@@ -83,6 +105,7 @@ function applySession(data) {
   if (data && data.token) {
     state.token = data.token
     writeStorage(TOKEN_KEY, data.token)
+  syncTokenCookie(data.token)
   }
   if (data && data.user) {
     state.user = data.user

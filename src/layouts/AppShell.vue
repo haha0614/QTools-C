@@ -28,7 +28,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 // 图标按名显式导入（本项目没有 unplugin-auto-import，模板里不能凭空出现组件名）
-import { House, List, Menu, Moon, Picture, Setting, Sunny, User, UserFilled, VideoPlay } from '@element-plus/icons-vue'
+import { Film, House, List, Menu, Moon, Picture, Setting, Sunny, User, UserFilled, VideoPlay } from '@element-plus/icons-vue'
 import BrandMark from '@/components/BrandMark.vue'
 // P5.70：全局登录悬浮窗（全站只挂这一次）+ 它的开关单例
 import AuthLoginDialog from '@/components/AuthLoginDialog.vue'
@@ -186,7 +186,10 @@ const NAV_GROUPS = [
     items: [
       { to: '/', label: '首页', icon: House },
       // 独立页面 /tools（首页 Hero 的「开始使用」仍走 /#tools 锚点，与侧栏无关）
-      { to: '/tools', label: '全部工具', icon: Menu }
+      { to: '/tools', label: '全部工具', icon: Menu },
+      // P6.111：内容聚合工具（承载页是我们自己的，内容来自源站）—— 单独给一个入口，
+      // 它不属于「媒体库」（那是本地盘），但同样是长时间浏览的场景，所以放在工具组末尾。
+      { to: '/tool/mrds', label: '每日大赛', icon: Film, online: true }
     ]
   },
   {

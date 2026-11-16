@@ -221,7 +221,15 @@ import PersonAvatarDialog from './PersonAvatarDialog.vue'
 import PageToast from './PageToast.vue'
 import { usePageToast } from './usePageToast.js'
 import { useMediaEditPolicy } from '@/composables/useMediaEditPolicy'
-import { clearPersonAvatar, clearPersonBg, errorText, setPersonAvatar, setPersonBg } from './video/personApi'
+import {
+  clearPersonAvatar,
+  clearPersonBg,
+  clearPersonViewCover,
+  errorText,
+  setPersonAvatar,
+  setPersonBg,
+  setPersonViewCover
+} from './video/personApi'
 // P5.72：背景模糊度滑块 —— 值域 / 遮罩联动 / 持久化的唯一实现（单测 personBgBlur.test.mjs）
 import { blurCssVars, clampBlur, readStoredBlur, saveStoredBlur } from './personBgBlur.js'
 // P5.84：整卡原图（清晰层 + 模糊层）—— 裁剪块中心落在整卡 76% / 50%，倍率固定 0.44（单测 personBgImage.test.mjs）
@@ -248,7 +256,9 @@ import PersonBgAdjustDialog from './PersonBgAdjustDialog.vue'
 import RatingFilterBar from './RatingFilterBar.vue'
 import { useRatingFilter } from './useRatingFilter.js'
 import { RATING_ALL } from './contentRating.js'
-import { buildPersonRatings, countPersonsByRating, matchesPersonRating } from './personRating.js'
+import { buildPersonRatings, countPersonsByRating, matchesPersonRating, personRatingBucket } from './personRating.js'
+import PersonCardVisual from './personCard/PersonCardVisual.vue'
+import PersonCoverAdjustDialog from './personCard/PersonCoverAdjustDialog.vue'
 
 const api = useMediaApi()
 const tk = useMediaTrack()
@@ -282,6 +292,88 @@ const {
   setRatingOptions,
   optionsWithCounts: ratingOptionsWithCounts
 } = useRatingFilter()
+
+/* ------------------------------------------------- P6.100 人物卡版式（四选一，全局记住） */
+
+/**
+ * 版式：poster 竖版海报卡 / hero 大图英雄卡 / masonry 瀑布流 / compact 旧横卡
+ *
+ * 前三种是同一份数据的三套排版（PersonCardVisual.vue），compact 是原有卡片 ——
+ * 它的「⛶ 调背景」是基于服务端预渲染几何的，在新版式里没有对应概念，所以保留一种紧凑视图
+ * 让那套能力仍然可达（不想用时切走即可）。
+ */
+const PERSON_VIEW_MODES = ['poster', 'hero', 'masonry', 'compact']
+/** 按钮文案（顺序 = 按钮顺序） */
+const VIEW_OPTIONS = [
+  { value: 'poster', label: '海报', title: '竖版海报卡（2:3）：图铺满，名字与计数压在底部' },
+  { value: 'hero', label: '大图', title: '大图英雄卡：整卡大图，信息压左下' },
+  { value: 'masonry', label: '瀑布', title: '瀑布流拼贴：图高错落排布' },
+  { value: 'compact', label: '紧凑', title: '原有横卡：头像 + 右侧信息（「⛶ 调背景」只在这一版可用）' }
+]
+const VIEW_STORE_KEY = 'ms.persons.view'
+const VIEW_DEFAULT = 'poster'
+/** 瀑布流高度循环：给拼贴制造错落感（真实图片比例差异由 object-fit: cover 抹平） */
+const MASONRY_HEIGHTS = [220, 300, 250, 340, 200, 280]
+
+function normalizeView(value) {
+  const v = String(value == null ? '' : value).trim().toLowerCase()
+  return PERSON_VIEW_MODES.indexOf(v) >= 0 ? v : ''
+}
+
+/** 读取顺序：URL hash #view= → localStorage → 默认海报卡（与分级筛选同一套优先级） */
+function readViewMode() {
+  if (typeof window === 'undefined') return VIEW_DEFAULT
+  const raw = String(window.location.hash || '').replace(/^#/, '')
+  if (raw) {
+    try {
+      const fromHash = normalizeView(new URLSearchParams(raw).get('view'))
+      if (fromHash) return fromHash
+    } catch (err) {
+      /* hash 不是 query 形态：忽略，继续看 localStorage */
+    }
+  }
+  try {
+    const stored = normalizeView(window.localStorage && window.localStorage.getItem(VIEW_STORE_KEY))
+    if (stored) return stored
+  } catch (err) {
+    /* 隐私模式取不到：用默认值 */
+  }
+  return VIEW_DEFAULT
+}
+
+const viewMode = ref(readViewMode())
+
+/** 切换版式：写状态 + localStorage + hash（只动 view 这一段，rating 段原样保留） */
+function setViewMode(value) {
+  const next = normalizeView(value) || VIEW_DEFAULT
+  if (next === viewMode.value) return
+  viewMode.value = next
+  try {
+    window.localStorage.setItem(VIEW_STORE_KEY, next)
+  } catch (err) {
+    /* 存不进去只影响下次打开，本次照常 */
+  }
+  if (typeof window !== 'undefined' && window.history) {
+    const raw = String(window.location.hash || '').replace(/^#/, '')
+    let params
+    try {
+      params = new URLSearchParams(raw)
+    } catch (err) {
+      params = new URLSearchParams()
+    }
+    if (next === VIEW_DEFAULT) params.delete('view')
+    else params.set('view', next)
+    const qs = params.toString()
+    const hash = qs ? '#' + qs : ''
+    if (window.location.hash !== hash) {
+      try {
+        window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search + hash)
+      } catch (err) {
+        /* 无 history API：hash 不写，localStorage 仍然生效 */
+      }
+    }
+  }
+}
 
 /** 人物名 → {分级: 可见作品数}：优先后端 people[].byRating，老索引从 albums / videos 反推 */
 const personRatings = computed(() => buildPersonRatings(indexDoc.value))
@@ -368,8 +460,9 @@ const visible = computed(() => {
 })
 
 /**
- * 顶部副标题（P6.09）：筛选生效时说「筛选后 N 位人物」，
- * 卡片上的计数仍是**完整口径**（不因筛选而变）——两者说的不是一件事。
+ * 顶部副标题（P6.09）：筛选生效时说「筛选后 N 位人物」。
+ * 卡片上的计数在筛选态下**改成该档的数**（P6.99）—— 与人物页点进去看到的分页 total 同源，
+ * 不再出现「卡片说 137 本相册、点进去只有 2 本」这种自相矛盾。
  */
 const subText = computed(() => {
   const n = visible.value.length
@@ -403,12 +496,17 @@ const guestHidden = computed(() => {
 /** 一条卡片就是一次纯函数调用（索引统计 + 详情 + URL 构造），模板只做 v-for */
 const cards = computed(() => {
   const map = wallIndex.value
+  // P6.99：筛选生效时，卡片上的三个数改成「该档下的数」—— 必须与人物页点进去看到的
+  // 分页 total 一致，否则就是「卡片说 137 本相册、点进去只有 2 本」。
+  const picked = rating.value
+  const ratings = personRatings.value
   return visible.value.map((p) => {
     const key = personKey(p)
     const name = String((p && p.name) || '').trim()
     const stats = map && name ? map.get(name) : null
     const detail = details[String(p && p.id != null ? p.id : '')] || null
-    return buildCard(p, { stats, detail, urls: URLS })
+    const ratingCounts = picked !== RATING_ALL ? personRatingBucket(ratings, name, picked) : null
+    return buildCard(p, { stats, detail, urls: URLS, ratingCounts })
   })
 })
 
@@ -438,7 +536,9 @@ function observeFrameCards() {
       { rootMargin: '120px 0px' }
     )
   }
-  wallRef.value.querySelectorAll('.pw-card[data-avatar="frame"]').forEach((node) => {
+  // P6.100：新版式卡（.pv）同样是 DOM 节点，取帧档必须一起懒加载 ——
+  // 漏掉它们的话，头像来自视频帧的人物（剪辑 / 娜娜 / 深田咏美…）在新版式里会一直停在首字占位。
+  wallRef.value.querySelectorAll('.pw-card[data-avatar="frame"], .pv[data-avatar="frame"]').forEach((node) => {
     cardObserver.observe(node)
   })
   ensureWallObserver()
@@ -469,8 +569,127 @@ watch(cards, () => {
   })
 })
 
+/**
+ * 记录「这个 URL 加载失败了」（P6.99：按 URL 记，不再按卡片记）
+ *
+ * <p>改前记的是布尔值：详情接口比索引晚到时，第一次渲染用的是索引封面（可能 404），
+ * 失败标记一旦置位就永久生效 —— 即使随后换成了能用的手动头像，卡片也一直停在首字占位，
+ * 只有刷新页面才能恢复。现在记的是失败的那个 src，URL 一变（详情到达 / 换头像 / 换裁剪）
+ * 就自动认为「这是新的图，值得再试一次」。</p>
+ */
 function markAvatarFailed(card) {
-  if (card && card.key) avatarFailed[String(card.key)] = true
+  if (card && card.key) avatarFailed[String(card.key)] = avatarSrcOf(card)
+}
+
+/** 卡片头像是否该渲染成 <img>（src 存在，且这个 src 没有失败过） */
+function avatarOk(card) {
+  const src = avatarSrcOf(card)
+  return !!src && avatarFailed[String(card.key)] !== src
+}
+
+/* ------------------------------------------- P6.101 四个视图各自的封面（图源 + 几何） */
+
+/** 本机覆盖（编辑策略 local / 未登录场景）：键 = "personId:view" */
+const VIEW_COVERS_KEY = 'ms.persons.cover'
+/** 本机覆盖的版本号：写完之后要触发 cards 重算（localStorage 本身不是响应式的） */
+const localCoverRev = ref(0)
+
+function readLocalCovers() {
+  try {
+    const raw = window.localStorage.getItem(VIEW_COVERS_KEY)
+    const parsed = raw ? JSON.parse(raw) : null
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch (err) {
+    return {}
+  }
+}
+
+function localCoverKey(id, view) {
+  return String(id) + ':' + String(view)
+}
+
+function readLocalCover(id, view) {
+  const all = readLocalCovers()
+  return all[localCoverKey(id, view)] || null
+}
+
+function writeLocalCover(id, view, value) {
+  const all = readLocalCovers()
+  const key = localCoverKey(id, view)
+  if (value) all[key] = value
+  else delete all[key]
+  try {
+    window.localStorage.setItem(VIEW_COVERS_KEY, JSON.stringify(all))
+  } catch (err) {
+    /* 存不进去只影响下次打开 */
+  }
+  localCoverRev.value += 1
+}
+
+/**
+ * 某个视图最终生效的封面设置：本机覆盖 → 服务端（user → default）→ null（自动）
+ *
+ * 三个字段都可能缺：{@code kind} 缺省 = auto（沿用头像三档），几何缺省 = 自动。
+ */
+function coverSettingOf(card, view) {
+  // 依赖 localCoverRev，写入本机覆盖后 cards 会重算
+  void localCoverRev.value
+  if (!card || !card.id) return null
+  const local = readLocalCover(card.id, view)
+  if (local) return local
+  const server = card.views && typeof card.views === 'object' ? card.views[view] : null
+  return server || null
+}
+
+/** 该视图要显示的图：auto 沿用现有自动头像三档，photo / frame 与头像同一套 URL 规则 */
+function coverUrlOf(card, view) {
+  const setting = coverSettingOf(card, view)
+  if (!setting || !setting.kind || setting.kind === 'auto') return bgSrcOf(card)
+  const parsed = parseAvatarRef(setting.kind, setting.ref)
+  if (parsed.type === 'photo') {
+    const url = api.photoThumbUrl(parsed.albumId, parsed.seq)
+    return parsed.crop ? url + '?crop=' + parsed.crop : url
+  }
+  if (parsed.type === 'frame') return api.frameAvatarUrl(parsed.videoId, parsed.sec, parsed.crop)
+  return bgSrcOf(card)
+}
+
+/** 弹层里正在预览的图：优先用「刚选好还没保存」的那份 */
+function coverPreviewUrlOf(card, view) {
+  if (!card) return ''
+  const pending = coverAdjust.card === card ? coverAdjust.pending : null
+  if (!pending) return coverUrlOf(card, view)
+  if (!pending.kind || pending.kind === 'auto') return bgSrcOf(card)
+  const parsed = parseAvatarRef(pending.kind, pending.ref)
+  if (parsed.type === 'photo') return api.photoThumbUrl(parsed.albumId, parsed.seq)
+  if (parsed.type === 'frame') return api.frameAvatarUrl(parsed.videoId, parsed.sec, parsed.crop)
+  return bgSrcOf(card)
+}
+
+/** 图源说明（弹层里那行小字） */
+function coverSourceLabelOf(card, view) {
+  if (!card) return ''
+  const pending = coverAdjust.card === card ? coverAdjust.pending : null
+  const setting = pending || coverSettingOf(card, view)
+  if (!setting || !setting.kind || setting.kind === 'auto') return '当前：自动（跟随头像）'
+  return setting.kind === 'photo' ? '当前：名下照片' : '当前：视频帧'
+}
+
+/**
+ * 该视图的几何（写给 PersonCardVisual 的 transform）
+ *
+ * P6.107：缩放下限钳到 1（= 图片刚好盖满卡片）—— 库里若存着更小的值（早期版本允许 0.5），
+ * 卡片会露出底色；这里兜一道，保证「卡片永远不露底」这条口径在渲染侧也成立。
+ */
+function coverGeometryOf(card, view) {
+  const setting = coverSettingOf(card, view)
+  if (!setting) return null
+  const scale = Number(setting.scale)
+  return {
+    scale: Number.isFinite(scale) ? Math.max(1, scale) : 1,
+    dx: setting.dx,
+    dy: setting.dy
+  }
 }
 
 /* --------------------------------------------------------- P5.67 卡片背景层 */
@@ -490,9 +709,11 @@ const bgFailed = reactive({})
 function bgSrcOf(card) {
   if (!card || !card.key) return ''
   const key = String(card.key)
-  if (avatarFailed[key] || bgFailed[key]) return ''
+  const src = avatarSrcOf(card)
+  // P6.99：失败标记按 src 记（见 markAvatarFailed）——换到一张新图就该重新试，不再永久停在纯色底
+  if (!src || avatarFailed[key] === src || bgFailed[key] === originalSrc(src)) return ''
   // P5.78：背景用**整张原图**（avatarUrl 是后端按 crop 裁好的方块，不能当背景）
-  return originalSrc(avatarSrcOf(card))
+  return originalSrc(src)
 }
 
 /* --------------------------------- P5.84 整卡背景几何：裁剪块中心落在整卡 76% / 50% */
@@ -807,8 +1028,9 @@ function clearBgAdjustDefault() {
   showToast('已清除背景全局默认')
 }
 
+/** 背景层失败（P6.99：与头像同一套「按 src 记」的规则，换图后允许重试） */
 function markBgFailed(card) {
-  if (card && card.key) bgFailed[String(card.key)] = true
+  if (card && card.key) bgFailed[String(card.key)] = originalSrc(avatarSrcOf(card))
 }
 
 /* ------------------------------- P5.84 卡片底色 = 从同一张图拾到的颜色（P5.77 链路恢复） */
@@ -1353,7 +1575,8 @@ function applyLocalAvatar(id, patch) {
   return () => {
     if (had) details[key] = before
     else delete details[key]
-    if (failedBefore) avatarFailed[key] = true
+    // P6.99：失败标记存的是失败的 src（见 markAvatarFailed），回滚时原样放回去
+    if (failedBefore) avatarFailed[key] = failedBefore
   }
 }
 
@@ -1368,6 +1591,132 @@ function mergeServerPerson(id, res) {
     // P5.90：同上 —— 服务端图按新头像版本重新请求
     delete cardBgFailed[String(id)]
     delete bgReady[String(id)]
+  }
+}
+
+/* ------------------------------------------- P6.101 封面：图源选择 / 位置调整 */
+
+const coverDialog = reactive({ open: false, card: null, busy: false })
+/** pending = 在本弹层里刚选好、还没保存的图源 {kind, ref}（选图与几何一次提交） */
+const coverAdjust = reactive({ open: false, card: null, busy: false, boxW: 340, boxH: 510, pending: null })
+
+/** 各视图的预览比例（与 PersonCardVisual 的实际盒子一致，只用于弹层预览） */
+const COVER_ASPECT = {
+  poster: { w: 340, h: 510 },
+  hero: { w: 340, h: 186 },
+  masonry: { w: 340, h: 260 },
+  compact: { w: 340, h: 104 }
+}
+
+function openCoverSource(card) {
+  if (!card || card.id == null || card.id === '') return
+  coverDialog.card = card
+  coverDialog.open = true
+}
+
+function closeCoverSource() {
+  if (!coverDialog.busy) coverDialog.open = false
+}
+
+/** 弹层里「当前已设置的封面图源」（auto / 未设置 → null，让弹层显示「恢复自动」不可用） */
+const coverCurrent = computed(() => {
+  const card = coverDialog.card
+  if (!card) return null
+  const pending = coverAdjust.card === card ? coverAdjust.pending : null
+  const setting = pending || coverSettingOf(card, viewMode.value)
+  return setting && setting.kind && setting.kind !== 'auto' ? { kind: setting.kind, ref: setting.ref } : null
+})
+
+/** 把服务端回包里的 views 写回人物行（卡片据此重算） */
+function applyViewsToPerson(id, views) {
+  for (const person of persons.value) {
+    if (String(person && person.id) !== String(id)) continue
+    if (views && typeof views === 'object' && Object.keys(views).length) person.views = views
+    else delete person.views
+    return
+  }
+}
+
+/** 落库：能写服务端（full 档 / 站长）就写服务端，否则写本机（与「调背景」同一套策略） */
+async function saveCoverSetting(card, view, next) {
+  if (policy.canWrite.value && card.id != null && card.id !== '') {
+    const res = await setPersonViewCover(card.id, view, next)
+    const body = res && typeof res === 'object' && res.data !== undefined ? res.data : res
+    applyViewsToPerson(card.id, body && body.views ? body.views : null)
+    return
+  }
+  writeLocalCover(card.id, view, next)
+}
+
+async function clearCoverSetting(card, view) {
+  if (policy.canWrite.value && card.id != null && card.id !== '') {
+    const res = await clearPersonViewCover(card.id, view)
+    const body = res && typeof res === 'object' && res.data !== undefined ? res.data : res
+    applyViewsToPerson(card.id, body && body.views ? body.views : null)
+    return
+  }
+  writeLocalCover(card.id, view, null)
+}
+
+/**
+ * 选图弹层「保存」——**不落库**，只是把选好的图源塞进封面弹层的 pending，
+ * 等用户在封面弹层里点「保存」时与几何一起提交（避免「图换了、位置没保存」）。
+ */
+function onCoverSourceSave(payload) {
+  const card = coverDialog.card
+  if (!card) return
+  // 封面的取景由缩放/偏移负责，ref 里那截 #crop= 是头像的语义，这里丢掉
+  const kind = payload && payload.kind
+  const ref = payload && payload.ref ? String(payload.ref).split('#')[0] : null
+  coverAdjust.pending = { kind: kind, ref: ref }
+  coverDialog.open = false
+}
+
+function onCoverSourceClear() {
+  coverAdjust.pending = { kind: 'auto', ref: null }
+  coverDialog.open = false
+}
+
+/** 打开「调位置/缩放」：先量出这张封面的自然尺寸，弹层预览才不会算错 */
+function openCoverAdjust(card) {
+  if (!card || card.id == null || card.id === '') return
+  const view = viewMode.value
+  const aspect = COVER_ASPECT[view] || COVER_ASPECT.poster
+  coverAdjust.card = card
+  coverAdjust.boxW = aspect.w
+  coverAdjust.boxH = aspect.h
+  coverAdjust.pending = null
+  coverAdjust.open = true
+}
+
+function closeCoverAdjust() {
+  if (!coverAdjust.busy) coverAdjust.open = false
+}
+
+async function onCoverAdjustSave(payload) {
+  const card = coverAdjust.card
+  if (!card || coverAdjust.busy) return
+  const view = viewMode.value
+  const adjust = (payload && payload.adjust) || {}
+  const cur = coverSettingOf(card, view) || {}
+  const pending = coverAdjust.pending
+  coverAdjust.busy = true
+  try {
+    // 图源与几何**一次提交**：pending 有就用 pending，没有就沿用当前设置
+    await saveCoverSetting(card, view, {
+      kind: pending ? pending.kind : cur.kind || 'auto',
+      ref: pending ? pending.ref : cur.ref,
+      scale: adjust.scale,
+      dx: adjust.dx,
+      dy: adjust.dy
+    })
+    coverAdjust.pending = null
+    coverAdjust.open = false
+    showToast('已保存该视图的封面')
+  } catch (err) {
+    showToast('保存失败：' + errorText(err))
+  } finally {
+    coverAdjust.busy = false
   }
 }
 
@@ -1525,6 +1874,22 @@ onBeforeUnmount(() => {
           :total="realPersons.length"
           @change="applyRating"
         />
+        <!-- P6.100：人物卡版式切换（图优先三选一 + 原来的紧凑视图）。状态全局记住。 -->
+        <div class="pp-views" role="group" aria-label="人物卡版式" data-role="view-switch">
+          <button
+            v-for="m in VIEW_OPTIONS"
+            :key="m.value"
+            type="button"
+            class="pp-view"
+            :class="{ on: viewMode === m.value }"
+            :title="m.title"
+            :aria-pressed="viewMode === m.value"
+            :data-role="'view-' + m.value"
+            @click="setViewMode(m.value)"
+          >
+            {{ m.label }}
+          </button>
+        </div>
         <input v-model="keyword" class="pp-search" type="search" placeholder="搜索人物名…" autocomplete="off" />
         <button class="pp-btn" type="button" :disabled="loading" @click="load">刷新</button>
         <!-- P5.72：背景模糊度 —— 0–20px 步长 1，拖动实时生效（只改 CSS 变量），值写 localStorage -->
@@ -1566,6 +1931,56 @@ onBeforeUnmount(() => {
     </p>
 
     <GuestHiddenEmpty v-else-if="guestHidden" @refresh="load" />
+
+    <!-- P6.100：图优先版式（海报 / 大图 / 瀑布）—— 同一份卡片数据，只换排版 -->
+    <div v-else-if="viewMode !== 'compact'" class="pv-wrap" ref="wallRef">
+      <div v-if="viewMode === 'poster'" class="pv-wall pv-wall-poster">
+        <PersonCardVisual
+          v-for="c in cards"
+          :key="c.key"
+          variant="poster"
+          :card="c"
+          :image="coverUrlOf(c, viewMode)"
+          :geometry="coverGeometryOf(c, viewMode)"
+          :tone-style="toneStyleOf(c)"
+          :can-edit="canChangeAvatar(c)"
+          @open="openCard"
+          @cover-open="openCoverAdjust"
+          @image-error="markBgFailed"
+        />
+      </div>
+      <div v-else-if="viewMode === 'hero'" class="pv-wall pv-wall-hero">
+        <PersonCardVisual
+          v-for="c in cards"
+          :key="c.key"
+          variant="hero"
+          :card="c"
+          :image="coverUrlOf(c, viewMode)"
+          :geometry="coverGeometryOf(c, viewMode)"
+          :tone-style="toneStyleOf(c)"
+          :can-edit="canChangeAvatar(c)"
+          @open="openCard"
+          @cover-open="openCoverAdjust"
+          @image-error="markBgFailed"
+        />
+      </div>
+      <div v-else class="pv-masonry">
+        <PersonCardVisual
+          v-for="(c, i) in cards"
+          :key="c.key"
+          variant="masonry"
+          :card="c"
+          :image="coverUrlOf(c, viewMode)"
+          :geometry="coverGeometryOf(c, viewMode)"
+          :tone-style="toneStyleOf(c)"
+          :height="MASONRY_HEIGHTS[i % MASONRY_HEIGHTS.length]"
+          :can-edit="canChangeAvatar(c)"
+          @open="openCard"
+          @cover-open="openCoverAdjust"
+          @image-error="markBgFailed"
+        />
+      </div>
+    </div>
 
     <div v-else class="pp-wall" ref="wallRef">
       <a
@@ -1647,7 +2062,7 @@ onBeforeUnmount(() => {
         <span class="pw-avatar-wrap">
           <span class="pw-avatar">
             <img
-              v-if="avatarSrcOf(c) && !avatarFailed[c.key]"
+              v-if="avatarOk(c)"
               :src="avatarSrcOf(c)"
               alt=""
               loading="lazy"
@@ -1734,6 +2149,33 @@ onBeforeUnmount(() => {
       @save="saveAvatar"
       @clear="clearAvatar"
     />
+    <!-- P6.101 封面图源选择（复用换头像弹层的三步选图；落库目标是「当前视图的封面」） -->
+    <PersonAvatarDialog
+      :open="coverDialog.open"
+      :person="coverDialog.card ? { id: coverDialog.card.id, name: coverDialog.card.name } : null"
+      :current="coverCurrent"
+      :busy="coverDialog.busy"
+      @close="closeCoverSource"
+      @save="onCoverSourceSave"
+      @clear="onCoverSourceClear"
+    />
+
+    <!-- P6.103 封面位置/缩放：预览与卡片**同一套 CSS**（object-fit: cover + transform），
+         所以拖出来的就是卡片上的样子（旧调背景弹层是 44% 宽 + crop 锚点的背景语义，不能复用） -->
+    <PersonCoverAdjustDialog
+      :open="coverAdjust.open"
+      :person="coverAdjust.card ? { name: coverAdjust.card.name } : null"
+      :image="coverAdjust.card ? coverPreviewUrlOf(coverAdjust.card, viewMode) : ''"
+      :box-w="coverAdjust.boxW"
+      :box-h="coverAdjust.boxH"
+      :adjust="coverAdjust.card ? coverGeometryOf(coverAdjust.card, viewMode) : null"
+      :saving="coverAdjust.busy"
+      :source-label="coverAdjust.card ? coverSourceLabelOf(coverAdjust.card, viewMode) : ''"
+      @close="closeCoverAdjust"
+      @save="onCoverAdjustSave"
+      @pick="coverAdjust.card && openCoverSource(coverAdjust.card)"
+    />
+
     <PageToast :toasts="toasts" />
   </div>
 </template>
@@ -1794,6 +2236,73 @@ onBeforeUnmount(() => {
 
 .pp-search:focus {
   border-color: var(--accent);
+}
+
+/* P6.100：版式切换 —— 分段控件（与筛选 chip 同一套视觉语言，但更矮更紧） */
+.pp-views {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  gap: 2px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-3);
+}
+
+.pp-view {
+  padding: 3px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-dim);
+  font-size: 12.5px;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pp-view:hover {
+  color: var(--fg);
+}
+
+.pp-view.on {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* ------------------------------------------------ P6.100 图优先版式容器 */
+.pv-wrap {
+  width: 100%;
+}
+
+.pv-wall {
+  display: grid;
+  gap: 14px;
+}
+
+.pv-wall-poster {
+  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+}
+
+.pv-wall-hero {
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+
+.pv-masonry {
+  column-count: 4;
+  column-gap: 14px;
+}
+
+@media (max-width: 1500px) {
+  .pv-masonry {
+    column-count: 3;
+  }
+}
+
+@media (max-width: 1100px) {
+  .pv-masonry {
+    column-count: 2;
+  }
 }
 
 .pp-btn {

@@ -451,7 +451,7 @@ onBeforeUnmount(unbindGlobal)
 /** 封面加载失败后置位：img 移除、容器加 .noimg 显示「无封面」占位（app.js:1408-1416 的等价行为） */
 const coverFailed = ref(false)
 
-const thumbSrc = computed(() => api.videoThumbUrl(props.video.id))
+const thumbSrc = computed(() => api.videoThumbUrl(props.video.id, props.video.poster))
 
 /** 续播进度条百分比：有 pos 且有 dur 才显示（app.js:852-858） */
 const progressPct = computed(() => {

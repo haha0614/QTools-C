@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>人物卡样式预览 · 四方案</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#161a20; --line:#252b34; --fg:#e8ecf2; --dim:#8b94a3;
+    --accent:#3b82f6; --accent-soft:#1e3a8a33; --radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font:14px/1.5 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif;}
+  header{padding:20px 24px 8px}
+  h1{margin:0 0 6px;font-size:19px}
+  .sub{color:var(--dim);font-size:12.5px}
+  section{padding:18px 24px 26px;border-top:1px solid var(--line)}
+  .sec-head{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+  .tag{display:inline-block;min-width:22px;text-align:center;padding:1px 7px;border-radius:6px;
+       background:var(--accent-soft);color:#93c5fd;font-weight:600;font-size:12px}
+  .sec-title{font-size:15px;font-weight:600}
+  .sec-note{color:var(--dim);font-size:12px}
+
+  /* ---------- A 竖版海报卡 ---------- */
+  .grid-poster{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(178px,1fr))}
+  .card-poster{position:relative;aspect-ratio:2/3;border-radius:var(--radius);overflow:hidden;
+               background:#1b1f26;cursor:pointer;isolation:isolate}
+  .card-poster img{width:100%;height:100%;object-fit:cover;display:block;
+                   transition:transform .35s ease}
+  .card-poster:hover img{transform:scale(1.06)}
+  .card-poster .veil{position:absolute;inset:auto 0 0 0;height:62%;
+       background:linear-gradient(to top,rgba(6,8,12,.94) 12%,rgba(6,8,12,.55) 52%,transparent);}
+  .card-poster .body{position:absolute;inset:auto 0 0 0;padding:10px 11px 11px}
+  .card-poster .nm{font-weight:600;font-size:14.5px;letter-spacing:.2px;
+       text-shadow:0 1px 6px rgba(0,0,0,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .card-poster .ct{color:#cfd6e2;font-size:11.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .card-poster .meta{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+  .pill{font-size:10.5px;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.14);
+        color:#e6ebf3;backdrop-filter:blur(2px)}
+  .edit{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;
+        display:flex;align-items:center;justify-content:center;font-size:12px;
+        background:rgba(10,12,16,.66);color:#dfe5ee;border:1px solid rgba(255,255,255,.18);
+        opacity:0;transition:opacity .18s}
+  .card-poster:hover .edit{opacity:1}
+
+  /* ---------- B 圆形头像紧凑卡 ---------- */
+  .grid-round{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
+  .card-round{display:flex;gap:12px;align-items:center;padding:12px;border-radius:var(--radius);
+       background:var(--panel);border:1px solid var(--line);cursor:pointer;transition:border-color .18s,transform .18s}
+  .card-round:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .card-round .av{width:64px;height:64px;border-radius:50%;overflow:hidden;flex:0 0 64px;
+       border:1px solid var(--line);background:#20252d}
+  .card-round .av img{width:100%;height:100%;object-fit:cover;display:block}
+  .card-round .info{min-width:0}
+  .card-round .nm{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .card-round .ct{color:var(--dim);font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .card-round .meta{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+  .chip{font-size:11px;padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}
+
+  /* ---------- C 大图英雄卡 ---------- */
+  .grid-hero{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+  .card-hero{position:relative;height:186px;border-radius:var(--radius);overflow:hidden;
+       background:#1b1f26;cursor:pointer}
+  .card-hero img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .45s ease,filter .45s ease;
+       filter:saturate(.92)}
+  .card-hero:hover img{transform:scale(1.05);filter:saturate(1.05) brightness(1.06)}
+  .card-hero .veil{position:absolute;inset:0;
+       background:linear-gradient(105deg,rgba(8,10,14,.92) 0%,rgba(8,10,14,.72) 34%,rgba(8,10,14,.12) 72%,transparent 100%)}
+  .card-hero .body{position:absolute;inset:auto auto 0 0;padding:14px 16px;max-width:78%}
+  .card-hero .nm{font-size:19px;font-weight:600;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+  .card-hero .ct{color:#d3dae6;font-size:12px;margin-top:3px}
+  .card-hero .meta{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+
+  /* ---------- D 瀑布流拼贴 ---------- */
+  .masonry{column-count:4;column-gap:14px}
+  @media (max-width:1500px){.masonry{column-count:3}}
+  @media (max-width:1100px){.masonry{column-count:2}}
+  .card-mas{position:relative;break-inside:avoid;margin:0 0 14px;border-radius:var(--radius);
+       overflow:hidden;background:#1b1f26;cursor:pointer}
+  .card-mas img{width:100%;display:block;object-fit:cover;transition:transform .35s ease}
+  .card-mas:hover img{transform:scale(1.04)}
+  .card-mas .veil{position:absolute;inset:auto 0 0 0;height:55%;
+       background:linear-gradient(to top,rgba(6,8,12,.92),transparent)}
+  .card-mas .body{position:absolute;inset:auto 0 0 0;padding:9px 10px}
+  .card-mas .nm{font-size:13.5px;font-weight:600}
+  .card-mas .ct{color:#c6cede;font-size:11px;margin-top:1px}
+
+  .empty{color:var(--dim);padding:20px 0}
+  footer{padding:14px 24px 40px;color:var(--dim);font-size:12px;border-top:1px solid var(--line)}
+  code{background:#1b2027;padding:1px 5px;border-radius:4px;font-size:11.5px}
+</style>
+</head>
+<body>
+<header>
+  <h1>人物卡样式预览 · 四个方案</h1>
+  <div class="sub" id="stat">加载中…</div>
+</header>
+
+<section>
+  <div class="sec-head"><span class="tag">A</span><span class="sec-title">竖版海报卡（2:3）</span>
+    <span class="sec-note">参考 TMDB / IMDb cast、JavDB 女优列表：图占主体，名字与计数压在底部渐变上</span></div>
+  <div class="grid-poster" id="gridA"></div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="tag">B</span><span class="sec-title">圆形头像紧凑卡</span>
+    <span class="sec-note">参考 Jellyfin / Emby 的 People 行、Letterboxd cast：信息密度最高，改动最小</span></div>
+  <div class="grid-round" id="gridB"></div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="tag">C</span><span class="sec-title">大图英雄卡</span>
+    <span class="sec-note">参考 Spotify 艺术家页 / Netflix 个人主页：整卡大图，信息压左下，hover 轻微放大</span></div>
+  <div class="grid-hero" id="gridC"></div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="tag">D</span><span class="sec-title">瀑布流拼贴</span>
+    <span class="sec-note">参考 Pinterest / Are.na：高度不等、错落排布，视觉密度最高</span></div>
+  <div class="masonry" id="gridD"></div>
+</section>
+
+<footer>
+  数据与图片全部来自本站真实接口（<code>/api/media/persons</code> + <code>/api/media/index</code>），
+  信息口径与现在的人物墙完全一致（部视频 / 本相册 / 张照片 / 性别 / 最近更新）。
+  选好后告诉我 A/B/C/D（或组合，例如「A 的版式 + C 的 hover」），我再落到 <code>PersonsPage.vue</code>。
+</footer>
+
+<script>
+const TOKEN = localStorage.getItem('app.token') || ''
+// 图片走同源 cookie：这里补一次，避免直接打开本页时图片是匿名请求（受限内容会 404）
+if (TOKEN) {
+  document.cookie = 'qtools_app_token=' + encodeURIComponent(TOKEN) + '; Path=/; Max-Age=604800; SameSite=Lax'
+}
+const H = TOKEN ? { Authorization: 'Bearer ' + TOKEN } : {}
+const unwrap = (j) => (j && j.data !== undefined ? j.data : j)
+const FALLBACK = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600"><rect width="100%" height="100%" fill="#20252d"/></svg>')
+
+function thumbOf(rel) {
+  const s = String(rel == null ? '' : rel)
+  if (s.indexOf('thumbs/') === 0) return '/api/media/thumb/' + s.slice(7).replace(/\.jpg$/i, '')
+  return ''
+}
+function countsText(v, a, p) {
+  return (v || 0) + ' 部视频 · ' + (a || 0) + ' 本相册 · ' + (p || 0) + ' 张照片'
+}
+function recent(mtime) {
+  if (!mtime) return ''
+  const d = new Date(Number(mtime))
+  if (isNaN(d.getTime())) return ''
+  return '最近 ' + d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+}
+
+(async () => {
+  const [personsRaw, indexRaw] = await Promise.all([
+    fetch('/api/media/persons', { headers: H }).then((r) => r.json()).catch(() => []),
+    fetch('/api/media/index', { headers: H }).then((r) => r.json()).catch(() => ({}))
+  ])
+  const persons = unwrap(personsRaw) || []
+  const index = unwrap(indexRaw) || {}
+  const byName = new Map(((index && index.people) || []).map((p) => [p.name, p]))
+  const avatars = new Map(persons.map((p) => [p.name, p.avatarUrl || '']))
+  document.getElementById('stat').textContent =
+    '共 ' + persons.length + ' 位人物 · ' + (TOKEN ? '已登录口径' : '访客口径（未登录，受限内容不显示）') +
+    ' · 现在时间 ' + new Date().toLocaleTimeString()
+
+  const rows = persons.filter((p) => p && !p.isPlaceholder).map((p) => {
+    const node = byName.get(p.name) || {}
+    const cover = thumbOf(node.cover) || (p.avatarUrl ? String(p.avatarUrl).split('?')[0] : '') || FALLBACK
+    return {
+      name: p.name,
+      cover,
+      avatar: p.avatarUrl ? String(p.avatarUrl) : cover,
+      counts: countsText(node.videos, node.count, node.photos),
+      recent: recent(node.mtime),
+      gender: p.gender || ''
+    }
+  })
+
+  const metaHTML = (r, cls) =>
+    '<div class="' + cls + '">' +
+      (r.gender ? '<span class="pill chip">性别 ' + esc(r.gender) + '</span>' : '') +
+      (r.recent ? '<span class="pill chip">' + esc(r.recent) + '</span>' : '') +
+    '</div>'
+
+  document.getElementById('gridA').innerHTML = rows.map((r) => (
+    '<div class="card-poster">' +
+      '<img src="' + esc(r.cover) + '" alt="" loading="lazy" onerror="this.src=\'' + FALLBACK + '\'">' +
+      '<div class="veil"></div><div class="edit">换</div>' +
+      '<div class="body">' +
+        '<div class="nm">' + esc(r.name) + '</div>' +
+        '<div class="ct">' + esc(r.counts) + '</div>' +
+        metaHTML(r, 'meta') +
+      '</div>' +
+    '</div>'
+  )).join('')
+
+  document.getElementById('gridB').innerHTML = rows.map((r) => (
+    '<div class="card-round">' +
+      '<span class="av"><img src="' + esc(r.avatar) + '" alt="" loading="lazy" onerror="this.src=\'' + FALLBACK + '\'"></span>' +
+      '<div class="info">' +
+        '<div class="nm">' + esc(r.name) + '</div>' +
+        '<div class="ct">' + esc(r.counts) + '</div>' +
+        '<div class="meta">' +
+          (r.gender ? '<span class="chip">性别 ' + esc(r.gender) + '</span>' : '') +
+          (r.recent ? '<span class="chip">' + esc(r.recent) + '</span>' : '') +
+        '</div>' +
+      '</div>' +
+    '</div>'
+  )).join('')
+
+  document.getElementById('gridC').innerHTML = rows.map((r) => (
+    '<div class="card-hero">' +
+      '<img src="' + esc(r.cover) + '" alt="" loading="lazy" onerror="this.src=\'' + FALLBACK + '\'">' +
+      '<div class="veil"></div>' +
+      '<div class="body">' +
+        '<div class="nm">' + esc(r.name) + '</div>' +
+        '<div class="ct">' + esc(r.counts) + '</div>' +
+        metaHTML(r, 'meta') +
+      '</div>' +
+    '</div>'
+  )).join('')
+
+  // 瀑布流：按序号制造不同高度（真实站点可改成按图片原比例）
+  const heights = [220, 300, 250, 340, 200, 280]
+  document.getElementById('gridD').innerHTML = rows.map((r, i) => (
+    '<div class="card-mas" style="height:' + heights[i % heights.length] + 'px">' +
+      '<img src="' + esc(r.cover) + '" alt="" loading="lazy" style="height:100%" onerror="this.src=\'' + FALLBACK + '\'">' +
+      '<div class="veil"></div>' +
+      '<div class="body">' +
+        '<div class="nm">' + esc(r.name) + '</div>' +
+        '<div class="ct">' + esc(r.counts) + '</div>' +
+      '</div>' +
+    '</div>'
+  )).join('')
+})().catch((e) => {
+  document.getElementById('stat').textContent = '加载失败：' + e.message
+})
+</script>
+</body>
+</html>

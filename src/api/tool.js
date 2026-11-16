@@ -69,3 +69,19 @@ export async function reportToolVisit(toolRoute) {
     console.warn('[qtools] 工具访问上报失败：', err)
   }
 }
+
+/**
+ * 去水印解析
+ * 后端：POST /api/tool/watermark/parse  body: { url }
+ * 返回：{ platform, videoId, title, author, cover, duration, width, height, items: [{ type, label, url }] }
+ * @param {string} url 分享链接或整段分享文案
+ */
+export function parseWatermark(url) {
+  return request({
+    url: '/tool/watermark/parse',
+    method: 'post',
+    // 首次解析要拉起 Node 侧车 + 本机 Chrome（约 10~15 秒），默认 10s 不够
+    timeout: 120000,
+    data: { url }
+  })
+}

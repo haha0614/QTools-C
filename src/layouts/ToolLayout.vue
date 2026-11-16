@@ -24,6 +24,8 @@ const props = defineProps({
   title: { type: String, required: true },
   desc: { type: String, default: '' },
   breadcrumb: { type: Array, default: () => [] },
+  /** 是否为纯本地运算工具：false 时不显示「数据不上传」角标（需要后端处理的工具必须传 false） */
+  localOnly: { type: Boolean, default: true },
   maxWidth: { type: String, default: '880px' }
 })
 
@@ -56,7 +58,11 @@ const rootStyle = computed(() => ({ '--tl-max': props.maxWidth || '880px' }))
 
       <div class="tl-title-row">
         <h1 class="tl-title">{{ title }}</h1>
-        <span class="tl-badge">🔒 数据不上传</span>
+        <span v-if="localOnly" class="tl-badge">🔒 数据不上传</span>
+        <!-- 标题右侧操作区：搜索、视图切换这类"全局设置"放这里，不占筛选区 -->
+        <div v-if="$slots.headActions" class="tl-head-actions">
+          <slot name="headActions" />
+        </div>
       </div>
 
       <p v-if="desc" class="tl-desc">{{ desc }}</p>
@@ -130,6 +136,8 @@ const rootStyle = computed(() => ({ '--tl-max': props.maxWidth || '880px' }))
 .tl-crumbs__sep {
   color: var(--qt-text-tertiary, var(--qt-text-secondary));
 }
+
+.tl-head-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 
 .tl-title-row {
   display: flex;

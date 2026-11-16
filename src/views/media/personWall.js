@@ -455,19 +455,36 @@ export function buildCard(person, ctx) {
   const detail = c.detail || null
   const stats = c.stats || null
   const name = text(person && person.name)
-  // P5.65：「Z 张照片」优先用详情里的 photoCount（后端一条聚合，口径 = 人名下可见相册的相片总数），
-  // 老后端没有这个键才回退索引侧 albums[].count 的前端求和。
-  const backendPhotos = detail && (detail.photoCount !== undefined ? detail.photoCount : detail.photo_count)
-  const counts = countsText(
-    stats ? stats.videos : detail && detail.videoCount,
-    stats ? stats.albums : detail && detail.albumCount,
-    backendPhotos !== undefined && backendPhotos !== null ? backendPhotos : stats ? stats.photos : 0
-  )
+  // 三个数必须**同源**（P6.99）。改前是「视频/相册取索引、照片取详情」，于是卡片会拼出
+  // 「137 本相册 · 7751 张照片」—— 137 来自索引的相册聚合、7751 来自详情接口，
+  // 而同一时刻同一个人物页头部写的是 139 / 7751：一张卡上两个口径并列，用户一眼就看出来对不上。
+  // 现在优先用详情（与人物详情页同一份数、同一套可见性口径），详情没到才用索引兜底。
+  const detailCount = (camel, snake) => {
+    if (!detail) return null
+    const raw = detail[camel] !== undefined ? detail[camel] : detail[snake]
+    return raw === undefined || raw === null ? null : num(raw)
+  }
+  const dVideos = detailCount('videoCount', 'video_count')
+  const dAlbums = detailCount('albumCount', 'album_count')
+  const dPhotos = detailCount('photoCount', 'photo_count')
+  const fromDetail = dVideos !== null && dAlbums !== null
+  // P6.99：分级筛选生效时用「该档下的数」（索引 byRating 的桶）—— 它是人物页分页 total 的同一份来源，
+  // 卡片与点进去之后的列表因此永远一致；没筛选才用同源的完整计数（详情优先）。
+  const rated = c.ratingCounts || null
+  const counts = rated
+    ? countsText(rated.videos, rated.albums, rated.photos)
+    : countsText(
+        fromDetail ? dVideos : stats ? stats.videos : 0,
+        fromDetail ? dAlbums : stats ? stats.albums : 0,
+        fromDetail && dPhotos !== null ? dPhotos : stats ? stats.photos : 0
+      )
   const mtime = stats ? stats.mtime : 0
   const day = formatDay(mtime)
   return {
     key: personKey(person),
     id: person && person.id != null ? person.id : '',
+    // P6.101：四个视图各自的封面设置（后端 effectiveMap：user > default），没有设置的视图不出现
+    views: person && person.views && typeof person.views === 'object' ? person.views : null,
     name,
     alias: aliasOf(person, detail),
     initial: initialOf(name),

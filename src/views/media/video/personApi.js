@@ -140,6 +140,30 @@ export function clearPersonBg(id) {
   return mediaCall({ url: '/person/' + encodeId(id) + '/bg', method: 'delete' })
 }
 
+/**
+ * 单个视图的封面设置（P6.101） 后端：PUT /api/media/person/{id}/view/{view}
+ *
+ * <p>body {@code {kind, ref?, scale?, dx?, dy?}}：{@code kind} 取 {@code auto / photo / frame}，
+ * 几何口径与 {@link setPersonBg} 完全一致（scale 1 = 自动；dx/dy 是卡片宽高的比例）。
+ * 四个视图（poster / hero / masonry / compact）各存一份，互不影响；回包是 {@code {views: {...}}}。</p>
+ */
+export function setPersonViewCover(id, view, payload) {
+  const p = payload && typeof payload === 'object' ? payload : {}
+  return mediaCall({
+    url: '/person/' + encodeId(id) + '/view/' + encodeURIComponent(String(view || 'poster')),
+    method: 'put',
+    data: { kind: p.kind, ref: p.ref, scale: p.scale, dx: p.dx, dy: p.dy }
+  })
+}
+
+/** 清除某视图的用户封面（回到管理端默认 / 自动） 后端：DELETE /api/media/person/{id}/view/{view} */
+export function clearPersonViewCover(id, view) {
+  return mediaCall({
+    url: '/person/' + encodeId(id) + '/view/' + encodeURIComponent(String(view || 'poster')),
+    method: 'delete'
+  })
+}
+
 /** HTTP 状态码（axios 错误 / 业务错误两种形态都取得到） */
 export function httpStatus(err) {
   if (!err) return 0

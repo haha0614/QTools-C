@@ -218,7 +218,7 @@ const items = computed(() =>
   detail.value.ids.map((id) => {
     const v = indexMap.value.get(String(id))
     return v
-      ? { id: String(v.id), title: v.title || String(v.id), thumb: api.videoThumbUrl(v.id) }
+      ? { id: String(v.id), title: v.title || String(v.id), thumb: api.videoThumbUrl(v.id, v.poster) }
       : { id: String(id), title: '（索引中未找到：' + id + '）', thumb: '' }
   })
 )
