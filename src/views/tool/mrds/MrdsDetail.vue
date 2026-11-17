@@ -75,11 +75,14 @@
 
         <!-- 右：标题 + 标签 + 正文 -->
         <section class="md-main">
-          <h1 class="md-title md-hero-title">{{ row.title }}</h1>
-          <div class="md-tags">
-            <span v-for="t in (row.tags || [])" :key="t" class="md-tag">#{{ t }}</span>
-          </div>
-          <p class="md-meta">{{ row.category }} · {{ row.publishedAt }} · 源站 id {{ row.sourceId }}</p>
+          <!-- standalone（整页）时标题/标签/日期已经在页面头部渲染，这里不再重复 -->
+          <template v-if="!standalone">
+            <h1 class="md-title md-hero-title">{{ row.title }}</h1>
+            <div class="md-tags">
+              <span v-for="t in (row.tags || [])" :key="t" class="md-tag">#{{ t }}</span>
+            </div>
+            <p class="md-meta">{{ row.category }} · {{ row.publishedAt }} · 源站 id {{ row.sourceId }}</p>
+          </template>
 
           <div class="md-content">
             <template v-for="(item, i) in layout" :key="i">
@@ -932,6 +935,7 @@ function unwrap(body) {
 async function load() {
   if (props.post) {
     row.value = props.post
+    emit('loaded', props.post)
     return
   }
   if (props.postId == null) return
@@ -943,6 +947,8 @@ async function load() {
     if (!row.value) {
       error.value = '条目不存在'
     } else {
+      // 页面头部（标题/标签/日期）要用这份数据
+      emit('loaded', row.value)
       downloadState.value = String(row.value.downloadState || '')
       downloadPercent.value = Number(row.value.downloadPercent || 0)
       ensureDetail()

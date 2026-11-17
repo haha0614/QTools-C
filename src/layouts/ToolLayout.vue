@@ -65,7 +65,7 @@ const rootStyle = computed(() => ({ '--tl-max': props.maxWidth || '880px' }))
         </div>
       </div>
 
-      <p v-if="desc" class="tl-desc">{{ desc }}</p>
+      <p v-if="$slots.desc || desc" class="tl-desc"><slot name="desc">{{ desc }}</slot></p>
     </header>
 
     <!-- 操作按钮区：与内容同宽，一组按钮右对齐 -->
