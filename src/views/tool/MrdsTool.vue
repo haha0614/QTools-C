@@ -1231,6 +1231,9 @@ function onSheetPopState() {
 }
 
 function openDetail(row, ev) {
+  // 窄屏不弹窗：直接进整页路由（/tool/mrds/post/:id）。
+  // 系统返回时靠 ?restore=1 那套"页窗口 + 滚动位置"快照恢复，弹窗方案做不到（会被钳到顶）。
+  if (isNarrow.value) { goFullPage(row); return }
   const cardEl = ev && ev.currentTarget
   const coverEl = cardEl && (cardEl.querySelector('.mr-cover') || cardEl.querySelector('.mr-pcard-cover'))
   const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -1390,8 +1393,8 @@ function cardDate(row) {
   return (row && (row.publishedTs || row.publishedAt)) || ''
 }
 
-function openFullPage() {
-  const id = detail.row && detail.row.id
+function goFullPage(row) {
+  const id = row && row.id
   if (id == null) return
   // 点的那张卡此刻在视口里的位置 + 它属于第几页（用于只恢复必要的那几页）
   const el = document.querySelector('[data-post-id="' + id + '"]')
@@ -1402,6 +1405,11 @@ function openFullPage() {
   detail.open = false
   try { window.history.replaceState({ ...(window.history.state || {}), mrdsSheet: undefined }, '') } catch (err) { /* 忽略 */ }
   router.push('/tool/mrds/post/' + encodeURIComponent(String(id)))
+}
+
+/** 模板里用 @click="openFullPage"，Vue 会把事件对象传进来，所以这里不接参数 */
+function openFullPage() {
+  goFullPage(detail.row)
 }
 
 const visibleFeatured = computed(() => (featuredOpen.value ? featured.value : featured.value.slice(0, FEATURED_COLLAPSED)))
@@ -1477,7 +1485,11 @@ onMounted(async () => {
   // 从整页详情返回：把离开前的列表原样恢复（条目、页窗口、滚动位置）。
   // 必须在首屏 load 之前接管，否则 load(true) 会先把列表重置成第 1 页，
   // 文档高度不够时 scrollTo 会被钳到顶（就是"回到最上方"的成因）。
-  const snapshot = route.query && route.query.restore === '1' ? readListState() : null
+  const savedState = readListState()
+  const freshReturn = !!(savedState && savedState.at && (Date.now() - Number(savedState.at) < 30 * 60 * 1000))
+  const wantRestore = (route.query && route.query.restore === '1') || freshReturn
+  const snapshot = wantRestore ? savedState : null
+  if (wantRestore && savedState) clearListState()
   if (snapshot && Number(snapshot.page) >= 1) {
     // 按离开前的页窗口把这几页重新拉回来（一页 24 条，几页也就几个请求）
     const from = Math.max(1, Number(snapshot.pageStart) || 1)
