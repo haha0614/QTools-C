@@ -1086,13 +1086,31 @@ async function initPlayer() {
       if (!src) return
       if (Hls && Hls.isSupported()) {
         const h = new Hls({ enableWorker: true, lowLatencyMode: false })
+        // 源站地址带 auth_key 会过期：后端收到 400/403 后会立刻返回 502，
+        // 并在后台用真浏览器重签（实测 8~13 秒）再回写库。默认重试只 1 次、间隔 1 秒，
+        // 根本等不到自愈，所以这里对网络类致命错误自己排期重试。
+        let retries = 0
+        const MAX_RETRY = 5
         h.loadSource(src)
         h.attachMedia(el)
         h.on(Hls.Events.ERROR, (_evt, data) => {
-          if (data && data.fatal) {
-            const msg = '第 ' + (i + 1) + ' 段播放失败：' + (data.details || data.type || '未知错误')
-            videoErrors.value = { ...videoErrors.value, [i]: msg }
+          if (!data || !data.fatal) return
+          const isNetwork = Hls.ErrorTypes && data.type === Hls.ErrorTypes.NETWORK_ERROR
+          if (isNetwork && retries < MAX_RETRY) {
+            retries += 1
+            videoErrors.value = {
+              ...videoErrors.value,
+              [i]: '源站地址已过期，正在后台重新签名…（第 ' + retries + '/' + MAX_RETRY + ' 次重试）'
+            }
+            setTimeout(() => {
+              // 必须 loadSource 重新拉清单：manifest 级失败时 startLoad() 只重试媒体加载，
+              // 清单还是那份 502，实测只重试 1 次就停了。
+              try { h.loadSource(src) } catch (e) { /* 播放器已销毁 */ }
+            }, 6000)
+            return
           }
+          const msg = '第 ' + (i + 1) + ' 段播放失败：' + (data.details || data.type || '未知错误')
+          videoErrors.value = { ...videoErrors.value, [i]: msg }
         })
         hlsList.push(h)
       } else if (el.canPlayType('application/vnd.apple.mpegurl')) {
