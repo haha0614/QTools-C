@@ -5,7 +5,7 @@
   MrdsDetail 在 standalone 模式下不再重复渲染这三样。
 -->
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ToolLayout from '@/layouts/ToolLayout.vue'
 import MrdsDetail from './mrds/MrdsDetail.vue'
@@ -37,9 +37,21 @@ const crumbs = computed(() => [
   { label: '详情' }
 ])
 
+/** 路由只声明了通用标题「条目详情」，帖子标题拿到后同步到浏览器标签 */
+let baseTitle = ''
+
 function onLoaded(data) {
-  if (data) post.value = data
+  if (!data) return
+  post.value = data
+  if (typeof document !== 'undefined' && data.title) {
+    if (!baseTitle) baseTitle = document.title
+    document.title = data.title + ' · 每日大赛'
+  }
 }
+
+onBeforeUnmount(() => {
+  if (baseTitle && typeof document !== 'undefined') document.title = baseTitle
+})
 
 function backToList() {
   // 带上 focus：回到列表时精确定位到刚才这篇，而不是"上次滚动位置"
