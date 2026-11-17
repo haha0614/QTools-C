@@ -1204,6 +1204,32 @@ function growToSheet(sourceRect, coverSrc) {
   nextTick(() => setTimeout(step, 20))
 }
 
+/**
+ * 弹窗不产生路由，所以安卓的"系统返回"会直接跳回上一页（主页）。
+ * 打开时压一条历史，返回时先把弹窗关掉，符合用户预期。
+ */
+function pushSheetEntry(id) {
+  try {
+    window.history.pushState({ ...(window.history.state || {}), mrdsSheet: Number(id) || 1 }, '')
+  } catch (err) { /* 隐私模式忽略 */ }
+}
+
+/** 关闭弹窗：优先走 history.back()，让"系统返回"和"点关闭"走同一条路 */
+function closeSheet() {
+  try {
+    if (window.history.state && window.history.state.mrdsSheet) {
+      window.history.back()
+      return
+    }
+  } catch (err) { /* 忽略 */ }
+  detail.open = false
+}
+
+/** 系统返回落到列表页时，把还开着的弹窗关掉 */
+function onSheetPopState() {
+  if (detail.open) detail.open = false
+}
+
 function openDetail(row, ev) {
   const cardEl = ev && ev.currentTarget
   const coverEl = cardEl && (cardEl.querySelector('.mr-cover') || cardEl.querySelector('.mr-pcard-cover'))
@@ -1229,6 +1255,7 @@ function openDetail(row, ev) {
     seenIds.value.add(Number(row.id))
     markSeen(row.id).catch(() => {})
   }
+  if (row && row.id) pushSheetEntry(row.id)
 }
 
 /** 网格卡片上的收藏开关（不打开详情也能收藏） */
@@ -1373,6 +1400,7 @@ function openFullPage() {
   const anchorPage = idx >= 0 ? pageStart.value + Math.floor(idx / size.value) : page.value
   saveListState({ id: String(id), top: rect ? Math.round(rect.top) : 0, page: anchorPage })
   detail.open = false
+  try { window.history.replaceState({ ...(window.history.state || {}), mrdsSheet: undefined }, '') } catch (err) { /* 忽略 */ }
   router.push('/tool/mrds/post/' + encodeURIComponent(String(id)))
 }
 
@@ -1438,6 +1466,7 @@ onMounted(async () => {
   window.addEventListener('keydown', markUser)
   window.addEventListener('scroll', onAnchorScroll, { passive: true })
   window.addEventListener('resize', onResize)
+  window.addEventListener('popstate', onSheetPopState)
   loadDownloads()
   // 面板有未结束的记录时才定时刷新，结束了就停
   dlTimer = setInterval(() => {
@@ -1568,6 +1597,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('scroll', onWindowScroll)
   window.removeEventListener('scroll', onAnchorScroll)
   window.removeEventListener('resize', onResize)
+  window.removeEventListener('popstate', onSheetPopState)
   if (scrollTimer) window.clearTimeout(scrollTimer)
   if (anchorTimer) window.clearTimeout(anchorTimer)
   if (dlTimer) clearInterval(dlTimer)
@@ -2017,19 +2047,19 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
         v-if="detail.open"
         class="mr-mask"
         :class="{ 'mr-mask-grow': grow.on }"
-        @click.self="detail.open = false"
+        @click.self="closeSheet()"
         @wheel.self.prevent
         @touchmove.self.prevent
       >
         <div class="mr-sheet" :class="{ 'mr-sheet-grow': grow.on, 'mr-sheet-landed': grow.landed }">
-        <button type="button" class="mr-sheet-close" title="关闭" @click="detail.open = false">✕</button>
+        <button type="button" class="mr-sheet-close" title="关闭" @click="closeSheet()">✕</button>
         <div class="mr-sheet-head">
           <span class="mr-sheet-title">条目详情</span>
           <span class="mr-sheet-tools">
             <!-- 详情组件用 Teleport 往这里投送「收藏」「去源站看」 -->
             <span id="mr-sheet-actions" class="mr-sheet-actions"></span>
             <button type="button" class="mr-btn mr-btn-sm" @click="openFullPage">展开整页</button>
-            <button type="button" class="mr-btn mr-btn-sm" @click="detail.open = false">关闭</button>
+            <button type="button" class="mr-btn mr-btn-sm" @click="closeSheet()">关闭</button>
           </span>
         </div>
         <div class="mr-sheet-body">
