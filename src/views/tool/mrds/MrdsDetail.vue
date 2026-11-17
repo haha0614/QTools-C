@@ -1102,11 +1102,13 @@ async function initPlayer() {
               ...videoErrors.value,
               [i]: '源站地址已过期，正在后台重新签名…（第 ' + retries + '/' + MAX_RETRY + ' 次重试）'
             }
+            // 退避：2/2/3/4/6 秒。后端重签实测要 8~30 秒（含排队），
+            // 固定 6 秒会让"第 2 次就成功"的用户白等最多 6 秒。
+            const DELAYS = [2000, 2000, 3000, 4000, 6000]
             setTimeout(() => {
-              // 必须 loadSource 重新拉清单：manifest 级失败时 startLoad() 只重试媒体加载，
-              // 清单还是那份 502，实测只重试 1 次就停了。
+              // 必须 loadSource 重新拉清单：manifest 级失败时 startLoad() 只重试媒体加载。
               try { h.loadSource(src) } catch (e) { /* 播放器已销毁 */ }
-            }, 6000)
+            }, DELAYS[Math.min(retries - 1, DELAYS.length - 1)])
             return
           }
           const msg = '第 ' + (i + 1) + ' 段播放失败：' + (data.details || data.type || '未知错误')
