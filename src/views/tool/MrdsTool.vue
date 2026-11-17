@@ -740,6 +740,12 @@ function onWindowScroll() {
     if (loading.value || loadingMore.value) return
     if (userFilter.value === 'fav' || userFilter.value === 'seen') return
     const el = document.documentElement
+    // 滑回顶部时补上被推迟的那次刷新（此时重置不会把视口顶走）
+    if (pendingAutoRefresh && el.scrollTop < 200) {
+      pendingAutoRefresh = false
+      load(true)
+      return
+    }
     showTopBtn.value = el.scrollTop > 800
     // 往下：快到底自动加载更旧的
     if (canShowMore.value && el.scrollHeight - el.scrollTop - el.clientHeight < 600) load(false)
@@ -1423,6 +1429,8 @@ const canShowMore = computed(() => rows.value.length < total.value)
 const REFRESH_KEY = 'ms.mrds.lastRefresh'
 const REFRESH_COOLDOWN = 3 * 60 * 1000
 let refreshTimer = null
+// 已经往下翻过、被推迟的那次刷新：等用户自己滑回顶部再执行
+let pendingAutoRefresh = false
 
 async function autoRefresh() {
   if (typeof window === 'undefined') return
@@ -1442,7 +1450,14 @@ async function autoRefresh() {
   request({ url: '/tool/web/refresh', method: 'post', params: { quick: 1 }, silent: true }).catch(() => {})
   refreshTimer = setTimeout(() => {
     refreshTimer = null
-    load(true)
+    // 只在「还停在列表顶部、且没有往下翻出更多页」时整体重置。
+    // load(true) 会把 rows 砍回第 1 页（实测 120 条 -> 24 条，视口被顶走 5000+ 像素，
+    // 手机上表现出来就是"莫名回到顶部"）。已经往下翻过就不动，等用户自己回来再刷。
+    if (rows.value.length <= size.value && window.scrollY < 200) {
+      load(true)
+    } else {
+      pendingAutoRefresh = true
+    }
     loadFacets()
   }, 22000)
 }
