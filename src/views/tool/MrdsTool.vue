@@ -2548,6 +2548,12 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
 @media (max-width: 768px) {
   .mr-dl { right: 12px; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
   .mr-dl-panel { width: min(92vw, 360px); }
+
+  /* 骨架屏只在「从详情返回、正在恢复列表」时出现。它原来按桌面侧栏留了 200px 左边距，
+     手机上没有侧栏，于是整块内容被挤到屏幕外（返回瞬间看到一片错位的灰块）。 */
+  .mr-skel-wrap { inset: 56px 0 0 0; padding: 12px; }
+  .mr-skel-grid { grid-template-columns: 1fr; gap: 12px; }
+  .mr-skel-line { width: 140px; margin-bottom: 10px; }
 }
 </style>
 
