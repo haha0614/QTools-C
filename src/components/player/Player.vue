@@ -2,6 +2,7 @@
   <div
     class="qtp"
     :class="{ 'qtp-hidden': barHidden, 'qtp-playing': player.state.playing }"
+    :style="radius ? { borderRadius: radius } : null"
     @mousemove="poke"
     @touchstart="poke"
     @mouseleave="scheduleHide"
@@ -32,7 +33,9 @@ const props = defineProps({
   source: { type: Object, required: true },
   poster: { type: String, default: '' },
   /** 插件列表：{ id, setup(ctx) }，ctx 提供 registerButton 等注册点 */
-  features: { type: Array, default: () => [] }
+  features: { type: Array, default: () => [] },
+  /** 外框圆角，传 '0' 就是方角（视频不再被裁成圆角） */
+  radius: { type: String, default: '' }
 })
 const emit = defineEmits(['loadedmetadata', 'loadeddata', 'ended'])
 

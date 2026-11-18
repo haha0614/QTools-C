@@ -42,11 +42,12 @@
               <div
                 class="md-player-box"
                 :class="{ 'md-hero-target': i === 0 }"
-                :style="{ aspectRatio: ratioOf(i), maxWidth: maxWidthOf(i) }"
+                :style="{ aspectRatio: ratioOf(i), width: widthOf(i) }"
               >
                 <Player
                   :source="playerSources[i]"
                   :features="playerFeatures[i]"
+                  radius="0"
                   @loadedmetadata="onMeta(i, $event)"
                   @loadeddata="showFirstFrame($event)"
                 />
@@ -922,12 +923,13 @@ function ratioOf(i) {
   return videoRatios.value[i] || '16 / 9'
 }
 
-/** 外框宽度上限 = 72vh × 宽高比：竖版不左右留黑边，横版也不超栏宽 */
-function maxWidthOf(i) {
+/** 外框宽度 = min(栏宽, 72vh × 宽高比)。
+    必须给确定宽度：只给 max-width 的话，fit-content 与 width:100% 互相依赖会塌成 300×150 */
+function widthOf(i) {
   const m = String(ratioOf(i)).split('/')
   const w = Number((m[0] || '').trim())
   const h = Number((m[1] || '').trim())
-  return w && h ? 'calc(72vh * ' + (w / h).toFixed(4) + ')' : undefined
+  return w && h ? 'min(100%, calc(72vh * ' + (w / h).toFixed(4) + '))' : '100%'
 }
 
 function onMeta(i, e) {
@@ -1135,14 +1137,15 @@ watch(() => [props.postId, props.post], load)
   width: fit-content;
   max-width: 100%;
   margin: 0 auto;
-  border-radius: 20px;
+  /* 方角：外框贴着画面，给外框圆角就等于给视频圆角（见 Player 的 radius 属性） */
+  border-radius: 0;
   overflow: hidden;
   background: radial-gradient(120% 120% at 30% 20%, #1d2430, #0b0e13);
 }
 .md-player.md-novideo { width: 100%; }
-.md-player-box { position: relative; width: 100%; max-width: 100%; max-height: 72vh; margin: 0 auto; line-height: 0; }
+.md-player-box { position: relative; max-width: 100%; max-height: 72vh; margin: 0 auto; line-height: 0; }
 .md-vseg { margin: 0 0 6px; font-size: 12px; color: var(--el-text-color-secondary); }
-.md-vitem { width: 100%; border-radius: 10px; overflow: hidden; background: #0d1015; }
+.md-vitem { width: 100%; border-radius: 0; overflow: hidden; background: #0d1015; }
 .md-vitem + .md-vitem { margin-top: 12px; }
 /* 每段的下载按钮放在播放器下方信息条里：不盖画面、不挡控制栏 */
 .md-vbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; font-size: 12px; color: rgba(255,255,255,.72); }
