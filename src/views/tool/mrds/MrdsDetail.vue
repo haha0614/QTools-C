@@ -1137,15 +1137,16 @@ watch(() => [props.postId, props.post], load)
   width: fit-content;
   max-width: 100%;
   margin: 0 auto;
-  /* 方角：外框贴着画面，给外框圆角就等于给视频圆角（见 Player 的 radius 属性） */
-  border-radius: 0;
+  border-radius: 20px;
   overflow: hidden;
   background: radial-gradient(120% 120% at 30% 20%, #1d2430, #0b0e13);
 }
 .md-player.md-novideo { width: 100%; }
 .md-player-box { position: relative; max-width: 100%; max-height: 72vh; margin: 0 auto; line-height: 0; }
 .md-vseg { margin: 0 0 6px; font-size: 12px; color: var(--el-text-color-secondary); }
-.md-vitem { width: 100%; border-radius: 0; overflow: hidden; background: #0d1015; }
+/* 圆角/裁切只在最外层 .md-player 上做一次：内层再设不同半径，
+     两层之间的近黑底色就会从四角露出来（实测四个黑角） */
+.md-vitem { width: 100%; border-radius: 0; overflow: visible; background: transparent; }
 .md-vitem + .md-vitem { margin-top: 12px; }
 /* 每段的下载按钮放在播放器下方信息条里：不盖画面、不挡控制栏 */
 .md-vbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; font-size: 12px; color: rgba(255,255,255,.72); }
