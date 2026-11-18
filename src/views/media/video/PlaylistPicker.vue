@@ -149,7 +149,7 @@ async function createAndAdd() {
   background: var(--bg-2);
   color: var(--fg);
   border: 1px solid var(--line-2);
-  border-radius: var(--radius);
+  border-radius: 16px;
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
   overflow: hidden;
 }
@@ -319,7 +319,7 @@ async function createAndAdd() {
     transform: none;
     width: 100%;
     max-height: 82vh;
-    border-radius: var(--radius) var(--radius) 0 0;
+    border-radius: 16px 16px 0 0;
   }
 }
 </style>

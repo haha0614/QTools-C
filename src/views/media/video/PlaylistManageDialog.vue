@@ -522,7 +522,7 @@ function noop() {
   background: var(--bg-2);
   color: var(--fg);
   border: 1px solid var(--line-2);
-  border-radius: var(--radius);
+  border-radius: 20px;
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
   overflow: hidden;
 }

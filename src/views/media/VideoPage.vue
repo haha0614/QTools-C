@@ -3536,7 +3536,7 @@ watch(
   padding: 7px 11px;
   background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 8px;
   color: var(--fg);
   outline: none;
 }
@@ -3555,7 +3555,7 @@ watch(
   padding: 7px 9px;
   background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 8px;
   color: var(--fg);
   outline: none;
   cursor: pointer;
@@ -3565,7 +3565,7 @@ watch(
 .icon-btn {
   padding: 7px 11px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 8px;
   background: var(--bg-3);
   color: var(--fg);
   cursor: pointer;
@@ -3831,7 +3831,7 @@ watch(
 .drawer-close {
   padding: 2px 8px;
   border: 1px solid var(--line);
-  border-radius: var(--radius, 10px);
+  border-radius: 8px;
   background: transparent;
   color: var(--fg-dim);
   font-size: 18px;
@@ -3864,14 +3864,14 @@ watch(
 
 .drawer-foot .btn-ghost {
   flex: 0 0 auto;
-  border-radius: var(--radius, 10px);
+  border-radius: 8px;
 }
 
 .btn-primary {
   flex: 1;
   padding: 8px 12px;
   border: 1px solid var(--accent-btn);
-  border-radius: var(--radius, 10px);
+  border-radius: 8px;
   /* 实心按钮：--accent-btn / --accent-on 才有 4.5:1 对比度 */
   background: var(--accent-btn);
   color: var(--accent-on);

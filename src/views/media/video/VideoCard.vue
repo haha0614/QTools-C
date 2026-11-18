@@ -583,7 +583,7 @@ function resBadge(w) {
   flex-direction: column;
   background: var(--bg-2);
   border: 1px solid var(--line);
-  border-radius: var(--radius, 10px);
+  border-radius: 12px;
   /* P5.1 起不再用 overflow:hidden 裁切（原本靠裁切得到的圆角改由 .thumb 上两角与 .card-prog 下两角承担，
      半径取 radius - 1px，视觉与改动前一致）。
      P5.7 说明：菜单已 teleport 到 body，是否裁切与菜单无关了 —— 这里保持 visible 只是为了圆角的现有画法不变 */
@@ -609,7 +609,7 @@ function resBadge(w) {
   min-height: 0;
   overflow: hidden;
   /* .card 不再裁切，圆角由封面自己承担（与原先裁切半径对齐） */
-  border-radius: calc(var(--radius, 10px) - 1px) calc(var(--radius, 10px) - 1px) 0 0;
+  border-radius: calc(12px - 1px) calc(12px - 1px) 0 0;
   background: var(--bg);
 }
 
@@ -709,7 +709,7 @@ function resBadge(w) {
   bottom: 0;
   height: 3px;
   background: var(--bg-3);
-  border-radius: 0 0 calc(var(--radius, 10px) - 1px) calc(var(--radius, 10px) - 1px);
+  border-radius: 0 0 calc(12px - 1px) calc(12px - 1px);
 }
 
 .card-prog i {

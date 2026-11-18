@@ -371,7 +371,7 @@ if (typeof window !== 'undefined') window.addEventListener('keydown', onKeydown)
   display: flex;
   flex-direction: column;
   border: 1px solid var(--line);
-  border-radius: var(--radius, 10px);
+  border-radius: 20px;
   background: var(--bg-2);
   color: var(--fg);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
@@ -424,7 +424,7 @@ if (typeof window !== 'undefined') window.addEventListener('keydown', onKeydown)
   margin: 0 0 10px;
   padding: 8px 10px;
   border: 1px solid var(--danger, #c0392b);
-  border-radius: var(--radius, 8px);
+  border-radius: 8px;
   font-size: 12.5px;
   color: var(--danger);
 }
@@ -454,7 +454,7 @@ if (typeof window !== 'undefined') window.addEventListener('keydown', onKeydown)
   width: 100%;
   padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: var(--radius, 8px);
+  border-radius: 8px;
   background: var(--bg-3);
   color: var(--fg);
   font-size: 13px;
@@ -488,7 +488,7 @@ if (typeof window !== 'undefined') window.addEventListener('keydown', onKeydown)
   margin: 8px 0;
   padding: 12px;
   border: 1px dashed var(--line);
-  border-radius: var(--radius, 10px);
+  border-radius: 12px;
   text-align: center;
   font-size: 12.5px;
   color: var(--fg-dim);
@@ -513,7 +513,7 @@ if (typeof window !== 'undefined') window.addEventListener('keydown', onKeydown)
   gap: 2px;
   padding: 8px 4px;
   border: 1px solid var(--line);
-  border-radius: var(--radius, 8px);
+  border-radius: 8px;
   background: var(--bg-3);
 }
 

@@ -160,7 +160,7 @@ watch(
   flex-direction: column;
   padding: 8px;
   border: 1px solid var(--line-2);
-  border-radius: var(--radius, 10px);
+  border-radius: 16px;
   background: var(--bg-2);
   color: var(--fg);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.38);

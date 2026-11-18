@@ -154,7 +154,7 @@ onMounted(() => {
   padding: 8px;
   background: var(--bg-2);
   border: 1px solid var(--line-2);
-  border-radius: var(--radius);
+  border-radius: 16px;
   box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28);
   color: var(--fg);
   font-size: 13px;
@@ -172,7 +172,7 @@ onMounted(() => {
   padding: 5px 8px;
   background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 8px;
   color: var(--fg);
   outline: none;
   font: inherit;
@@ -187,7 +187,7 @@ onMounted(() => {
   height: 22px;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 8px;
   background: var(--bg-3);
   color: var(--fg-dim);
   line-height: 1;
@@ -268,7 +268,7 @@ onMounted(() => {
   width: 100%;
   padding: 5px 8px;
   border: 1px dashed var(--line-2);
-  border-radius: var(--radius);
+  border-radius: 8px;
   background: transparent;
   color: var(--accent);
   font: inherit;
@@ -301,7 +301,7 @@ onMounted(() => {
 .tp-ok {
   padding: 4px 12px;
   border: 1px solid var(--accent);
-  border-radius: var(--radius);
+  border-radius: 8px;
   background: var(--accent-soft);
   color: var(--accent);
   font: inherit;

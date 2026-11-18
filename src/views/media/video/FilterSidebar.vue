@@ -308,7 +308,7 @@ defineExpose({ scrollToQuick })
 
 details.fg {
   border: 1px solid var(--line);
-  border-radius: var(--radius, 10px);
+  border-radius: 12px;
   background: var(--bg);
   overflow: hidden;
 }

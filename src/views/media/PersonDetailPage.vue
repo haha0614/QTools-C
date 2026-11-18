@@ -943,7 +943,7 @@ onBeforeUnmount(() => {
   margin: 10px 0;
   padding: 14px;
   border: 1px dashed var(--line);
-  border-radius: var(--radius, 10px);
+  border-radius: 12px;
   text-align: center;
   font-size: 13px;
   color: var(--fg-dim);

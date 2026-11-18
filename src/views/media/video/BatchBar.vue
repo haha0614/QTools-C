@@ -185,7 +185,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocDown))
   padding: 6px 8px;
   background: var(--bg-3);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 8px;
 }
 
 .bb-count {
@@ -218,7 +218,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocDown))
 .bb-btn {
   padding: 5px 10px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 8px;
   background: var(--bg-2);
   color: var(--fg);
   font: inherit;
@@ -286,7 +286,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocDown))
   gap: 7px;
   background: var(--bg-2);
   border: 1px solid var(--line-2);
-  border-radius: var(--radius);
+  border-radius: 16px;
   box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28);
 }
 
@@ -348,7 +348,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocDown))
 .br-ok {
   padding: 4px 12px;
   border: 1px solid var(--accent);
-  border-radius: var(--radius);
+  border-radius: 8px;
   background: var(--accent-soft);
   color: var(--accent);
   font: inherit;

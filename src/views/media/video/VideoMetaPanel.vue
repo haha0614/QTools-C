@@ -1591,7 +1591,7 @@ onMounted(() => {
   height: 26px;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 8px;
   background: var(--bg-3);
   color: var(--fg-dim);
   font-size: 15px;
@@ -1740,7 +1740,7 @@ onMounted(() => {
 .vp-err {
   padding: 7px 9px;
   border: 1px solid var(--warn);
-  border-radius: var(--radius);
+  border-radius: 8px;
   background: color-mix(in srgb, var(--warn) 14%, transparent);
   color: var(--warn);
   font-size: 12.5px;
@@ -2153,7 +2153,7 @@ onMounted(() => {
 .vp-policy {
   padding: 6px 9px;
   border: 1px dashed var(--line-2);
-  border-radius: var(--radius);
+  border-radius: 8px;
   background: var(--bg-3);
 }
 

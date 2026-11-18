@@ -574,7 +574,7 @@ watch(
   display: flex;
   flex-direction: column;
   border: 1px solid var(--line);
-  border-radius: var(--radius, 10px);
+  border-radius: 20px;
   background: var(--bg-2);
   color: var(--fg);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
@@ -662,7 +662,7 @@ watch(
   position: relative;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: var(--radius, 10px);
+  border-radius: 12px;
   background: var(--pw-tone, var(--bg-2));
   cursor: grab;
   touch-action: none;

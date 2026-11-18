@@ -1014,7 +1014,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   border: 1px solid var(--line);
-  border-radius: var(--radius, 10px);
+  border-radius: 20px;
   background: var(--bg-2);
   color: var(--fg);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
@@ -1096,7 +1096,7 @@ onBeforeUnmount(() => {
   margin: 8px 0;
   padding: 12px;
   border: 1px dashed var(--line);
-  border-radius: var(--radius, 10px);
+  border-radius: 12px;
   text-align: center;
   font-size: 12.5px;
   color: var(--fg-dim);
@@ -1182,7 +1182,7 @@ onBeforeUnmount(() => {
   width: 100%;
   padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: var(--radius, 8px);
+  border-radius: 8px;
   background: var(--bg-3);
   color: var(--fg);
   font-size: 13px;
@@ -1209,7 +1209,7 @@ onBeforeUnmount(() => {
   width: 120px;
   height: 120px;
   border: 1px solid var(--line);
-  border-radius: var(--radius, 8px);
+  border-radius: 10px;
   overflow: hidden;
   background: var(--bg-3);
 }
@@ -1293,7 +1293,7 @@ onBeforeUnmount(() => {
   justify-content: center;
   padding: 8px;
   border: 1px solid var(--line);
-  border-radius: var(--radius, 10px);
+  border-radius: 10px;
   background: var(--bg-3);
   cursor: crosshair;
   user-select: none;

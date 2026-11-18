@@ -166,7 +166,7 @@ function confirmDelete(item) {
 .sf-btn {
   padding: 4px 9px;
   border: 1px solid var(--line);
-  border-radius: var(--radius, 10px);
+  border-radius: 8px;
   background: var(--bg-3);
   color: var(--fg-dim);
   font-size: 12px;

@@ -4420,7 +4420,7 @@ defineExpose({
   transform: translateX(-50%);
   z-index: 6;
   border: 1px solid var(--line-2);
-  border-radius: var(--radius);
+  border-radius: 16px;
   /* P5.18：底色必须是深色。--bg-3 / --bg-2 在亮色主题下是接近白的灰，
      而这一格里装的是**视频画面**（精灵图切片 / 精确帧 / 预览片段），
      任何一层没就绪时露出的就是那块白底 —— 用户反馈的「预览框白屏」。 */
@@ -4715,7 +4715,7 @@ defineExpose({
   bottom: 64px;
   padding: 6px 12px;
   border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: var(--radius);
+  border-radius: 8px;
   background: rgba(0, 0, 0, 0.72);
   color: #fff;
   font-size: 12.5px;
@@ -5097,7 +5097,7 @@ defineExpose({
   overflow: auto;
   padding: 14px 16px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 16px;
   background: var(--bg-2);
   color: var(--fg);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);

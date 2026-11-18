@@ -1116,7 +1116,7 @@ onUnmounted(() => {
   height: 30px;
   padding: 0 14px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 8px;
   background: transparent;
   color: var(--fg);
   font: inherit;
@@ -1273,7 +1273,7 @@ onUnmounted(() => {
 .mm-link {
   display: block;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 8px;
   overflow: hidden;
   background: var(--bg-2);
   color: inherit;
@@ -1352,7 +1352,7 @@ onUnmounted(() => {
   margin: 0 0 14px;
   padding: 10px 12px;
   border: 1px dashed var(--line);
-  border-radius: var(--radius);
+  border-radius: 12px;
   font-size: 13px;
   color: var(--fg-dim);
 }
@@ -1380,7 +1380,7 @@ onUnmounted(() => {
 .me-rows {
   margin: 0;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 12px;
   overflow: hidden;
 }
 
@@ -1439,7 +1439,7 @@ onUnmounted(() => {
   margin-top: 14px;
   padding: 12px 14px;
   border: 1px dashed var(--line);
-  border-radius: var(--radius);
+  border-radius: 12px;
 }
 
 .me-locked__t {
@@ -1532,7 +1532,7 @@ onUnmounted(() => {
   height: 34px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 8px;
   background: var(--bg);
   color: var(--fg);
   font-size: 14px;
@@ -1568,7 +1568,7 @@ onUnmounted(() => {
   height: 30px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 8px;
   background: transparent;
   color: var(--fg);
   font: inherit;
@@ -1602,7 +1602,7 @@ onUnmounted(() => {
   height: 32px;
   padding: 0 16px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 8px;
   background: transparent;
   color: var(--fg);
   font: inherit;

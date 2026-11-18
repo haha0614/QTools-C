@@ -116,7 +116,7 @@ const onOpen = () => emit('open', props.album.id)
   color: var(--fg);
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: var(--radius, 10px);
+  border-radius: 12px;
   overflow: hidden;
   transition: transform 0.12s ease, border-color 0.12s ease, background-color 0.2s;
 }

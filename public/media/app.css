@@ -102,7 +102,7 @@ button, input, select { font-family: inherit; font-size: inherit; color: inherit
 .facet-groups { display: flex; flex-direction: column; gap: 6px; }
 details.fg {
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 12px;
   background: var(--bg-2);
   overflow: hidden;
 }
@@ -181,7 +181,7 @@ details.fg[open] .fg-caret { transform: rotate(180deg); }
   padding: 7px 11px;
   background: var(--bg-2);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 12px;
   outline: none;
 }
 .search:focus { border-color: var(--accent); background: #12161d; }
@@ -190,14 +190,14 @@ details.fg[open] .fg-caret { transform: rotate(180deg); }
   padding: 7px 9px;
   background: var(--bg-2);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 12px;
   outline: none;
   cursor: pointer;
 }
 .btn, .btn-ghost, .icon-btn {
   padding: 7px 11px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 8px;
   background: var(--bg-2);
   color: var(--fg);
   cursor: pointer;
@@ -238,7 +238,7 @@ details.fg[open] .fg-caret { transform: rotate(180deg); }
   text-align: left;
   background: var(--bg-2);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   color: inherit;
@@ -271,7 +271,7 @@ details.fg[open] .fg-caret { transform: rotate(180deg); }
   display: flex; flex-direction: column;
   background: var(--bg-2);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   transition: transform .12s, border-color .12s, box-shadow .12s;
@@ -422,7 +422,7 @@ details.fg[open] .fg-caret { transform: rotate(180deg); }
   position: absolute; left: 14px; bottom: 64px;
   padding: 6px 12px;
   border: 1px solid rgba(255, 255, 255, .22);
-  border-radius: var(--radius);
+  border-radius: 12px;
   background: rgba(0, 0, 0, .72);
   color: #fff;
   font-size: 12.5px;

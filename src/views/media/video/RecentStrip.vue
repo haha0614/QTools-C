@@ -72,7 +72,7 @@ function pctOf(it) {
   line-height: 1;
   font-size: 15px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 8px;
   background: var(--bg-2);
   color: var(--fg);
   cursor: pointer;
@@ -98,7 +98,7 @@ function pctOf(it) {
   text-align: left;
   background: var(--bg-2);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   color: inherit;

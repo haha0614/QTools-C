@@ -108,7 +108,7 @@ function onDragEnd() {
   gap: 4px;
   padding: 6px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 12px;
   background: var(--bg-2);
   cursor: pointer;
   user-select: none;
