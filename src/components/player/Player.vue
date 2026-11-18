@@ -103,7 +103,8 @@ defineExpose({ player })
 .qtp {
   position: relative;
   display: inline-block;
-  max-width: 100%;
+  width: 100%;
+  height: 100%;
   border-radius: var(--qt-radius-xl, 20px);
   overflow: hidden;
   line-height: 0;
@@ -111,11 +112,9 @@ defineExpose({ player })
 }
 .qtp-video {
   display: block;
-  /* 高度定死、宽度按视频比例算：竖版不会左右留黑边，横版也不会超出栏宽 */
-  height: 72vh;
-  max-height: 72vh;
-  width: auto;
-  max-width: 100%;
+  /* 外框已按视频自然比例定好尺寸，这里只要铺满即可（比例一致 → 不会出现黑边） */
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   background: #000;
 }

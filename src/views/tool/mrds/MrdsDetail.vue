@@ -39,10 +39,15 @@
               <!-- 段号只在多段时出现，且放在播放器上方；原来压在画面里的底栏已去掉 -->
               <p v-if="videoUrls.length > 1" class="md-vseg">第 {{ i + 1 }} 段 / {{ videoUrls.length }}</p>
               <!-- 外框尺寸由 <video> 的自然比例决定，不再用 aspect-ratio 兜底 -->
-              <div class="md-player-box" :class="{ 'md-hero-target': i === 0 }">
+              <div
+                class="md-player-box"
+                :class="{ 'md-hero-target': i === 0 }"
+                :style="{ aspectRatio: ratioOf(i), maxWidth: maxWidthOf(i) }"
+              >
                 <Player
                   :source="playerSources[i]"
                   :features="playerFeatures[i]"
+                  @loadedmetadata="onMeta(i, $event)"
                   @loadeddata="showFirstFrame($event)"
                 />
               </div>
@@ -909,6 +914,29 @@ const videoUrls = computed(() => {
 })
 
 /** 每段视频的源适配器：HLS 清单失效重试全在适配器内部 */
+/** 每段视频各自的宽高比（metadata 到达后才知道）。多段帖里各段画幅可能不同，
+    共用一份比例会让第 2 段以后出现黑边 */
+const videoRatios = ref({})
+
+function ratioOf(i) {
+  return videoRatios.value[i] || '16 / 9'
+}
+
+/** 外框宽度上限 = 72vh × 宽高比：竖版不左右留黑边，横版也不超栏宽 */
+function maxWidthOf(i) {
+  const m = String(ratioOf(i)).split('/')
+  const w = Number((m[0] || '').trim())
+  const h = Number((m[1] || '').trim())
+  return w && h ? 'calc(72vh * ' + (w / h).toFixed(4) + ')' : undefined
+}
+
+function onMeta(i, e) {
+  const v = e && e.target
+  if (v && v.videoWidth && v.videoHeight) {
+    videoRatios.value = { ...videoRatios.value, [i]: v.videoWidth + ' / ' + v.videoHeight }
+  }
+}
+
 const playerSources = computed(() => videoUrls.value.map((u) => hlsSource(u)))
 
 /** 每段视频挂哪些插件：现在只有"下载这一段"，以后画质/雪碧图/标记也在这里按需加 */
@@ -1102,7 +1130,7 @@ watch(() => [props.postId, props.post], load)
 .md-main { flex: 1 1 auto; min-width: 0; }
 
 .md-player { border-radius: 20px; overflow: hidden; background: radial-gradient(120% 120% at 30% 20%, #1d2430, #0b0e13); }
-.md-player-box { position: relative; width: fit-content; max-width: 100%; margin: 0 auto; line-height: 0; }
+.md-player-box { position: relative; width: 100%; max-width: 100%; max-height: 72vh; margin: 0 auto; line-height: 0; }
 .md-vseg { margin: 0 0 6px; font-size: 12px; color: var(--el-text-color-secondary); }
 .md-vitem { width: 100%; border-radius: 10px; overflow: hidden; background: #0d1015; }
 .md-vitem + .md-vitem { margin-top: 12px; }
