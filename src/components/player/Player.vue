@@ -1,11 +1,17 @@
 <template>
-  <div class="qtp" :class="{ 'qtp-is-error': !!player.state.error }">
+  <div
+    class="qtp"
+    :class="{ 'qtp-hidden': barHidden, 'qtp-playing': player.state.playing }"
+    @mousemove="poke"
+    @touchstart="poke"
+    @mouseleave="scheduleHide"
+  >
     <video
       ref="videoEl"
       class="qtp-video"
       playsinline
       :poster="poster || undefined"
-      @loadedmetadata="emit('loadedmetadata', $event)"
+      @loadedmetadata="onMeta"
       @loadeddata="emit('loadeddata', $event)"
       @ended="emit('ended')"
       @click="player.toggle()"
@@ -45,6 +51,29 @@ const ctx = {
   }
 }
 
+/** 控制条自动隐藏：播放中 2.5 秒无操作就淡出，暂停或出错时常驻 */
+const barHidden = ref(false)
+let hideTimer = 0
+const HIDE_MS = 2500
+
+function scheduleHide() {
+  if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0 }
+  const s = player.state
+  if (!s.playing || s.error) { barHidden.value = false; return }
+  hideTimer = window.setTimeout(() => { barHidden.value = true }, HIDE_MS)
+}
+function poke() {
+  barHidden.value = false
+  scheduleHide()
+}
+
+/** 把自然尺寸交给父级（用于外框按视频比例收窄） */
+function onMeta(e) {
+  barHidden.value = false
+  scheduleHide()
+  emit('loadedmetadata', e)
+}
+
 onMounted(() => {
   for (const f of props.features) {
     if (!f || typeof f.setup !== 'function') continue
@@ -57,9 +86,11 @@ onMounted(() => {
       console.warn('[player] plugin failed:', f.id, e)
     }
   }
+  scheduleHide()
 })
 
 onBeforeUnmount(() => {
+  if (hideTimer) clearTimeout(hideTimer)
   for (const d of disposers) { try { d() } catch (e) { /* 忽略 */ } }
 })
 
@@ -67,23 +98,39 @@ defineExpose({ player })
 </script>
 
 <style lang="scss" scoped>
+/* 外框不再定死尺寸：由 <video> 的自然比例撑开，
+   这样框和画面严丝合缝，不会出现"画布比视频宽"导致的左右黑边与四角露黑底。 */
 .qtp {
   position: relative;
-  /* 必须撑满外框：否则 metadata 到达前视频高度为 0、容器塌陷，
-     绝对定位的控制条会贴到顶部（表现为"刚打开时控制条位置不对"） */
-  width: 100%;
-  height: 100%;
+  display: inline-block;
+  max-width: 100%;
   border-radius: var(--qt-radius-xl, 20px);
   overflow: hidden;
-  background: #06080b;
   line-height: 0;
+  background: #06080b;
 }
-.qtp-video { display: block; width: 100%; height: 100%; background: #000; object-fit: contain; }
+.qtp-video {
+  display: block;
+  /* 高度定死、宽度按视频比例算：竖版不会左右留黑边，横版也不会超出栏宽 */
+  height: 72vh;
+  max-height: 72vh;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  background: #000;
+}
 .qtp-hint {
-  position: absolute; left: 0; right: 0; bottom: 44px;
-  margin: 0; padding: 0 12px;
-  font-size: 12.5px; line-height: 1.6; text-align: center;
-  color: #ffd479; line-height: 1.6;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 52px;
+  margin: 0;
+  padding: 0 16px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  text-align: center;
+  color: #ffd479;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .8);
 }
-.qtp-hint-error { color: #ff8f8f; }
+.qtp-hint-error { color: #ff9a9a; }
 </style>

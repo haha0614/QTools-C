@@ -62,10 +62,8 @@ function cycleRate() {
 </script>
 
 <style lang="scss" scoped>
-/* 外观沿用媒体站播放器的深色控制条，但颜色/圆角一律走全局令牌：
-   控件圆角取"控件层" 8px，胶囊取 999px，间距走 4/8/12 刻度。 */
+/* 控制条：贴底、无自身圆角（由外框裁切），背景用向下透明渐变而不是实色块 */
 .qtp-bar {
-  /* 浮在画面底部：控制条若参与布局会把视频挤出容器（实测被裁掉、看不见也点不到） */
   position: absolute;
   left: 0;
   right: 0;
@@ -74,12 +72,13 @@ function cycleRate() {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 10px;
-  background: rgba(12, 16, 22, .78);
-  backdrop-filter: blur(6px);
+  padding: 22px 12px 8px;
+  background: linear-gradient(to top, rgba(6, 9, 13, .92) 0%, rgba(6, 9, 13, .55) 45%, rgba(6, 9, 13, 0) 100%);
   color: #f2f5f9;
   font-size: 12.5px;
   line-height: 1;
+  border-radius: 0;
+  transition: opacity .2s ease;
 }
 .qtp-btn {
   display: inline-flex;
@@ -97,9 +96,9 @@ function cycleRate() {
   transition: background-color .15s ease, border-color .15s ease;
 }
 .qtp-btn:hover { background: rgba(255, 255, 255, .16); border-color: rgba(255, 255, 255, .34); }
-.qtp-btn-text { font-variant-numeric: tabular-nums; }
+.qtp-btn-text { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .qtp-ico { font-size: 11px; line-height: 1; }
-.qtp-time { color: rgba(255, 255, 255, .78); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.qtp-time { color: rgba(255, 255, 255, .82); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 .qtp-scrub { position: relative; flex: 1 1 auto; min-width: 60px; height: 26px; display: flex; align-items: center; }
 .qtp-scrub-buf {
@@ -114,4 +113,13 @@ function cycleRate() {
   border-radius: 999px; background: #fff; border: 0;
 }
 .qtp-range:focus-visible { outline: 2px solid var(--el-color-primary, #4a9eff); outline-offset: 2px; }
+
+/* 自动隐藏：播放中无操作 2.5 秒淡出，鼠标移入/触摸立刻恢复 */
+:global(.qtp-hidden) .qtp-bar { opacity: 0; pointer-events: none; }
+:global(.qtp-hidden) { cursor: none; }
+
+@media (max-width: 560px) {
+  .qtp-range-vol { display: none; }
+  .qtp-bar { gap: 6px; padding: 18px 8px 6px; }
+}
 </style>
