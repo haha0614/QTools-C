@@ -69,6 +69,10 @@ defineExpose({ player })
 <style lang="scss" scoped>
 .qtp {
   position: relative;
+  /* 必须撑满外框：否则 metadata 到达前视频高度为 0、容器塌陷，
+     绝对定位的控制条会贴到顶部（表现为"刚打开时控制条位置不对"） */
+  width: 100%;
+  height: 100%;
   border-radius: var(--qt-radius-xl, 20px);
   overflow: hidden;
   background: #06080b;
