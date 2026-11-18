@@ -41,19 +41,14 @@
               :class="{ 'md-hero-target': i === 0 }"
               :style="{ aspectRatio: i === 0 ? videoRatio : '16 / 9' }"
             >
-              <video
-                :ref="(el) => { videoEls[i] = el }"
-                class="md-video"
-                controls
-                playsinline
-                :preload="i === 0 ? 'auto' : 'metadata'"
-                :data-vindex="i"
-                :src="url"
+              <!-- 播放器已抽成通用组件：HLS 清单重试在源适配器里，
+                   下载按钮由插件注册进来，本页不再自己管 hls.js -->
+              <Player
+                :source="playerSources[i]"
+                :features="playerFeatures[i]"
                 @loadedmetadata="i === 0 && onMeta($event)"
                 @loadeddata="showFirstFrame($event)"
-              ></video>
-              <!-- 错误提示跟着各自的播放器走，避免"第 2 段失败却显示在最后一段下面" -->
-              <p v-if="videoErrors[i]" class="md-player-hint">{{ videoErrors[i] }}</p>
+              />
             </div>
             <!-- 下载按钮放在播放器下方：不遮挡画面，也不压控制栏 -->
             <div class="md-vbar">
@@ -307,6 +302,9 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import Player from '@/components/player/Player.vue'
+import { hlsSource } from '@/components/player/sources/hls'
+import { downloadPlugin } from '@/components/player/plugins/download'
 import request from '@/utils/request'
 import { fetchUserFlags, markSeen, toggleFav } from '@/utils/webUserItem'
 import { ownerHeaders } from '@/utils/webOwner'
@@ -326,11 +324,7 @@ const props = defineProps({
 const row = ref(props.post || null)
 const loading = ref(false)
 const error = ref('')
-/** 所有视频元素（多视频时左侧纵向平铺，每段一个播放器） */
-const videoEls = ref([])
 const playError = ref('')
-/** 每段视频各自的错误信息（index → 文案）：多视频时错误不能都堆到最后一段下面 */
-const videoErrors = ref({})
 /** 播放区按视频自身比例走：源站竖版（720×1280）比横版多，强制 16:9 会留大片黑边 */
 const videoRatio = ref('16 / 9')
 /** 收藏态：详情页自己拉一次（深链直接进来时列表页没机会告诉我们） */
@@ -893,7 +887,6 @@ async function startDownload() {
       downloadError.value = String((data && data.downloadError) || '')
       if (downloadState.value === 'done') {
         row.value = data
-        initPlayer()
       }
       if (downloadState.value === 'error' || downloadState.value === 'done' || rounds > 400) {
         clearInterval(timer)
@@ -904,8 +897,6 @@ async function startDownload() {
     }
   }, 3000)
 }
-/** hls.js 实例（切换条目要销毁，否则 worker 里还挂着旧播放列表） */
-let hlsList = []
 
 /** 视频数：优先用详情返回的 videos 数组（多视频帖），老数据退回 videoCount */
 const videoCount = computed(() => {
@@ -926,6 +917,16 @@ const videoUrls = computed(() => {
   if (row.value.videoFile && n === 1) return [row.value.videoFile]
   return Array.from({ length: n }, (_, i) => '/api/tool/web/hls/' + id + '/playlist.m3u8?i=' + i)
 })
+
+/** 每段视频的源适配器：HLS 清单失效重试全在适配器内部 */
+const playerSources = computed(() => videoUrls.value.map((u) => hlsSource(u)))
+
+/** 每段视频挂哪些插件：现在只有"下载这一段"，以后画质/雪碧图/标记也在这里按需加 */
+const playerFeatures = computed(() =>
+  videoUrls.value.map((_, i) => [
+    downloadPlugin({ label: '下载这一段', onClick: () => openSaveDialogFor(i) })
+  ])
+)
 
 function unwrap(body) {
   if (body && typeof body === 'object' && typeof body.code === 'number') return body.data
@@ -1061,81 +1062,9 @@ function onMeta(e) {
   videoRatio.value = v && v.videoWidth && v.videoHeight ? v.videoWidth + ' / ' + v.videoHeight : '16 / 9'
 }
 
-function destroyPlayer() {
-  for (const h of hlsList) {
-    try { h.destroy() } catch (e) { /* 忽略销毁异常 */ }
-  }
-  hlsList = []
-}
 
-async function initPlayer() {
-  destroyPlayer()
-  playError.value = ''
-  videoErrors.value = {}
-  const id = row.value && row.value.id
-  if (!id || videoCount.value < 1) return
-  await nextTick()
-  const els = videoEls.value.filter(Boolean)
-  if (!els.length) return
-  // 本地 mp4（已入库）：自带进度条、不依赖代理
-  if (row.value.videoFile) {
-    els[0].src = row.value.videoFile
-    return
-  }
-  const urls = videoUrls.value
-  try {
-    // hls.min.js 是 UMD：在 ESM 里没有 export，但会把构造函数挂到 globalThis.Hls 上
-    await import('@/vendor/hls.min.js')
-    const Hls = (typeof window !== 'undefined' && window.Hls) || null
-    els.forEach((el, i) => {
-      const src = urls[i]
-      if (!src) return
-      if (Hls && Hls.isSupported()) {
-        const h = new Hls({ enableWorker: true, lowLatencyMode: false })
-        // 源站地址带 auth_key 会过期：后端收到 400/403 后会立刻返回 502，
-        // 并在后台用真浏览器重签（实测 8~13 秒）再回写库。默认重试只 1 次、间隔 1 秒，
-        // 根本等不到自愈，所以这里对网络类致命错误自己排期重试。
-        let retries = 0
-        const MAX_RETRY = 5
-        h.loadSource(src)
-        h.attachMedia(el)
-        h.on(Hls.Events.ERROR, (_evt, data) => {
-          if (!data || !data.fatal) return
-          const isNetwork = Hls.ErrorTypes && data.type === Hls.ErrorTypes.NETWORK_ERROR
-          if (isNetwork && retries < MAX_RETRY) {
-            retries += 1
-            videoErrors.value = {
-              ...videoErrors.value,
-              [i]: '源站地址已过期，正在后台重新签名…（第 ' + retries + '/' + MAX_RETRY + ' 次重试）'
-            }
-            // 退避：2/2/3/4/6 秒。后端重签实测要 8~30 秒（含排队），
-            // 固定 6 秒会让"第 2 次就成功"的用户白等最多 6 秒。
-            const DELAYS = [2000, 2000, 3000, 4000, 6000]
-            setTimeout(() => {
-              // 必须 loadSource 重新拉清单：manifest 级失败时 startLoad() 只重试媒体加载。
-              try { h.loadSource(src) } catch (e) { /* 播放器已销毁 */ }
-            }, DELAYS[Math.min(retries - 1, DELAYS.length - 1)])
-            return
-          }
-          const msg = '第 ' + (i + 1) + ' 段播放失败：' + (data.details || data.type || '未知错误')
-          videoErrors.value = { ...videoErrors.value, [i]: msg }
-        })
-        hlsList.push(h)
-      } else if (el.canPlayType('application/vnd.apple.mpegurl')) {
-        el.src = src
-      } else {
-        playError.value = '当前浏览器不支持 HLS 播放'
-      }
-    })
-  } catch (err) {
-    playError.value = '播放器初始化失败：' + ((err && err.message) || '')
-  }
-}
-
-watch(() => row.value && row.value.id, () => { initPlayer() })
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onLbKey)
-  destroyPlayer()
   if (detailPollTimer) {
     clearInterval(detailPollTimer)
     detailPollTimer = null
