@@ -2106,7 +2106,7 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
 .mr-restoring { opacity: 0; pointer-events: none; }
 
 /* 骨架屏：恢复期间顶住页面高度，视觉上不是白屏 */
-.mr-skel-wrap { position: fixed; inset: 60px 0 0 200px; z-index: 5; padding: 16px 24px; pointer-events: none; }
+.mr-skel-wrap { position: fixed; inset: 60px 0 0 var(--qt-rail-w); z-index: 5; padding: 16px 24px; pointer-events: none; }
 .mr-skel-line { height: 14px; width: 180px; border-radius: 6px; margin-bottom: 14px; background: var(--el-fill-color); animation: mr-skel-pulse 1.2s ease-in-out infinite; }
 .mr-skel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
 .mr-skel-card { border-radius: 12px; overflow: hidden; background: var(--el-fill-color-lighter); padding-bottom: 10px; }
@@ -2310,7 +2310,7 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
 
 .mr-grid-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
 .mr-grid-poster { grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); }
-.mr-card { border: 1px solid var(--el-border-color); border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform .16s, border-color .16s; background: var(--el-bg-color-overlay); }
+.mr-card { border: 1px solid var(--el-border-color); border-radius: 14px; overflow: hidden; cursor: pointer; transition: transform .16s, border-color .16s; background: var(--el-bg-color-overlay); }
 .mr-card:hover { transform: translateY(-2px); border-color: var(--el-color-primary); }
 .mr-card-grid .mr-cover { aspect-ratio: 16 / 10; }
 .mr-card-poster .mr-cover { aspect-ratio: 2 / 3; }
@@ -2332,7 +2332,7 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
 .mr-meta { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11.5px; color: var(--el-text-color-secondary); }
 
 .mr-list { display: flex; flex-direction: column; gap: 8px; }
-.mr-row { display: flex; gap: 12px; align-items: center; padding: 8px; border: 1px solid var(--el-border-color); border-radius: 10px; cursor: pointer; }
+.mr-row { display: flex; gap: 12px; align-items: center; padding: 8px; border: 1px solid var(--el-border-color); border-radius: 14px; cursor: pointer; }
 .mr-row:hover { border-color: var(--el-color-primary); }
 .mr-row-cover { width: 120px; aspect-ratio: 16 / 10; flex: 0 0 120px; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #1b2027; color: #cfd6e2; font-size: 11px; }
 .mr-row-cover img { width: 100%; height: 100%; object-fit: cover; }
@@ -2350,7 +2350,7 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
 .mr-done { font-size: 12px; color: var(--el-text-color-secondary); }
 
 .mr-mask { position: fixed; inset: 0; background: rgba(6,8,12,.72); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 2000; }
-.mr-sheet { width: min(1680px, 100%); max-height: calc(100vh - 48px); display: flex; flex-direction: column; border-radius: 14px; background: var(--el-bg-color-overlay); border: 1px solid var(--el-border-color); overflow: hidden; }
+.mr-sheet { width: min(1680px, 100%); max-height: calc(100vh - 48px); display: flex; flex-direction: column; border-radius: 20px; background: var(--el-bg-color-overlay); border: 1px solid var(--el-border-color); overflow: hidden; }
 .mr-sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--el-border-color-lighter); }
 .mr-sheet-title { font-size: 13.5px; font-weight: 600; }
 .mr-sheet-tools { display: inline-flex; gap: 8px; }

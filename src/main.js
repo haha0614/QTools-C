@@ -18,6 +18,7 @@ import { APP_INFO } from '@/utils/constants'
 
 const app = createApp(App)
 
+
 // 全量注册 @element-plus/icons-vue 图标，模板中可直接使用 <el-icon><Sunny /></el-icon>
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)

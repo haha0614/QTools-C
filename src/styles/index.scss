@@ -158,3 +158,22 @@ a {
     max-width: calc(100vw - 24px);
   }
 }
+
+/* ---------------------------------------------------------------- 连续曲率（方圆角）
+   主要表面在支持 corner-shape 的浏览器上用曲率连续的圆角（squircle），
+   不支持的浏览器整块跳过，退回等价的圆弧。半径已在各组件内配套上调。 */
+@supports (corner-shape: squircle) {
+  .mr-card,
+  .mr-row,
+  .mr-row-cover,
+  .mr-sheet,
+  .md-player,
+  .md-player-box,
+  .md-vitem,
+  .md-gcell,
+  .mp-back,
+  .md-btn,
+  .tl-badge {
+    corner-shape: squircle;
+  }
+}
