@@ -1187,12 +1187,12 @@ watch(() => [props.postId, props.post], load)
 
 .md-player { border-radius: 20px; overflow: hidden; background: radial-gradient(120% 120% at 30% 20%, #1d2430, #0b0e13); }
 .md-player-box { position: relative; width: 100%; max-height: 72vh; margin: 0 auto; background: #000; line-height: 0; }
-.md-vitem { width: 100%; border-radius: 12px; overflow: hidden; background: #0d1015; }
+.md-vitem { width: 100%; border-radius: 10px; overflow: hidden; background: #0d1015; }
 .md-vitem + .md-vitem { margin-top: 12px; }
 /* 每段的下载按钮放在播放器下方信息条里：不盖画面、不挡控制栏 */
 .md-vbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; font-size: 12px; color: rgba(255,255,255,.72); }
 .md-vbar-label { white-space: nowrap; }
-.md-vdl { padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,.28); background: rgba(255,255,255,.06); color: #fff; font-size: 12px; line-height: 1.5; cursor: pointer; }
+.md-vdl { padding: 3px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,.28); background: rgba(255,255,255,.06); color: #fff; font-size: 12px; line-height: 1.5; cursor: pointer; }
 .md-vdl:hover { background: rgba(255,255,255,.16); border-color: #fff; }
 .md-btn-top { padding: 4px 10px; font-size: 12.5px; }
 .md-video { width: 100%; height: 100%; display: block; object-fit: contain; background: #000; }
@@ -1206,7 +1206,7 @@ watch(() => [props.postId, props.post], load)
 .md-vbtn.on { border-color: var(--el-color-primary); color: var(--el-color-primary); }
 
 .md-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-.md-btn { padding: 6px 14px; border-radius: 10px; border: 1px solid var(--el-border-color); background: transparent; color: var(--el-text-color-regular); font-size: 13px; cursor: pointer; text-decoration: none; }
+.md-btn { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--el-border-color); background: transparent; color: var(--el-text-color-regular); font-size: 13px; cursor: pointer; text-decoration: none; }
 .md-btn:disabled { opacity: .6; cursor: default; }
 .md-btn-on { color: #ffd479; border-color: rgba(255,212,121,.6); }
 
@@ -1239,7 +1239,7 @@ watch(() => [props.postId, props.post], load)
 .md-lb-img.zoomed { cursor: grab; transition: none; }
 .md-lb-close { position: absolute; right: 18px; top: 16px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(0,0,0,.5); color: #fff; font-size: 15px; cursor: pointer; }
 .md-lb-count { position: absolute; left: 20px; top: 22px; color: rgba(255,255,255,.85); font-size: 13px; }
-.md-lb-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 46px; height: 74px; border: 0; border-radius: 10px; background: rgba(0,0,0,.42); color: #fff; font-size: 30px; line-height: 1; cursor: pointer; }
+.md-lb-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 46px; height: 74px; border: 0; border-radius: 8px; background: rgba(0,0,0,.42); color: #fff; font-size: 30px; line-height: 1; cursor: pointer; }
 .md-lb-nav.prev { left: 14px; }
 .md-lb-nav.next { right: 14px; }
 .md-lb-nav:disabled { opacity: .25; cursor: default; }
@@ -1247,7 +1247,7 @@ watch(() => [props.postId, props.post], load)
 .md-lb-tools button { border: 1px solid rgba(255,255,255,.28); background: transparent; color: #fff; border-radius: 8px; padding: 2px 10px; cursor: pointer; font-size: 12.5px; }
 .md-toast { position: fixed; left: 50%; top: 18px; transform: translateX(-50%); z-index: 4000; margin: 0; padding: 8px 16px; border-radius: 999px; background: rgba(20,22,26,.9); color: #fff; font-size: 12.5px; border: 1px solid var(--el-border-color); }
 .md-save { display: flex; flex-direction: column; gap: 10px; }
-.md-save-opt { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--el-border-color); border-radius: 10px; cursor: pointer; }
+.md-save-opt { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--el-border-color); border-radius: 8px; cursor: pointer; }
 .md-save-opt.on { border-color: var(--el-color-primary); background: var(--el-color-primary-light-9); }
 .md-save-opt span { display: flex; flex-direction: column; gap: 2px; }
 .md-save-opt b { font-size: 13.5px; }
@@ -1264,7 +1264,7 @@ watch(() => [props.postId, props.post], load)
   padding: 4px 0 12px;
   align-items: start;
 }
-.md-gcell { display: block; break-inside: avoid; margin: 0 0 8px; border-radius: 16px; overflow: hidden; background: #1b2027; line-height: 0; }
+.md-gcell { display: block; break-inside: avoid; margin: 0 0 8px; border-radius: 10px; overflow: hidden; background: #1b2027; line-height: 0; }
 .md-gcell img { width: 100%; height: auto; display: block; transition: transform .18s ease; }
 .md-gcell:hover img { transform: scale(1.02); }
 

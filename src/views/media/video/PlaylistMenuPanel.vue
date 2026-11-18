@@ -193,7 +193,7 @@ watch(
   height: 20px;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--bg-3);
   color: var(--fg-dim);
   font-size: 13px;
@@ -239,7 +239,7 @@ watch(
   width: 100%;
   padding: 6px 8px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--bg);
   color: var(--fg);
   font-size: 12.5px;
@@ -310,7 +310,7 @@ watch(
   flex: 1;
   padding: 6px 8px;
   border: 1px dashed var(--line-2);
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   color: var(--fg);
   font-size: 12px;
@@ -334,7 +334,7 @@ watch(
   min-width: 0;
   padding: 5px 7px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--bg);
   color: var(--fg);
   font-size: 12px;
@@ -349,7 +349,7 @@ watch(
   flex: 0 0 auto;
   padding: 5px 9px;
   border: 1px solid var(--accent);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--accent-soft);
   color: var(--accent);
   font-size: 11.5px;

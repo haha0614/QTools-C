@@ -1653,7 +1653,7 @@ onMounted(() => {
   gap: 8px;
   padding: 10px 11px 11px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 16px;
   background: var(--bg);
 }
 
@@ -1897,7 +1897,7 @@ onMounted(() => {
   min-height: 38px;
   padding: 4px 6px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   color: var(--fg);
   font: inherit;

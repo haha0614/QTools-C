@@ -75,7 +75,7 @@ function backToList() {
 <style lang="scss" scoped>
 .mp-back {
   padding: 6px 14px;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid var(--el-border-color);
   background: transparent;
   color: var(--el-text-color-regular);

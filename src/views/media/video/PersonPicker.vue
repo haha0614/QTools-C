@@ -352,7 +352,7 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   padding: 4px 3px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
 }
 

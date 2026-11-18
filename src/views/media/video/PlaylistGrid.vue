@@ -145,7 +145,7 @@ function onDragEnd() {
 .pl-thumb {
   display: block;
   aspect-ratio: 16 / 9;
-  border-radius: 6px;
+  border-radius: 10px;
   overflow: hidden;
   background: var(--bg-3);
 }

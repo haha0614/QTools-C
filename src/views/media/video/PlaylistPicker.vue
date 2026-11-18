@@ -178,7 +178,7 @@ async function createAndAdd() {
   width: 26px;
   height: 26px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--bg-3);
   color: var(--fg-dim);
   font-size: 15px;

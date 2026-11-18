@@ -2160,11 +2160,11 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
 .mr-top:hover { transform: translateY(-2px); border-color: var(--el-color-primary); color: var(--el-color-primary); }
 .mr-fade-enter-active, .mr-fade-leave-active { transition: opacity .18s ease; }
 .mr-fade-enter-from, .mr-fade-leave-to { opacity: 0; }
-.mr-newer { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; padding: 8px 12px; border-radius: 10px; background: var(--el-color-primary-light-9); border: 1px solid var(--el-color-primary-light-7); }
+.mr-newer { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; padding: 8px 12px; border-radius: 8px; background: var(--el-color-primary-light-9); border: 1px solid var(--el-color-primary-light-7); }
 .mr-newer-text { flex: 1 1 auto; min-width: 0; font-size: 12.5px; color: var(--el-text-color-regular); }
 .mr-tags-mobile { display: none; }
 .mr-sheet-close { display: none; }
-.mr-resume { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; padding: 8px 12px; border: 1px dashed var(--el-border-color); border-radius: 10px; background: var(--el-fill-color-lighter); }
+.mr-resume { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; padding: 8px 12px; border: 1px dashed var(--el-border-color); border-radius: 8px; background: var(--el-fill-color-lighter); }
 .mr-resume-text { flex: 1 1 auto; min-width: 0; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--el-text-color-regular); }
 .mr-resume-x { padding: 0 8px; }
 .mr-card.mr-hit { outline: 2px solid var(--el-color-primary); outline-offset: 2px; transition: outline-color .3s ease; }
@@ -2207,7 +2207,7 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
 .mr-drawer-pick em { font-style: normal; opacity: .55; font-size: 11px; }
 .mr-drawer-block { border: 0; border-radius: 999px; padding: 1px 6px; font-size: 10.5px; background: var(--el-fill-color-light); color: var(--el-text-color-secondary); cursor: pointer; }
 .mr-tags { display: flex; gap: 6px; flex-wrap: wrap; }
-.mr-pinned { margin: 0 0 14px; padding: 12px 14px; border: 1px solid var(--el-border-color-lighter); border-radius: 12px; background: var(--el-fill-color-blank); }
+.mr-pinned { margin: 0 0 14px; padding: 12px 14px; border: 1px solid var(--el-border-color-lighter); border-radius: 16px; background: var(--el-fill-color-blank); }
 /* 置顶块做紧凑：固定 240px 宽的小卡，不再拉满整行，避免一条置顶占掉半屏 */
 .mr-pinned-grid {
   display: flex;
@@ -2223,7 +2223,7 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
 .mr-pin { position: absolute; left: 8px; top: 8px; padding: 1px 8px; border-radius: 999px; font-size: 10.5px; background: rgba(10,14,20,.66); color: #ffd479; border: 1px solid rgba(255,212,121,.45); }
 .mr-ptitle { margin: 6px 0 2px; font-size: 12.5px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .mr-pmeta { margin: 0; font-size: 11.5px; color: var(--el-text-color-secondary); }
-.mr-featured { margin: 0 0 14px; padding: 12px 14px; border: 1px solid var(--el-border-color-lighter); border-radius: 12px; background: var(--el-fill-color-blank); }
+.mr-featured { margin: 0 0 14px; padding: 12px 14px; border: 1px solid var(--el-border-color-lighter); border-radius: 16px; background: var(--el-fill-color-blank); }
 .mr-featured-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
 .mr-featured-head h2 { margin: 0; font-size: 15px; }
 .mr-featured-sub { font-size: 12px; color: var(--el-text-color-secondary); }
@@ -2310,7 +2310,7 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
 
 .mr-grid-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
 .mr-grid-poster { grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); }
-.mr-card { border: 1px solid var(--el-border-color); border-radius: 16px; overflow: hidden; cursor: pointer; transition: transform .16s, border-color .16s; background: var(--el-bg-color-overlay); }
+.mr-card { border: 1px solid var(--el-border-color); border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform .16s, border-color .16s; background: var(--el-bg-color-overlay); }
 .mr-card:hover { transform: translateY(-2px); border-color: var(--el-color-primary); }
 .mr-card-grid .mr-cover { aspect-ratio: 16 / 10; }
 .mr-card-poster .mr-cover { aspect-ratio: 2 / 3; }
@@ -2334,7 +2334,7 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
 .mr-list { display: flex; flex-direction: column; gap: 8px; }
 .mr-row { display: flex; gap: 12px; align-items: center; padding: 8px; border: 1px solid var(--el-border-color); border-radius: 16px; cursor: pointer; }
 .mr-row:hover { border-color: var(--el-color-primary); }
-.mr-row-cover { width: 120px; aspect-ratio: 16 / 10; flex: 0 0 120px; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #1b2027; color: #cfd6e2; font-size: 11px; }
+.mr-row-cover { width: 120px; aspect-ratio: 16 / 10; flex: 0 0 120px; border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #1b2027; color: #cfd6e2; font-size: 11px; }
 .mr-row-cover img { width: 100%; height: 100%; object-fit: cover; }
 .mr-row-main { flex: 1 1 auto; min-width: 0; }
 .mr-row-side { flex: 0 0 auto; font-size: 11.5px; color: var(--el-text-color-secondary); }
@@ -2344,7 +2344,7 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
 .mr-crow:hover { color: var(--el-color-primary); }
 
 .mr-more { display: flex; justify-content: center; padding: 12px 0 4px; }
-.mr-btn { padding: 7px 16px; border-radius: 10px; border: 1px solid var(--el-border-color); background: transparent; color: inherit; font-size: 13px; cursor: pointer; text-decoration: none; }
+.mr-btn { padding: 7px 16px; border-radius: 8px; border: 1px solid var(--el-border-color); background: transparent; color: inherit; font-size: 13px; cursor: pointer; text-decoration: none; }
 .mr-btn:disabled { opacity: .6; cursor: default; }
 .mr-btn-link { display: inline-flex; align-items: center; }
 .mr-done { font-size: 12px; color: var(--el-text-color-secondary); }
@@ -2536,12 +2536,12 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
 /* ---------- 下载记录浮窗 ---------- */
 .mr-dl { position: fixed; right: 26px; bottom: 88px; z-index: 61; }
 .mr-dl-toggle { padding: 7px 14px; border-radius: 999px; border: 1px solid var(--el-border-color); background: var(--el-bg-color-overlay, #1b2027); color: var(--el-text-color-primary); font-size: 12.5px; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,.28); }
-.mr-dl-panel { position: absolute; right: 0; bottom: 46px; width: 360px; max-height: 60vh; overflow-y: auto; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--el-border-color); background: var(--el-bg-color-overlay, #1b2027); box-shadow: 0 12px 32px rgba(0,0,0,.36); }
+.mr-dl-panel { position: absolute; right: 0; bottom: 46px; width: 360px; max-height: 60vh; overflow-y: auto; padding: 10px 12px; border-radius: 20px; border: 1px solid var(--el-border-color); background: var(--el-bg-color-overlay, #1b2027); box-shadow: 0 12px 32px rgba(0,0,0,.36); }
 .mr-dl-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
 .mr-dl-x { border: 0; background: transparent; color: var(--el-text-color-secondary); cursor: pointer; }
 .mr-dl-expand { margin-left: auto; margin-right: 8px; padding: 1px 8px; font-size: 11.5px; border-radius: 999px; border: 1px solid var(--el-border-color); background: transparent; color: var(--el-text-color-regular); cursor: pointer; }
-.mr-dl-fitem { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 10px; background: var(--el-fill-color-lighter); }
-.mr-dl-thumb { width: 72px; height: 48px; object-fit: cover; border-radius: 6px; flex: 0 0 72px; }
+.mr-dl-fitem { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 8px; background: var(--el-fill-color-lighter); }
+.mr-dl-thumb { width: 72px; height: 48px; object-fit: cover; border-radius: 10px; flex: 0 0 72px; }
 .mr-dl-thumb-ph { display: grid; place-items: center; font-size: 11px; color: var(--el-text-color-secondary); background: var(--el-fill-color-dark); }
 .mr-dl-fmain { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .mr-dl-fmain b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

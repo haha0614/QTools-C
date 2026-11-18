@@ -554,7 +554,7 @@ function noop() {
   width: 26px;
   height: 26px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--bg-3);
   color: var(--fg-dim);
   font-size: 15px;
@@ -572,7 +572,7 @@ function noop() {
   padding: 7px 9px;
   border: 1px solid var(--warn);
   border-left-width: 3px;
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--bg-3);
   color: var(--warn);
   font-size: 12px;
@@ -729,7 +729,7 @@ function noop() {
   max-width: 240px;
   padding: 2px 6px;
   border: 1px dashed transparent;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   color: var(--fg);
   font-size: 13.5px;

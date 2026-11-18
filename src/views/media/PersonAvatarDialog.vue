@@ -1142,7 +1142,7 @@ onBeforeUnmount(() => {
   position: relative;
   padding: 0;
   border: 2px solid transparent;
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--bg-3);
   aspect-ratio: 3 / 2;
   overflow: hidden;
@@ -1327,7 +1327,7 @@ onBeforeUnmount(() => {
   position: absolute;
   box-sizing: border-box;
   border: 2px solid var(--accent);
-  border-radius: 6px;
+  border-radius: 8px;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
   pointer-events: none;
 }
@@ -1382,7 +1382,7 @@ onBeforeUnmount(() => {
   width: 132px;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--bg-3);
   color: var(--fg-dim);
   cursor: pointer;
