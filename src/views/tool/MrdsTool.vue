@@ -2310,7 +2310,7 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
 
 .mr-grid-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
 .mr-grid-poster { grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); }
-.mr-card { border: 1px solid var(--el-border-color); border-radius: 14px; overflow: hidden; cursor: pointer; transition: transform .16s, border-color .16s; background: var(--el-bg-color-overlay); }
+.mr-card { border: 1px solid var(--el-border-color); border-radius: 16px; overflow: hidden; cursor: pointer; transition: transform .16s, border-color .16s; background: var(--el-bg-color-overlay); }
 .mr-card:hover { transform: translateY(-2px); border-color: var(--el-color-primary); }
 .mr-card-grid .mr-cover { aspect-ratio: 16 / 10; }
 .mr-card-poster .mr-cover { aspect-ratio: 2 / 3; }
@@ -2332,7 +2332,7 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
 .mr-meta { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11.5px; color: var(--el-text-color-secondary); }
 
 .mr-list { display: flex; flex-direction: column; gap: 8px; }
-.mr-row { display: flex; gap: 12px; align-items: center; padding: 8px; border: 1px solid var(--el-border-color); border-radius: 14px; cursor: pointer; }
+.mr-row { display: flex; gap: 12px; align-items: center; padding: 8px; border: 1px solid var(--el-border-color); border-radius: 16px; cursor: pointer; }
 .mr-row:hover { border-color: var(--el-color-primary); }
 .mr-row-cover { width: 120px; aspect-ratio: 16 / 10; flex: 0 0 120px; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #1b2027; color: #cfd6e2; font-size: 11px; }
 .mr-row-cover img { width: 100%; height: 100%; object-fit: cover; }
@@ -2344,7 +2344,7 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
 .mr-crow:hover { color: var(--el-color-primary); }
 
 .mr-more { display: flex; justify-content: center; padding: 12px 0 4px; }
-.mr-btn { padding: 7px 16px; border-radius: 9px; border: 1px solid var(--el-border-color); background: transparent; color: inherit; font-size: 13px; cursor: pointer; text-decoration: none; }
+.mr-btn { padding: 7px 16px; border-radius: 10px; border: 1px solid var(--el-border-color); background: transparent; color: inherit; font-size: 13px; cursor: pointer; text-decoration: none; }
 .mr-btn:disabled { opacity: .6; cursor: default; }
 .mr-btn-link { display: inline-flex; align-items: center; }
 .mr-done { font-size: 12px; color: var(--el-text-color-secondary); }

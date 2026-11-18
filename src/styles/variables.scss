@@ -53,7 +53,15 @@
   /* 中圆角：卡片、按钮、导航项 */
   --qt-radius-md: 10px;
   /* 大圆角：弹窗、抽屉、大面板 */
-  --qt-radius-lg: 14px;
+  --qt-radius-lg: 16px;
+  /* 全站圆角刻度到此闭合：4 / 6 / 10 / 16 / 20，其余一律胶囊 999px。
+     下面几个是补位档，供新代码直接使用；Element Plus 的圆角也走这条线。 */
+  --qt-radius-xs: 4px;
+  --qt-radius-xl: 20px;
+  --qt-radius-pill: 999px;
+  --el-border-radius-base: 8px;
+  --el-border-radius-small: 6px;
+  --el-border-radius-round: 20px;
 
   /* ---------- 间距 ---------- */
   /* 间距 1 档：4px，图标与文字之间等极小间隙 */

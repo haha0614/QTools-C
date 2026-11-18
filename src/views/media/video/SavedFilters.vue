@@ -256,7 +256,7 @@ function confirmDelete(item) {
   gap: 6px;
   padding: 5px 8px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--bg);
   color: var(--fg);
   font-size: 12.5px;
@@ -295,7 +295,7 @@ function confirmDelete(item) {
   height: 24px;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: 8px;
   background: transparent;
   color: var(--fg-dim);
   font-size: 15px;

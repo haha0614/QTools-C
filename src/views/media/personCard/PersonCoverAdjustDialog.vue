@@ -292,7 +292,7 @@ function save() {
   box-sizing: border-box;
   overflow: auto;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 16px;
   background: var(--bg-2, #161a20);
   color: var(--fg);
   padding: 16px 18px 14px;

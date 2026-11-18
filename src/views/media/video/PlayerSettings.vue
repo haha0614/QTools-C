@@ -405,7 +405,7 @@ function numberValue(e) {
   min-width: 0;
   padding: 4px 6px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--bg);
   color: var(--fg);
   font: inherit;
@@ -426,7 +426,7 @@ function numberValue(e) {
   height: 26px;
   padding: 0 9px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--bg-3);
   color: var(--fg);
   font: inherit;
@@ -548,7 +548,7 @@ function numberValue(e) {
   flex: 0 0 auto;
   width: 8px;
   height: 8px;
-  border-radius: 2px;
+  border-radius: 4px;
 }
 
 .p-set-mark-t {

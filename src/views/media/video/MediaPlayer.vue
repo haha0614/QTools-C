@@ -3478,7 +3478,7 @@ defineExpose({
 }
 
 .p-side::-webkit-scrollbar-thumb {
-  border-radius: 3px;
+  border-radius: 4px;
   background: color-mix(in srgb, var(--fg) 16%, transparent);
 }
 
@@ -3804,7 +3804,7 @@ defineExpose({
 .p-kbd {
   padding: 1px 5px;
   border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
-  border-radius: 5px;
+  border-radius: 6px;
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   font-size: 10.5px;
   font-weight: 600;
@@ -3916,7 +3916,7 @@ defineExpose({
   justify-content: space-between;
   gap: 8px;
   padding: 6px 9px;
-  border-radius: 7px;
+  border-radius: 8px;
   white-space: nowrap;
   cursor: pointer;
   transition: background 0.1s ease, color 0.1s ease;
@@ -4363,7 +4363,7 @@ defineExpose({
   padding: 0;
   border: 0;
   overflow: visible;
-  border-radius: 2px;
+  border-radius: 4px;
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
@@ -4390,7 +4390,7 @@ defineExpose({
 /* Gecko：轨道默认会盖住 input 自己的渐变，置空让填充透出来；thumb 同一尺寸 */
 .p-seek::-moz-range-track {
   height: 4px;
-  border-radius: 2px;
+  border-radius: 4px;
   background: transparent;
 }
 
@@ -4530,7 +4530,7 @@ defineExpose({
 .p-seek-now {
   flex: 0 0 auto;
   padding: 3px 8px;
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--p-chip);
   color: var(--p-ink);
   font-size: 12.5px;
@@ -4923,7 +4923,7 @@ defineExpose({
   bottom: 0;
   width: 2px;
   margin-left: -1px;
-  border-radius: 1px;
+  border-radius: 4px;
   background: var(--accent);
   opacity: 0.85;
 }
@@ -4933,7 +4933,7 @@ defineExpose({
   opacity: 0.28;
   width: auto;
   margin-left: 0;
-  border-radius: 2px;
+  border-radius: 4px;
 }
 
 /* 刻度提示：与 hover 卡片同样贴着进度条上方，宽度自适应文案 */
@@ -4968,7 +4968,7 @@ defineExpose({
   margin: var(--lane-gap, 3px) var(--thumb-r, 7px) 0;
   background: color-mix(in srgb, var(--bg-3) 88%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent);
-  border-radius: 2px;
+  border-radius: 4px;
   pointer-events: none;
   z-index: 2;
 }
@@ -4980,7 +4980,7 @@ defineExpose({
   bottom: 0;
   padding: 0;
   border: 0;
-  border-radius: 1px;
+  border-radius: 4px;
   background: var(--accent);
   /* 亮暗都可见的细描边：浅色底上勾出边界，暗色底由 html.dark 加深到 1px 深色 */
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28);
@@ -4997,7 +4997,7 @@ defineExpose({
   min-width: 6px;
   border-left: var(--lane-edge, 3px) solid;
   border-right: var(--lane-edge, 3px) solid;
-  border-radius: 1px;
+  border-radius: 4px;
 }
 
 .p-lane-mark:hover,
@@ -5054,7 +5054,7 @@ defineExpose({
 .p-ab-text {
   flex: 0 0 auto;
   padding: 3px 8px;
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--p-chip);
   color: var(--p-ink);
   font-size: 12px;

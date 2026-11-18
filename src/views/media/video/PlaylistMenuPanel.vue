@@ -193,7 +193,7 @@ watch(
   height: 20px;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: 6px;
   background: var(--bg-3);
   color: var(--fg-dim);
   font-size: 13px;

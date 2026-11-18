@@ -238,7 +238,7 @@ defineExpose({ open: openPanel, close, isOpen: () => open.value })
   width: 100%;
   padding: 5px 8px;
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: 8px;
   background: transparent;
   color: var(--fg);
   font-size: 12.5px;
@@ -296,7 +296,7 @@ defineExpose({ open: openPanel, close, isOpen: () => open.value })
   width: 100%;
   padding: 5px 8px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 8px;
   background: transparent;
   color: var(--fg);
   font-size: 12.5px;

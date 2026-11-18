@@ -1638,7 +1638,7 @@ onMounted(() => {
 }
 
 .vp-body::-webkit-scrollbar-thumb {
-  border-radius: 3px;
+  border-radius: 4px;
   background: color-mix(in srgb, var(--fg) 16%, transparent);
 }
 
@@ -1931,7 +1931,7 @@ onMounted(() => {
   width: 40px;
   height: 22px;
   overflow: hidden;
-  border-radius: 3px;
+  border-radius: 4px;
   background: var(--bg-2);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg) 8%, transparent);
 }

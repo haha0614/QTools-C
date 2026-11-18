@@ -43,7 +43,7 @@ const title = computed(() => props.label || (style.value ? '标记处画面' : '
   width: 40px;
   height: 22.5px;
   border: 1px solid var(--line);
-  border-radius: 3px;
+  border-radius: 4px;
   background: var(--bg-3);
   overflow: visible;
   /* 悬停放大的层级：盖住相邻标记行，但不影响布局 */
@@ -58,7 +58,7 @@ const title = computed(() => props.label || (style.value ? '标记处画面' : '
   position: absolute;
   inset: 0;
   display: block;
-  border-radius: 2px;
+  border-radius: 4px;
   background-repeat: no-repeat;
   /* 缩放锚点放在左侧：放大后向右展开，不越过抽屉左边界 */
   transform-origin: left center;
@@ -83,7 +83,7 @@ const title = computed(() => props.label || (style.value ? '标记处画面' : '
   line-height: 1;
   color: var(--fg-dim);
   background: repeating-linear-gradient(45deg, transparent 0 4px, var(--line) 4px 5px);
-  border-radius: 2px;
+  border-radius: 4px;
   user-select: none;
 }
 

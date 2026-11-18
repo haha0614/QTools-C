@@ -233,7 +233,7 @@ async function createAndAdd() {
   width: 100%;
   padding: 7px 9px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--bg);
   color: var(--fg);
   font-size: 13px;
@@ -284,7 +284,7 @@ async function createAndAdd() {
   min-width: 0;
   padding: 6px 9px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--bg);
   color: var(--fg);
   font-size: 13px;
@@ -299,7 +299,7 @@ async function createAndAdd() {
   flex: 0 0 auto;
   padding: 6px 12px;
   border: 1px solid var(--accent);
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--accent-soft);
   color: var(--accent);
   font-size: 12.5px;

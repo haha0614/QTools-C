@@ -385,7 +385,7 @@ details.fg[open] .fg-caret {
   align-items: center;
   gap: 7px;
   padding: 3px 6px;
-  border-radius: 5px;
+  border-radius: 6px;
   font-size: 12.5px;
   color: var(--fg-dim);
   cursor: pointer;

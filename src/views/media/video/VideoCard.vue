@@ -769,7 +769,7 @@ function resBadge(w) {
   width: 1px;
   height: 13px;
   margin: 0 3px;
-  border-radius: 1px;
+  border-radius: 4px;
   background: var(--fg-dim);
   opacity: 0.42;
 }
