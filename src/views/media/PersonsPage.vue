@@ -2373,7 +2373,7 @@ onBeforeUnmount(() => {
   margin: 32px 0;
   padding: 18px;
   border: 1px dashed var(--line);
-  border-radius: var(--radius, 10px);
+  border-radius: 12px;
   text-align: center;
   font-size: 13.5px;
   color: var(--fg-dim);
@@ -2435,7 +2435,7 @@ onBeforeUnmount(() => {
      相对 P5.98 的 36px，文字区**回收 12px**；再小就会压到姓名行（几何上不可能同时「20px 钮 + 4px 贴角 + 0 相交」）。 */
   padding: 10px 24px 10px 12px;
   border: 1px solid var(--line);
-  border-radius: var(--radius, 10px);
+  border-radius: 12px;
   background: var(--bg-2);
   color: var(--fg);
   text-decoration: none;
