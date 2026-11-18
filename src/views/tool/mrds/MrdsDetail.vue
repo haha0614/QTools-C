@@ -39,7 +39,7 @@
             <div
               class="md-player-box"
               :class="{ 'md-hero-target': i === 0 }"
-              :style="{ aspectRatio: i === 0 ? videoRatio : '16 / 9' }"
+              :style="{ aspectRatio: i === 0 ? videoRatio : '16 / 9', maxWidth: i === 0 ? ratioMaxWidth : undefined }"
             >
               <!-- 播放器已抽成通用组件：HLS 清单重试在源适配器里，
                    下载按钮由插件注册进来，本页不再自己管 hls.js -->
@@ -53,7 +53,7 @@
             <!-- 下载按钮放在播放器下方：不遮挡画面，也不压控制栏 -->
             <div class="md-vbar">
               <span class="md-vbar-label">第 {{ i + 1 }} 段{{ videoUrls.length > 1 ? ' / ' + videoUrls.length : '' }}</span>
-              <button type="button" class="md-vdl" @click.stop="openSaveDialogFor(i)">⬇ 下载这一段</button>
+              <!-- 下载按钮已由 downloadPlugin 注册到控制条，这里不再重复 -->
             </div>
             </div>
             <p v-if="playError" class="md-player-hint">{{ playError }}</p>
@@ -1062,6 +1062,19 @@ function onMeta(e) {
   videoRatio.value = v && v.videoWidth && v.videoHeight ? v.videoWidth + ' / ' + v.videoHeight : '16 / 9'
 }
 
+/**
+ * 框宽上限 = 72vh × 视频宽高比。
+ * 竖版视频（如 720×1280）在 width:100% 的框里会被 contain 出两侧黑边；
+ * 把宽度按比例卡住，框和画面就严丝合缝。
+ */
+const ratioMaxWidth = computed(() => {
+  const m = String(videoRatio.value).split('/')
+  const w = Number((m[0] || '').trim())
+  const h = Number((m[1] || '').trim())
+  if (!w || !h) return undefined
+  return 'calc(72vh * ' + (w / h).toFixed(4) + ')'
+})
+
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onLbKey)
@@ -1115,7 +1128,7 @@ watch(() => [props.postId, props.post], load)
 .md-main { flex: 1 1 auto; min-width: 0; }
 
 .md-player { border-radius: 20px; overflow: hidden; background: radial-gradient(120% 120% at 30% 20%, #1d2430, #0b0e13); }
-.md-player-box { position: relative; width: 100%; max-height: 72vh; margin: 0 auto; background: #000; line-height: 0; }
+.md-player-box { position: relative; width: auto; max-width: 100%; max-height: 72vh; margin: 0 auto; background: #000; line-height: 0; }
 .md-vitem { width: 100%; border-radius: 10px; overflow: hidden; background: #0d1015; }
 .md-vitem + .md-vitem { margin-top: 12px; }
 /* 每段的下载按钮放在播放器下方信息条里：不盖画面、不挡控制栏 */

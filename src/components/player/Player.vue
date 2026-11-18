@@ -8,6 +8,7 @@
       @loadedmetadata="emit('loadedmetadata', $event)"
       @loadeddata="emit('loadeddata', $event)"
       @ended="emit('ended')"
+      @click="player.toggle()"
     ></video>
     <p v-if="player.state.hint" class="qtp-hint">{{ player.state.hint }}</p>
     <p v-else-if="player.state.error" class="qtp-hint qtp-hint-error">{{ player.state.error }}</p>

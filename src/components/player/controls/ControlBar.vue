@@ -65,6 +65,12 @@ function cycleRate() {
 /* 外观沿用媒体站播放器的深色控制条，但颜色/圆角一律走全局令牌：
    控件圆角取"控件层" 8px，胶囊取 999px，间距走 4/8/12 刻度。 */
 .qtp-bar {
+  /* 浮在画面底部：控制条若参与布局会把视频挤出容器（实测被裁掉、看不见也点不到） */
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
   display: flex;
   align-items: center;
   gap: 8px;
