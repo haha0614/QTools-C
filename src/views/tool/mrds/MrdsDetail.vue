@@ -1129,7 +1129,17 @@ watch(() => [props.postId, props.post], load)
 .md-side > * { width: 100%; flex: 0 0 auto; }
 .md-main { flex: 1 1 auto; min-width: 0; }
 
-.md-player { border-radius: 20px; overflow: hidden; background: radial-gradient(120% 120% at 30% 20%, #1d2430, #0b0e13); }
+.md-player {
+  /* 必须跟着画面收缩：.md-side > * 会把它拉成 100%，
+     里面视频再按比例缩，外面这层黑框仍满宽 → 两侧出现黑边（实测过） */
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  border-radius: 20px;
+  overflow: hidden;
+  background: radial-gradient(120% 120% at 30% 20%, #1d2430, #0b0e13);
+}
+.md-player.md-novideo { width: 100%; }
 .md-player-box { position: relative; width: 100%; max-width: 100%; max-height: 72vh; margin: 0 auto; line-height: 0; }
 .md-vseg { margin: 0 0 6px; font-size: 12px; color: var(--el-text-color-secondary); }
 .md-vitem { width: 100%; border-radius: 10px; overflow: hidden; background: #0d1015; }
