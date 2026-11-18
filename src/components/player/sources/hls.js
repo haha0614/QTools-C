@@ -6,7 +6,7 @@
  * capabilities 用来做能力协商：quality 插件只有在 qualities 非空时才会挂载。
  */
 export function hlsSource(url, opts = {}) {
-  const maxRetry = Number(opts.maxRetry ?? 5)
+  const maxRetry = Number(opts.maxRetry ?? 9)
   const retryDelay = Number(opts.retryDelay ?? 2000)
   const onRetry = opts.onRetry
   return {
@@ -39,7 +39,9 @@ export function hlsSource(url, opts = {}) {
           if (onRetry) { try { onRetry(retries) } catch (e) { /* 忽略 */ } }
           // 清单级失败必须 loadSource 重拉；startLoad 只重试媒体加载
           // 退避 2/2/3/4/6 秒：固定间隔会让"第 2 次就成功"的情况白等
-          const DELAYS = [2000, 2000, 3000, 4000, 6000]
+          // 后端重签实测 8~30 秒（见 WebPlayController.resignAsync 的排队），
+          // 原来 5 次 / 17 秒窗口经常不够 → 拉长到 9 次 / 约 55 秒
+          const DELAYS = [2000, 2000, 3000, 4000, 5000, 6000, 8000, 10000, 12000]
           const delay = DELAYS[Math.min(retries - 1, DELAYS.length - 1)] || retryDelay
           timer.id = setTimeout(() => {
             if (disposed) return

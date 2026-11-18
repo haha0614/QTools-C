@@ -1224,6 +1224,7 @@ function pushSheetEntry(id) {
 function closeSheet() {
   try {
     if (window.history.state && window.history.state.mrdsSheet) {
+      window.__mrdsNoScroll = true
       window.history.back()
       return
     }
@@ -1233,7 +1234,8 @@ function closeSheet() {
 
 /** 系统返回落到列表页时，把还开着的弹窗关掉 */
 function onSheetPopState() {
-  if (detail.open) detail.open = false
+  if (!detail.open) return
+  detail.open = false
 }
 
 function openDetail(row, ev) {

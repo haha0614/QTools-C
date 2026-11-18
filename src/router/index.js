@@ -187,6 +187,11 @@ const router = createRouter({
   // 例外：带 restore=1 的是「从整页详情返回列表」，位置由列表页自己恢复，
   // 这里不能抢先滚到 0（之前就是它把恢复好的位置又顶回顶部的）。
   scrollBehavior(to) {
+    // 列表弹窗的开关也会压/退一条历史，但那是"关一个弹窗"不是换页面
+    if (typeof window !== 'undefined' && window.__mrdsNoScroll) {
+      window.__mrdsNoScroll = false
+      return false
+    }
     if (to.query && to.query.restore === '1') return false
     return { top: 0 }
   }
