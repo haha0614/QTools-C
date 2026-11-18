@@ -9,6 +9,7 @@ export function downloadPlugin(options = {}) {
       ctx.registerButton({
         id: 'download',
         label: options.label || '下载这一段',
+        icon: options.icon || '⬇',
         title: options.title || '下载这段视频',
         onClick: () => { if (typeof options.onClick === 'function') options.onClick() }
       })

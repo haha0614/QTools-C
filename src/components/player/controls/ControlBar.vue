@@ -19,19 +19,13 @@
     <button type="button" class="qtp-btn" :title="player.state.muted ? '取消静音' : '静音'" @click="player.toggleMute()">
       <span class="qtp-ico">{{ player.state.muted || player.state.volume === 0 ? '🔇' : '🔊' }}</span>
     </button>
-    <input
-      class="qtp-range qtp-range-vol" type="range" min="0" max="1" step="0.05"
-      :value="player.state.muted ? 0 : player.state.volume" aria-label="音量"
-      @input="onVol($event)"
-    />
-
     <button type="button" class="qtp-btn qtp-btn-text" title="倍速" @click="cycleRate()">{{ player.state.rate }}×</button>
 
     <button
       v-for="b in buttons" :key="b.id"
-      type="button" class="qtp-btn qtp-btn-text" :title="b.title || b.label"
+      type="button" class="qtp-btn qtp-btn-plugin" :title="b.title || b.label"
       @click="b.onClick && b.onClick()"
-    >{{ b.label }}</button>
+    ><span v-if="b.icon" class="qtp-btn-ico">{{ b.icon }}</span><span class="qtp-btn-label">{{ b.label }}</span></button>
 
     <button type="button" class="qtp-btn" :title="player.state.fullscreen ? '退出全屏' : '全屏'" @click="player.toggleFullscreen()">
       <span class="qtp-ico">{{ player.state.fullscreen ? '⤡' : '⤢' }}</span>
@@ -54,7 +48,6 @@ function fmt(s) {
   return m + ':' + String(ss).padStart(2, '0')
 }
 function onScrub(e) { props.player.seek(Number(e.target.value)) }
-function onVol(e) { props.player.setVolume(Number(e.target.value)) }
 function cycleRate() {
   const i = RATES.indexOf(props.player.state.rate)
   props.player.setRate(RATES[(i + 1) % RATES.length])
@@ -72,6 +65,9 @@ function cycleRate() {
   display: flex;
   align-items: center;
   gap: 8px;
+  /* 允许内部压缩：否则窄播放器里按钮会把内容顶出可视区 */
+  min-width: 0;
+  overflow: hidden;
   padding: 22px 12px 8px;
   background: linear-gradient(to top, rgba(6, 9, 13, .92) 0%, rgba(6, 9, 13, .55) 45%, rgba(6, 9, 13, 0) 100%);
   color: #f2f5f9;
@@ -100,7 +96,7 @@ function cycleRate() {
 .qtp-ico { font-size: 11px; line-height: 1; }
 .qtp-time { color: rgba(255, 255, 255, .82); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-.qtp-scrub { position: relative; flex: 1 1 auto; min-width: 60px; height: 26px; display: flex; align-items: center; }
+.qtp-scrub { position: relative; flex: 1 1 auto; min-width: 0; height: 26px; display: flex; align-items: center; }
 .qtp-scrub-buf {
   position: absolute; left: 0; top: 50%; height: 3px; transform: translateY(-50%);
   border-radius: 999px; background: rgba(255, 255, 255, .28); pointer-events: none;
@@ -118,8 +114,10 @@ function cycleRate() {
 :global(.qtp-hidden) .qtp-bar { opacity: 0; pointer-events: none; }
 :global(.qtp-hidden) { cursor: none; }
 
-@media (max-width: 560px) {
-  .qtp-range-vol { display: none; }
-  .qtp-bar { gap: 6px; padding: 18px 8px 6px; }
-}
+/* 紧凑布局：竖版播放器只有 324px 宽，控件必须精简
+   —— 音量滑块已移除（保留静音按钮），插件按钮只显示图标 */
+.qtp-bar { gap: 6px; padding: 16px 8px 6px; }
+.qtp-btn { min-width: 24px; height: 24px; padding: 0 5px; }
+.qtp-btn-plugin .qtp-btn-label { display: none; }
+.qtp-time { font-size: 11.5px; }
 </style>

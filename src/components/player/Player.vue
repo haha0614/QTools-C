@@ -105,7 +105,7 @@ defineExpose({ player })
    这样框和画面严丝合缝，不会出现"画布比视频宽"导致的左右黑边与四角露黑底。 */
 .qtp {
   position: relative;
-  display: inline-block;
+  display: block;
   width: 100%;
   height: 100%;
   border-radius: var(--qt-radius-xl, 20px);
