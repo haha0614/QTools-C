@@ -31,7 +31,7 @@
          滑块在同一块宽度里淡入；移开整个音量控件就恢复。
          这样滑块不必悬浮、不必进设置，也不用把按钮挤出去（.qtp 兜住越界）。 -->
     <div
-      class="qtp-vol"
+      class="qtp-vol-area"
       @mouseenter="volActive = true"
       @mouseleave="volActive = false"
       @focusin="onVolFocusIn"
@@ -40,12 +40,15 @@
       <button type="button" class="qtp-btn" :title="player.state.muted ? '取消静音' : '静音'" @click="player.toggleMute()">
         <span class="qtp-ico">{{ player.state.muted || player.state.volume === 0 ? '🔇' : '🔊' }}</span>
       </button>
-      <div class="qtp-vol-slot" :class="{ on: volOpen }" :aria-hidden="volOpen ? 'false' : 'true'">
-        <VolumePop :player="player" />
-      </div>
-    </div>
 
-    <div class="qtp-tail" :class="{ out: volOpen }">
+      <!-- 右侧区：宽度由尾部按钮决定、永远不变。展开时尾部按钮只淡出（不让出宽度），
+           滑块绝对定位盖在同一块区域上 —— 音量按钮与进度条都不会位移。 -->
+      <div class="qtp-right">
+        <div class="qtp-vol-slot" :class="{ on: volOpen }" :aria-hidden="volOpen ? 'false' : 'true'">
+          <VolumePop :player="player" />
+        </div>
+
+        <div class="qtp-tail" :class="{ out: volOpen }">
       <!-- 倍速：点一下直接出一列，选完即生效（不再"点一下切一档"） -->
       <div class="qtp-btn-wrap qtp-rate-wrap" @mouseleave="rateOpen = false">
         <button
@@ -85,6 +88,8 @@
           <path d="M4 9h5V4M20 9h-5V4M15 20v-5h5M9 20v-5H4" />
         </svg>
       </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -222,32 +227,36 @@ function onScrub(e) { props.player.seek(Number(e.target.value)) }
 
 /* 音量控件：按钮 + 内联滑块槽。槽默认宽度 0，hover 时展开到 110px。
    .qtp-vol 自己独立成组，鼠标从按钮滑到滑块上时不会触发 mouseleave。 */
-/* 音量控件整组不许被压缩：槽里的滑块+数值是定宽的，压窄就会把数字裁掉 */
-.qtp-vol { display: inline-flex; align-items: center; flex: 0 0 auto; }
+/* 音量区 = 按钮 + 右侧区。整组是固定宽度的 flex 项，永远不压缩。 */
+.qtp-vol-area { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+
+/* 右侧区的宽度由尾部那组按钮决定（它们始终占位，只是淡出），所以展开前后不产生任何位移 */
+.qtp-right { position: relative; display: inline-flex; align-items: center; }
+
+/* 滑块盖在右侧区上：绝对定位，不参与布局 */
 .qtp-vol-slot {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
-  flex: 0 0 auto;
-  width: 0;
   opacity: 0;
-  overflow: hidden;
-  transition: width .22s cubic-bezier(.22, .68, .32, 1), opacity .16s ease;
+  pointer-events: none;
+  transition: opacity .18s ease;
 }
-.qtp-vol-slot.on { width: 114px; opacity: 1; }
+.qtp-vol-slot.on { opacity: 1; pointer-events: auto; }
 
-/* 音量右侧那组按钮：hover 音量时整组淡出并收掉宽度，把位置让给滑块 */
+/* 尾部按钮：hover 音量时只淡出，不收起宽度（收起会改变进度条宽度 → 音量按钮跟着动） */
 .qtp-tail {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   flex: 0 0 auto;
-  max-width: 420px;
-  opacity: 1;
-  transition: max-width .22s cubic-bezier(.22, .68, .32, 1), opacity .16s ease;
+  transition: opacity .16s ease;
 }
-.qtp-tail.out { max-width: 0; opacity: 0; overflow: hidden; pointer-events: none; }
+.qtp-tail.out { opacity: 0; pointer-events: none; }
 
 .qtp-btn-wrap { position: relative; display: inline-flex; align-items: center; }
+.qtp-vol-slot :deep(.qtp-vol-range) { flex: 1 1 auto; min-width: 0; width: auto; }
 /* 只有倍速那一个需要往上弹列表（音量已经改成原位展开了） */
 .qtp-pop { position: absolute; bottom: calc(100% + 6px); right: 0; z-index: 4; }
 .qtp-pop-rate {

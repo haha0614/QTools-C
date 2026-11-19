@@ -27,7 +27,7 @@ function onInput(e) {
 </script>
 
 <style lang="scss" scoped>
-.qtp-vol-pop { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.qtp-vol-pop { display: flex; align-items: center; gap: 6px; width: 100%; min-width: 0; white-space: nowrap; }
 .qtp-vol-range {
   width: 86px;
   height: 20px;
