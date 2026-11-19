@@ -28,15 +28,46 @@ export function usePlayerCore(videoRef, getSource) {
 
   let cleanup = null
   let disposed = false
+  /** 服务端 seek 重开流之后，画面就绪时接着播 */
+  let resumeAfterAttach = false
 
   function el() { return videoRef.value }
 
-  function onTime() { const v = el(); if (v) { state.currentTime = v.currentTime; const b = v.buffered; state.buffered = b && b.length ? b.end(b.length - 1) : 0 } }
-  function onDur() { const v = el(); if (v) state.duration = Number.isFinite(v.duration) ? v.duration : 0 }
+  /** 内容偏移：服务端转码流从 offset 秒开始出流，流内时间要加回去才是内容时间 */
+  function offsetOf() {
+    const src = getSource && getSource()
+    const n = Number(src && src.offset)
+    return Number.isFinite(n) && n > 0 ? n : 0
+  }
+
+  function onTime() {
+    const v = el()
+    if (!v) return
+    state.currentTime = offsetOf() + v.currentTime
+    const b = v.buffered
+    state.buffered = offsetOf() + (b && b.length ? b.end(b.length - 1) : 0)
+  }
+  function onDur() {
+    const v = el()
+    if (!v) return
+    const src = getSource && getSource()
+    const fixed = Number(src && src.duration) || 0
+    // 索引里有总时长就用它：转码流只出"剩余段"，光看 v.duration 会越播越短
+    state.duration = fixed > 0 ? fixed : offsetOf() + (Number.isFinite(v.duration) ? v.duration : 0)
+  }
   function onPlay() { state.playing = true; state.error = ''; state.hint = ''; state.waiting = false }
   function onPause() { state.playing = false }
   function onWait() { state.waiting = true }
-  function onReady() { state.waiting = false; state.ready = true; state.hint = '' }
+  function onReady() {
+    state.waiting = false
+    state.ready = true
+    state.hint = ''
+    if (resumeAfterAttach) {
+      resumeAfterAttach = false
+      const v = el()
+      if (v && v.paused) v.play().catch(() => {})
+    }
+  }
   function onFsChange() {
     const d = typeof document !== 'undefined' ? document : null
     state.fullscreen = !!(d && (d.fullscreenElement || d.webkitFullscreenElement))
@@ -59,7 +90,21 @@ export function usePlayerCore(videoRef, getSource) {
   }
 
   function toggle() { const v = el(); if (!v) return; if (v.paused) v.play().catch(() => {}); else v.pause() }
-  function seek(t) { const v = el(); if (!v) return; const d = state.duration || 0; v.currentTime = Math.max(0, Math.min(t, d || t)) }
+  function seek(t) {
+    const v = el()
+    if (!v) return
+    const d = state.duration || 0
+    const target = Math.max(0, Math.min(t, d || t))
+    const src = getSource && getSource()
+    if (src && typeof src.serverSeek === 'function') {
+      // 浏览器不可 seek 的流：带 t 重开流（内核 watch 到 url 变化会重新 attach）
+      resumeAfterAttach = !v.paused
+      src.serverSeek(target)
+      state.currentTime = target
+      return
+    }
+    v.currentTime = target
+  }
   function seekBy(dt) { seek(state.currentTime + dt) }
   function setVolume(x) { const v = el(); if (!v) return; v.volume = Math.max(0, Math.min(1, x)); state.volume = v.volume; v.muted = v.volume === 0 }
   function toggleMute() { const v = el(); if (!v) return; v.muted = !v.muted; state.muted = v.muted }

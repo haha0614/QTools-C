@@ -4,13 +4,14 @@
  * 桥接层是"媒体站数据 → 新播放器能力"的唯一映射点，这里把口径钉死。
  */
 import assert from 'node:assert/strict'
-import { mediaCapabilities, mediaSourceUrl, qualityOptions, SPRITE_CELLS } from '../../src/views/media/video/playerBridge.js'
+import { mediaCapabilities, mediaPlayPlan, qualityOptions, SPRITE_CELLS } from '../../src/views/media/video/playerBridge.js'
 
 const api = {
   spriteUrl: (id) => '/api/media/sprite/' + id,
   previewUrl: (id) => '/api/media/preview/' + id,
   subUrl: (rel) => '/api/media/sub/' + rel,
-  streamUrl: (rel, o) => '/api/media/stream/' + rel + '?q=' + o.q + '&s=' + o.startSec
+  streamUrl: (rel, o) => '/api/media/stream/' + rel + '?q=' + o.q + '&s=' + o.startSec,
+  mediaFileUrl: (rel) => '/api/media/file/' + rel
 }
 const video = { id: 7, rel: 'a/b.mp4', hasSprite: true, hasPreview: true, sub: 'a/b.vtt', dur: 600 }
 
@@ -34,7 +35,8 @@ assert.equal(bare.preview, null, '无 preview 时为 null')
 assert.deepEqual(bare.subtitles, [], '无字幕为空数组')
 assert.equal(bare.quality, 'orig', '非法档回退原画')
 
-// 播放地址：档位与续播起点都要带上
-assert.equal(mediaSourceUrl(video, { api, quality: '480', startSec: 42 }), '/api/media/stream/a/b.mp4?q=480&s=42', 'streamUrl 透传')
-assert.equal(mediaSourceUrl({}, { api }), '', '没有 rel 就没地址')
+// 播放计划：orig 走直连（可 seek），其他档走转码流（带起点重开）
+assert.deepEqual(mediaPlayPlan(video, { api, quality: 'orig', startSec: 42 }), { kind: 'file', url: '/api/media/file/a/b.mp4', startAt: 42 }, '原画直连')
+assert.deepEqual(mediaPlayPlan(video, { api, quality: '480', startSec: 42 }), { kind: 'stream', url: '/api/media/stream/a/b.mp4?q=480&s=42', startAt: 42 }, '转码流带 q/起点')
+assert.equal(mediaPlayPlan({}, { api }).url, '', '没有 rel 就没地址')
 console.log('playerBridge: ALL PASS')

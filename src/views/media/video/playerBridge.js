@@ -60,12 +60,24 @@ export function mediaCapabilities(video, opts = {}) {
   return caps
 }
 
-/** 媒体站视频 → 新播放器的源适配器入参（播放地址由调用方用 api.streamUrl 拼） */
-export function mediaSourceUrl(video, opts = {}) {
+/**
+ * 媒体站视频 → 播放计划。档位决定走哪条路，这是 MediaPlayer.vue:1391-1392 的原样口径：
+ *   orig  → `api.mediaFileUrl(rel)`（原画直连，**浏览器可 seek**，起点靠 loadedmetadata 后写 currentTime）
+ *   其他档 → `api.streamUrl(rel, { q, startSec })`（实时转码流，**不可 seek**，只能带 t 重开）
+ * @returns {{ kind: 'file'|'stream', url: string, startAt: number }}
+ */
+export function mediaPlayPlan(video, opts = {}) {
   const api = opts.api || {}
   const v = video || {}
   const q = QUALITY_VALUES.includes(opts.quality) ? opts.quality : 'orig'
-  const startSec = Number(opts.startSec) || 0
-  if (typeof api.streamUrl !== 'function' || !v.rel) return ''
-  return api.streamUrl(v.rel, { q, startSec })
+  const startAt = Math.max(0, Number(opts.startSec) || 0)
+  if (!v.rel) return { kind: 'file', url: '', startAt }
+  if (q === 'orig') {
+    return { kind: 'file', url: typeof api.mediaFileUrl === 'function' ? api.mediaFileUrl(v.rel) : '', startAt }
+  }
+  return {
+    kind: 'stream',
+    url: typeof api.streamUrl === 'function' ? api.streamUrl(v.rel, { q, startSec: startAt }) : '',
+    startAt
+  }
 }

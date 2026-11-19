@@ -1,0 +1,193 @@
+<template>
+  <div class="mpn" role="dialog" aria-modal="true" aria-label="播放器（新内核）">
+    <header class="mpn-head">
+      <h2 class="mpn-title" :title="video.title">{{ video.title }}</h2>
+      <div class="mpn-acts">
+        <button type="button" :disabled="!hasPrev" @click="emit('prev')">上一条</button>
+        <button type="button" :disabled="!hasNext" @click="emit('next')">下一条</button>
+        <button type="button" class="mpn-close" @click="emit('close')">关闭 Esc</button>
+      </div>
+    </header>
+    <div class="mpn-body">
+      <div class="mpn-stage">
+        <Player ref="playerRef" :source="source" :features="features" :cover="coverUrl" @loadedmetadata="onMeta" />
+      </div>
+      <aside class="mpn-side"><slot name="side" /></aside>
+    </div>
+  </div>
+</template>
+
+<script setup>
+/**
+ * MediaPlayerNext.vue —— 媒体站播放层（新内核）实验外壳
+ *
+ * 用途：HANDOFF 13 第 3 步 · 阶段 B 的第一块。默认**不启用**，只在 `?engine=qtp` 时由 VideoPage
+ * 渲染，用来和新播放器做真机对照；旧 MediaPlayer.vue 一行未动。
+ *
+ * 现状：播放（服务端转码流 + serverSeek）、画质 / 字幕 / 标记 / 雪碧图四个插件、续播起点、
+ *       5 秒一次的 save-pos、上一条 / 下一条、右侧信息栏插槽。
+ * 未做（见 HANDOFF 13.7 清单）：元信息六项、编码告警、A-B 循环、逐帧、增益、键盘快捷键表、
+ *       埋点、封面冻结、预览时间条、设置浮层、字幕样式。
+ */
+import { computed, onBeforeUnmount, ref } from 'vue'
+import Player from '@/components/player/Player.vue'
+import { useMediaApi } from '@/composables/useMediaApi'
+import { mediaStreamSource } from '@/components/player/sources/mediaStream'
+import { fileSource } from '@/components/player/sources/hls'
+import { mediaCapabilities, mediaPlayPlan } from './playerBridge'
+import { mediaPlugins } from './playerBridgePlugins'
+
+const props = defineProps({
+  video: { type: Object, required: true },
+  startPos: { type: Number, default: 0 },
+  openSeq: { type: Number, default: 0 },
+  hasPrev: { type: Boolean, default: false },
+  hasNext: { type: Boolean, default: false },
+  quality: { type: String, default: 'orig' },
+  tracker: { type: Object, required: true },
+  markers: { type: Array, default: () => [] }
+})
+const emit = defineEmits(['close', 'prev', 'next', 'update:quality', 'save-pos', 'clear-pos', 'push-recent', 'open-meta'])
+
+const api = useMediaApi()
+const playerRef = ref(null)
+
+const caps = computed(() => mediaCapabilities(props.video, {
+  api,
+  quality: props.quality,
+  selectQuality: (q) => emit('update:quality', q),
+  markers: props.markers
+}))
+
+/**
+ * 源：原画档是直连文件（可 seek），其他档是转码流（不可 seek，走 serverSeek）。
+ * 换档时 plan.kind 可能变，所以这里直接按 plan 造适配器。
+ */
+const plan = computed(() => mediaPlayPlan(props.video, { api, quality: props.quality, startSec: props.startPos }))
+const source = computed(() => {
+  const p = plan.value
+  if (p.kind === 'stream') {
+    return mediaStreamSource(
+      (t) => mediaPlayPlan(props.video, { api, quality: props.quality, startSec: t }).url,
+      { startAt: p.startAt, duration: Number(props.video.dur) || 0, capabilities: caps.value }
+    )
+  }
+  return fileSource(p.url, { capabilities: caps.value })
+})
+
+/** 直连文件的续播：元数据到了再写 currentTime（转码流靠 URL 里的 t） */
+function onMeta() {
+  const p = plan.value
+  if (p.kind !== 'file' || !(p.startAt > 0)) return
+  const pl = player()
+  if (pl) pl.seek(p.startAt)
+}
+
+const coverUrl = computed(() => (props.video && props.video.contentHash
+  ? api.thumbUrl(props.video.contentHash)
+  : ''))
+
+const features = mediaPlugins()
+
+function st() {
+  const p = playerRef.value && playerRef.value.player
+  return p ? p.state : null
+}
+function player() {
+  return playerRef.value && playerRef.value.player
+}
+function savePos() {
+  const s = st()
+  if (!s || !props.video) return
+  emit('save-pos', {
+    id: props.video.id,
+    pos: Math.round((Number(s.currentTime) || 0) * 10) / 10,
+    dur: Number(s.duration) || Number(props.video.dur) || 0
+  })
+}
+const tick = window.setInterval(savePos, 5000)
+onBeforeUnmount(() => {
+  window.clearInterval(tick)
+  savePos()
+})
+
+/** 页面级入口：VideoPage 已经在调这 10 个（旧播放器 defineExpose 的同名方法），这里都接住 */
+defineExpose({
+  togglePlay: () => player() && player().toggle(),
+  seekRel: (dt) => player() && player().seekBy(dt),
+  adjustVolume: (d) => {
+    const p = player()
+    if (p) p.setVolume((Number(p.state.volume) || 0) + d)
+  },
+  toggleFullscreen: () => player() && player().toggleFullscreen(),
+  changeSpeed: (dir) => {
+    const p = player()
+    if (!p) return
+    const step = dir > 0 ? 0.25 : -0.25
+    p.setRate(Math.min(2, Math.max(0.25, (Number(p.state.rate) || 1) + step)))
+  },
+  stepFrame: (dir) => player() && player().seekBy(dir > 0 ? 0.04 : -0.04),
+  getCurrentTime: () => (st() && Number(st().currentTime)) || 0,
+  getDuration: () => (st() && Number(st().duration)) || 0,
+  /* 以下尚未实现（见 13.7 清单），先接住调用，避免页面报错 */
+  settle: () => {},
+  setAbPoint: () => {},
+  toggleHelp: () => {},
+  closeHelp: () => {},
+  openSide: () => {},
+  closeSide: () => {},
+  toggleSide: () => {}
+})
+</script>
+
+<style lang="scss" scoped>
+.mpn {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: rgba(8, 11, 16, .96);
+  color: #e8eef7;
+}
+.mpn-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, .1);
+}
+.mpn-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mpn-acts { display: inline-flex; gap: 8px; flex: 0 0 auto; }
+.mpn-acts button {
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .06);
+  color: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.mpn-acts button:disabled { opacity: .4; cursor: not-allowed; }
+.mpn-close { background: var(--el-color-primary, #4a9eff) !important; border-color: transparent !important; color: #fff !important; }
+.mpn-body { flex: 1 1 auto; min-height: 0; display: flex; }
+.mpn-stage { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.mpn-stage :deep(.qtp) { width: 100%; height: 100%; }
+.mpn-side {
+  flex: 0 0 auto;
+  width: 360px;
+  min-width: 0;
+  overflow-y: auto;
+  border-left: 1px solid rgba(255, 255, 255, .1);
+}
+</style>

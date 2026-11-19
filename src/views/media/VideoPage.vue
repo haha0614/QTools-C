@@ -329,7 +329,9 @@
       </footer>
     </aside>
 
-    <MediaPlayer
+    <!-- HANDOFF 13 第 3 步 · 阶段 B：`?engine=qtp` 时换新内核外壳做对照，默认仍是旧播放器 -->
+    <component
+      :is="engineNew ? MediaPlayerNext : MediaPlayer"
       v-if="curVideo"
       ref="playerRef"
       :video="curVideo"
@@ -381,7 +383,7 @@
           @notify="showToast"
         />
       </template>
-    </MediaPlayer>
+    </component>
 
     <!-- 加入播放列表（P5-B）：选择已有列表或新建，写入失败只提示，不影响库与播放 -->
     <PlaylistPicker
@@ -476,6 +478,7 @@ import QuickFilters from './video/QuickFilters.vue'
 import VideoCard from './video/VideoCard.vue'
 import RecentStrip from './video/RecentStrip.vue'
 import MediaPlayer from './video/MediaPlayer.vue'
+import MediaPlayerNext from './video/MediaPlayerNext.vue'
 import BatchBar from './video/BatchBar.vue'
 import {
   batchActive,
@@ -1089,6 +1092,9 @@ function onStudioToggle(name) {
 
 const route = useRoute()
 const router = useRouter()
+
+/** HANDOFF 13 第 3 步 · 阶段 B：`?engine=qtp` → 用新内核外壳（默认关闭，旧播放器不动） */
+const engineNew = computed(() => String(route.query.engine || '') === 'qtp')
 
 /** 弹层开关 + 目标视频：正在播放的那一部优先，否则用多选集合 */
 const playlistPickerOpen = ref(false)
