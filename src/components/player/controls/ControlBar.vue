@@ -263,13 +263,14 @@ function onScrub(e) { props.player.seek(Number(e.target.value)) }
 .qtp-right { position: relative; display: inline-flex; align-items: center; }
 
 /* 滑块盖在右侧区上：绝对定位，不参与布局。
-   宽度跟着"尾部整组"走（宽屏下会很长），所以内容右对齐并限宽 140px —— 实测用户嫌太长。 */
+   必须**左对齐**紧贴音量按钮 —— 右对齐时它会跑到整组尾部（宽屏下离按钮好几百像素，用户指出位置不对）。
+   同时限宽 140px，宽屏下不至于拉成一条长棍。 */
 .qtp-vol-slot {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   opacity: 0;
   pointer-events: none;
   transition: opacity .18s ease;
