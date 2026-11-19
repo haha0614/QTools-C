@@ -138,7 +138,7 @@ watch(volOpen, (v) => { if (v) rateOpen.value = false })
  * 展开音量时**只隐藏被滑块盖住的那几个按钮**（原来整组一起淡出，用户指出"没被盖住的也藏了"）。
  * 滑块左对齐、宽度 = VOL_SLOT_PX，所以从尾部左端起、左边距小于这个宽度的子元素才需要让位。
  */
-const VOL_SLOT_PX = 100
+const VOL_SLOT_PX = 80
 const tailRef = ref(null)
 let coveredEls = []
 
@@ -305,7 +305,8 @@ function onScrub(e) { props.player.seek(Number(e.target.value)) }
   pointer-events: none;
   transition: opacity .18s ease;
 }
-.qtp-vol-slot :deep(.qtp-vol-pop) { max-width: 100px; }
+/* 滑轨本身要短：数字去掉后整条都给滑轨，100px 看着比原来(86px+数字)更长 */
+.qtp-vol-slot :deep(.qtp-vol-pop) { max-width: 76px; }
 .qtp-vol-slot.on { opacity: 1; pointer-events: auto; }
 
 /* 尾部按钮：始终占位（收宽度会让进度条变宽、音量按钮跟着动）；
