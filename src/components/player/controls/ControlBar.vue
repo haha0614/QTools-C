@@ -53,7 +53,7 @@
           <VolumePop :player="player" />
         </div>
 
-        <div class="qtp-tail" :class="{ out: volOpen }">
+        <div ref="tailRef" class="qtp-tail">
       <!-- 倍速：点一下直接出一列，选完即生效（不再"点一下切一档"） -->
       <div class="qtp-btn-wrap qtp-rate-wrap" @mouseleave="rateOpen = false">
         <button
@@ -103,7 +103,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import VolumePop from './VolumePop.vue'
 import RatePop from './RatePop.vue'
 
@@ -132,8 +132,38 @@ const volActive = ref(false)
 const volFocus = ref(false)
 /** 展开条件：鼠标在上面，或焦点在音量控件里 */
 const volOpen = computed(() => volActive.value || volFocus.value)
-// 展开时尾部按钮只是淡出（不可点），倍速列表留在里面就变成"看不见但还在"的状态
 watch(volOpen, (v) => { if (v) rateOpen.value = false })
+
+/**
+ * 展开音量时**只隐藏被滑块盖住的那几个按钮**（原来整组一起淡出，用户指出"没被盖住的也藏了"）。
+ * 滑块左对齐、宽度 = VOL_SLOT_PX，所以从尾部左端起、左边距小于这个宽度的子元素才需要让位。
+ */
+const VOL_SLOT_PX = 100
+const tailRef = ref(null)
+let coveredEls = []
+
+function clearCoverage() {
+  for (const el of coveredEls) el.classList.remove('qtp-covered')
+  coveredEls = []
+}
+function updateCoverage() {
+  const tail = tailRef.value
+  clearCoverage()
+  if (!tail || !volOpen.value) return
+  const base = tail.getBoundingClientRect().left
+  for (const child of Array.from(tail.children)) {
+    const left = child.getBoundingClientRect().left - base
+    if (left >= VOL_SLOT_PX) break
+    child.classList.add('qtp-covered')
+    coveredEls.push(child)
+  }
+}
+watch(volOpen, async (v) => {
+  if (!v) { clearCoverage(); return }
+  await nextTick()
+  updateCoverage()
+})
+onBeforeUnmount(clearCoverage)
 /**
  * 键盘聚焦才展开。鼠标点按钮同样会给按钮焦点，若按 focusin 就展开，
  * 点完音量按钮移开鼠标也会卡在展开态（实测：右侧按钮一直藏着回不来）。
@@ -275,18 +305,18 @@ function onScrub(e) { props.player.seek(Number(e.target.value)) }
   pointer-events: none;
   transition: opacity .18s ease;
 }
-.qtp-vol-slot :deep(.qtp-vol-pop) { max-width: 140px; }
+.qtp-vol-slot :deep(.qtp-vol-pop) { max-width: 100px; }
 .qtp-vol-slot.on { opacity: 1; pointer-events: auto; }
 
-/* 尾部按钮：hover 音量时只淡出，不收起宽度（收起会改变进度条宽度 → 音量按钮跟着动） */
+/* 尾部按钮：始终占位（收宽度会让进度条变宽、音量按钮跟着动）；
+   只有被滑块盖住的那几个加 .qtp-covered 淡出，其余保持可见可点 */
 .qtp-tail {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   flex: 0 0 auto;
-  transition: opacity .16s ease;
 }
-.qtp-tail.out { opacity: 0; pointer-events: none; }
+.qtp-tail > .qtp-covered { opacity: 0; pointer-events: none; transition: opacity .16s ease; }
 
 .qtp-btn-wrap { position: relative; display: inline-flex; align-items: center; }
 .qtp-vol-slot :deep(.qtp-vol-range) { flex: 1 1 auto; min-width: 0; width: auto; }
