@@ -40,6 +40,16 @@ export function abLoopPlugin(options = {}) {
         if (Number(t) >= b.value - 0.02) player.seek(a.value)
       })
 
+      // 把能力交回给宿主（外壳的 defineExpose.setAbPoint / clearAb 要调它）
+      if (typeof options.onReady === 'function') {
+        try {
+          options.onReady({
+            setPoint: (which) => (String(which || '').toLowerCase() === 'b' ? setB() : setA()),
+            clear
+          })
+        } catch (e) { /* 宿主回调失败不影响插件 */ }
+      }
+
       ctx.registerButton({ id: 'abA', label: 'A 点', icon: 'A', title: '把当前位置设为 A 点（A）', onClick: setA })
       ctx.registerButton({ id: 'abB', label: 'B 点', icon: 'B', title: '把当前位置设为 B 点（B）', onClick: setB })
       ctx.registerButton({ id: 'abX', label: '清除 A-B', icon: '✕', title: '清除 A-B 循环（X）', onClick: clear })

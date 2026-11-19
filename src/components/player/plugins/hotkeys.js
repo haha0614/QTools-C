@@ -45,7 +45,12 @@ export function hotkeysPlugin(options = {}) {
         const lower = String(k || '').toLowerCase()
 
         if (k === 'Escape') {
-          if (visible.value) { visible.value = false; e.preventDefault() }
+          if (!visible.value) return
+          // 只关帮助，并且把事件挡住 —— 页面级 keydown（VideoPage 挂在 window 上）也要靠
+          // 「帮助开着时 Esc 只关帮助」这个语义，否则会顺手把播放器一起关掉
+          visible.value = false
+          e.preventDefault()
+          e.stopPropagation()
           return
         }
         if (k === '?' || (k === '/' && e.shiftKey)) {
@@ -111,6 +116,20 @@ export function hotkeysPlugin(options = {}) {
             : null)
         }
       })
+
+      if (typeof options.onReady === 'function') {
+        try {
+          options.onReady({
+            toggleHelp: () => { visible.value = !visible.value },
+            /** 返回是否真的关掉了：VideoPage 的 Esc 分支靠这个返回值决定要不要继续关播放器 */
+            closeHelp: () => {
+              if (!visible.value) return false
+              visible.value = false
+              return true
+            }
+          })
+        } catch (e) { /* 宿主回调失败不影响插件 */ }
+      }
 
       ctx.registerButton({
         id: 'hotkeysHelp',

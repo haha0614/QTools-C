@@ -33,7 +33,7 @@
           @loadedmetadata="onMeta"
         />
       </div>
-      <aside class="mpn-side"><slot name="side" /></aside>
+      <aside v-show="sideOpen" class="mpn-side"><slot name="side" /></aside>
     </div>
   </div>
 </template>
@@ -136,12 +136,18 @@ const coverUrl = computed(() => (props.video && props.video.contentHash
   ? api.thumbUrl(props.video.contentHash)
   : ''))
 
+/** 侧栏展开状态：页面「信息」入口走 defineExpose 的 openSide/toggleSide */
+const sideOpen = ref(true)
+/** 插件把能力交回来，外壳再转给页面（页面在用旧的 defineExpose 名单） */
+let abApi = null
+let helpApi = null
+
 /** 四个能力插件 + 逐帧 + 埋点（媒体站专有：每日大赛不传 tracker 也就不挂） */
 const features = computed(() => [
   ...mediaPlugins(),
   frameStepPlugin({ fps: props.video && props.video.fps }),
-  hotkeysPlugin({ fps: props.video && props.video.fps }),
-  abLoopPlugin(),
+  hotkeysPlugin({ fps: props.video && props.video.fps, onReady: (api) => { helpApi = api } }),
+  abLoopPlugin({ onReady: (api) => { abApi = api } }),
   subtitleStylePlugin(),
   gainPlugin(),
   telemetryPlugin({ tracker: props.tracker, id: props.video && props.video.id })
@@ -187,14 +193,16 @@ defineExpose({
   stepFrame: (dir) => player() && player().seekBy(dir > 0 ? 0.04 : -0.04),
   getCurrentTime: () => (st() && Number(st().currentTime)) || 0,
   getDuration: () => (st() && Number(st().duration)) || 0,
-  /* 以下尚未实现（见 13.7 清单），先接住调用，避免页面报错 */
-  settle: () => {},
-  setAbPoint: () => {},
-  toggleHelp: () => {},
-  closeHelp: () => {},
-  openSide: () => {},
-  closeSide: () => {},
-  toggleSide: () => {}
+  /* 下面这些原来是空实现：A-B 与帮助浮层由插件回传能力，侧栏折叠由外壳自己管 */
+  setAbPoint: (which) => { if (abApi) abApi.setPoint(which) },
+  clearAb: () => { if (abApi) abApi.clear() },
+  toggleHelp: () => { if (helpApi) helpApi.toggleHelp() },
+  closeHelp: () => (helpApi ? helpApi.closeHelp() : false),
+  openSide: () => { sideOpen.value = true },
+  closeSide: () => { sideOpen.value = false },
+  toggleSide: () => { sideOpen.value = !sideOpen.value },
+  /** 旧播放器的布局结算钩子，新外壳没有对应需求，保留空实现 */
+  settle: () => {}
 })
 </script>
 

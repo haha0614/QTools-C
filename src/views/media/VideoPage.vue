@@ -3287,6 +3287,10 @@ watch([playlistCtx, plView, () => state.pl], () => {
    ========================================================================= */
 
 function onKey(e) {
+  // 新内核（?engine=qtp）自带键盘插件（hotkeys / abLoop），页面级只保留 Esc ——
+  // 否则同一次按键会被页面和插件各处理一遍（播放/快进按两下）
+  if (engineNew.value && e.key !== 'Escape') return
+
   const t = e.target
   const tag = t && t.tagName ? t.tagName.toLowerCase() : ''
   const typing = tag === 'input' || tag === 'textarea' || tag === 'select' || (t && t.isContentEditable)
