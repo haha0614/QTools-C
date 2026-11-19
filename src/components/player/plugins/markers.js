@@ -57,8 +57,7 @@ const TICK_BASE = {
   top: '0',
   bottom: '0',
   display: 'flex',
-  alignItems: 'center',
-  cursor: 'pointer'
+  alignItems: 'center'
 }
 
 const MarkersLane = defineComponent({
@@ -91,22 +90,32 @@ const MarkersLane = defineComponent({
     }
 
     function tickNode(t, i) {
-      // 点标记按中心定位（pos 是瞬间），11px 命中盒比 3px 视觉条好点；区间标记从 pos 起铺开
+      // 合并进进度条：每条标记是进度条上的一条**竖线**。
+      // 命中盒宽 11px（竖线 2px 很难点中），要有 pointer-events 才能 hover/点击 ——
+      // 轨道层容器默认是 none，这里逐条打开。
       const style = {
         ...TICK_BASE,
         left: t.left + '%',
         width: t.range ? t.width + '%' : '11px',
         transform: t.range ? undefined : 'translateX(-5.5px)',
         justifyContent: t.range ? 'flex-start' : 'center',
+        pointerEvents: 'auto',
+        cursor: 'pointer',
         outline: focused.value === i ? '2px solid rgba(255, 255, 255, .75)' : 'none',
         outlineOffset: '1px'
       }
-      const barStyle = {
-        width: t.range ? '100%' : '3px',
-        height: '3px',
-        borderRadius: '999px',
-        background: i === active.value ? 'rgba(255, 255, 255, .45)' : 'rgba(255, 255, 255, .28)'
-      }
+      // 竖线：贯穿进度条高度；区间标记画成一段横条（区间本身是"长度"而不是"点"）
+      const barStyle = t.range
+        ? {
+          position: 'absolute', left: '0', right: '0', top: '50%', height: '3px',
+          transform: 'translateY(-50%)', borderRadius: '999px',
+          background: i === active.value ? 'rgba(74, 158, 255, .85)' : 'rgba(74, 158, 255, .55)'
+        }
+        : {
+          position: 'absolute', left: '50%', top: '12%', bottom: '12%', width: '2px',
+          transform: 'translateX(-50%)', borderRadius: '1px',
+          background: i === active.value ? 'rgba(255, 255, 255, .95)' : 'rgba(255, 255, 255, .62)'
+        }
       return h('div', {
         key: 'mk' + i,
         class: 'qtp-mk',
@@ -169,7 +178,7 @@ export function markersPlugin() {
       // 不能"有标记才注册"：媒体站的标记是信息栏后来 @markers emit 上来的，
       // 播放器不会因为标记变化而重建 -> 那一刻判空就永远不出现刻度（实测踩过）。
       // 组件内部按 ticks 空不空决定渲染，空时返回 null。
-      ctx.registerTrackLayer({ id: 'markers', mode: 'lane', order: 10, component: MarkersLane })
+      ctx.registerTrackLayer({ id: 'markers', mode: 'overlay', order: 10, component: MarkersLane })
     }
   }
 }
