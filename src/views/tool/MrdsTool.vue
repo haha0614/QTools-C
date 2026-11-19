@@ -1203,6 +1203,17 @@ function dismissLastSeen() {
  */
 const grow = reactive({ on: false, cover: '', from: null, to: null, moving: false, landed: false })
 
+/**
+ * 飞行层的矩形：起点是卡片封面，moving 之后落到播放器矩形。
+ * 用 left/top/width/height 过渡，不用 scale：卡片是 16:10 横版、竖版视频的播放器是 9:16，
+ * 非等比 scale 会把封面直接拉变形（用户看到的第一张"图"就是它）。
+ */
+const growStyle = computed(() => {
+  const r = (grow.moving && grow.to) || grow.from
+  if (!r) return { display: 'none' }
+  return { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px' }
+})
+
 function rectOf(el) {
   if (!el) return null
   const r = el.getBoundingClientRect()
@@ -2085,17 +2096,10 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
       v-if="grow.on && grow.cover"
       class="mr-grow"
       :class="{ moving: grow.moving, landed: grow.landed }"
-      :style="{
-        left: (grow.from && grow.from.x) + 'px',
-        top: (grow.from && grow.from.y) + 'px',
-        width: (grow.from && grow.from.w) + 'px',
-        height: (grow.from && grow.from.h) + 'px',
-        transform: grow.moving && grow.to
-          ? 'translate(' + (grow.to.x - grow.from.x) + 'px,' + (grow.to.y - grow.from.y) + 'px) scale(' + (grow.to.w / Math.max(1, grow.from.w)) + ',' + (grow.to.h / Math.max(1, grow.from.h)) + ')'
-          : 'none'
-      }"
+      :style="growStyle"
     >
-      <img :src="grow.cover" alt="" />
+      <img class="mr-grow-cut" :src="grow.cover" alt="" />
+      <img class="mr-grow-fit" :src="grow.cover" alt="" />
     </div>
 
     <!-- 详情弹层：与深链页共用 MrdsDetail（混合布局） -->
@@ -2149,7 +2153,8 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
 .mr-chip.on { border-color: var(--el-color-primary); color: var(--el-color-primary); background: var(--el-color-primary-light-9); }
 .mr-chip-sm { font-size: 11.5px; padding: 2px 10px; }
 /* ---------- 卡片长成弹窗 ---------- */
-/* 这块副本就是"卡片封面本人"：从卡片矩形长到播放器矩形 */
+/* 这块副本就是"卡片封面本人"：从卡片矩形长到播放器矩形。
+   只过渡几何，不缩放（见 growStyle 的注释）。 */
 .mr-grow {
   position: fixed;
   z-index: 2400;
@@ -2157,15 +2162,27 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
   border-radius: 10px;
   background: #000;
   pointer-events: none;
-  will-change: transform;
-  transform-origin: top left;
-  transition: border-radius .3s ease, opacity .16s ease;
+  transition: opacity .16s ease;
 }
-.mr-grow img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .mr-grow.moving {
-  transition: transform .3s cubic-bezier(.22, .68, .32, 1), border-radius .3s ease;
-  border-radius: 10px;
+  transition: left .3s cubic-bezier(.22, .68, .32, 1), top .3s cubic-bezier(.22, .68, .32, 1),
+    width .3s cubic-bezier(.22, .68, .32, 1), height .3s cubic-bezier(.22, .68, .32, 1),
+    opacity .16s ease;
 }
+/* 起飞时按卡片的裁切方式（cover），落位前换成播放器封面层的显示方式（contain）。
+   落位那一帧必须和 Player 的封面层长得一模一样，否则交接时会"换一张图"。 */
+.mr-grow img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  transition: opacity .3s cubic-bezier(.22, .68, .32, 1);
+}
+.mr-grow .mr-grow-cut { object-fit: cover; }
+.mr-grow .mr-grow-fit { object-fit: contain; opacity: 0; }
+.mr-grow.moving .mr-grow-cut { opacity: 0; }
+.mr-grow.moving .mr-grow-fit { opacity: 1; }
 .mr-grow.landed { opacity: 0; }
 
 /* 弹窗：框架先淡入，但播放器与文字先隐身，等封面落位再淡入 */

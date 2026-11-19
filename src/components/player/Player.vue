@@ -62,6 +62,11 @@ function onDataFrame(e) {
   emit('loadeddata', e)
 }
 
+// player 必须在下面两个 watch 之前建好：watch 的 getter 是当场执行的，
+// 写在前面会读到 TDZ 里的 player（控制台报 "Cannot access 'player' before initialization"，
+// 而且是静默失效——hint 变化永远盖不回封面）
+const player = usePlayerCore(videoEl, () => props.source)
+
 // 重试/重签期间（有 hint）重新盖回封面，把中间过程藏起来
 watch(() => player.state.hint, (h) => { if (h) frameReady.value = false })
 
@@ -71,7 +76,6 @@ watch(() => props.source && props.source.src, () => {
   const v = videoEl.value
   if (!v || v.readyState < 2) frameReady.value = false
 })
-const player = usePlayerCore(videoEl, () => props.source)
 
 const buttons = ref([])
 const disposers = []
