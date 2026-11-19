@@ -12,7 +12,8 @@ export function hlsSource(url, opts = {}) {
   return {
     kind: 'hls',
     url,
-    capabilities: { qualities: [] },
+    /** 能力由调用方给（画质/雪碧图/标记/字幕），没有就是空对象 —— 插件据此决定挂不挂 */
+    capabilities: opts.capabilities || { qualities: [] },
     async attach(videoEl, api) {
       // hls.min.js 是 UMD：ESM 里没有 export，只会把构造函数挂到 window.Hls
       await import('@/vendor/hls.min.js')
@@ -63,11 +64,11 @@ export function hlsSource(url, opts = {}) {
 }
 
 /** 普通直链（mp4 等）：不需要额外库，直接喂 <video> */
-export function fileSource(url) {
+export function fileSource(url, opts = {}) {
   return {
     kind: 'file',
     url,
-    capabilities: { qualities: [] },
+    capabilities: opts.capabilities || {},
     attach(videoEl, api) {
       videoEl.src = url
       const onErr = () => api.fail('视频加载失败')

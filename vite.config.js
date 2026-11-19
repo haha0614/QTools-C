@@ -54,6 +54,12 @@ export default defineConfig(({ command, mode }) => {
         '/api': {
           target: proxyTarget,
           changeOrigin: true
+        },
+        // 抓取素材（封面/视频/字幕）线上由 nginx 的 /web/ 提供；dev 下也走它，
+        // 否则 devtools/player-lab 取片、取 <track> 会跨源（字幕轨跨源必须 CORS）。
+        '/web': {
+          target: env.VITE_WEB_TARGET || 'http://localhost',
+          changeOrigin: true
         }
       }
     }

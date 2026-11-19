@@ -29,12 +29,31 @@
     ></video>
     <p v-if="player.state.hint" class="qtp-hint">{{ player.state.hint }}</p>
     <p v-else-if="player.state.error" class="qtp-hint qtp-hint-error">{{ player.state.error }}</p>
-    <ControlBar v-show="!player.state.error" :player="player" :buttons="buttons" />
+
+    <!-- 设置浮层：插件注册的菜单段（画质 / 字幕…）。没有任何菜单段时整块不进 DOM，
+         所以每日大赛这种"只有下载按钮"的用法看不到齿轮，也看不到这层壳。 -->
+    <div v-if="menuOpen && menuSections.length" ref="menuRef" class="qtp-menu" role="menu">
+      <div v-for="s in menuSections" :key="s.id" class="qtp-menu-sec">
+        <p class="qtp-menu-title">{{ s.title }}</p>
+        <component :is="s.component" :ctx="ctx" />
+      </div>
+    </div>
+
+    <ControlBar
+      v-show="!player.state.error"
+      :player="player"
+      :buttons="buttons"
+      :sections="menuSections"
+      :layers="trackLayers"
+      :ctx="ctx"
+      :menu-open="menuOpen"
+      @toggle-menu="toggleMenu"
+    />
   </div>
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import ControlBar from './controls/ControlBar.vue'
 import { usePlayerCore } from './usePlayerCore'
 
@@ -44,7 +63,10 @@ const props = defineProps({
   poster: { type: String, default: '' },
   /** 封面图：缓冲/重签期间显示，首个数据帧到达后淡出 */
   cover: { type: String, default: '' },
-  /** 插件列表：{ id, setup(ctx) }，ctx 提供 registerButton 等注册点 */
+  /**
+   * 插件列表：{ id, setup(ctx) }。
+   * ctx 只提供"加什么"的注册点，播放语义一律留在内核里（见 HANDOFF 13.3）。
+   */
   features: { type: Array, default: () => [] },
   /** 外框圆角，传 '0' 就是方角（视频不再被裁成圆角） */
   radius: { type: String, default: '' }
@@ -77,19 +99,84 @@ watch(() => props.source && props.source.src, () => {
   if (!v || v.readyState < 2) frameReady.value = false
 })
 
+/* ---------- 插件注册点 ---------- */
+
 const buttons = ref([])
-const disposers = []
+const menuSections = ref([])
+const trackLayers = ref([])
+/** 适配器改了 capabilities（比如切了画质）之后 +1，让菜单/轨道层重新求值 */
+const capsVersion = ref(0)
+
+/** 源能力：{ qualities, quality, selectQuality, sprite, preview, markers, subtitles }，没有就是空对象 */
+const caps = computed(() => {
+  void capsVersion.value
+  return (props.source && props.source.capabilities) || {}
+})
+
+function upsert(list, def, keys) {
+  const i = list.value.findIndex((x) => x.id === def.id)
+  const next = list.value.slice()
+  const item = { order: 100, ...def }
+  if (i >= 0) next[i] = item
+  else next.push(item)
+  next.sort((a, b) => (a.order || 100) - (b.order || 100))
+  list.value = next
+  void keys
+}
 
 const ctx = {
   player,
   emit,
+  /** <video> 元素：setup 阶段还是 null，所以给 getter */
+  videoEl: () => videoEl.value,
+  /** 源能力（computed，读 .value） */
+  caps,
+  /** 适配器改完 capabilities 后调一次，触发菜单重算 */
+  touch() { capsVersion.value += 1 },
+  /** 关掉设置浮层（画质选完、字幕切完都该关） */
+  closeMenu() { menuOpen.value = false },
   registerButton(def) {
     if (!def || !def.id) return
     if (!buttons.value.some((b) => b.id === def.id)) buttons.value = [...buttons.value, def]
+  },
+  /** 菜单段：{ id, title, order?, component }，渲染在齿轮浮层里，组件收 ctx */
+  registerMenuSection(def) {
+    if (!def || !def.id || !def.component) return
+    upsert(menuSections, def)
+  },
+  /**
+   * 轨道层：{ id, order?, mode?, component }。
+   * mode='overlay'（默认）压进度条上、不接鼠标；mode='lane' 单独一条（标记刻度用，可点）。
+   */
+  registerTrackLayer(def) {
+    if (!def || !def.id || !def.component) return
+    upsert(trackLayers, { mode: 'overlay', ...def })
   }
 }
 
-/** 控制条自动隐藏：播放中 2.5 秒无操作就淡出，暂停或出错时常驻 */
+/* ---------- 设置浮层开关 ---------- */
+const menuOpen = ref(false)
+const menuRef = ref(null)
+
+function onDocDown(e) {
+  if (!menuOpen.value) return
+  const t = e && e.target
+  const menu = menuRef.value
+  if (menu && t && menu.contains(t)) return
+  const btn = t && t.closest && t.closest('.qtp-menu-btn')
+  if (btn) return
+  menuOpen.value = false
+}
+function onDocKey(e) {
+  if (e && e.key === 'Escape' && menuOpen.value) menuOpen.value = false
+}
+function toggleMenu() {
+  menuOpen.value = !menuOpen.value
+  barHidden.value = false
+  poke()
+}
+
+/* ---------- 控制条自动隐藏：播放中 2.5 秒无操作就淡出，暂停或出错时常驻 ---------- */
 const barHidden = ref(false)
 let hideTimer = 0
 const HIDE_MS = 2500
@@ -97,7 +184,8 @@ const HIDE_MS = 2500
 function scheduleHide() {
   if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0 }
   const s = player.state
-  if (!s.playing || s.error) { barHidden.value = false; return }
+  // 浮层开着时控制条不能淡出，否则点不到菜单
+  if (!s.playing || s.error || menuOpen.value) { barHidden.value = false; return }
   hideTimer = window.setTimeout(() => { barHidden.value = true }, HIDE_MS)
 }
 function poke() {
@@ -112,6 +200,8 @@ function onMeta(e) {
   emit('loadedmetadata', e)
 }
 
+const disposers = []
+
 onMounted(() => {
   for (const f of props.features) {
     if (!f || typeof f.setup !== 'function') continue
@@ -124,11 +214,15 @@ onMounted(() => {
       console.warn('[player] plugin failed:', f.id, e)
     }
   }
+  document.addEventListener('mousedown', onDocDown)
+  document.addEventListener('keydown', onDocKey)
   scheduleHide()
 })
 
 onBeforeUnmount(() => {
   if (hideTimer) clearTimeout(hideTimer)
+  document.removeEventListener('mousedown', onDocDown)
+  document.removeEventListener('keydown', onDocKey)
   for (const d of disposers) { try { d() } catch (e) { /* 忽略 */ } }
 })
 
@@ -182,4 +276,27 @@ defineExpose({ player })
   text-shadow: 0 1px 3px rgba(0, 0, 0, .8);
 }
 .qtp-hint-error { color: #ff9a9a; }
+
+/* 设置浮层：贴控制条上方。放在 Player 里而不是控制条里 —— 控制条有 overflow:hidden，
+   放里面会被裁掉半截（窄播放器尤其明显）。 */
+.qtp-menu {
+  position: absolute;
+  right: 12px;
+  bottom: 54px;
+  z-index: 3;
+  width: 200px;
+  max-height: 60%;
+  overflow-y: auto;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  background: rgba(10, 14, 20, .96);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .5);
+  color: #e8eef7;
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: left;
+}
+.qtp-menu-sec + .qtp-menu-sec { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .1); }
+.qtp-menu-title { margin: 0 0 6px; font-size: 11.5px; color: rgba(255, 255, 255, .6); }
 </style>
