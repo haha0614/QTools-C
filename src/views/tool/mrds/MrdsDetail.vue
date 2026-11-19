@@ -1157,8 +1157,9 @@ function showFirstFrame(e) {
   if (!v || v.dataset.frameShown === '1') return
   v.dataset.frameShown = '1'
   try {
-    if (v.currentTime > 0.2) v.currentTime = 0
-    // 请求一次绘制，确保黑帧被替换成真实画面
+    // 不再强行把进度拨回 0：HLS 起播位置本来就可能不是 0，
+    // 这一拨会让画面从 A 场景瞬间跳到 B 场景（用户看到的就是「闪了三帧」）。
+    // 黑帧问题已经由封面层（Player 的 cover）遮住，这里只请求一次绘制。
     v.requestVideoFrameCallback && v.requestVideoFrameCallback(() => {})
   } catch (err) {
     /* 不影响播放，忽略 */

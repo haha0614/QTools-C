@@ -22,7 +22,8 @@
       playsinline
       :poster="poster || undefined"
       @loadedmetadata="onMeta"
-      @loadeddata="onDataFrame($event)"
+      @canplay="onDataFrame($event)"
+      @loadeddata="emit('loadeddata', $event)"
       @ended="emit('ended')"
       @click="player.toggle()"
     ></video>
@@ -55,12 +56,21 @@ const videoEl = ref(null)
 const frameReady = ref(false)
 
 function onDataFrame(e) {
+  // canplay 而不是 loadeddata：后者在签名失效、正在重签时也可能短暂触发，
+  // 一收封面就会看到"旧流首帧 → 新流首帧"连续两跳
   frameReady.value = true
   emit('loadeddata', e)
 }
 
-// 换源（重签成功后 src 变化）时重新露出封面，避免中间闪一帧黑
-watch(() => props.source && props.source.src, () => { frameReady.value = false })
+// 重试/重签期间（有 hint）重新盖回封面，把中间过程藏起来
+watch(() => player.state.hint, (h) => { if (h) frameReady.value = false })
+
+// 换源（重签成功）时只有当画面真的没了才重新露出封面：
+// 否则会在已经出画的视频上再盖一次封面，表现为「封面→画面→又变封面→又画面」
+watch(() => props.source && props.source.src, () => {
+  const v = videoEl.value
+  if (!v || v.readyState < 2) frameReady.value = false
+})
 const player = usePlayerCore(videoEl, () => props.source)
 
 const buttons = ref([])
