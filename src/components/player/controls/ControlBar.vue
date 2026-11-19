@@ -32,12 +32,17 @@
          这样滑块不必悬浮、不必进设置，也不用把按钮挤出去（.qtp 兜住越界）。 -->
     <div
       class="qtp-vol-area"
-      @mouseenter="volActive = true"
       @mouseleave="volActive = false"
       @focusin="onVolFocusIn"
       @focusout="onVolFocusOut"
     >
-      <button type="button" class="qtp-btn" :title="player.state.muted ? '取消静音' : '静音'" @click="player.toggleMute()">
+      <!-- 展开只由"移到音量按钮上"触发：挂在整组上的话，滑到右侧任一按钮也会展开 -->
+      <button
+        type="button" class="qtp-btn"
+        :title="player.state.muted ? '取消静音' : '静音'"
+        @mouseenter="volActive = true"
+        @click="player.toggleMute()"
+      >
         <span class="qtp-ico">{{ player.state.muted || player.state.volume === 0 ? '🔇' : '🔊' }}</span>
       </button>
 
@@ -120,7 +125,7 @@ const volActive = ref(false)
 const volFocus = ref(false)
 /** 展开条件：鼠标在上面，或焦点在音量控件里 */
 const volOpen = computed(() => volActive.value || volFocus.value)
-// 展开时右侧那组按钮被收起来了，倍速列表留在里面就会变成"看不见但还在"的状态
+// 展开时尾部按钮只是淡出（不可点），倍速列表留在里面就变成"看不见但还在"的状态
 watch(volOpen, (v) => { if (v) rateOpen.value = false })
 /**
  * 键盘聚焦才展开。鼠标点按钮同样会给按钮焦点，若按 focusin 就展开，
@@ -128,7 +133,9 @@ watch(volOpen, (v) => { if (v) rateOpen.value = false })
  */
 function onVolFocusIn(e) {
   const t = e && e.target
-  volFocus.value = !!(t && t.matches && t.matches(':focus-visible'))
+  // 聚焦尾部按钮（倍速/齿轮/全屏）不该展开滑块：只有音量按钮和滑块自己算
+  const tail = t && t.closest && t.closest('.qtp-tail')
+  volFocus.value = !!(t && t.matches && t.matches(':focus-visible') && !tail)
 }
 function onVolFocusOut(e) {
   const next = e && e.relatedTarget
