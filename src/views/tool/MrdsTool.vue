@@ -1407,7 +1407,9 @@ function onDetailLoaded(data) {
   const row = rows.value[idx]
   rows.value[idx] = {
     ...row,
-    cover: (Array.isArray(data.blocks) && data.blocks.find((b) => b && b.type === 'image' && b.url)?.url) || row.cover,
+    // 封面只在原本没有时才用图集第一张兜底：原来这里无条件取第一张图，
+    // 点开一次卡片封面就从源站封面被换成 p1.jpg，再点开播放器封面层也跟着变
+    cover: row.cover || data.cover || (Array.isArray(data.blocks) && data.blocks.find((b) => b && b.type === 'image' && b.url)?.url) || '',
     hasDetail: 1,
     hasVideo: Number(data.videoCount) > 0 ? 1 : row.hasVideo,
     videoCount: data.videoCount ?? row.videoCount,
