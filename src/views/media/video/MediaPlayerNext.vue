@@ -21,6 +21,7 @@
     </header>
     <!-- 编码告警：与旧播放器同一句文案（HEVC 等浏览器可能播不了） -->
     <p v-if="warnVisible" class="mpn-warn">该片为 HEVC/异常编码，浏览器可能无法播放</p>
+    <p v-if="notice" class="mpn-warn">{{ notice }}</p>
     <div class="mpn-body">
       <div class="mpn-stage">
         <!-- key 用 视频 id + openSeq：换片 / 重开都重建播放器，插件（含埋点会话）才会按新片重跑 -->
@@ -50,7 +51,7 @@
  * 未做（见 HANDOFF 13.7 清单）：元信息六项、编码告警、A-B 循环、逐帧、增益、键盘快捷键表、
  *       埋点、封面冻结、预览时间条、设置浮层、字幕样式。
  */
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import Player from '@/components/player/Player.vue'
 import { useMediaApi } from '@/composables/useMediaApi'
 import { mediaStreamSource } from '@/components/player/sources/mediaStream'
@@ -79,6 +80,28 @@ const emit = defineEmits(['close', 'prev', 'next', 'update:quality', 'save-pos',
 
 const api = useMediaApi()
 const playerRef = ref(null)
+
+/**
+ * 播不动就自动降一档：orig -> 720 -> 480 -> 360，最低档仍失败就停在这里，
+ * 由播放器把底层错误显示出来（.qtp-hint-error）。每部片只降一次，避免来回换档。
+ */
+const DEGRADE = { orig: '720', 720: '480', 480: '360', 360: '' }
+const notice = ref('')
+let degradeTried = false
+watch(
+  () => {
+    const p = playerRef.value && playerRef.value.player
+    return p ? p.state.error : ''
+  },
+  (err) => {
+    if (!err || degradeTried) return
+    const next = DEGRADE[props.quality]
+    if (!next) { notice.value = '该片编码浏览器可能不支持：' + err + '（可试试下载）'; return }
+    degradeTried = true
+    notice.value = '这个清晰度播不了（' + err + '），已自动降到 ' + next + 'p'
+    emit('update:quality', next)
+  }
+)
 
 /** 编码告警：索引里 browserOk === false 就是浏览器大概率播不了的片 */
 const warnVisible = computed(() => !!(props.video && props.video.browserOk === false))
