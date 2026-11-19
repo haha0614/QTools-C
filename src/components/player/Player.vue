@@ -3,7 +3,7 @@
     class="qtp"
     :class="{ 'qtp-hidden': barHidden, 'qtp-playing': player.state.playing }"
     :style="radius ? { borderRadius: radius } : null"
-    @mousemove="poke"
+    @mousemove="onPointerMove"
     @touchstart="poke"
     @mouseleave="scheduleHide"
   >
@@ -199,6 +199,28 @@ function poke() {
   barHidden.value = false
   scheduleHide()
 }
+
+let lastPt = { x: -1, y: -1 }
+
+/**
+ * 只有指针真的移动才算"用户在操作"。
+ * 播放中 timeupdate 每 ~250ms 改一次时间标签宽度 → 控制条布局变化 →
+ * Chrome 会补发一条同坐标的 mousemove。若每次都 poke()，计时器永远被重置，
+ * 控制条就永远不隐藏（用户实测：光标停在播放器上时不隐藏）。
+ */
+function onPointerMove(e) {
+  const x = e && e.clientX
+  const y = e && e.clientY
+  if (x === lastPt.x && y === lastPt.y) return
+  lastPt = { x, y }
+  poke()
+}
+
+// 暂停 / 播完要把控制条露出来（否则停在最后一帧时控件是隐身的，只能靠移鼠标找回）
+watch(() => player.state.playing, (playing) => {
+  if (!playing) barHidden.value = false
+  scheduleHide()
+})
 
 /** 把自然尺寸交给父级（用于外框按视频比例收窄） */
 function onMeta(e) {
