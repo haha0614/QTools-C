@@ -30,7 +30,13 @@
     <button type="button" class="qtp-btn" :title="player.state.muted ? '取消静音' : '静音'" @click="player.toggleMute()">
       <span class="qtp-ico">{{ player.state.muted || player.state.volume === 0 ? '🔇' : '🔊' }}</span>
     </button>
-    <button type="button" class="qtp-btn qtp-btn-text" title="倍速" @click="cycleRate()">{{ player.state.rate }}×</button>
+    <!-- 倍速：默认 1× 时不占位（窄播放器要给进度条腾地方），非 1× 才出现，点它打开设置里的倍速列表 -->
+    <button
+      v-if="player.state.rate !== 1"
+      type="button" class="qtp-btn qtp-btn-text qtp-rate-btn"
+      :title="'倍速（当前 ' + player.state.rate + '×）'"
+      @click="emit('toggle-menu')"
+    >{{ player.state.rate }}×</button>
 
     <button
       v-for="b in buttons" :key="b.id"
@@ -49,7 +55,13 @@
     ><span class="qtp-ico">⚙</span></button>
 
     <button type="button" class="qtp-btn" :title="player.state.fullscreen ? '退出全屏' : '全屏'" @click="player.toggleFullscreen()">
-      <span class="qtp-ico">{{ player.state.fullscreen ? '⤡' : '⤢' }}</span>
+      <!-- 用 SVG 画：原来 ⤢ / ⤡ 两个斜箭头在 8px 字号下几乎分不出，看着像"图标没变" -->
+      <svg v-if="!player.state.fullscreen" class="qtp-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 4H4v5M15 4h5v5M20 15v5h-5M4 15v5h5" />
+      </svg>
+      <svg v-else class="qtp-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 9h5V4M20 9h-5V4M15 20v-5h5M9 20v-5H4" />
+      </svg>
     </button>
   </div>
 </template>
@@ -73,8 +85,6 @@ const emit = defineEmits(['toggle-menu'])
 const overlayLayers = computed(() => props.layers.filter((l) => (l.mode || 'overlay') === 'overlay'))
 const laneLayers = computed(() => props.layers.filter((l) => l.mode === 'lane'))
 
-const RATES = [0.75, 1, 1.25, 1.5, 2]
-
 function fmt(s) {
   const v = Math.max(0, Math.floor(Number(s) || 0))
   const m = Math.floor(v / 60)
@@ -82,10 +92,6 @@ function fmt(s) {
   return m + ':' + String(ss).padStart(2, '0')
 }
 function onScrub(e) { props.player.seek(Number(e.target.value)) }
-function cycleRate() {
-  const i = RATES.indexOf(props.player.state.rate)
-  props.player.setRate(RATES[(i + 1) % RATES.length])
-}
 </script>
 
 <style lang="scss" scoped>
@@ -129,6 +135,7 @@ function cycleRate() {
 .qtp-btn-on { background: rgba(255, 255, 255, .22); border-color: rgba(255, 255, 255, .45); }
 .qtp-btn-text { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .qtp-ico { font-size: 11px; line-height: 1; }
+.qtp-svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 .qtp-time { color: rgba(255, 255, 255, .82); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 .qtp-scrub { position: relative; flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; }

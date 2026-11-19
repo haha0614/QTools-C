@@ -32,8 +32,8 @@
 
     <!-- 设置浮层：插件注册的菜单段（画质 / 字幕…）。没有任何菜单段时整块不进 DOM，
          所以每日大赛这种"只有下载按钮"的用法看不到齿轮，也看不到这层壳。 -->
-    <div v-if="menuOpen && menuSections.length" ref="menuRef" class="qtp-menu" role="menu">
-      <div v-for="s in menuSections" :key="s.id" class="qtp-menu-sec">
+    <div v-if="menuOpen && sections.length" ref="menuRef" class="qtp-menu" role="menu">
+      <div v-for="s in sections" :key="s.id" class="qtp-menu-sec">
         <p class="qtp-menu-title">{{ s.title }}</p>
         <component :is="s.component" :ctx="ctx" />
       </div>
@@ -43,7 +43,7 @@
       v-show="!player.state.error"
       :player="player"
       :buttons="buttons"
-      :sections="menuSections"
+      :sections="sections"
       :layers="trackLayers"
       :ctx="ctx"
       :menu-open="menuOpen"
@@ -55,6 +55,8 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import ControlBar from './controls/ControlBar.vue'
+import VolumeSection from './controls/VolumeSection.vue'
+import RateSection from './controls/RateSection.vue'
 import { usePlayerCore } from './usePlayerCore'
 
 const props = defineProps({
@@ -104,6 +106,17 @@ watch(() => props.source && props.source.src, () => {
 const buttons = ref([])
 const menuSections = ref([])
 const trackLayers = ref([])
+
+/**
+ * 内核自带的菜单段：音量、倍速。
+ * 这两个是"播放语义"（HANDOFF 13.3：全屏/倍速/音量归内核），不做成插件；
+ * 但它们必须在齿轮里可用 —— 控制条 324px 宽塞不下音量滑块，倍速也不该只能"点一下换一档"。
+ */
+const CORE_SECTIONS = [
+  { id: 'volume', title: '音量', order: 5, component: VolumeSection },
+  { id: 'rate', title: '倍速', order: 8, component: RateSection }
+]
+const sections = computed(() => CORE_SECTIONS.concat(menuSections.value))
 /** 适配器改了 capabilities（比如切了画质）之后 +1，让菜单/轨道层重新求值 */
 const capsVersion = ref(0)
 
