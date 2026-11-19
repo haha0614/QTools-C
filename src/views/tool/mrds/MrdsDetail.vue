@@ -31,10 +31,12 @@
           <a class="md-btn md-btn-top" :href="row.url" target="_blank" rel="noreferrer">去源站看</a>
         </Teleport>
 
-        <aside class="md-side">
+        <aside class="md-side" ref="sideRef">
           <!-- 多个视频时直接在左侧纵向排开，不用标签切换：
                切换会把"这一条到底有几段"藏起来，也不方便对照着看 -->
-          <div v-if="videoCount > 0" class="md-player">
+          <div v-if="videoCount > 0 && sideWidth > 0" class="md-player">
+            <!-- 栏宽还没量到时先占位不渲染：此刻算出的尺寸都是猜的，
+                 竖版会先撑成超大再缩回，表现为打开详情时闪一下 -->
             <div v-for="(url, i) in videoUrls" :key="i" class="md-vitem">
               <!-- 段号只在多段时出现，且放在播放器上方；原来压在画面里的底栏已去掉 -->
               <p v-if="videoUrls.length > 1" class="md-vseg">第 {{ i + 1 }} 段 / {{ videoUrls.length }}</p>
@@ -42,7 +44,7 @@
               <div
                 class="md-player-box"
                 :class="{ 'md-hero-target': i === 0 }"
-                :style="{ aspectRatio: ratioOf(i), width: widthOf(i) }"
+                :style="boxStyle(i)"
               >
                 <Player
                   :source="playerSources[i]"
@@ -55,7 +57,8 @@
             </div>
             <p v-if="playError" class="md-player-hint">{{ playError }}</p>
           </div>
-          <div v-else class="md-player md-novideo">本条没有视频（图文内容）</div>
+          <div v-else-if="videoCount === 0" class="md-player md-novideo">本条没有视频（图文内容）</div>
+          <div v-else class="md-player-wait" aria-hidden="true"></div>
 
           <div class="md-actions">
             <!-- 批量下载：单段下载已经挪到每个播放器右下角 -->
@@ -298,7 +301,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, reactive, ref, watch } from 'vue'
 import Player from '@/components/player/Player.vue'
 import { hlsSource } from '@/components/player/sources/hls'
 import { downloadPlugin } from '@/components/player/plugins/download'
@@ -919,8 +922,84 @@ const videoUrls = computed(() => {
     共用一份比例会让第 2 段以后出现黑边 */
 const videoRatios = ref({})
 
+/** 库里存的每段宽高比（ffprobe 探测，形如 "720/1280"）；首帧就用它撑框，不靠 loadedmetadata */
+function seedRatios(source) {
+  let raw = source && source.videoRatios
+  if (typeof raw === 'string') {
+    try { raw = JSON.parse(raw) } catch (e) { raw = null }
+  }
+  if (!Array.isArray(raw)) return
+  const next = {}
+  raw.forEach((r, i) => { const s = String(r || '').trim(); if (/^\d+\/\d+$/.test(s)) next[i] = s.replace('/', ' / ') })
+  if (Object.keys(next).length) videoRatios.value = { ...next, ...videoRatios.value }
+}
+
+watch(() => row.value && row.value.videoRatios, (v) => { if (v) seedRatios(row.value) }, { immediate: true })
+watch([() => row.value && row.value.id, () => videoCount.value], async () => {
+  await nextTick()
+  attachSideObserver()
+  const el = sideRef.value
+  if (el && el.clientWidth > 0) sideWidth.value = Math.round(el.clientWidth)
+})
+
+/** 图集第一张的宽高比（后端从 p1.jpg 文件头读出来），没有就是空串 */
+const imageRatio = computed(() => {
+  const r = String((row.value && row.value.imageRatio) || '').trim()
+  return /^\d+\/\d+$/.test(r) ? r.replace('/', ' / ') : ''
+})
+
+/** 尺寸来源优先级：库里 ffprobe 探到的 → 图集第一张 → 16:9 */
 function ratioOf(i) {
-  return videoRatios.value[i] || '16 / 9'
+  return videoRatios.value[i] || imageRatio.value || '16 / 9'
+}
+
+const sideRef = ref(null)
+const sideWidth = ref(0)
+let sideRO = null
+
+/**
+ * 栏宽观测（幂等）：详情数据回来前 .md-side 还不存在，
+ * 所以 mounted / updated / row 变化时都要试一次 —— 否则 sideWidth 永远是 0，
+ * 播放器会退回 CSS 的 width:100% 分支，竖版视频就不受 72vh 高度上限约束了。
+ */
+function attachSideObserver() {
+  const el = sideRef.value
+  if (!el || sideRO || typeof ResizeObserver === 'undefined') return
+  sideRO = new ResizeObserver((entries) => {
+    const w = entries && entries[0] ? Math.round(entries[0].contentRect.width) : 0  // contentRect 已是布局尺寸
+    if (w > 0 && w !== sideWidth.value) sideWidth.value = w
+  })
+  sideRO.observe(el)
+  // clientWidth 是布局宽度：弹窗展开时有 transform 缩放，
+  // getBoundingClientRect 会返回缩放后的值（偏小），用它算尺寸就会先小后大。
+  const w0 = Math.round(el.clientWidth)
+  if (w0 > 0) sideWidth.value = w0
+}
+
+onMounted(() => { attachSideObserver() })
+onUpdated(() => { attachSideObserver() })
+
+onBeforeUnmount(() => { if (sideRO) { sideRO.disconnect(); sideRO = null } })
+
+function ratioNums(i) {
+  const m = String(ratioOf(i)).split('/')
+  const w = Number((m[0] || '').trim())
+  const h = Number((m[1] || '').trim())
+  return w > 0 && h > 0 ? { w, h } : { w: 16, h: 9 }
+}
+
+/**
+ * 每段的像素尺寸：宽度取 min(可用栏宽, 72vh × 比例)，高度按比例推出。
+ * 不能用「width: fit-content」让内容定宽 —— 没有元数据时 <video> 的默认固有尺寸是 300×169，
+ * 整块播放器就会先缩成一个极小方框（用户实际看到的就是这个）。
+ */
+function boxStyle(i) {
+  const { w, h } = ratioNums(i)
+  // 栏宽未知时不渲染播放器，这里只做兜底（理论到不了）
+  if (!sideWidth.value) return { aspectRatio: w + ' / ' + h, width: '100%' }
+  const maxH = Math.round((window.innerHeight || 800) * 0.72)
+  const width = Math.min(sideWidth.value, Math.round(maxH * (w / h)))
+  return { width: width + 'px', height: Math.round(width / (w / h)) + 'px' }
 }
 
 /** 外框宽度 = min(栏宽, 72vh × 宽高比)。
@@ -1132,17 +1211,18 @@ watch(() => [props.postId, props.post], load)
 .md-main { flex: 1 1 auto; min-width: 0; }
 
 .md-player {
-  /* 必须跟着画面收缩：.md-side > * 会把它拉成 100%，
-     里面视频再按比例缩，外面这层黑框仍满宽 → 两侧出现黑边（实测过） */
-  width: fit-content;
-  max-width: 100%;
-  margin: 0 auto;
-  border-radius: 20px;
-  overflow: hidden;
-  background: radial-gradient(120% 120% at 30% 20%, #1d2430, #0b0e13);
+  /* 不能再写 width: fit-content：没有元数据时 <video> 默认 300×169，
+     整块会先缩成极小方框（实测就是这个原因）。宽度由 boxStyle 按比例算成像素。 */
+  width: 100%;
+  background: transparent;
 }
 .md-player.md-novideo { width: 100%; }
-.md-player-box { position: relative; max-width: 100%; max-height: 72vh; margin: 0 auto; line-height: 0; }
+.md-player-wait { height: 120px; }
+ .md-player-box { position: relative; max-width: 100%; margin: 0 auto; line-height: 0;
+  border-radius: 20px; overflow: hidden;
+  background: radial-gradient(120% 120% at 30% 20%, #1d2430, #0b0e13);
+  /* 尺寸变化（兜底比例 → 真实比例）时平滑过渡，不硬切 */
+  transition: width .32s cubic-bezier(.22, .61, .36, 1), height .32s cubic-bezier(.22, .61, .36, 1); }
 .md-vseg { margin: 0 0 6px; font-size: 12px; color: var(--el-text-color-secondary); }
 /* 圆角/裁切只在最外层 .md-player 上做一次：内层再设不同半径，
      两层之间的近黑底色就会从四角露出来（实测四个黑角） */

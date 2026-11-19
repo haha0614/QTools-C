@@ -53,13 +53,14 @@ const activeFilterCount = computed(() => {
   if (dateFrom.value || dateTo.value) n += 1
   if (userFilter.value) n += 1
   if (tagsSelected.value.length) n += 1
+  if (videoType.value || minVideos.value || orientation.value) n += 1
   if (view.value !== 'grid') n += 1
   return n
 })
 /** 是否有任何筛选条件生效：生效时隐藏精选带与置顶块，把屏幕让给结果 */
 const hasActiveFilter = computed(() => Boolean(
   q.value || category.value || tagsSelected.value.length || dateFrom.value || dateTo.value
-  || videoType.value || minVideos.value || userFilter.value
+  || videoType.value || minVideos.value || orientation.value || userFilter.value
 ))
 
 const rows = ref([])
@@ -95,11 +96,21 @@ const dateAsFilter = ref(false)
 const videoType = ref('')
 /** 视频数量下限：''=不限 / 1 / 2 / 3 */
 const minVideos = ref('')
+/** 方向：'' 全部 / 'l' 横屏 / 'p' 竖屏（只有已判定方向的条目能筛） */
+const orientation = ref('')
+const orientationHint = '只筛已判定方向的条目：比例来自 ffprobe 探测，或图集第一张的尺寸；其余仍留在「全部」'
+
+function orientationCount(key) {
+  const hit = (facets.orientations || []).find((x) => String(x.o || '') === key)
+  const n = hit ? Number(hit.c || 0) : 0
+  return n ? '（' + n + '）' : ''
+}
+
 /** 高级筛选（内容类型 / 视频数量）默认收起，不占界面 */
 /** 选择器模式：day=按日 daterange / month=按月 monthrange */
 const dateMode = ref('day')
 const datePickerValue = ref(null)
-const facets = reactive({ categories: [], tags: [], dates: [], dated: 0, total: 0 })
+const facets = reactive({ categories: [], tags: [], dates: [], orientations: [], dated: 0, total: 0 })
 /** 收藏 / 看过（只存 id，前端打标记） */
 const favIds = ref(new Set())
 const seenIds = ref(new Set())
@@ -316,7 +327,8 @@ function dateBounds() {
     from: filterMode ? (dateFrom.value || undefined) : undefined,
     to: filterMode ? (dateTo.value || undefined) : undefined,
     videoType: videoType.value || undefined,
-    minVideos: minVideos.value === '' ? undefined : Number(minVideos.value)
+    minVideos: minVideos.value === '' ? undefined : Number(minVideos.value),
+  orientation: orientation.value || undefined
   }
 }
 
@@ -562,7 +574,7 @@ async function load(reset) {
         dateFrom: dateBounds().from,
         dateTo: dateBounds().to,
           videoType: dateBounds().videoType,
-          minVideos: dateBounds().minVideos
+          minVideos: dateBounds().minVideos, orientation: orientation.value || undefined
       }
     })) || {}
     const list = Array.isArray(data.rows) ? data.rows : []
@@ -641,6 +653,7 @@ async function loadFacets() {
     facets.categories = Array.isArray(data.categories) ? data.categories : []
     facets.tags = Array.isArray(data.tags) ? data.tags : []
     facets.dates = Array.isArray(data.dates) ? data.dates : []
+  facets.orientations = Array.isArray(data.orientations) ? data.orientations : []
     blockedTags.value = Array.isArray(data.blockedTags) ? data.blockedTags : []
     facets.dated = Number(data.dated) || 0
     facets.total = Number(data.total) || 0
@@ -663,6 +676,13 @@ function pickMinVideos(v) {
   if (minVideos.value === v) return
   minVideos.value = v
   if (v && videoType.value === 'image') videoType.value = ''
+  loadPage(1)
+}
+
+/** 方向（横屏/竖屏）：只筛已判定方向的条目 */
+function pickOrientation(v) {
+  if (orientation.value === v) return
+  orientation.value = v
   loadPage(1)
 }
 
@@ -783,7 +803,7 @@ async function loadNewer() {
         dateFrom: dateBounds().from,
         dateTo: dateBounds().to,
           videoType: dateBounds().videoType,
-          minVideos: dateBounds().minVideos
+          minVideos: dateBounds().minVideos, orientation: orientation.value || undefined
       }
     })) || {}
     const list = Array.isArray(data.rows) ? data.rows : []
@@ -883,7 +903,7 @@ async function focusPost(id, opts) {
         dateFrom: dateBounds().from,
         dateTo: dateBounds().to,
           videoType: dateBounds().videoType,
-          minVideos: dateBounds().minVideos
+          minVideos: dateBounds().minVideos, orientation: orientation.value || undefined
       }
     })) || {}
     const targetPage = Number(loc.page) || 1
@@ -948,7 +968,7 @@ async function loadPage(target) {
         dateFrom: dateBounds().from,
         dateTo: dateBounds().to,
           videoType: dateBounds().videoType,
-          minVideos: dateBounds().minVideos
+          minVideos: dateBounds().minVideos, orientation: orientation.value || undefined
       }
     })) || {}
     rows.value = Array.isArray(data.rows) ? data.rows : []
@@ -1029,7 +1049,7 @@ async function restoreAnchor() {
           dateFrom: dateBounds().from,
           dateTo: dateBounds().to,
           videoType: dateBounds().videoType,
-          minVideos: dateBounds().minVideos
+          minVideos: dateBounds().minVideos, orientation: orientation.value || undefined
         }
       })) || {}
       const targetPage = Number(loc.page) || 1
@@ -1146,7 +1166,7 @@ async function gotoLastSeen() {
           dateFrom: dateBounds().from,
           dateTo: dateBounds().to,
           videoType: dateBounds().videoType,
-          minVideos: dateBounds().minVideos
+          minVideos: dateBounds().minVideos, orientation: orientation.value || undefined
         }
       })) || {}
       const targetPage = Number(loc.page) || 1
@@ -1535,7 +1555,7 @@ onMounted(async () => {
         dateFrom: dateBounds().from,
         dateTo: dateBounds().to,
           videoType: dateBounds().videoType,
-          minVideos: dateBounds().minVideos
+          minVideos: dateBounds().minVideos, orientation: orientation.value || undefined
       }
     }).catch(() => null)))
     const collected = []
@@ -1711,6 +1731,12 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
           <button type="button" class="mr-chip" :class="{ on: minVideos === '1' }" @click="pickMinVideos('1')" title="至少 1 段视频">≥1</button>
           <button type="button" class="mr-chip" :class="{ on: minVideos === '2' }" @click="pickMinVideos('2')" title="至少 2 段视频">≥2</button>
           <button type="button" class="mr-chip" :class="{ on: minVideos === '3' }" @click="pickMinVideos('3')" title="至少 3 段视频">≥3</button>
+          <span class="mr-adv-label" title="画面方向（只统计已判定方向的条目）">方向</span>
+          <button type="button" class="mr-chip" :class="{ on: orientation === '' }" @click="pickOrientation('')">全部</button>
+          <button type="button" class="mr-chip" :class="{ on: orientation === 'l' }" @click="pickOrientation('l')"
+                  :title="orientationHint">横屏{{ orientationCount('l') }}</button>
+          <button type="button" class="mr-chip" :class="{ on: orientation === 'p' }" @click="pickOrientation('p')"
+                  :title="orientationHint">竖屏{{ orientationCount('p') }}</button>
                   </span>
 
           <button type="button" class="mr-chip mr-chip-date" :class="{ on: !dateFrom && !dateTo }" @click="clearDate">
