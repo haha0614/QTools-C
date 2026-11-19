@@ -329,7 +329,7 @@
       </footer>
     </aside>
 
-    <!-- HANDOFF 13 第 3 步 · 阶段 B：`?engine=qtp` 时换新内核外壳做对照，默认仍是旧播放器 -->
+    <!-- HANDOFF 13 第 3 步 · 阶段 C：默认新内核外壳；`?engine=old` 回退旧播放器 -->
     <component
       :is="engineNew ? MediaPlayerNext : MediaPlayer"
       v-if="curVideo"
@@ -1093,8 +1093,11 @@ function onStudioToggle(name) {
 const route = useRoute()
 const router = useRouter()
 
-/** HANDOFF 13 第 3 步 · 阶段 B：`?engine=qtp` → 用新内核外壳（默认关闭，旧播放器不动） */
-const engineNew = computed(() => String(route.query.engine || '') === 'qtp')
+/**
+ * HANDOFF 13 第 3 步 · 阶段 C（2026-11-19 切换）：**默认就用新内核外壳**，
+ * `?engine=old` 回退到旧 MediaPlayer.vue —— 旧文件保留一段时间做逃生舱，确认稳定后再删。
+ */
+const engineNew = computed(() => String(route.query.engine || '').toLowerCase() !== 'old')
 
 /** 弹层开关 + 目标视频：正在播放的那一部优先，否则用多选集合 */
 const playlistPickerOpen = ref(false)
