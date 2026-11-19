@@ -55,8 +55,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import ControlBar from './controls/ControlBar.vue'
-import VolumeSection from './controls/VolumeSection.vue'
-import RateSection from './controls/RateSection.vue'
 import { usePlayerCore } from './usePlayerCore'
 
 const props = defineProps({
@@ -108,15 +106,11 @@ const menuSections = ref([])
 const trackLayers = ref([])
 
 /**
- * 内核自带的菜单段：音量、倍速。
- * 这两个是"播放语义"（HANDOFF 13.3：全屏/倍速/音量归内核），不做成插件；
- * 但它们必须在齿轮里可用 —— 控制条 324px 宽塞不下音量滑块，倍速也不该只能"点一下换一档"。
+ * 齿轮里只有插件注册的菜单段（画质 / 字幕…）；音量、倍速是常驻操作，
+ * 直接挂在控制条上（音量按钮 hover 出滑块、倍速按钮点一下出列表），不进设置。
+ * 没有插件段时齿轮整个不进 DOM —— 每日大赛看到的就是这一种。
  */
-const CORE_SECTIONS = [
-  { id: 'volume', title: '音量', order: 5, component: VolumeSection },
-  { id: 'rate', title: '倍速', order: 8, component: RateSection }
-]
-const sections = computed(() => CORE_SECTIONS.concat(menuSections.value))
+const sections = computed(() => menuSections.value)
 /** 适配器改了 capabilities（比如切了画质）之后 +1，让菜单/轨道层重新求值 */
 const capsVersion = ref(0)
 

@@ -27,16 +27,35 @@
       </div>
     </div>
 
-    <button type="button" class="qtp-btn" :title="player.state.muted ? '取消静音' : '静音'" @click="player.toggleMute()">
-      <span class="qtp-ico">{{ player.state.muted || player.state.volume === 0 ? '🔇' : '🔊' }}</span>
-    </button>
-    <!-- 倍速：默认 1× 时不占位（窄播放器要给进度条腾地方），非 1× 才出现，点它打开设置里的倍速列表 -->
-    <button
-      v-if="player.state.rate !== 1"
-      type="button" class="qtp-btn qtp-btn-text qtp-rate-btn"
-      :title="'倍速（当前 ' + player.state.rate + '×）'"
-      @click="emit('toggle-menu')"
-    >{{ player.state.rate }}×</button>
+    <!-- 音量：按钮本身点一下静音，鼠标移上去（或键盘聚焦）就出滑块，不用进设置 -->
+    <div
+      class="qtp-btn-wrap"
+      @mouseenter="volHover = true"
+      @mouseleave="volHover = false"
+      @focusin="volFocus = true"
+      @focusout="onVolFocusOut"
+    >
+      <button type="button" class="qtp-btn" :title="player.state.muted ? '取消静音' : '静音'" @click="player.toggleMute()">
+        <span class="qtp-ico">{{ player.state.muted || player.state.volume === 0 ? '🔇' : '🔊' }}</span>
+      </button>
+      <div v-if="volHover || volFocus" class="qtp-pop qtp-pop-vol" @mouseenter="volHover = true" @mouseleave="volHover = false">
+        <VolumePop :player="player" />
+      </div>
+    </div>
+
+    <!-- 倍速：点一下直接出一列，选完即生效（不再"点一下切一档"） -->
+    <div class="qtp-btn-wrap qtp-rate-wrap" @mouseleave="rateOpen = false">
+      <button
+        type="button" class="qtp-btn qtp-btn-text"
+        :class="{ 'qtp-btn-on': rateOpen }"
+        :title="'倍速（当前 ' + player.state.rate + '×）'"
+        :aria-expanded="rateOpen ? 'true' : 'false'"
+        @click="rateOpen = !rateOpen"
+      >{{ player.state.rate }}×</button>
+      <div v-if="rateOpen" class="qtp-pop qtp-pop-rate">
+        <RatePop :player="player" @pick="rateOpen = false" />
+      </div>
+    </div>
 
     <button
       v-for="b in buttons" :key="b.id"
@@ -67,7 +86,9 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import VolumePop from './VolumePop.vue'
+import RatePop from './RatePop.vue'
 
 const props = defineProps({
   player: { type: Object, required: true },
@@ -84,6 +105,33 @@ const emit = defineEmits(['toggle-menu'])
 
 const overlayLayers = computed(() => props.layers.filter((l) => (l.mode || 'overlay') === 'overlay'))
 const laneLayers = computed(() => props.layers.filter((l) => l.mode === 'lane'))
+
+/* 音量滑块：hover 出，键盘聚焦也出（滑块在浮层里，焦点要能过去，所以用 focusin/focusout 而不是按钮的 focus/blur） */
+const volHover = ref(false)
+const volFocus = ref(false)
+function onVolFocusOut(e) {
+  const next = e && e.relatedTarget
+  if (next && e.currentTarget && e.currentTarget.contains(next)) return
+  volFocus.value = false
+}
+
+/* 倍速下拉：点开、点外部/按 Esc 收起 */
+const rateOpen = ref(false)
+function onDocDown(e) {
+  if (!rateOpen.value) return
+  const t = e && e.target
+  const wrap = t && t.closest && t.closest('.qtp-rate-wrap')
+  if (!wrap) rateOpen.value = false
+}
+function onDocKey(e) { if (e && e.key === 'Escape') rateOpen.value = false }
+onMounted(() => {
+  document.addEventListener('mousedown', onDocDown)
+  document.addEventListener('keydown', onDocKey)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('mousedown', onDocDown)
+  document.removeEventListener('keydown', onDocKey)
+})
 
 function fmt(s) {
   const v = Math.max(0, Math.floor(Number(s) || 0))
@@ -105,9 +153,9 @@ function onScrub(e) { props.player.seek(Number(e.target.value)) }
   display: flex;
   align-items: center;
   gap: 8px;
-  /* 允许内部压缩：否则窄播放器里按钮会把内容顶出可视区 */
   min-width: 0;
-  overflow: hidden;
+  /* 浮层要能弹出控制条上沿（音量滑块/倍速列表）；越出播放器的部分由 .qtp 的 overflow:hidden 兜住 */
+  overflow: visible;
   padding: 22px 12px 8px;
   background: linear-gradient(to top, rgba(6, 9, 13, .92) 0%, rgba(6, 9, 13, .55) 45%, rgba(6, 9, 13, 0) 100%);
   color: #f2f5f9;
@@ -145,7 +193,6 @@ function onScrub(e) { props.player.seek(Number(e.target.value)) }
   border-radius: 999px; background: rgba(255, 255, 255, .28); pointer-events: none;
 }
 .qtp-range { position: relative; width: 100%; height: 26px; margin: 0; background: transparent; appearance: none; cursor: pointer; }
-.qtp-range-vol { width: 72px; flex: 0 0 auto; }
 .qtp-range::-webkit-slider-runnable-track { height: 3px; border-radius: 999px; background: rgba(255, 255, 255, .34); }
 .qtp-range::-webkit-slider-thumb {
   appearance: none; width: 12px; height: 12px; margin-top: -4.5px;
@@ -157,12 +204,24 @@ function onScrub(e) { props.player.seek(Number(e.target.value)) }
 .qtp-layers { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 .qtp-lane { position: relative; height: 12px; min-width: 0; }
 
+/* 常驻按钮 + 浮层：音量滑块 / 倍速列表都从这里弹，位置贴着按钮上沿 */
+.qtp-btn-wrap { position: relative; display: inline-flex; align-items: center; }
+.qtp-pop { position: absolute; bottom: calc(100% + 6px); right: 0; z-index: 4; }
+.qtp-pop-rate {
+  min-width: 108px;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  background: rgba(10, 14, 20, .96);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .5);
+}
+
 /* 自动隐藏：播放中无操作 2.5 秒淡出，鼠标移入/触摸立刻恢复 */
 :global(.qtp-hidden) .qtp-bar { opacity: 0; pointer-events: none; }
 :global(.qtp-hidden) { cursor: none; }
 
 /* 紧凑布局：竖版播放器只有 324px 宽，控件必须精简
-   —— 音量滑块已移除（保留静音按钮），插件按钮只显示图标 */
+   —— 音量滑块做成 hover 浮层，插件按钮只显示图标 */
 .qtp-bar { gap: 6px; padding: 16px 8px 6px; }
 .qtp-btn { min-width: 24px; height: 24px; padding: 0 5px; }
 .qtp-btn-plugin .qtp-btn-label { display: none; }
