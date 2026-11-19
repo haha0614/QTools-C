@@ -39,6 +39,11 @@
       </div>
     </div>
 
+    <!-- 插件注册的覆盖层（帮助浮层 / 以后的封面冻结、字幕层）。容器不接鼠标，层自己开 -->
+    <div v-if="overlays.length" class="qtp-overlays">
+      <component v-for="o in overlays" :key="o.id" :is="o.component" :ctx="ctx" />
+    </div>
+
     <ControlBar
       v-show="!player.state.error"
       :player="player"
@@ -105,6 +110,7 @@ watch(() => props.source && props.source.src, () => {
 const buttons = ref([])
 const menuSections = ref([])
 const trackLayers = ref([])
+const overlays = ref([])
 
 /**
  * 齿轮里只有插件注册的菜单段（画质 / 字幕…）；音量、倍速是常驻操作，
@@ -159,6 +165,14 @@ const ctx = {
   registerTrackLayer(def) {
     if (!def || !def.id || !def.component) return
     upsert(trackLayers, { mode: 'overlay', ...def })
+  },
+  /**
+   * 覆盖层：{ id, order?, component }。整块盖在画面上（不接鼠标，层自己开 pointer-events），
+   * 组件收 ctx，自己决定显不显示（返回 null 即不渲染）。
+   */
+  registerOverlay(def) {
+    if (!def || !def.id || !def.component) return
+    upsert(overlays, { order: 50, ...def })
   }
 }
 
@@ -345,6 +359,7 @@ defineExpose({ player })
   line-height: 1.5;
   text-align: left;
 }
+.qtp-overlays { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
 .qtp-menu-sec + .qtp-menu-sec { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .1); }
 .qtp-menu-title { margin: 0 0 6px; font-size: 11.5px; color: rgba(255, 255, 255, .6); }
 </style>

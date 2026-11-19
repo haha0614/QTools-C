@@ -46,6 +46,7 @@ import { mediaCapabilities, mediaPlayPlan } from './playerBridge'
 import { mediaPlugins } from './playerBridgePlugins'
 import { frameStepPlugin } from '@/components/player/plugins/frameStep'
 import { telemetryPlugin } from '@/components/player/plugins/telemetry'
+import { hotkeysPlugin } from '@/components/player/plugins/hotkeys'
 
 const props = defineProps({
   video: { type: Object, required: true },
@@ -101,6 +102,7 @@ const coverUrl = computed(() => (props.video && props.video.contentHash
 const features = computed(() => [
   ...mediaPlugins(),
   frameStepPlugin({ fps: props.video && props.video.fps }),
+  hotkeysPlugin({ fps: props.video && props.video.fps }),
   telemetryPlugin({ tracker: props.tracker, id: props.video && props.video.id })
 ])
 
