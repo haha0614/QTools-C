@@ -48,6 +48,7 @@
               >
                 <Player
                   :source="playerSources[i]"
+                  :cover="coverSrc"
                   :features="playerFeatures[i]"
                   radius="0"
                   @loadedmetadata="onMeta(i, $event)"
@@ -1019,6 +1020,14 @@ function onMeta(i, e) {
 }
 
 const playerSources = computed(() => videoUrls.value.map((u) => hlsSource(u)))
+
+/** 缓冲期间显示的封面：卡片封面 → 图集第一张（都没有就显示黑底） */
+const coverSrc = computed(() => {
+  const c = String((row.value && row.value.cover) || '')
+  if (c) return c
+  const sid = row.value && row.value.sourceId
+  return sid ? '/web/' + sid + '/p1.jpg' : ''
+})
 
 /** 每段视频挂哪些插件：现在只有"下载这一段"，以后画质/雪碧图/标记也在这里按需加 */
 const playerFeatures = computed(() =>

@@ -7,13 +7,22 @@
     @touchstart="poke"
     @mouseleave="scheduleHide"
   >
+    <!-- 封面层：缓冲/重签期间显示封面，拿到首个数据帧后淡出（硬切太生硬） -->
+    <img
+      v-if="cover"
+      class="qtp-cover"
+      :class="{ 'qtp-cover-hide': frameReady }"
+      :src="cover"
+      alt=""
+      draggable="false"
+    />
     <video
       ref="videoEl"
       class="qtp-video"
       playsinline
       :poster="poster || undefined"
       @loadedmetadata="onMeta"
-      @loadeddata="emit('loadeddata', $event)"
+      @loadeddata="onDataFrame($event)"
       @ended="emit('ended')"
       @click="player.toggle()"
     ></video>
@@ -24,7 +33,7 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import ControlBar from './controls/ControlBar.vue'
 import { usePlayerCore } from './usePlayerCore'
 
@@ -32,6 +41,8 @@ const props = defineProps({
   /** 源适配器：hlsSource(url) / fileSource(url) */
   source: { type: Object, required: true },
   poster: { type: String, default: '' },
+  /** 封面图：缓冲/重签期间显示，首个数据帧到达后淡出 */
+  cover: { type: String, default: '' },
   /** 插件列表：{ id, setup(ctx) }，ctx 提供 registerButton 等注册点 */
   features: { type: Array, default: () => [] },
   /** 外框圆角，传 '0' 就是方角（视频不再被裁成圆角） */
@@ -40,6 +51,16 @@ const props = defineProps({
 const emit = defineEmits(['loadedmetadata', 'loadeddata', 'ended'])
 
 const videoEl = ref(null)
+/** 首个数据帧是否已到：到了就把封面层淡出 */
+const frameReady = ref(false)
+
+function onDataFrame(e) {
+  frameReady.value = true
+  emit('loadeddata', e)
+}
+
+// 换源（重签成功后 src 变化）时重新露出封面，避免中间闪一帧黑
+watch(() => props.source && props.source.src, () => { frameReady.value = false })
 const player = usePlayerCore(videoEl, () => props.source)
 
 const buttons = ref([])
@@ -113,6 +134,18 @@ defineExpose({ player })
   line-height: 0;
   background: #06080b;
 }
+.qtp-cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;   /* 不能让封面挡住点击播放 */
+  transition: opacity .3s ease;
+  opacity: 1;
+  z-index: 1;
+}
+.qtp-cover-hide { opacity: 0; }
 .qtp-video {
   display: block;
   /* 外框已按视频自然比例定好尺寸，这里只要铺满即可（比例一致 → 不会出现黑边） */
