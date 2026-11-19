@@ -1,4 +1,5 @@
 import { defineComponent, h, ref } from 'vue'
+import { isTextTarget } from './keyGuard'
 import './hotkeys.css'
 
 /**
@@ -25,11 +26,7 @@ export const HOTKEYS = [
   ['Esc', '关闭帮助']
 ]
 
-function isTyping(el) {
-  if (!el) return false
-  const tag = String(el.tagName || '').toLowerCase()
-  return tag === 'input' || tag === 'textarea' || tag === 'select' || el.isContentEditable === true
-}
+
 
 export function hotkeysPlugin(options = {}) {
   return {
@@ -42,7 +39,7 @@ export function hotkeysPlugin(options = {}) {
 
       function onKey(e) {
         if (!e || e.defaultPrevented) return
-        if (isTyping(e.target)) return
+        if (isTextTarget(e.target)) return
         if (e.metaKey || e.ctrlKey || e.altKey) return
         const k = e.key
         const lower = String(k || '').toLowerCase()
