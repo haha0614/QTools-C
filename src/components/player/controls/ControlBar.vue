@@ -1,5 +1,5 @@
 <template>
-  <div class="qtp-bar">
+  <div class="qtp-bar" :class="{ 'qtp-bar-hidden': hidden }">
     <button type="button" class="qtp-btn" :title="player.state.playing ? '暂停' : '播放'" @click="player.toggle()">
       <span class="qtp-ico">{{ player.state.playing ? '❚❚' : '▶' }}</span>
     </button>
@@ -113,7 +113,9 @@ const props = defineProps({
   layers: { type: Array, default: () => [] },
   /** 传给插件组件的注册上下文 */
   ctx: { type: Object, default: null },
-  menuOpen: { type: Boolean, default: false }
+  menuOpen: { type: Boolean, default: false },
+  /** 播放中无操作时隐藏控制条（由 Player 统一管计时；视频画面不受影响） */
+  hidden: { type: Boolean, default: false }
 })
 const emit = defineEmits(['toggle-menu'])
 
@@ -275,9 +277,10 @@ function onScrub(e) { props.player.seek(Number(e.target.value)) }
   box-shadow: 0 10px 26px rgba(0, 0, 0, .5);
 }
 
-/* 自动隐藏：播放中无操作 2.5 秒淡出，鼠标移入/触摸立刻恢复 */
-:global(.qtp-hidden) .qtp-bar { opacity: 0; pointer-events: none; }
-:global(.qtp-hidden) { cursor: none; }
+/* 自动隐藏：播放中无操作 2.5 秒淡出，鼠标移入/触摸立刻恢复。
+   注意别写成 :global(.qtp-hidden) .qtp-bar —— scoped 编译会把后代选择器丢掉，
+   变成 .qtp-hidden{opacity:0}，等于把整块播放器（含视频）一起透明掉。 */
+.qtp-bar-hidden { opacity: 0; pointer-events: none; }
 
 /* 紧凑布局：竖版播放器只有 324px 宽，控件必须精简
    —— 音量滑块做成 hover 浮层，插件按钮只显示图标 */

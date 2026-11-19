@@ -47,6 +47,7 @@
       :layers="trackLayers"
       :ctx="ctx"
       :menu-open="menuOpen"
+      :hidden="barHidden"
       @toggle-menu="toggleMenu"
     />
   </div>
@@ -283,6 +284,8 @@ defineExpose({ player })
   z-index: 1;
 }
 .qtp-cover-hide { opacity: 0; }
+/* 控制条淡出时连光标一起藏起来（只影响指针样式，不动任何盒子） */
+.qtp-hidden { cursor: none; }
 .qtp-video {
   display: block;
   /* 外框已按视频自然比例定好尺寸，这里只要铺满即可（比例一致 → 不会出现黑边） */
