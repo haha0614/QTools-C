@@ -236,15 +236,16 @@ defineExpose({
   z-index: 60;
   display: flex;
   flex-direction: column;
-  background: rgba(8, 11, 16, .96);
-  color: #e8eef7;
+  /* 跟主题走：亮色模式下必须也是亮的（原来写死深色，用户当场指出颜色不对） */
+  background: var(--el-bg-color-page, #0e1116);
+  color: var(--el-text-color-primary, #e8eef7);
 }
 .mpn-head {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 10px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, .1);
+  border-bottom: 1px solid var(--el-border-color-lighter, rgba(255, 255, 255, .1));
 }
 .mpn-info { flex: 1 1 auto; min-width: 0; }
 .mpn-title {
@@ -261,23 +262,23 @@ defineExpose({
   flex-wrap: wrap;
   gap: 4px 12px;
   font-size: 11.5px;
-  color: rgba(255, 255, 255, .62);
+  color: var(--el-text-color-secondary, rgba(255, 255, 255, .62));
 }
 .mpn-warn {
   margin: 0;
   padding: 6px 16px;
   font-size: 12.5px;
-  color: #ffd479;
-  background: rgba(255, 212, 121, .1);
-  border-bottom: 1px solid rgba(255, 212, 121, .25);
+  color: var(--el-color-warning, #e6a23c);
+  background: var(--el-color-warning-light-9, rgba(230, 162, 60, .1));
+  border-bottom: 1px solid var(--el-color-warning-light-7, rgba(230, 162, 60, .25));
 }
 .mpn-acts { display: inline-flex; gap: 8px; flex: 0 0 auto; }
 .mpn-acts button {
   height: 28px;
   padding: 0 12px;
-  border: 1px solid rgba(255, 255, 255, .18);
+  border: 1px solid var(--el-border-color, rgba(255, 255, 255, .18));
   border-radius: 8px;
-  background: rgba(255, 255, 255, .06);
+  background: var(--el-fill-color-light, rgba(255, 255, 255, .06));
   color: inherit;
   font-size: 12.5px;
   cursor: pointer;
@@ -292,6 +293,6 @@ defineExpose({
   width: 360px;
   min-width: 0;
   overflow-y: auto;
-  border-left: 1px solid rgba(255, 255, 255, .1);
+  border-left: 1px solid var(--el-border-color-lighter, rgba(255, 255, 255, .1));
 }
 </style>

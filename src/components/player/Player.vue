@@ -49,6 +49,7 @@
       :player="player"
       :buttons="buttons"
       :sections="sections"
+      :bar-controls="barControls"
       :layers="trackLayers"
       :ctx="ctx"
       :menu-open="menuOpen"
@@ -111,6 +112,8 @@ const buttons = ref([])
 const menuSections = ref([])
 const trackLayers = ref([])
 const overlays = ref([])
+/** 控制条上的自定义控件（画质这种要下拉、不是简单按钮的放这里，order 小的靠左） */
+const barControls = ref([])
 
 /**
  * 齿轮里只有插件注册的菜单段（画质 / 字幕…）；音量、倍速是常驻操作，
@@ -170,6 +173,11 @@ const ctx = {
    * 覆盖层：{ id, order?, component }。整块盖在画面上（不接鼠标，层自己开 pointer-events），
    * 组件收 ctx，自己决定显不显示（返回 null 即不渲染）。
    */
+  /** 控制条自定义控件：{ id, order?, component }，组件收 ctx */
+  registerBarControl(def) {
+    if (!def || !def.id || !def.component) return
+    upsert(barControls, { order: 20, ...def })
+  },
   registerOverlay(def) {
     if (!def || !def.id || !def.component) return
     upsert(overlays, { order: 50, ...def })

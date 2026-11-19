@@ -50,9 +50,22 @@ export function abLoopPlugin(options = {}) {
         } catch (e) { /* 宿主回调失败不影响插件 */ }
       }
 
-      ctx.registerButton({ id: 'abA', label: 'A 点', icon: 'A', title: '把当前位置设为 A 点（A）', onClick: setA })
-      ctx.registerButton({ id: 'abB', label: 'B 点', icon: 'B', title: '把当前位置设为 B 点（B）', onClick: setB })
-      ctx.registerButton({ id: 'abX', label: '清除 A-B', icon: '✕', title: '清除 A-B 循环（X）', onClick: clear })
+      // A-B 不常用：从控制条搬进齿轮（键位 A/B/X 照旧，lane 上的区间条照旧）
+      const MenuSection = defineComponent({
+        name: 'AbMenu',
+        props: { ctx: { type: Object, required: true } },
+        setup() {
+          const btn = (label, act) => h('button', {
+            type: 'button', class: 'qtp-sub-opt', onClick: act
+          }, label)
+          return () => h('div', { style: { display: 'flex', gap: '6px', flexWrap: 'wrap' } }, [
+            btn('设为 A', setA),
+            btn('设为 B', setB),
+            btn('清除', clear)
+          ])
+        }
+      })
+      ctx.registerMenuSection({ id: 'ab', title: 'A-B 循环（A / B / X）', order: 15, component: MenuSection })
 
       const Lane = defineComponent({
         name: 'AbLane',

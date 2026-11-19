@@ -68,6 +68,9 @@
         </div>
       </div>
 
+      <!-- 插件注册的控制条自定义控件（画质下拉这种要下拉的放这里） -->
+      <component v-for="c in barControls" :key="c.id" :is="c.component" :ctx="ctx" />
+
       <button
         v-for="b in buttons" :key="b.id"
         type="button" class="qtp-btn qtp-btn-plugin" :title="b.title || b.label"
@@ -111,6 +114,8 @@ const props = defineProps({
   sections: { type: Array, default: () => [] },
   /** 插件注册的轨道层：{ id, mode, component } */
   layers: { type: Array, default: () => [] },
+  /** 插件注册的控制条自定义控件：{ id, component } */
+  barControls: { type: Array, default: () => [] },
   /** 传给插件组件的注册上下文 */
   ctx: { type: Object, default: null },
   menuOpen: { type: Boolean, default: false },
@@ -211,6 +216,19 @@ function onScrub(e) { props.player.seek(Number(e.target.value)) }
 }
 .qtp-btn:hover { background: rgba(255, 255, 255, .16); border-color: rgba(255, 255, 255, .34); }
 .qtp-btn-on { background: rgba(255, 255, 255, .22); border-color: rgba(255, 255, 255, .45); }
+/* 画质下拉（插件用 h() 渲染，走 :deep 落到它身上） */
+.qtp-bar :deep(.qtp-qsel) {
+  height: 24px;
+  max-width: 96px;
+  padding: 0 4px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .06);
+  color: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.qtp-bar :deep(.qtp-qsel option) { color: #1f2329; }
 .qtp-btn-text { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .qtp-ico { font-size: 11px; line-height: 1; }
 .qtp-svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
@@ -233,6 +251,8 @@ function onScrub(e) { props.player.seek(Number(e.target.value)) }
 /* 轨道层容器：不接鼠标，插件按需给内部元素开 pointer-events */
 .qtp-layers { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 .qtp-lane { position: relative; height: 12px; min-width: 0; }
+/* 插件没内容时不许占位：markers 现在无条件注册（等晚到的标记），空 lane 会让控制条凭空高 12px */
+.qtp-lane:empty { display: none; }
 
 /* 音量控件：按钮 + 内联滑块槽。槽默认宽度 0，hover 时展开到 110px。
    .qtp-vol 自己独立成组，鼠标从按钮滑到滑块上时不会触发 mouseleave。 */
@@ -242,16 +262,19 @@ function onScrub(e) { props.player.seek(Number(e.target.value)) }
 /* 右侧区的宽度由尾部那组按钮决定（它们始终占位，只是淡出），所以展开前后不产生任何位移 */
 .qtp-right { position: relative; display: inline-flex; align-items: center; }
 
-/* 滑块盖在右侧区上：绝对定位，不参与布局 */
+/* 滑块盖在右侧区上：绝对定位，不参与布局。
+   宽度跟着"尾部整组"走（宽屏下会很长），所以内容右对齐并限宽 140px —— 实测用户嫌太长。 */
 .qtp-vol-slot {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   opacity: 0;
   pointer-events: none;
   transition: opacity .18s ease;
 }
+.qtp-vol-slot :deep(.qtp-vol-pop) { max-width: 140px; }
 .qtp-vol-slot.on { opacity: 1; pointer-events: auto; }
 
 /* 尾部按钮：hover 音量时只淡出，不收起宽度（收起会改变进度条宽度 → 音量按钮跟着动） */

@@ -166,7 +166,9 @@ export function markersPlugin() {
   return {
     id: 'markers',
     setup(ctx) {
-      if (!markersOf(ctx).length) return
+      // 不能"有标记才注册"：媒体站的标记是信息栏后来 @markers emit 上来的，
+      // 播放器不会因为标记变化而重建 -> 那一刻判空就永远不出现刻度（实测踩过）。
+      // 组件内部按 ticks 空不空决定渲染，空时返回 null。
       ctx.registerTrackLayer({ id: 'markers', mode: 'lane', order: 10, component: MarkersLane })
     }
   }

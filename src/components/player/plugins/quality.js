@@ -35,12 +35,39 @@ export function qualityPlugin(options = {}) {
         }
       })
 
-      ctx.registerMenuSection({
-        id: 'quality',
-        title: options.title || '画质',
-        order: 10,
-        component: Section
+      // 画质是高频操作：放控制条（下拉），不进齿轮
+      const BarControl = defineComponent({
+        name: 'QualitySelect',
+        props: { ctx: { type: Object, required: true } },
+        setup(props) {
+          const capsOf = () => props.ctx.caps.value || {}
+          const listOf = () => {
+            const l = capsOf().qualities
+            return Array.isArray(l) && l.length ? l : []
+          }
+          function onChange(e) {
+            const v = e.target.value
+            const cap = capsOf()
+            if (typeof cap.selectQuality === 'function') {
+              try { cap.selectQuality(v) } catch (err) { /* 适配器自己兜 */ }
+              props.ctx.touch()
+            }
+          }
+          return () => {
+            const list = listOf()
+            if (!list.length) return null
+            const cur = String(capsOf().quality || (list[0] && list[0].value) || '')
+            return h('select', {
+              class: 'qtp-qsel',
+              title: '画质',
+              onChange,
+              onClick: (e) => e.stopPropagation()
+            }, list.map((o) => h('option', { value: String(o.value), selected: String(o.value) === cur }, o.label)))
+          }
+        }
       })
+      ctx.registerBarControl({ id: 'quality', order: 10, component: BarControl })
+      void Section
     }
   }
 }
