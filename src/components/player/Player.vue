@@ -149,7 +149,7 @@ defineExpose({ player })
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;   /* 源站封面常是三联拼图，cover 会把它裁成中间那一张（看起来像换了张图） */
   pointer-events: none;   /* 不能让封面挡住点击播放 */
   transition: opacity .3s ease;
   opacity: 1;
