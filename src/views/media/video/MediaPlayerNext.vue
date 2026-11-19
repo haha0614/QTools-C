@@ -1,13 +1,26 @@
 <template>
   <div class="mpn" role="dialog" aria-modal="true" aria-label="播放器（新内核）">
     <header class="mpn-head">
-      <h2 class="mpn-title" :title="video.title">{{ video.title }}</h2>
+      <div class="mpn-info">
+        <h2 class="mpn-title" :title="video.title">{{ video.title }}</h2>
+        <!-- 与旧播放器头部同一组六项、同一顺序、同一口径（见 MediaPlayer.vue 的 p-meta） -->
+        <div class="mpn-meta">
+          <span title="所在目录">目录 {{ video.folder || '—' }}</span>
+          <span title="影片时长">时长 {{ durText(video.dur) }}</span>
+          <span title="分辨率与画质档">分辨率 {{ video.w && video.h ? video.w + '×' + video.h : '未知' }} {{ resBadge(video.w) }}</span>
+          <span title="视频编码">编码 {{ video.vcodec || '未知' }}</span>
+          <span title="文件体积">体积 {{ fmtSize(video.size) }}</span>
+          <span title="是否带字幕">字幕 {{ video.sub ? '有' : '无' }}</span>
+        </div>
+      </div>
       <div class="mpn-acts">
         <button type="button" :disabled="!hasPrev" @click="emit('prev')">上一条</button>
         <button type="button" :disabled="!hasNext" @click="emit('next')">下一条</button>
         <button type="button" class="mpn-close" @click="emit('close')">关闭 Esc</button>
       </div>
     </header>
+    <!-- 编码告警：与旧播放器同一句文案（HEVC 等浏览器可能播不了） -->
+    <p v-if="warnVisible" class="mpn-warn">该片为 HEVC/异常编码，浏览器可能无法播放</p>
     <div class="mpn-body">
       <div class="mpn-stage">
         <!-- key 用 视频 id + openSeq：换片 / 重开都重建播放器，插件（含埋点会话）才会按新片重跑 -->
@@ -43,6 +56,7 @@ import { useMediaApi } from '@/composables/useMediaApi'
 import { mediaStreamSource } from '@/components/player/sources/mediaStream'
 import { fileSource } from '@/components/player/sources/hls'
 import { mediaCapabilities, mediaPlayPlan } from './playerBridge'
+import { durText } from './playerExtras'
 import { mediaPlugins } from './playerBridgePlugins'
 import { frameStepPlugin } from '@/components/player/plugins/frameStep'
 import { telemetryPlugin } from '@/components/player/plugins/telemetry'
@@ -63,6 +77,27 @@ const emit = defineEmits(['close', 'prev', 'next', 'update:quality', 'save-pos',
 
 const api = useMediaApi()
 const playerRef = ref(null)
+
+/** 编码告警：索引里 browserOk === false 就是浏览器大概率播不了的片 */
+const warnVisible = computed(() => !!(props.video && props.video.browserOk === false))
+
+/** 与 MediaPlayer.vue:1337/1347 同一套口径（那边没有导出，这里按同样规则复写，改一处要同步） */
+function fmtSize(bytes) {
+  const MB = 1048576
+  const GB = 1073741824
+  if (bytes == null || !isFinite(bytes)) return '—'
+  if (bytes >= GB) return (bytes / GB).toFixed(2) + ' GB'
+  if (bytes >= MB) return (bytes / MB).toFixed(1) + ' MB'
+  return Math.round(bytes / 1024) + ' KB'
+}
+function resBadge(w) {
+  if (!w) return ''
+  if (w >= 3840) return '4K'
+  if (w >= 2560) return '2K'
+  if (w >= 1920) return '1080p'
+  if (w >= 1280) return '720p'
+  return w + 'w'
+}
 
 const caps = computed(() => mediaCapabilities(props.video, {
   api,
@@ -176,15 +211,30 @@ defineExpose({
   padding: 10px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, .1);
 }
+.mpn-info { flex: 1 1 auto; min-width: 0; }
 .mpn-title {
-  flex: 1 1 auto;
-  min-width: 0;
   margin: 0;
   font-size: 15px;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.mpn-meta {
+  margin-top: 3px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, .62);
+}
+.mpn-warn {
+  margin: 0;
+  padding: 6px 16px;
+  font-size: 12.5px;
+  color: #ffd479;
+  background: rgba(255, 212, 121, .1);
+  border-bottom: 1px solid rgba(255, 212, 121, .25);
 }
 .mpn-acts { display: inline-flex; gap: 8px; flex: 0 0 auto; }
 .mpn-acts button {
