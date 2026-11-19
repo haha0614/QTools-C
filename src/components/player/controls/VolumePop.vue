@@ -1,23 +1,30 @@
 <template>
-  <div class="qtp-vol-pop">
+  <div class="qtp-vol-pop" @mouseenter="hover = true" @mouseleave="hover = false">
     <input
       class="qtp-vol-range" type="range" min="0" max="100" step="1"
       :value="pct" aria-label="音量"
       @input="onInput"
+      @pointerdown="drag = true"
+      @pointerup="drag = false"
+      @pointercancel="drag = false"
+      @blur="drag = false"
     />
-    <span class="qtp-vol-num">{{ pct }}</span>
+    <!-- 音量值不常显：只在悬停 / 拖动时，挂在滑块轨道的对应位置上 -->
+    <span v-if="hover || drag" class="qtp-vol-tip" :style="{ left: pct + '%' }">{{ pct }}</span>
   </div>
 </template>
 
 <script setup>
 /**
- * 音量滑块：内联长在音量按钮右边（hover 时右侧按钮淡出、它淡入，占回那块宽度）。
- * 静音仍是那个按钮本身；这里只管细调。
+ * 音量滑块：内联长在音量按钮右边（hover 时覆盖在被让位的那几个控件上）。
+ * 数值不常显 —— 只在悬停或拖动时浮在滑块上方（用户要求），免得一直占位。
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const props = defineProps({ player: { type: Object, required: true } })
 
+const hover = ref(false)
+const drag = ref(false)
 const pct = computed(() => Math.round((props.player.state.muted ? 0 : Number(props.player.state.volume) || 0) * 100))
 
 function onInput(e) {
@@ -27,9 +34,17 @@ function onInput(e) {
 </script>
 
 <style lang="scss" scoped>
-.qtp-vol-pop { display: flex; align-items: center; gap: 6px; width: 100%; min-width: 0; white-space: nowrap; }
+.qtp-vol-pop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+}
 .qtp-vol-range {
-  width: 86px;
+  width: 100%;
+  min-width: 0;
   height: 20px;
   margin: 0;
   background: transparent;
@@ -42,5 +57,22 @@ function onInput(e) {
   border-radius: 999px; background: #fff; border: 0;
 }
 .qtp-vol-range:focus-visible { outline: 2px solid var(--el-color-primary, #4a9eff); outline-offset: 2px; }
-.qtp-vol-num { min-width: 20px; text-align: right; font-size: 11px; color: rgba(255, 255, 255, .78); font-variant-numeric: tabular-nums; }
+
+/* 数值气泡：贴着滑块轨道对应位置，整块浮在上面 */
+.qtp-vol-tip {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%);
+  min-width: 26px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  background: rgba(10, 14, 20, .96);
+  color: #f2f5f9;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
 </style>
