@@ -10,7 +10,15 @@
     </header>
     <div class="mpn-body">
       <div class="mpn-stage">
-        <Player ref="playerRef" :source="source" :features="features" :cover="coverUrl" @loadedmetadata="onMeta" />
+        <!-- key 用 视频 id + openSeq：换片 / 重开都重建播放器，插件（含埋点会话）才会按新片重跑 -->
+        <Player
+          :key="(video.id || '') + '#' + openSeq"
+          ref="playerRef"
+          :source="source"
+          :features="features"
+          :cover="coverUrl"
+          @loadedmetadata="onMeta"
+        />
       </div>
       <aside class="mpn-side"><slot name="side" /></aside>
     </div>
@@ -36,6 +44,8 @@ import { mediaStreamSource } from '@/components/player/sources/mediaStream'
 import { fileSource } from '@/components/player/sources/hls'
 import { mediaCapabilities, mediaPlayPlan } from './playerBridge'
 import { mediaPlugins } from './playerBridgePlugins'
+import { frameStepPlugin } from '@/components/player/plugins/frameStep'
+import { telemetryPlugin } from '@/components/player/plugins/telemetry'
 
 const props = defineProps({
   video: { type: Object, required: true },
@@ -87,7 +97,12 @@ const coverUrl = computed(() => (props.video && props.video.contentHash
   ? api.thumbUrl(props.video.contentHash)
   : ''))
 
-const features = mediaPlugins()
+/** 四个能力插件 + 逐帧 + 埋点（媒体站专有：每日大赛不传 tracker 也就不挂） */
+const features = computed(() => [
+  ...mediaPlugins(),
+  frameStepPlugin({ fps: props.video && props.video.fps }),
+  telemetryPlugin({ tracker: props.tracker, id: props.video && props.video.id })
+])
 
 function st() {
   const p = playerRef.value && playerRef.value.player
