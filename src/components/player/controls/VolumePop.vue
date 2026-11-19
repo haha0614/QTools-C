@@ -10,7 +10,11 @@
       @blur="drag = false"
     />
     <!-- 音量值不常显：只在悬停 / 拖动时，挂在滑块轨道的对应位置上 -->
-    <span v-if="hover || drag" class="qtp-vol-tip" :style="{ left: pct + '%' }">{{ pct }}</span>
+    <span
+      v-if="hover || drag"
+      class="qtp-vol-tip"
+      :style="{ '--qtp-vol-r': (pct / 100) }"
+    >{{ pct }}</span>
   </div>
 </template>
 
@@ -58,10 +62,14 @@ function onInput(e) {
 }
 .qtp-vol-range:focus-visible { outline: 2px solid var(--el-color-primary, #4a9eff); outline-offset: 2px; }
 
-/* 数值气泡：贴着滑块轨道对应位置，整块浮在上面 */
+/* 数值气泡：要对齐"滑轨上的实际位置"而不是容器百分比 ——
+   <input type=range> 的拇指行程两端各内缩半个拇指（THUMB/2 = 6px），
+   直接用 left:pct% 会在 0 / 100 时分别偏左偏右。这里按 travel 换算，并夹住两端不溢出容器。 */
 .qtp-vol-tip {
   position: absolute;
   bottom: calc(100% + 4px);
+  /* 不夹两端：夹了会离拇指 7px。气泡可以略微溢出滑块，播放器不裁它，这样两端与拇指严格对齐 */
+  left: calc(6px + (100% - 12px) * var(--qtp-vol-r, 0));
   transform: translateX(-50%);
   min-width: 26px;
   padding: 1px 6px;
