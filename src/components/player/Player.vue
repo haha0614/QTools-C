@@ -5,7 +5,7 @@
     :style="radius ? { borderRadius: radius } : null"
     @mousemove="onPointerMove"
     @touchstart="poke"
-    @mouseleave="scheduleHide"
+    @mouseleave="onLeave"
   >
     <!-- 封面层：缓冲/重签期间显示封面，拿到首个数据帧后淡出（硬切太生硬） -->
     <img
@@ -187,7 +187,8 @@ function toggleMenu() {
 /* ---------- 控制条自动隐藏：播放中 2.5 秒无操作就淡出，暂停或出错时常驻 ---------- */
 const barHidden = ref(false)
 let hideTimer = 0
-const HIDE_MS = 2500
+/** 鼠标停住多久后收起控制条（非全屏时鼠标一离开就立刻收，不等这个） */
+const HIDE_MS = 1500
 
 function scheduleHide() {
   if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0 }
@@ -198,6 +199,21 @@ function scheduleHide() {
 }
 function poke() {
   barHidden.value = false
+  scheduleHide()
+}
+
+/**
+ * 鼠标离开播放器：
+ * 非全屏 + 正在播 → 立刻收起（窗口播放时鼠标走了就不该再占着画面）；
+ * 全屏 / 暂停 / 浮层开着 → 交给 scheduleHide 按计时处理。
+ */
+function onLeave() {
+  const s = player.state
+  if (!s.fullscreen && s.playing && !s.error && !menuOpen.value) {
+    if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0 }
+    barHidden.value = true
+    return
+  }
   scheduleHide()
 }
 
