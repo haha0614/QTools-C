@@ -62,6 +62,7 @@ import { frameStepPlugin } from '@/components/player/plugins/frameStep'
 import { telemetryPlugin } from '@/components/player/plugins/telemetry'
 import { hotkeysPlugin } from '@/components/player/plugins/hotkeys'
 import { abLoopPlugin } from '@/components/player/plugins/abLoop'
+import { subtitleStylePlugin } from '@/components/player/plugins/subtitleStyle'
 
 const props = defineProps({
   video: { type: Object, required: true },
@@ -140,6 +141,7 @@ const features = computed(() => [
   frameStepPlugin({ fps: props.video && props.video.fps }),
   hotkeysPlugin({ fps: props.video && props.video.fps }),
   abLoopPlugin(),
+  subtitleStylePlugin(),
   telemetryPlugin({ tracker: props.tracker, id: props.video && props.video.id })
 ])
 

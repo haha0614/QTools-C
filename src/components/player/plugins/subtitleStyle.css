@@ -1,0 +1,19 @@
+/* 字幕样式菜单段（插件用 h() 渲染，没有 scoped 作用域，样式走全局类名） */
+.qtp-sub-menu { display: flex; flex-direction: column; gap: 6px; }
+.qtp-sub-row { display: flex; align-items: center; gap: 6px; }
+.qtp-sub-lab { flex: 0 0 30px; font-size: 11.5px; color: rgba(255, 255, 255, .6); }
+.qtp-sub-opts { display: inline-flex; flex-wrap: wrap; gap: 4px; flex: 1 1 auto; min-width: 0; }
+.qtp-sub-tail { flex: 0 0 auto; font-size: 11.5px; color: rgba(255, 255, 255, .72); font-variant-numeric: tabular-nums; }
+.qtp-sub-opt {
+  min-width: 26px;
+  padding: 2px 7px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, .06);
+  color: inherit;
+  font-size: 11.5px;
+  line-height: 1.6;
+  cursor: pointer;
+}
+.qtp-sub-opt:hover { background: rgba(255, 255, 255, .16); }
+.qtp-sub-opt.on { border-color: rgba(74, 158, 255, .8); background: rgba(74, 158, 255, .22); color: #cfe6ff; }
