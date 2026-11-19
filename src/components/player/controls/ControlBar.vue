@@ -27,66 +27,70 @@
       </div>
     </div>
 
-    <!-- 音量：按钮本身点一下静音，鼠标移上去（或键盘聚焦）就出滑块，不用进设置 -->
+    <!-- 音量：按钮点一下静音；鼠标移上来（或键盘聚焦）时 —— 右侧那组按钮淡出，
+         滑块在同一块宽度里淡入；移开整个音量控件就恢复。
+         这样滑块不必悬浮、不必进设置，也不用把按钮挤出去（.qtp 兜住越界）。 -->
     <div
-      class="qtp-btn-wrap"
-      @mouseenter="volHover = true"
-      @mouseleave="volHover = false"
-      @focusin="volFocus = true"
+      class="qtp-vol"
+      @mouseenter="volActive = true"
+      @mouseleave="volActive = false"
+      @focusin="onVolFocusIn"
       @focusout="onVolFocusOut"
     >
       <button type="button" class="qtp-btn" :title="player.state.muted ? '取消静音' : '静音'" @click="player.toggleMute()">
         <span class="qtp-ico">{{ player.state.muted || player.state.volume === 0 ? '🔇' : '🔊' }}</span>
       </button>
-      <div v-if="volHover || volFocus" class="qtp-pop qtp-pop-vol" @mouseenter="volHover = true" @mouseleave="volHover = false">
+      <div class="qtp-vol-slot" :class="{ on: volOpen }" :aria-hidden="volOpen ? 'false' : 'true'">
         <VolumePop :player="player" />
       </div>
     </div>
 
-    <!-- 倍速：点一下直接出一列，选完即生效（不再"点一下切一档"） -->
-    <div class="qtp-btn-wrap qtp-rate-wrap" @mouseleave="rateOpen = false">
-      <button
-        type="button" class="qtp-btn qtp-btn-text"
-        :class="{ 'qtp-btn-on': rateOpen }"
-        :title="'倍速（当前 ' + player.state.rate + '×）'"
-        :aria-expanded="rateOpen ? 'true' : 'false'"
-        @click="rateOpen = !rateOpen"
-      >{{ player.state.rate }}×</button>
-      <div v-if="rateOpen" class="qtp-pop qtp-pop-rate">
-        <RatePop :player="player" @pick="rateOpen = false" />
+    <div class="qtp-tail" :class="{ out: volOpen }">
+      <!-- 倍速：点一下直接出一列，选完即生效（不再"点一下切一档"） -->
+      <div class="qtp-btn-wrap qtp-rate-wrap" @mouseleave="rateOpen = false">
+        <button
+          type="button" class="qtp-btn qtp-btn-text"
+          :class="{ 'qtp-btn-on': rateOpen }"
+          :title="'倍速（当前 ' + player.state.rate + '×）'"
+          :aria-expanded="rateOpen ? 'true' : 'false'"
+          @click="rateOpen = !rateOpen"
+        >{{ player.state.rate }}×</button>
+        <div v-if="rateOpen" class="qtp-pop qtp-pop-rate">
+          <RatePop :player="player" @pick="rateOpen = false" />
+        </div>
       </div>
+
+      <button
+        v-for="b in buttons" :key="b.id"
+        type="button" class="qtp-btn qtp-btn-plugin" :title="b.title || b.label"
+        @click="b.onClick && b.onClick()"
+      ><span v-if="b.icon" class="qtp-btn-ico">{{ b.icon }}</span><span class="qtp-btn-label">{{ b.label }}</span></button>
+
+      <button
+        v-if="sections.length"
+        type="button"
+        class="qtp-btn qtp-menu-btn"
+        :class="{ 'qtp-btn-on': menuOpen }"
+        title="设置"
+        :aria-expanded="menuOpen ? 'true' : 'false'"
+        @click="emit('toggle-menu')"
+      ><span class="qtp-ico">⚙</span></button>
+
+      <button type="button" class="qtp-btn" :title="player.state.fullscreen ? '退出全屏' : '全屏'" @click="player.toggleFullscreen()">
+        <!-- 用 SVG 画：原来 ⤢ / ⤡ 两个斜箭头在 8px 字号下几乎分不出，看着像"图标没变" -->
+        <svg v-if="!player.state.fullscreen" class="qtp-svg" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 4H4v5M15 4h5v5M20 15v5h-5M4 15v5h5" />
+        </svg>
+        <svg v-else class="qtp-svg" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 9h5V4M20 9h-5V4M15 20v-5h5M9 20v-5H4" />
+        </svg>
+      </button>
     </div>
-
-    <button
-      v-for="b in buttons" :key="b.id"
-      type="button" class="qtp-btn qtp-btn-plugin" :title="b.title || b.label"
-      @click="b.onClick && b.onClick()"
-    ><span v-if="b.icon" class="qtp-btn-ico">{{ b.icon }}</span><span class="qtp-btn-label">{{ b.label }}</span></button>
-
-    <button
-      v-if="sections.length"
-      type="button"
-      class="qtp-btn qtp-menu-btn"
-      :class="{ 'qtp-btn-on': menuOpen }"
-      title="设置"
-      :aria-expanded="menuOpen ? 'true' : 'false'"
-      @click="emit('toggle-menu')"
-    ><span class="qtp-ico">⚙</span></button>
-
-    <button type="button" class="qtp-btn" :title="player.state.fullscreen ? '退出全屏' : '全屏'" @click="player.toggleFullscreen()">
-      <!-- 用 SVG 画：原来 ⤢ / ⤡ 两个斜箭头在 8px 字号下几乎分不出，看着像"图标没变" -->
-      <svg v-if="!player.state.fullscreen" class="qtp-svg" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M9 4H4v5M15 4h5v5M20 15v5h-5M4 15v5h5" />
-      </svg>
-      <svg v-else class="qtp-svg" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M4 9h5V4M20 9h-5V4M15 20v-5h5M9 20v-5H4" />
-      </svg>
-    </button>
   </div>
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import VolumePop from './VolumePop.vue'
 import RatePop from './RatePop.vue'
 
@@ -106,9 +110,21 @@ const emit = defineEmits(['toggle-menu'])
 const overlayLayers = computed(() => props.layers.filter((l) => (l.mode || 'overlay') === 'overlay'))
 const laneLayers = computed(() => props.layers.filter((l) => l.mode === 'lane'))
 
-/* 音量滑块：hover 出，键盘聚焦也出（滑块在浮层里，焦点要能过去，所以用 focusin/focusout 而不是按钮的 focus/blur） */
-const volHover = ref(false)
+/* 音量：hover 展开（键盘聚焦也展开——焦点要能进到滑块，所以用 focusin/focusout 而不是按钮的 focus/blur） */
+const volActive = ref(false)
 const volFocus = ref(false)
+/** 展开条件：鼠标在上面，或焦点在音量控件里 */
+const volOpen = computed(() => volActive.value || volFocus.value)
+// 展开时右侧那组按钮被收起来了，倍速列表留在里面就会变成"看不见但还在"的状态
+watch(volOpen, (v) => { if (v) rateOpen.value = false })
+/**
+ * 键盘聚焦才展开。鼠标点按钮同样会给按钮焦点，若按 focusin 就展开，
+ * 点完音量按钮移开鼠标也会卡在展开态（实测：右侧按钮一直藏着回不来）。
+ */
+function onVolFocusIn(e) {
+  const t = e && e.target
+  volFocus.value = !!(t && t.matches && t.matches(':focus-visible'))
+}
 function onVolFocusOut(e) {
   const next = e && e.relatedTarget
   if (next && e.currentTarget && e.currentTarget.contains(next)) return
@@ -204,8 +220,35 @@ function onScrub(e) { props.player.seek(Number(e.target.value)) }
 .qtp-layers { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 .qtp-lane { position: relative; height: 12px; min-width: 0; }
 
-/* 常驻按钮 + 浮层：音量滑块 / 倍速列表都从这里弹，位置贴着按钮上沿 */
+/* 音量控件：按钮 + 内联滑块槽。槽默认宽度 0，hover 时展开到 110px。
+   .qtp-vol 自己独立成组，鼠标从按钮滑到滑块上时不会触发 mouseleave。 */
+/* 音量控件整组不许被压缩：槽里的滑块+数值是定宽的，压窄就会把数字裁掉 */
+.qtp-vol { display: inline-flex; align-items: center; flex: 0 0 auto; }
+.qtp-vol-slot {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: width .22s cubic-bezier(.22, .68, .32, 1), opacity .16s ease;
+}
+.qtp-vol-slot.on { width: 114px; opacity: 1; }
+
+/* 音量右侧那组按钮：hover 音量时整组淡出并收掉宽度，把位置让给滑块 */
+.qtp-tail {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  max-width: 420px;
+  opacity: 1;
+  transition: max-width .22s cubic-bezier(.22, .68, .32, 1), opacity .16s ease;
+}
+.qtp-tail.out { max-width: 0; opacity: 0; overflow: hidden; pointer-events: none; }
+
 .qtp-btn-wrap { position: relative; display: inline-flex; align-items: center; }
+/* 只有倍速那一个需要往上弹列表（音量已经改成原位展开了） */
 .qtp-pop { position: absolute; bottom: calc(100% + 6px); right: 0; z-index: 4; }
 .qtp-pop-rate {
   min-width: 108px;
