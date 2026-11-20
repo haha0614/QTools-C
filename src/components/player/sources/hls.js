@@ -33,6 +33,13 @@ export function hlsSource(url, opts = {}) {
       const timer = { id: 0 }
       hls.on(Hls.Events.ERROR, (_e, data) => {
         if (!data || !data.fatal || disposed) return
+        // 后端明确回 503 source_unreachable = 源站域名失效/连不上，重签也要先打开同一个域名。
+        // 这种失败重试多少次都是白等（原先 9 次约 55 秒），直接给用户结论。
+        const status = data.response && data.response.code
+        if (status === 503) {
+          api.fail('源站暂时无法访问，地址可能已更换；站点每 30 分钟自动同步新地址，稍后再试')
+          return
+        }
         const isNetwork = Hls.ErrorTypes && data.type === Hls.ErrorTypes.NETWORK_ERROR
         if (isNetwork && retries < maxRetry) {
           retries += 1
