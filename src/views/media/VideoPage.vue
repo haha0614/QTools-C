@@ -2,7 +2,7 @@
   VideoPage.vue —— 媒体站「视频库」页面（Vue 3 重写）
   来源：public/media/index.html + app.js（1731 行）+ app.css 的行为等价实现；路由由 router/index.js 统一接线。
   分层：本文件持有筛选 / 排序 / URL hash / 收藏 / 最近观看 / 埋点与播放器会话边界；
-        播放层在 video/MediaPlayer.vue，筛选抽屉内容（分类 + facet 组）、快捷筛选、卡片、最近观看拆成 video/*.vue 子组件。
+        播放层在 video/MediaPlayerNext.vue（新内核外壳），筛选抽屉内容（分类 + facet 组）、快捷筛选、卡片、最近观看拆成 video/*.vue 子组件。
   布局：外壳（src/layouts/AppShell.vue）给媒体路由 meta.bleed（取消左右 padding），本页贴边全宽流式；
         筛选不再占用常驻左栏，改为右侧 320px 抽屉（桌面与移动共用），不再与外壳左导航争位。
   复用：src/composables/useMediaApi.js（接口 + 资源 URL）、useMediaTrack.js（埋点单例）、
@@ -329,9 +329,8 @@
       </footer>
     </aside>
 
-    <!-- HANDOFF 13 第 3 步 · 阶段 C：默认新内核外壳；`?engine=old` 回退旧播放器 -->
-    <component
-      :is="engineNew ? MediaPlayerNext : MediaPlayer"
+    <!-- HANDOFF 13 第 3 步：播放层是新内核外壳（旧 MediaPlayer.vue 已删除，见 §13.8） -->
+    <MediaPlayerNext
       v-if="curVideo"
       ref="playerRef"
       :video="curVideo"
@@ -383,7 +382,7 @@
           @notify="showToast"
         />
       </template>
-    </component>
+    </MediaPlayerNext>
 
     <!-- 加入播放列表（P5-B）：选择已有列表或新建，写入失败只提示，不影响库与播放 -->
     <PlaylistPicker
@@ -477,7 +476,6 @@ import SavedFilters from './video/SavedFilters.vue'
 import QuickFilters from './video/QuickFilters.vue'
 import VideoCard from './video/VideoCard.vue'
 import RecentStrip from './video/RecentStrip.vue'
-import MediaPlayer from './video/MediaPlayer.vue'
 import MediaPlayerNext from './video/MediaPlayerNext.vue'
 import BatchBar from './video/BatchBar.vue'
 import {
@@ -1092,12 +1090,6 @@ function onStudioToggle(name) {
 
 const route = useRoute()
 const router = useRouter()
-
-/**
- * HANDOFF 13 第 3 步 · 阶段 C（2026-11-19 切换）：**默认就用新内核外壳**，
- * `?engine=old` 回退到旧 MediaPlayer.vue —— 旧文件保留一段时间做逃生舱，确认稳定后再删。
- */
-const engineNew = computed(() => String(route.query.engine || '').toLowerCase() !== 'old')
 
 /** 弹层开关 + 目标视频：正在播放的那一部优先，否则用多选集合 */
 const playlistPickerOpen = ref(false)
@@ -3098,7 +3090,7 @@ async function applyBatchMeta(patch, okText) {
 
 /**
  * P5.23：信息栏常驻右侧 —— 标签库 / 人物库在「播放器打开」时就预热，
- * 面板内容始终挂载，展开只是把右栏宽度从 0 拉回来（状态在 MediaPlayer 里）。
+ * 面板内容始终挂载，展开只是把右栏宽度从 0 拉回来（状态在 MediaPlayerNext 里）。
  * 标签库 / 人物库都是按需拉一次（已有缓存 / 加载中不重复拉）。
  */
 function ensureMetaData() {
@@ -3108,7 +3100,7 @@ function ensureMetaData() {
 
 /** 播放器头部「信息」按钮 → 展开右栏（并刷新「在当前时间加标记」的起手位置） */
 function openMeta() {
-  // 「在当前时间加标记」的起手位置：播放器暴露 getCurrentTime（见 MediaPlayer defineExpose）
+  // 「在当前时间加标记」的起手位置：播放器暴露 getCurrentTime（见 MediaPlayerNext defineExpose）
   const pl = playerRef.value
   metaAtSec.value = pl && typeof pl.getCurrentTime === 'function' ? pl.getCurrentTime() : 0
   ensureMetaData()
@@ -3290,10 +3282,8 @@ watch([playlistCtx, plView, () => state.pl], () => {
    ========================================================================= */
 
 function onKey(e) {
-  // 新内核（?engine=qtp）自带键盘插件（hotkeys / abLoop），页面级只保留 Esc ——
-  // 否则同一次按键会被页面和插件各处理一遍（播放/快进按两下）
-  if (engineNew.value && e.key !== 'Escape') return
-
+  // 播放类按键由播放器自带的 hotkeys / abLoop 插件处理，页面级只留 Esc、搜索聚焦与上一条 / 下一条 ——
+  // 否则同一次按键会被页面和插件各处理一遍（播放 / 快进按两下）
   const t = e.target
   const tag = t && t.tagName ? t.tagName.toLowerCase() : ''
   const typing = tag === 'input' || tag === 'textarea' || tag === 'select' || (t && t.isContentEditable)
@@ -3325,89 +3315,10 @@ function onKey(e) {
     if (searchEl.value) searchEl.value.focus()
     return
   }
-  if (!curVideo.value || !playerRef.value) return
-
-  switch (e.key) {
-    case ' ':
-    case 'Spacebar':
-      e.preventDefault()
-      playerRef.value.togglePlay()
-      break
-    case 'ArrowLeft':
-      e.preventDefault()
-      // P4-B：Shift+方向 = 单帧步进（不带 Shift 的 5 秒跳转保持不变）
-      if (e.shiftKey) playerRef.value.stepFrame(-1)
-      else playerRef.value.seekRel(-5)
-      break
-    case 'ArrowRight':
-      e.preventDefault()
-      if (e.shiftKey) playerRef.value.stepFrame(1)
-      else playerRef.value.seekRel(5)
-      break
-    case 'ArrowUp':
-      e.preventDefault()
-      playerRef.value.adjustVolume(0.1)
-      break
-    case 'ArrowDown':
-      e.preventDefault()
-      playerRef.value.adjustVolume(-0.1)
-      break
-    case 'f':
-    case 'F':
-      e.preventDefault()
-      playerRef.value.toggleFullscreen()
-      break
-    case 'n':
-    case 'N':
-      e.preventDefault()
-      step(1)
-      break
-    case 'p':
-    case 'P':
-      e.preventDefault()
-      step(-1)
-      break
-    /* ---------------- P4-B 新增：AB 循环 / 单帧 / 帮助（输入框聚焦时不抢键） ---------------- */
-    case 'a':
-    case 'A':
-      if (typing) break
-      e.preventDefault()
-      playerRef.value.setAbPoint('a')
-      break
-    case 'b':
-    case 'B':
-      if (typing) break
-      e.preventDefault()
-      playerRef.value.setAbPoint('b')
-      break
-    case ',':
-      if (typing) break
-      e.preventDefault()
-      playerRef.value.stepFrame(-1)
-      break
-    case '.':
-      if (typing) break
-      e.preventDefault()
-      playerRef.value.stepFrame(1)
-      break
-    /* ---------------- P4.1 新增：视频倍速 [ / ]（增益不再绑快捷键） ---------------- */
-    case '[':
-      if (typing) break
-      e.preventDefault()
-      playerRef.value.changeSpeed(-1)
-      break
-    case ']':
-      if (typing) break
-      e.preventDefault()
-      playerRef.value.changeSpeed(1)
-      break
-    case '?':
-      if (typing) break
-      e.preventDefault()
-      playerRef.value.toggleHelp()
-      break
-    default:
-      break
+  // 换片（n / p）播放器插件不管，留在页面层；其余播放类快捷键见 hotkeys 插件
+  if (curVideo.value && !typing && /^[npNP]$/.test(e.key)) {
+    e.preventDefault()
+    step(e.key === 'n' || e.key === 'N' ? 1 : -1)
   }
 }
 

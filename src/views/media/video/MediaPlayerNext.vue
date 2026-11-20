@@ -3,7 +3,7 @@
     <header class="mpn-head">
       <div class="mpn-info">
         <h2 class="mpn-title" :title="video.title">{{ video.title }}</h2>
-        <!-- 与旧播放器头部同一组六项、同一顺序、同一口径（见 MediaPlayer.vue 的 p-meta） -->
+        <!-- 六项、顺序、口径沿用旧播放器头部（p-meta，媒体站信息栏仍在读同一套字段） -->
         <div class="mpn-meta">
           <span title="所在目录">目录 {{ video.folder || '—' }}</span>
           <span title="影片时长">时长 {{ durText(video.dur) }}</span>
@@ -43,8 +43,8 @@
 /**
  * MediaPlayerNext.vue —— 媒体站播放层（新内核）实验外壳
  *
- * 用途：HANDOFF 13 第 3 步 · 阶段 B 的第一块。默认**不启用**，只在 `?engine=qtp` 时由 VideoPage
- * 渲染，用来和新播放器做真机对照；旧 MediaPlayer.vue 一行未动。
+ * 用途：HANDOFF 13 第 3 步的落地形态。2026-11-19 起是媒体站唯一播放层（`?engine=old` 回退与旧
+ * MediaPlayer.vue 已于 §13.8 删除）；每日大赛也复用同一套 Player + 插件。
  *
  * 现状：播放（服务端转码流 + serverSeek）、画质 / 字幕 / 标记 / 雪碧图四个插件、续播起点、
  *       5 秒一次的 save-pos、上一条 / 下一条、右侧信息栏插槽。
@@ -106,7 +106,7 @@ watch(
 /** 编码告警：索引里 browserOk === false 就是浏览器大概率播不了的片 */
 const warnVisible = computed(() => !!(props.video && props.video.browserOk === false))
 
-/** 与 MediaPlayer.vue:1337/1347 同一套口径（那边没有导出，这里按同样规则复写，改一处要同步） */
+/** 与旧 MediaPlayer.vue（已删除，见 §13.8）:1337/1347 同一套口径；那边没导出，故这里复写，改一处要同步 */
 function fmtSize(bytes) {
   const MB = 1048576
   const GB = 1073741824

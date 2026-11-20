@@ -4,8 +4,8 @@
  * 为什么单独一个文件：
  *   1) 「设置里的控件 → localStorage → 舞台上的样式」这条链路的**数值口径**（夹取、取整、非法值兜底）
  *      是纯函数，可以脱离浏览器与 Vue 单测（见 subtitleStyle.test.mjs）；
- *   2) MediaPlayer.vue 只负责「读一次 → 每次改动写回 → 把变量挂到舞台上」，
- *      PlayerSettings.vue 只负责画控件，两边共用同一份 normalize，不会出现「面板显示 1.6 实际 1.5」。
+ *   2) 播放器（旧 MediaPlayer.vue 与现在的 subtitleStyle 插件）只负责「读一次 → 每次改动写回 →
+ *      把变量挂到舞台上」，设置控件只负责画控件，两边共用同一份 normalize，不会出现「面板显示 1.6 实际 1.5」。
  *
  * 存储口径（用户要求：按站点维度，**不按视频**）：localStorage['ms.substyle']，
  * 与倍速 ms.speed / 增益 ms.gain 同一条约定（站点级偏好，换片不重置）。
