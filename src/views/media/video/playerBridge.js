@@ -42,6 +42,7 @@ export function mediaCapabilities(video, opts = {}) {
     quality: QUALITY_VALUES.includes(opts.quality) ? opts.quality : 'orig',
     sprite: null,
     preview: null,
+    frame: null,
     markers: Array.isArray(opts.markers) ? opts.markers : [],
     subtitles: []
   }
@@ -53,6 +54,13 @@ export function mediaCapabilities(video, opts = {}) {
   if (v.hasPreview && v.id != null && typeof api.previewUrl === 'function') {
     // 预览片段是整部片的低码率小样，时长按正片算（插件用它换算 seek 位置）
     caps.preview = { url: api.previewUrl(v.id), duration: Number(v.dur) || 0 }
+  }
+  // hover 精确帧（P5.15）：片段/雪碧图都是「等间隔缩时」，与影片时刻只有近似关系；
+  // 精确帧按整秒现取一帧（后端 ffmpeg 取帧 + <秒>.jpg 落盘缓存），时间上严格对应。
+  // 只要源文件能读就能取帧，与派生资源无关，所以 available 恒 true。
+  if (v.id != null && typeof api.frameUrl === 'function') {
+    // urlOf 口径与 framePicker 一致：urlOf(id, sec) → 帧地址
+    caps.frame = { id: v.id, urlOf: (id, sec) => api.frameUrl(id, sec), available: true }
   }
   if (v.sub && typeof api.subUrl === 'function') {
     caps.subtitles = [{ src: api.subUrl(v.sub), label: '字幕', lang: 'zh', default: true }]

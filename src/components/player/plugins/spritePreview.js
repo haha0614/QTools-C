@@ -1,4 +1,5 @@
 import { defineComponent, h, onBeforeUnmount, onMounted, ref } from 'vue'
+import { createFramePicker, frameKey, frameSecond } from '../support/framePicker'
 
 /**
  * 雪碧图 / 预览片段插件 —— 鼠标在进度条上悬停时，在进度条上方浮一张「该时刻的画面」卡片。
@@ -99,6 +100,9 @@ const CLIP_STYLE = {
   pointerEvents: 'none'
 }
 
+// 精确帧是 <img>，尺寸必须显式铺满卡片（SHOT_STYLE 只管定位，图会按原始 480x854 撑出去被裁）
+const FRAME_STYLE = { ...CLIP_STYLE, background: 'none' }
+
 const TIME_STYLE = {
   position: 'absolute',
   left: '5px',
@@ -140,12 +144,17 @@ const SpritePreviewLayer = defineComponent({
     const open = ref(false)
     const cardStyle = ref({ ...CARD_BASE })
     const shotStyle = ref({ ...SHOT_STYLE })
+    const frameUrl = ref('')
     const label = ref('0:00')
 
     /** 事件宿主：.qtp-layers(轨道层容器) 的父节点 = .qtp-scrub-main */
     let host = null
     let rafId = 0
     let clipTarget = 0
+    /** 精确帧调度器（framePicker 的五道闸）+ 当前键：只接受当前悬停位置的取帧结果 */
+    let picker = null
+    let pickerId = ''
+    let frameKeyNow = ''
 
     function capsNow() {
       const c = props.ctx && props.ctx.caps
@@ -159,6 +168,44 @@ const SpritePreviewLayer = defineComponent({
       const p = capsNow().preview
       return p && p.url ? p : null
     }
+    function frameCaps() {
+      const fr = capsNow().frame
+      return fr && fr.id != null && typeof fr.urlOf === 'function' ? fr : null
+    }
+
+    /** 换片时重建调度器（LRU 里的图属于上一部片）；没有取帧能力时返回 null */
+    function ensurePicker() {
+      const fr = frameCaps()
+      if (!fr) return null
+      if (picker && pickerId === String(fr.id)) return picker
+      if (picker) picker.reset()
+      pickerId = String(fr.id)
+      frameKeyNow = ''
+      frameUrl.value = ''
+      picker = createFramePicker({
+        urlOf: (id, sec) => fr.urlOf(id, sec),
+        load(url, key, done) {
+          if (typeof Image === 'undefined') { done(false); return }
+          const img = new Image()
+          img.decoding = 'async'
+          img.onload = () => done(true)
+          img.onerror = () => done(false)
+          img.src = url
+        },
+        // 落回来的帧只认当前键：鼠标已经移走的旧请求不许盖住新位置
+        onFrame({ key, url }) { if (key === frameKeyNow) frameUrl.value = url },
+        onFallback({ key }) { if (key === frameKeyNow) frameUrl.value = '' }
+      })
+      return picker
+    }
+
+    /** 触屏没有 hover（与旧内核 canRequestFrame 同一判据） */
+    function isMobile() {
+      return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+        ? window.matchMedia('(max-width: 768px)').matches
+        : false
+    }
+
     function durationNow() {
       const p = props.ctx && props.ctx.player
       const d = p && p.state ? Number(p.state.duration) : 0
@@ -211,6 +258,9 @@ const SpritePreviewLayer = defineComponent({
     function hide() {
       open.value = false
       cardStyle.value = { ...CARD_BASE }
+      frameKeyNow = ''
+      frameUrl.value = ''
+      if (picker) picker.leave()
     }
 
     /** 预览片段 seek：rAF 合并，拖动时不会每帧发一次 seek */
@@ -235,7 +285,7 @@ const SpritePreviewLayer = defineComponent({
       const hostRect = host ? host.getBoundingClientRect() : null
       const sprite = spriteNow()
       const preview = previewNow()
-      if (!hostRect || !hostRect.width || (!sprite && !preview)) { hide(); return }
+      if (!hostRect || !hostRect.width || (!sprite && !preview && !frameCaps())) { hide(); return }
       const pdur = preview ? Number(preview.duration) || 0 : 0
       const dur = durationNow() || pdur
       if (!dur) { hide(); return }
@@ -263,6 +313,22 @@ const SpritePreviewLayer = defineComponent({
         const clipDur = Number(clipEl.value && clipEl.value.duration) || 0
         if (clipDur > 0) seekClip(ratio * clipDur)
       }
+      // 精确帧：片段/雪碧图先顶上（零延迟），停住 250ms 后换成该秒的真实画面；
+      // 取帧失败（400/404/503）记在 picker 里不再重试，卡片继续显示片段。
+      const fr = frameCaps()
+      if (fr) {
+        // ensurePicker 先建好（它会重置 frameKeyNow），再算键，否则首帧永远对不上键
+        const p = ensurePicker()
+        const sec = frameSecond(ratio * dur, dur)
+        const key = frameKey(fr.id, sec)
+        if (key !== frameKeyNow) { frameKeyNow = key; frameUrl.value = '' }
+        const res = p ? p.schedule(fr.id, sec, {
+          available: fr.available !== false,
+          mobile: isMobile(),
+          dragging: e.buttons === 1
+        }) : null
+        if (!res || res.showed === 'skipped') frameUrl.value = ''
+      }
     }
 
     onMounted(() => {
@@ -282,6 +348,7 @@ const SpritePreviewLayer = defineComponent({
       }
       window.removeEventListener('scroll', hide, true)
       if (rafId) { cancelAnimationFrame(rafId); rafId = 0 }
+      if (picker) { picker.reset(); picker = null }
     })
 
     return () => {
@@ -297,6 +364,9 @@ const SpritePreviewLayer = defineComponent({
           style: CLIP_STYLE
         })]
         : [h('div', { class: 'qtp-sprite-shot', style: shotStyle.value })]
+      if (frameUrl.value) {
+        children.push(h('img', { class: 'qtp-sprite-frame', src: frameUrl.value, alt: '', style: FRAME_STYLE }))
+      }
       children.push(h('span', { class: 'qtp-sprite-time', style: TIME_STYLE }, label.value))
       return h('div', {
         ref: root,
@@ -319,7 +389,8 @@ export function spritePreviewPlugin() {
       const caps = (ctx && ctx.caps && ctx.caps.value) || {}
       const sprite = caps.sprite && caps.sprite.url ? caps.sprite : null
       const preview = caps.preview && caps.preview.url ? caps.preview : null
-      if (!sprite && !preview) return
+      const frame = caps.frame && caps.frame.id != null ? caps.frame : null
+      if (!sprite && !preview && !frame) return
       if (sprite) preloadSprite(sprite.url)
       ctx.registerTrackLayer({ id: 'spritePreview', mode: 'overlay', order: 20, component: SpritePreviewLayer })
     }
