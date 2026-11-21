@@ -97,10 +97,15 @@ export function usePlayerCore(videoRef, getSource) {
     const target = Math.max(0, Math.min(t, d || t))
     const src = getSource && getSource()
     if (src && typeof src.serverSeek === 'function') {
-      // 浏览器不可 seek 的流：带 t 重开流（内核 watch 到 url 变化会重新 attach）
+      // 浏览器不可 seek 的流：带 t 重开流。
+      // 不能指望下面那个 watch(url) 接手：url 是源适配器上的普通字段（不是响应式），
+      // 改了它 watch getter 不会重算——之前就是这样 offset 换了、流没换，
+      // 画面还停在旧流里，显示时间 = 新 offset + 旧流内时间，一路涨过总时长。
       resumeAfterAttach = !v.paused
       src.serverSeek(target)
       state.currentTime = target
+      state.buffered = target
+      attach()
       return
     }
     v.currentTime = target

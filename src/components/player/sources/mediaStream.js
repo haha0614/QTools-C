@@ -8,7 +8,7 @@
  * 契约（在 hlsSource / fileSource 的基础上多三项）：
  *   offset     内容时间 = 流内时间 + offset（流从 offset 秒开始出）
  *   duration   内容总时长（秒，来自索引；流本身的 duration 只是剩余段）
- *   serverSeek(t)  换 url；内核监听到 url 变化会重新 attach，并自动续播
+ *   serverSeek(t)  换 url；内核 seek() 调完立刻自己重挂（url 是普通字段，不走响应式 watch），并自动续播
  */
 export function mediaStreamSource(buildUrl, opts = {}) {
   const make = typeof buildUrl === 'function' ? buildUrl : () => String(buildUrl || '')
