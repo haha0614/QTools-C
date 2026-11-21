@@ -52,9 +52,14 @@
       :bar-controls="barControls"
       :layers="trackLayers"
       :ctx="ctx"
+      :nav="nav"
+      :has-prev="hasPrev"
+      :has-next="hasNext"
       :menu-open="menuOpen"
       :hidden="barHidden"
       @toggle-menu="toggleMenu"
+      @prev="emit('prev')"
+      @next="emit('next')"
     />
   </div>
 </template>
@@ -76,9 +81,13 @@ const props = defineProps({
    */
   features: { type: Array, default: () => [] },
   /** 外框圆角，传 '0' 就是方角（视频不再被裁成圆角） */
-  radius: { type: String, default: '' }
+  radius: { type: String, default: '' },
+  /** 多片连播：nav 为真时控制条出现上一条/下一条（头部不再放这两个按钮） */
+  nav: { type: Boolean, default: false },
+  hasPrev: { type: Boolean, default: false },
+  hasNext: { type: Boolean, default: false }
 })
-const emit = defineEmits(['loadedmetadata', 'loadeddata', 'ended'])
+const emit = defineEmits(['loadedmetadata', 'loadeddata', 'ended', 'prev', 'next'])
 
 const videoEl = ref(null)
 /** 首个数据帧是否已到：到了就把封面层淡出 */

@@ -1,6 +1,12 @@
 <template>
   <div class="mpn" role="dialog" aria-modal="true" aria-label="播放器（新内核）">
     <header class="mpn-head">
+      <!-- 头部对齐旧播放器（p-head）：站点标识 → 标题 → 一行「·」分隔的 meta，右侧只留关闭。
+           上一条/下一条 已挪进控制条（用户 review 第 1 条）。 -->
+      <a class="mpn-brand" href="/" :title="brandTitle" :aria-label="brandTitle" @click="onBrandClick($event)">
+        <BrandMark class="mpn-brand-mark" :size="18" />
+        <span class="mpn-brand-text">{{ brandName }}</span>
+      </a>
       <div class="mpn-info">
         <h2 class="mpn-title" :title="video.title">{{ video.title }}</h2>
         <!-- 六项、顺序、口径沿用旧播放器头部（p-meta，媒体站信息栏仍在读同一套字段） -->
@@ -14,8 +20,6 @@
         </div>
       </div>
       <div class="mpn-acts">
-        <button type="button" :disabled="!hasPrev" @click="emit('prev')">上一条</button>
-        <button type="button" :disabled="!hasNext" @click="emit('next')">下一条</button>
         <button type="button" class="mpn-close" @click="emit('close')">关闭 Esc</button>
       </div>
     </header>
@@ -31,6 +35,11 @@
           :source="source"
           :features="features"
           :cover="coverUrl"
+          :nav="true"
+          :has-prev="hasPrev"
+          :has-next="hasNext"
+          @prev="emit('prev')"
+          @next="emit('next')"
           @loadedmetadata="onMeta"
         />
       </div>
@@ -52,7 +61,10 @@
  *       埋点、封面冻结、预览时间条、设置浮层、字幕样式。
  */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import Player from '@/components/player/Player.vue'
+import BrandMark from '@/components/BrandMark.vue'
+import { BRAND } from '@/utils/brandMark'
 import { useMediaApi } from '@/composables/useMediaApi'
 import { mediaStreamSource } from '@/components/player/sources/mediaStream'
 import { fileSource } from '@/components/player/sources/hls'
@@ -80,6 +92,16 @@ const emit = defineEmits(['close', 'prev', 'next', 'update:quality', 'save-pos',
 
 const api = useMediaApi()
 const playerRef = ref(null)
+
+/** 头部站点标识：与左栏 Logo 同源（BrandMark + BRAND.name），点了回首页 */
+const router = useRouter()
+const brandName = BRAND.name
+const brandTitle = BRAND.name + ' · 回到首页'
+function onBrandClick(e) {
+  e.preventDefault()
+  emit('close')
+  router.push('/')
+}
 
 /**
  * 播不动就自动降一档：orig -> 720 -> 480 -> 360，最低档仍失败就停在这里，
@@ -243,10 +265,24 @@ defineExpose({
 .mpn-head {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   padding: 10px 16px;
   border-bottom: 1px solid var(--el-border-color-lighter, rgba(255, 255, 255, .1));
 }
+/* 站点标识：18px 图标 + 12.5px 品牌名，次级色、hover 提亮 —— 与左栏 Logo 同一套语言 */
+.mpn-brand {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  text-decoration: none;
+  color: var(--el-text-color-secondary, rgba(255, 255, 255, .62));
+  transition: color .15s;
+}
+.mpn-brand:hover { color: var(--el-text-color-primary, #e8eef7); }
+.mpn-brand-mark { color: var(--el-color-primary, #4a9eff); }
+.mpn-brand-text { font-size: 12.5px; letter-spacing: .2px; line-height: 22px; }
 .mpn-info { flex: 1 1 auto; min-width: 0; }
 .mpn-title {
   margin: 0;
@@ -260,10 +296,13 @@ defineExpose({
   margin-top: 3px;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 12px;
+  align-items: center;
   font-size: 11.5px;
   color: var(--el-text-color-secondary, rgba(255, 255, 255, .62));
 }
+/* 旧播放器的分隔口径（p-meta-i + p-meta-i::before）：一个「·」，两侧 7px */
+.mpn-meta > span { white-space: nowrap; }
+.mpn-meta > span + span::before { content: '·'; margin: 0 7px; opacity: .8; }
 .mpn-warn {
   margin: 0;
   padding: 6px 16px;

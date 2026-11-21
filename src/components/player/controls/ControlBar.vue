@@ -3,6 +3,15 @@
     <button type="button" class="qtp-btn" :title="player.state.playing ? '暂停' : '播放'" @click="player.toggle()">
       <span class="qtp-ico">{{ player.state.playing ? '❚❚' : '▶' }}</span>
     </button>
+    <!-- 上一条 / 下一条：旧播放器在控制条里，头部只留关闭（用户 review 第 1 条） -->
+    <template v-if="nav">
+      <button type="button" class="qtp-btn" :disabled="!hasPrev" title="上一条" @click="emit('prev')">
+        <span class="qtp-ico">⏮</span>
+      </button>
+      <button type="button" class="qtp-btn" :disabled="!hasNext" title="下一条" @click="emit('next')">
+        <span class="qtp-ico">⏭</span>
+      </button>
+    </template>
     <span class="qtp-time">{{ fmt(player.state.currentTime) }} / {{ fmt(player.state.duration) }}</span>
 
     <div class="qtp-scrub">
@@ -118,11 +127,15 @@ const props = defineProps({
   barControls: { type: Array, default: () => [] },
   /** 传给插件组件的注册上下文 */
   ctx: { type: Object, default: null },
+  /** 上一条 / 下一条：nav 为真才渲染，hasPrev/hasNext 只控制禁用态 */
+  nav: { type: Boolean, default: false },
+  hasPrev: { type: Boolean, default: false },
+  hasNext: { type: Boolean, default: false },
   menuOpen: { type: Boolean, default: false },
   /** 播放中无操作时隐藏控制条（由 Player 统一管计时；视频画面不受影响） */
   hidden: { type: Boolean, default: false }
 })
-const emit = defineEmits(['toggle-menu'])
+const emit = defineEmits(['toggle-menu', 'prev', 'next'])
 
 const overlayLayers = computed(() => props.layers.filter((l) => (l.mode || 'overlay') === 'overlay'))
 const laneLayers = computed(() => props.layers.filter((l) => l.mode === 'lane'))
@@ -264,7 +277,8 @@ function onScrub(e) { props.player.seek(Number(e.target.value)) }
 .qtp-svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 .qtp-time { color: rgba(255, 255, 255, .82); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-.qtp-scrub { position: relative; flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+/* 左中右三区：进度条两侧多留 6px，把「播放/上一条/下一条/时间」与「音量…全屏」分成两组 */
+.qtp-scrub { position: relative; flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; margin: 0 6px; }
 .qtp-scrub-main { position: relative; height: 26px; min-width: 0; display: flex; align-items: center; }
 .qtp-scrub-buf {
   position: absolute; left: 0; top: 50%; height: 3px; transform: translateY(-50%);
