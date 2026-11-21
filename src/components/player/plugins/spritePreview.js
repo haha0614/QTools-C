@@ -256,7 +256,13 @@ const SpritePreviewLayer = defineComponent({
       label.value = clockText(ratio * dur)
       cardStyle.value = { ...CARD_BASE, ...layout(hostRect, ratio), opacity: '1', visibility: 'visible' }
       open.value = true
-      if (preview) seekClip(ratio * (pdur || dur))
+      // 片段是「整段视频的等间隔缩时」：第 k 帧对应影片 k*dur/frames，成片时长固定在 5~8 秒。
+      // 所以换算必须用成片自己的时长，不能用影片时长（pdur）——用 pdur 会把 30% 处算成 30 秒，
+      // 而片段只有 8 秒，seek 被夹到末尾，肉眼就是"刚过三分之一就显示结尾画面"。
+      if (preview) {
+        const clipDur = Number(clipEl.value && clipEl.value.duration) || 0
+        if (clipDur > 0) seekClip(ratio * clipDur)
+      }
     }
 
     onMounted(() => {
