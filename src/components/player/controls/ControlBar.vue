@@ -64,16 +64,17 @@
 
         <div ref="tailRef" class="qtp-tail">
       <!-- 倍速：点一下直接出一列，选完即生效（不再"点一下切一档"） -->
-      <div class="qtp-btn-wrap qtp-rate-wrap" @mouseleave="rateOpen = false">
+      <div ref="rateWrap" class="qtp-btn-wrap qtp-rate-wrap" @mouseenter="onRateEnter" @mouseleave="onRateLeave">
         <button
           type="button" class="qtp-btn qtp-btn-text"
           :class="{ 'qtp-btn-on': rateOpen }"
           :title="'倍速（当前 ' + player.state.rate + '×）'"
           :aria-expanded="rateOpen ? 'true' : 'false'"
-          @click="rateOpen = !rateOpen"
+          aria-haspopup="menu"
+          @click="toggleRate"
         >{{ player.state.rate }}×</button>
-        <div v-if="rateOpen" class="qtp-pop qtp-pop-rate">
-          <RatePop :player="player" @pick="rateOpen = false" />
+        <div v-if="rateOpen" ref="ratePop" class="qtp-pop qtp-pop-rate" role="menu">
+          <RatePop :player="player" @pick="closeRate" />
         </div>
       </div>
 
@@ -145,7 +146,7 @@ const volActive = ref(false)
 const volFocus = ref(false)
 /** 展开条件：鼠标在上面，或焦点在音量控件里 */
 const volOpen = computed(() => volActive.value || volFocus.value)
-watch(volOpen, (v) => { if (v) rateOpen.value = false })
+watch(volOpen, (v) => { if (v) closeRate() })
 
 /**
  * 展开音量时**只隐藏被滑块盖住的那几个按钮**（原来整组一起淡出，用户指出"没被盖住的也藏了"）。
@@ -193,15 +194,62 @@ function onVolFocusOut(e) {
   volFocus.value = false
 }
 
-/* 倍速下拉：点开、点外部/按 Esc 收起 */
+/* 倍速下拉：点开、点外部/按 Esc/选完收起。
+   安全三角：指针离开按钮后不立刻关，只要还落在「离开点 → 列表底边两端」围成的三角里就继续开
+   —— 按钮与列表之间隔 6px，直着往上会先离开再进入，原先的 @mouseleave 立刻关导致根本选不了。
+   三角之外的第一下移动才关；wrap 的 ::after 又把那 6px 补进命中区，直上直下连离开都不会触发。 */
+const rateWrap = ref(null)
+const ratePop = ref(null)
 const rateOpen = ref(false)
+let rateExit = null
+let rateGuard = 0
+
+function pointInTri(p, a, b, c) {
+  const side = (m, n, o) => (m.x - o.x) * (n.y - o.y) - (n.x - o.x) * (m.y - o.y)
+  const d1 = side(p, a, b), d2 = side(p, b, c), d3 = side(p, c, a)
+  const neg = d1 < 0 || d2 < 0 || d3 < 0
+  const pos = d1 > 0 || d2 > 0 || d3 > 0
+  return !(neg && pos)
+}
+function rateElement() {
+  const p = ratePop.value
+  return p && (p.$el || p)
+}
+function inRateSafe(x, y) {
+  const el = rateElement()
+  if (!el || !rateExit) return false
+  const r = el.getBoundingClientRect()
+  if (!r.width || !r.height) return false
+  if (x >= r.left - 4 && x <= r.right + 4 && y >= r.top - 4 && y <= r.bottom + 4) return true
+  return pointInTri({ x, y }, rateExit, { x: r.left, y: r.bottom }, { x: r.right, y: r.bottom })
+}
+function stopRateGuard() {
+  document.removeEventListener('mousemove', onRateGuardMove, true)
+  if (rateGuard) { clearTimeout(rateGuard); rateGuard = 0 }
+  rateExit = null
+}
+function onRateGuardMove(e) {
+  if (!rateOpen.value) { stopRateGuard(); return }
+  if (!inRateSafe(e.clientX, e.clientY)) closeRate()
+}
+function onRateLeave(e) {
+  if (!rateOpen.value) return
+  rateExit = { x: e.clientX, y: e.clientY }
+  document.addEventListener('mousemove', onRateGuardMove, true)
+  if (rateGuard) clearTimeout(rateGuard)
+  rateGuard = setTimeout(closeRate, 1600)
+}
+function onRateEnter() { stopRateGuard() }
+function closeRate() { stopRateGuard(); rateOpen.value = false }
+function toggleRate() { if (rateOpen.value) closeRate(); else rateOpen.value = true }
+
 function onDocDown(e) {
   if (!rateOpen.value) return
   const t = e && e.target
   const wrap = t && t.closest && t.closest('.qtp-rate-wrap')
-  if (!wrap) rateOpen.value = false
+  if (!wrap) closeRate()
 }
-function onDocKey(e) { if (e && e.key === 'Escape') rateOpen.value = false }
+function onDocKey(e) { if (e && e.key === 'Escape') closeRate() }
 onMounted(() => {
   document.addEventListener('mousedown', onDocDown)
   document.addEventListener('keydown', onDocKey)
@@ -209,6 +257,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('mousedown', onDocDown)
   document.removeEventListener('keydown', onDocKey)
+  stopRateGuard()
 })
 
 function fmt(s) {
@@ -336,6 +385,8 @@ function onScrub(e) { props.player.seek(Number(e.target.value)) }
 .qtp-btn-wrap { position: relative; display: inline-flex; align-items: center; }
 .qtp-vol-slot :deep(.qtp-vol-range) { flex: 1 1 auto; min-width: 0; width: auto; }
 /* 只有倍速那一个需要往上弹列表（音量已经改成原位展开了） */
+/* 按钮与浮层之间那 6px 也归 wrap 命中：光标直着往上走不会先触发 mouseleave */
+.qtp-rate-wrap::after { content: ''; position: absolute; left: -10px; right: -10px; bottom: 100%; height: 6px; }
 .qtp-pop { position: absolute; bottom: calc(100% + 6px); right: 0; z-index: 4; }
 .qtp-pop-rate {
   min-width: 108px;
