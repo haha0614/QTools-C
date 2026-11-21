@@ -157,7 +157,24 @@ const caps = computed(() => mediaCapabilities(props.video, {
  * 源：原画档是直连文件（可 seek），其他档是转码流（不可 seek，走 serverSeek）。
  * 换档时 plan.kind 可能变，所以这里直接按 plan 造适配器。
  */
-const plan = computed(() => mediaPlayPlan(props.video, { api, quality: props.quality, startSec: props.startPos }))
+/**
+ * 换画质时新源不能从头来：记住换档前的播放位置，新源从那里重建，原来在播就接着播。
+ * 打开新片 / 重开播放层时清掉，回到页面给的续播点。
+ */
+const switchAt = ref(0)
+let resumeAfterSwitch = false
+watch(() => props.quality, () => {
+  const s = st()
+  if (!s) return
+  switchAt.value = Math.round((Number(s.currentTime) || 0) * 10) / 10
+  resumeAfterSwitch = !!s.playing
+})
+watch(() => [props.video && props.video.id, props.openSeq], () => {
+  switchAt.value = 0
+  resumeAfterSwitch = false
+})
+
+const plan = computed(() => mediaPlayPlan(props.video, { api, quality: props.quality, startSec: switchAt.value || props.startPos }))
 const source = computed(() => {
   const p = plan.value
   if (p.kind === 'stream') {
@@ -171,10 +188,14 @@ const source = computed(() => {
 
 /** 直连文件的续播：元数据到了再写 currentTime（转码流靠 URL 里的 t） */
 function onMeta() {
-  const p = plan.value
-  if (p.kind !== 'file' || !(p.startAt > 0)) return
   const pl = player()
-  if (pl) pl.seek(p.startAt)
+  if (!pl) return
+  const p = plan.value
+  if (p.kind === 'file' && p.startAt > 0) pl.seek(p.startAt)
+  if (resumeAfterSwitch) {
+    resumeAfterSwitch = false
+    pl.play()
+  }
 }
 
 const coverUrl = computed(() => (props.video && props.video.contentHash

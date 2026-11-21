@@ -89,6 +89,8 @@ export function usePlayerCore(videoRef, getSource) {
     if (cleanup) { try { cleanup() } catch (e) { /* 忽略 */ } cleanup = null }
   }
 
+  /** 只在暂停时起播（换档续播用；不切换播放/暂停状态） */
+  function play() { const v = el(); if (v && v.paused) v.play().catch(() => {}) }
   function toggle() { const v = el(); if (!v) return; if (v.paused) v.play().catch(() => {}); else v.pause() }
   function seek(t) {
     const v = el()
@@ -174,7 +176,7 @@ export function usePlayerCore(videoRef, getSource) {
   return {
     state,
     api,
-    toggle, seek, seekBy, setVolume, toggleMute, setRate, toggleFullscreen,
+    toggle, play, seek, seekBy, setVolume, toggleMute, setRate, toggleFullscreen,
     progress: computed(() => (state.duration ? state.currentTime / state.duration : 0)),
     bufferedRatio: computed(() => (state.duration ? Math.min(1, state.buffered / state.duration) : 0))
   }
