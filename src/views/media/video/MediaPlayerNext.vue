@@ -41,9 +41,32 @@
           @prev="emit('prev')"
           @next="emit('next')"
           @loadedmetadata="onMeta"
+          @ended="onEnded"
         />
       </div>
-      <aside v-show="sideOpen" class="mpn-side"><slot name="side" /></aside>
+      <aside
+        v-show="sideOpen"
+        class="mpn-side"
+        aria-label="视频信息"
+        @mouseenter="sideAreaHover = true"
+        @mouseleave="sideAreaHover = false"
+      ><slot name="side" /></aside>
+      <!-- 信息栏开关（旧播放器 P5.24~P5.26 口径）：贴信息栏左边缘中部的 20×64 竖条，一个 chevron；
+           展开态 ›（收起）、收起态 ‹（展开）。默认不可见，指针进信息栏或按钮本身才浮出。 -->
+      <button
+        class="mpn-side-toggle"
+        :class="{ 'is-shown': sideHover, 'is-open': sideOpen }"
+        type="button"
+        data-role="side-toggle"
+        :aria-pressed="sideOpen"
+        :aria-label="sideOpen ? '收起信息栏' : '展开信息栏'"
+        :title="sideOpen ? '收起信息栏' : '展开信息栏'"
+        @mouseenter="sideBtnHover = true"
+        @mouseleave="sideBtnHover = false"
+        @click="onSideToggle"
+      >
+        <span aria-hidden="true">{{ sideOpen ? '›' : '‹' }}</span>
+      </button>
     </div>
   </div>
 </template>
@@ -202,8 +225,38 @@ const coverUrl = computed(() => (props.video && props.video.contentHash
   ? api.thumbUrl(props.video.contentHash)
   : ''))
 
-/** 侧栏展开状态：页面「信息」入口走 defineExpose 的 openSide/toggleSide */
-const sideOpen = ref(true)
+/** 信息栏状态：折叠开关是栏左边缘那条竖条，跨会话记在本机（沿用旧播放器的键，老用户的偏好直接生效） */
+const SIDE_KEY = 'qt-player-side-open'
+function readSide() {
+  // 缺省 = 展开：只有明确存过 '0' 才收起来
+  try { return localStorage.getItem(SIDE_KEY) !== '0' } catch (e) { return true }
+}
+const narrowMq = typeof window !== 'undefined' && window.matchMedia
+  ? window.matchMedia('(max-width: 1199px)')
+  : null
+const isNarrow = ref(narrowMq ? narrowMq.matches : false)
+/** 窄屏浮层默认收起（一进来就用信息栏盖住/挤掉画面不是常驻栏的本意），且不写回本机偏好 */
+const sideOpen = ref(isNarrow.value ? false : readSide())
+function applySide(v) {
+  sideOpen.value = !!v
+  if (isNarrow.value) return
+  try { localStorage.setItem(SIDE_KEY, v ? '1' : '0') } catch (e) { /* 无痕模式忽略 */ }
+}
+/** 竖条只在「指针在信息栏或按钮上」时浮出（旧 P5.25） */
+const sideAreaHover = ref(false)
+const sideBtnHover = ref(false)
+const sideHover = computed(() => sideAreaHover.value || sideBtnHover.value)
+/** 展开时通知页面刷新「在当前时间加标记」的起手位置 */
+function onSideToggle() {
+  const willOpen = !sideOpen.value
+  applySide(willOpen)
+  if (willOpen) emit('open-meta')
+  else sideAreaHover.value = false
+}
+function onNarrowChange(e) {
+  isNarrow.value = !!e.matches
+  sideOpen.value = isNarrow.value ? false : readSide()
+}
 /** 插件把能力交回来，外壳再转给页面（页面在用旧的 defineExpose 名单） */
 let abApi = null
 let helpApi = null
@@ -226,18 +279,41 @@ function st() {
 function player() {
   return playerRef.value && playerRef.value.player
 }
+/**
+ * 每 5 秒（以及关闭播放层时）结算一次进度，口径照旧播放器 savePosFor：
+ * 距结尾 15 秒内视为看完 → 清续播点 + 服务端最近观看写 pos=0；否则存续播点，在播时顺手上报最近观看。
+ */
 function savePos() {
   const s = st()
   if (!s || !props.video) return
-  emit('save-pos', {
-    id: props.video.id,
-    pos: Math.round((Number(s.currentTime) || 0) * 10) / 10,
-    dur: Number(s.duration) || Number(props.video.dur) || 0
-  })
+  const id = props.video.id
+  const dur = Number(s.duration) || Number(props.video.dur) || 0
+  const pos = Math.round((Number(s.currentTime) || 0) * 10) / 10
+  if (!dur || !isFinite(dur)) return
+  // 旧口径只看「距结尾 ≤15 秒」，但那样没播过的短片（≤15 秒）一进来就算看完，这里补 pos>1 的前提
+  if (pos > 1 && dur - pos <= 15) {
+    emit('clear-pos', id)
+    emit('push-recent', { id, pos: 0, dur, force: true })
+    return
+  }
+  if (pos <= 1) return
+  emit('save-pos', { id, pos, dur })
+  if (s.playing) emit('push-recent', { id, pos, dur })
 }
+
+/** 播完：清续播点，最近观看记成 pos=0（旧播放器 onEnded 同口径） */
+function onEnded() {
+  const id = props.video && props.video.id
+  if (!id) return
+  const dur = Number(st() && st().duration) || Number(props.video.dur) || 0
+  emit('clear-pos', id)
+  emit('push-recent', { id, pos: 0, dur, force: true })
+}
+if (narrowMq && narrowMq.addEventListener) narrowMq.addEventListener('change', onNarrowChange)
 const tick = window.setInterval(savePos, 5000)
 onBeforeUnmount(() => {
   window.clearInterval(tick)
+  if (narrowMq && narrowMq.removeEventListener) narrowMq.removeEventListener('change', onNarrowChange)
   savePos()
 })
 
@@ -264,9 +340,9 @@ defineExpose({
   clearAb: () => { if (abApi) abApi.clear() },
   toggleHelp: () => { if (helpApi) helpApi.toggleHelp() },
   closeHelp: () => (helpApi ? helpApi.closeHelp() : false),
-  openSide: () => { sideOpen.value = true },
-  closeSide: () => { sideOpen.value = false },
-  toggleSide: () => { sideOpen.value = !sideOpen.value },
+  openSide: () => applySide(true),
+  closeSide: () => applySide(false),
+  toggleSide: () => applySide(!sideOpen.value),
   /** 旧播放器的布局结算钩子，新外壳没有对应需求，保留空实现 */
   settle: () => {}
 })
@@ -354,5 +430,41 @@ defineExpose({
   min-width: 0;
   overflow-y: auto;
   border-left: 1px solid var(--el-border-color-lighter, rgba(255, 255, 255, .1));
+}
+/* 信息栏开关（旧 P5.24~P5.26）：20×64 竖条贴栏左边缘中部，展开态 right = 栏宽，收起态贴右边缘；
+   right 参与过渡 → 两态之间是滑动而非瞬移。默认 opacity 0，指针进栏或按钮才浮出；
+   ::before 上下各扩 66px（命中区 196px），视觉尺寸不变。 */
+.mpn-body { position: relative; }
+.mpn-side-toggle {
+  --tog-op: 0;
+  position: absolute;
+  right: 360px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 64px;
+  padding: 0;
+  border: 1px solid var(--el-border-color, rgba(255, 255, 255, .18));
+  border-right: 0;
+  border-radius: 10px 0 0 10px;
+  background: var(--el-bg-color-overlay, rgba(20, 24, 32, .9));
+  color: var(--el-text-color-primary, #e8eef7);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  opacity: var(--tog-op);
+  transition: right .18s ease, opacity .18s ease, background .18s ease, border-color .18s ease, color .18s ease;
+}
+.mpn-side-toggle:not(.is-open) { right: 0; }
+.mpn-side-toggle::before { content: ''; position: absolute; left: 0; right: 0; top: -66px; bottom: -66px; background: transparent; }
+.mpn-side-toggle.is-shown,
+.mpn-side-toggle:hover { --tog-op: 1; }
+.mpn-side-toggle:hover {
+  color: var(--el-color-primary, #4a9eff);
+  border-color: var(--el-color-primary, #4a9eff);
 }
 </style>
