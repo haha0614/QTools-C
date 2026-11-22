@@ -1109,7 +1109,11 @@ const DL_STATE = {
 
 function dlStateText(r) {
   const base = DL_STATE[r.state] || r.state || '—'
-  return r.state === 'importing' || r.state === 'preparing' ? base + ' ' + (r.percent || 0) + '%' : base
+  // 多段帖子入库后后台还在逐段补 v2..vN（8~10 分钟），后端把进度并成 note（"补段 3/12"）
+  const note = r.note ? ' · ' + r.note : ''
+  return r.state === 'importing' || r.state === 'preparing'
+    ? base + note + ' ' + (r.percent || 0) + '%'
+    : base
 }
 
 function dlTime(t) {
