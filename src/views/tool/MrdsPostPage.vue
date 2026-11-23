@@ -31,6 +31,25 @@ const metaText = computed(() => {
     .join(' · ')
 })
 
+/** 归档进度徽标：与正文里的 .md-arch 同一套阈值，字段缺省（老数据）时整块不渲染 */
+const archiveState = computed(() => {
+  const s = String((post.value && post.value.archiveState) || '')
+  return ['pending', 'running', 'done', 'partial', 'failed'].indexOf(s) >= 0 ? s : 'none'
+})
+
+const archivePercent = computed(() => {
+  const n = Number(post.value && post.value.archivePercent)
+  return Number.isFinite(n) && n > 0 ? Math.min(100, Math.round(n)) : 0
+})
+
+const archiveText = computed(() => {
+  const s = archiveState.value
+  if (s === 'pending' || s === 'running') return '归档中 ' + archivePercent.value + '%'
+  if (s === 'done') return '已本地归档'
+  if (s === 'partial' || s === 'failed') return '归档未完成'
+  return ''
+})
+
 const crumbs = computed(() => [
   { label: '工具', to: '/' },
   { label: '每日大赛', to: '/tool/mrds' },
@@ -67,6 +86,7 @@ function backToList() {
     <template #desc>
       <span v-if="metaText" class="mp-meta">{{ metaText }}</span>
       <span v-for="t in tags" :key="t" class="mp-tag">#{{ t }}</span>
+      <span v-if="archiveText" class="mp-tag" :class="'mp-arch-' + archiveState">{{ archiveText }}</span>
     </template>
     <MrdsDetail :post-id="postId" standalone @loaded="onLoaded" />
   </ToolLayout>
@@ -107,4 +127,6 @@ function backToList() {
   font-size: 12px;
   line-height: 1.7;
 }
+/* 归档徽标直接套 .mp-tag；已完成那条只降对比度，不引新颜色 */
+.mp-arch-done { border-color: transparent; background: transparent; color: var(--el-text-color-secondary); }
 </style>
