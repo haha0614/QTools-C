@@ -1273,6 +1273,12 @@ function onSheetPopState() {
   detail.open = false
 }
 
+// 封面文件可能不存在（历史数据里 cover 指向的文件没落盘，或源站图被清理）：
+// 一次加载失败就把这一行的 cover 清成空串，模板马上换成占位文字，不留在页面上当破图。
+function coverFail(row) {
+  if (row && row.cover) row.cover = ''
+}
+
 function openDetail(row, ev) {
   // 窄屏不弹窗：直接进整页路由（/tool/mrds/post/:id）。
   // 系统返回时靠 ?restore=1 那套"页窗口 + 滚动位置"快照恢复，弹窗方案做不到（会被钳到顶）。
@@ -1903,7 +1909,7 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
             @click="openDetail(row)"
           >
             <div class="mr-fcover">
-              <img v-if="row.cover" :src="row.cover" alt="" loading="lazy" />
+              <img v-if="row.cover" :src="row.cover" alt="" loading="lazy" @error="coverFail(row)" />
               <span v-else class="mr-cover-ph">{{ row.category || '视频' }}</span>
             </div>
             <h3 class="mr-ftitle" :title="row.title">{{ row.title }}</h3>
@@ -1921,7 +1927,7 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
         <div class="mr-pinned-grid">
           <article v-for="row in pinned" :key="row.id" class="mr-pcard" @click="openDetail(row, $event)">
             <div class="mr-pcover">
-              <img v-if="row.cover" :src="row.cover" alt="" loading="lazy" />
+              <img v-if="row.cover" :src="row.cover" alt="" loading="lazy" @error="coverFail(row)" />
               <span v-else class="mr-cover-ph">{{ row.category || '视频' }}</span>
               <span class="mr-pin">置顶</span>
             </div>
@@ -1986,7 +1992,7 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
           @click="openDetail(row, $event)"
         >
           <div class="mr-cover">
-            <img v-if="row.cover" :src="row.cover" alt="" loading="lazy" />
+            <img v-if="row.cover" :src="row.cover" alt="" loading="lazy" @error="coverFail(row)" />
             <span v-else class="mr-cover-ph">{{ row.category || '视频' }}</span>
             <span v-if="!Number(row.hasDetail)" class="mr-todo">待抓</span>
             <button
@@ -2014,7 +2020,7 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
       <!-- 列表 -->
       <div v-else-if="view === 'list'" class="mr-list">
         <article v-for="row in visibleRows" :key="row.id" class="mr-row" :data-post-id="row.id" @click="openDetail(row, $event)">
-          <div class="mr-row-cover"><img v-if="row.cover" :src="row.cover" alt="" loading="lazy" /><span v-else>{{ row.category || '视频' }}</span></div>
+          <div class="mr-row-cover"><img v-if="row.cover" :src="row.cover" alt="" loading="lazy" @error="coverFail(row)" /><span v-else>{{ row.category || '视频' }}</span></div>
           <div class="mr-row-main">
             <h3 class="mr-title">{{ row.title }}</h3>
             <div class="mr-tagline"><span v-for="t in (row.tags || [])" :key="t" class="mr-tag">#{{ t }}</span></div>
