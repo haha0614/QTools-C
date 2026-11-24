@@ -1442,7 +1442,25 @@ function saveListState(anchorInfo) {
     rows: rows.value,
     featured: featured.value,
     pinned: pinned.value,
-    facets: { ...facets }
+    facets: { ...facets },
+    // 筛选条件也一起存：以前返回列表 chip 会变回「全部」、数据也跟着变，
+    // 而快照里的 pageStart/page/anchor 是按筛选后的数据集算的 ——
+    // 等于用"过滤后的行号"去索引"全量数据"，位置必然错。
+    filters: {
+      q: q.value,
+      category: category.value,
+      tag: tag.value,
+      tags: tagsSelected.value.slice(),
+      dateFrom: dateFrom.value,
+      dateTo: dateTo.value,
+      dateMode: dateMode.value,
+      dateAsFilter: dateAsFilter.value,
+      datePickerValue: datePickerValue.value,
+      dateJumped: dateJumped.value,
+      videoType: videoType.value,
+      minVideos: minVideos.value,
+      orientation: orientation.value
+    }
   }
   try {
     window.sessionStorage.setItem(LIST_STATE_KEY, JSON.stringify(payload))
@@ -1458,6 +1476,30 @@ function saveListState(anchorInfo) {
       /* 放弃快照，回退成普通加载 */
     }
   }
+}
+
+/**
+ * 把快照里的筛选条件回填到当前 ref。
+ * 必须在首屏取数之前调用：列表的 POST 参数（q/category/tag/date/...）都读这些 ref，
+ * 先恢复条件再取数，页码和锚点才和离开时是同一个数据集。
+ * 注意：只能碰 setup 上半段声明的这些 ref，未声明的字段一律跳过（老快照/字段缺失都不会炸）。
+ */
+function applySnapshotFilters(f) {
+  if (!f || typeof f !== 'object') return
+  const setStr = (ref, v) => { if (typeof v === 'string') ref.value = v }
+  setStr(q, f.q)
+  setStr(category, f.category)
+  setStr(tag, f.tag)
+  if (Array.isArray(f.tags)) tagsSelected.value = f.tags.filter((x) => typeof x === 'string')
+  setStr(dateFrom, f.dateFrom)
+  setStr(dateTo, f.dateTo)
+  setStr(dateMode, f.dateMode)
+  setStr(dateJumped, f.dateJumped)
+  setStr(videoType, f.videoType)
+  setStr(minVideos, f.minVideos)
+  setStr(orientation, f.orientation)
+  if (typeof f.dateAsFilter === 'boolean') dateAsFilter.value = f.dateAsFilter
+  if (f.datePickerValue !== undefined) datePickerValue.value = f.datePickerValue
 }
 
 function readListState() {
@@ -1669,6 +1711,8 @@ onMounted(async () => {
   if (snapshot) {
     restoring.value = true
     try {
+      // 先回填筛选条件：它决定接下来按什么数据集取数，也决定 chip 的选中态。
+      applySnapshotFilters(snapshot.filters)
       clearListState()
       const from = Math.max(1, Number(snapshot.pageStart) || 1)
       const to = Math.max(from, Number(snapshot.page) || from)
@@ -1722,8 +1766,16 @@ onMounted(async () => {
         }
         rows.value = collected
       }
-      page.value = winTo
-      pageStart.value = winFrom
+      // page/pageStart 必须等于"当前 rows 实际覆盖的页范围"：
+      // 有缓存时 rows 是快照里的 pageStart..page（可能是两页），若照旧只写 winTo，
+      // 之后点「加载更多」会把已经加载过的那页再请求一遍 —— 去重后一条都不新增。
+      if (cached) {
+        pageStart.value = from
+        page.value = to
+      } else {
+        pageStart.value = winFrom
+        page.value = winTo
+      }
       if (!cached) {
         // ★ 先等精选/置顶/分类这些异步区块渲染完再滚：
         //   它们没渲染时文档矮，scrollTo 会被钳到中途（先看到图一的位置），
