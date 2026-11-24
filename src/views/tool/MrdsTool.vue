@@ -128,8 +128,16 @@ const pinned = ref([])
 
 const detail = reactive({ open: false, row: null })
 
-/** 正在从整页返回恢复列表：期间隐藏内容，避免先闪一下顶部再跳到位 */
-const restoring = ref(Boolean(route.query && route.query.restore === '1'))
+/**
+ * 正在从整页返回恢复列表：期间隐藏内容，避免先闪一下顶部再跳到位。
+ * 初值必须表示「这次真的能恢复」：以前只看 URL 上的 restore=1，
+ * 于是没有快照的返回（下载记录进详情、直接打开或刷新详情页）也会进入骨架屏状态，
+ * 而复位只写在「有快照」那条分支里 —— 整页永久 opacity:0，只剩骨架屏，只能刷新。
+ */
+const bootSnapshot = readListState()
+const bootFreshReturn = Boolean(bootSnapshot && bootSnapshot.at && Date.now() - Number(bootSnapshot.at) < 30 * 60 * 1000)
+const bootRestore = Boolean(bootSnapshot && Number(bootSnapshot.page) >= 1 && ((route.query && route.query.restore === '1') || bootFreshReturn))
+const restoring = ref(bootRestore)
 
 // ========== 上次浏览位置 ==========
 // 只记"最后点开的那条"的 id/标题：刷新或几天后再来，能一键定位回去，
@@ -1161,11 +1169,14 @@ function dlModeShort(r) {
 
 const dlRows = computed(() => dlRecords.value.map((r) => ({ r, ph: dlPhase(r) })))
 
-// 点记录 → 打开对应帖子；先把浮窗/弹窗关掉，别让它们压在新页面上
+// 点记录 → 打开对应帖子；先把浮窗/弹窗关掉，别让它们压在新页面上。
+// 这是一次普通路由跳转（没有走 goFullPage 那套快照），所以离开前在这里补一份：
+// 否则返回列表时无快照可用 —— 整页重载、回到第 1 页，而且以前会卡在骨架屏上。
 function dlOpenPost(r) {
   if (!r || !r.postId) return
   dlOpen.value = false
   dlDialog.value = false
+  saveListState(viewportAnchorInfo() || { id: '', top: 0, page: page.value })
   router.push('/tool/mrds/post/' + encodeURIComponent(String(r.postId)))
 }
 
@@ -1414,22 +1425,38 @@ watch(() => detail.open, (open) => {
 /** 弹窗 → 整页：刷新、分享、收藏都以这个地址为准 */
 /** 离开列表（去整页详情）前快照当前列表状态 */
 function saveListState(anchorInfo) {
+  const payload = {
+    total: total.value,
+    page: page.value,
+    pageStart: pageStart.value,
+    size: size.value,
+    scrollY: Math.round(currentScrollY()),
+    // 锚点用"用户点的那张卡"：它在当前窗口里，恢复时一定存在；
+    // 之前取"视口第一张卡"，一开弹窗它可能已被滚出视口、甚至不在恢复的页窗口内，
+    // 于是对齐失效、位置整体错掉。
+    anchor: anchorInfo,
+    at: Date.now(),
+    // 连条目一起存：返回时直接铺上，不用再等一轮 0.5–1.1s 的接口往返（返回慢的主因）。
+    // 条目很轻（封面是 URL 不是 base64，24 条约 11KB），一个页窗口远不到 5MB 配额。
+    // 分类/精选/置顶也一起存：它们异步长出来会把列表往下顶，返回时看到的位置会"跳"一下。
+    rows: rows.value,
+    featured: featured.value,
+    pinned: pinned.value,
+    facets: { ...facets }
+  }
   try {
-    // 只存"页窗口 + 滚动位置"，不存条目本身：
-    // 封面是 base64 内联图，96 条就远超 sessionStorage 的 5MB 配额（存整页会直接抛异常）
-    window.sessionStorage.setItem(LIST_STATE_KEY, JSON.stringify({
-      total: total.value,
-      page: page.value,
-      pageStart: pageStart.value,
-      scrollY: Math.round(currentScrollY()),
-      // 锚点用"用户点的那张卡"：它在当前窗口里，恢复时一定存在；
-      // 之前取"视口第一张卡"，一开弹窗它可能已被滚出视口、甚至不在恢复的页窗口内，
-      // 于是对齐失效、位置整体错掉。
-      anchor: anchorInfo,
-      at: Date.now()
-    }))
+    window.sessionStorage.setItem(LIST_STATE_KEY, JSON.stringify(payload))
   } catch (err) {
-    /* 隐私模式 / 超限：放弃快照，回退成普通加载 */
+    // 隐私模式 / 万一超限：退化成只存位置，恢复时按老路子重新拉条目
+    try {
+      delete payload.rows
+      delete payload.featured
+      delete payload.pinned
+      delete payload.facets
+      window.sessionStorage.setItem(LIST_STATE_KEY, JSON.stringify(payload))
+    } catch (err2) {
+      /* 放弃快照，回退成普通加载 */
+    }
   }
 }
 
@@ -1448,6 +1475,51 @@ function clearListState() {
   } catch (err) {
     /* 忽略 */
   }
+}
+
+/**
+ * 当前视口顶部那张卡 → 快照锚点（"我正在看这一条"）。
+ * 收藏、下载记录这类入口没经过 goFullPage，离开前用它在现场补一份快照。
+ */
+function viewportAnchorInfo() {
+  const cards = document.querySelectorAll('[data-post-id]')
+  for (const el of cards) {
+    if (el.getBoundingClientRect().bottom <= 80) continue
+    const id = el.getAttribute('data-post-id')
+    const idx = rows.value.findIndex((r) => String(r.id) === String(id))
+    return {
+      id: String(id),
+      top: Math.round(el.getBoundingClientRect().top),
+      page: idx >= 0 ? pageStart.value + Math.floor(idx / size.value) : page.value
+    }
+  }
+  return null
+}
+
+/**
+ * 把视口对齐到"离开时那张卡"。
+ * 反复对齐是因为文档高度还在长（图片按比例占位后才稳定）；预算给短：
+ * 命中快照缓存时文档一两帧就到位，没必要固定等满 1200ms，对不上就按 scrollY 收尾即刻放行。
+ */
+async function alignListAnchor(anchor, targetY, budget) {
+  const t0 = Date.now()
+  await new Promise((resolve) => {
+    const tick = () => {
+      const el = anchor && anchor.id ? document.querySelector('[data-post-id="' + anchor.id + '"]') : null
+      if (el && typeof anchor.top === 'number') {
+        const delta = Math.round(el.getBoundingClientRect().top) - anchor.top
+        if (Math.abs(delta) > 1) window.scrollBy(0, delta)
+      } else {
+        window.scrollTo(0, targetY)
+      }
+      const ok = el && typeof anchor.top === 'number'
+        ? Math.abs(Math.round(el.getBoundingClientRect().top) - anchor.top) <= 2
+        : Math.abs(window.scrollY - targetY) <= 2
+      if (ok || Date.now() - t0 > budget) resolve()
+      else requestAnimationFrame(tick)
+    }
+    tick()
+  })
 }
 
 /**
@@ -1588,92 +1660,88 @@ onMounted(async () => {
     const pending = dlRecords.value.some((r) => ['queued', 'preparing', 'importing', 'pending_import'].includes(r.state))
     if (dlOpen.value || pending) loadDownloads()
   }, 4000)
-  // 必须等首屏那一次 load 完成再定位：否则它在后面返回时会把跳页结果整体覆盖掉
   // 从整页详情返回：把离开前的列表原样恢复（条目、页窗口、滚动位置）。
   // 必须在首屏 load 之前接管，否则 load(true) 会先把列表重置成第 1 页，
   // 文档高度不够时 scrollTo 会被钳到顶（就是"回到最上方"的成因）。
-  const savedState = readListState()
-  const freshReturn = !!(savedState && savedState.at && (Date.now() - Number(savedState.at) < 30 * 60 * 1000))
-  const wantRestore = (route.query && route.query.restore === '1') || freshReturn
-  const snapshot = wantRestore ? savedState : null
-  if (wantRestore && savedState) clearListState()
-  if (snapshot && Number(snapshot.page) >= 1) {
-    // 按离开前的页窗口把这几页重新拉回来（一页 24 条，几页也就几个请求）
-    const from = Math.max(1, Number(snapshot.pageStart) || 1)
-    const to = Math.max(from, Number(snapshot.page) || from)
-    // 只恢复"离开时所在页附近"的窗口，而不是从第 1 页一路拉过来：
-    // 否则翻到第 30 页再返回，就要拉 30 个页面的数据，白屏时间随深度线性变长。
-    // 取 to-1..to 两页，配合上方"↑ 加载更新的"逐页往上补。
-    const anchorPage = snapshot.anchor && snapshot.anchor.page ? Number(snapshot.anchor.page) : to
-    const winTo = Math.max(1, Math.min(to, anchorPage))
-    const winFrom = Math.max(1, winTo - 1)
-    const pageNums = []
-    for (let n = winFrom; n <= winTo; n += 1) pageNums.push(n)
-    const pageResults = await Promise.all(pageNums.map((n) => request({
-      url: '/tool/web/posts',
-      method: 'get',
-      silent: true,
-      headers: ownerHeaders(),
-      params: {
-        source: SOURCE,
-        page: n,
-        size: size.value,
-        q: q.value || undefined,
-        category: category.value || undefined,
-        tag: tag.value || undefined,
-        tags: tagsSelected.value.length ? tagsSelected.value.join(',') : undefined,
-        dateFrom: dateBounds().from,
-        dateTo: dateBounds().to,
-          videoType: dateBounds().videoType,
-          minVideos: dateBounds().minVideos, orientation: orientation.value || undefined
-      }
-    }).catch(() => null)))
-    const collected = []
-    for (const res of pageResults) {
-      const data = unwrap(res) || {}
-      const list = Array.isArray(data.rows) ? data.rows : []
-      const seen = new Set(collected.map((r) => String(r.id)))
-      collected.push(...list.filter((r) => !seen.has(String(r.id))))
-      total.value = Number(data.total) || total.value
-    }
-    rows.value = collected
-    page.value = winTo
-    pageStart.value = winFrom
-    clearListState()
-    // ★ 先等精选/置顶/分类这些异步区块渲染完再滚：
-    //   它们没渲染时文档矮，scrollTo 会被钳到中途（先看到图一的位置），
-    //   等区块出现文档变高，再补一次滚动就"跳"到图二 —— 用户看到的两次跳跃就是这么来的。
+  // 快照能不能用已经在 setup 里算过（bootRestore）：不能用就根本不进这个分支，
+  // 也就不会留下骨架屏状态（以前无快照的返回会永久卡在骨架上）。
+  const snapshot = bootRestore ? bootSnapshot : null
+  if (snapshot) {
     restoring.value = true
-    await widgetLoads
-    await nextTick()
-    const targetY = Number(snapshot.scrollY) || 0
-    const anchor = snapshot.anchor || null
-    // 文档高度是逐步长出来的（图片按比例占位后才稳定），所以反复对齐到目标，
-    // 直到真的到了或者超时，最后再显示出来——用户只会看到"已经在那儿"。
-    const focusId = Number(route.query && route.query.focus)
-    const t0 = Date.now()
-    await new Promise((resolve) => {
-      const tick = () => {
-        const el = anchor && anchor.id ? document.querySelector('[data-post-id="' + anchor.id + '"]') : null
-        if (el && typeof anchor.top === 'number') {
-          // 用「当时视口顶部那张卡」对齐，位置和内容都对得上
-          const delta = Math.round(el.getBoundingClientRect().top) - anchor.top
-          if (Math.abs(delta) > 1) window.scrollBy(0, delta)
-        } else {
-          window.scrollTo(0, targetY)
+    try {
+      clearListState()
+      const from = Math.max(1, Number(snapshot.pageStart) || 1)
+      const to = Math.max(from, Number(snapshot.page) || from)
+      // 只恢复"离开时所在页附近"的窗口，而不是从第 1 页一路拉过来：
+      // 否则翻到第 30 页再返回，就要拉 30 个页面的数据，白屏时间随深度线性变长。
+      // 取 to-1..to 两页，配合上方"↑ 加载更新的"逐页往上补。
+      const anchorPage = snapshot.anchor && snapshot.anchor.page ? Number(snapshot.anchor.page) : to
+      const winTo = Math.max(1, Math.min(to, anchorPage))
+      const winFrom = Math.max(1, winTo - 1)
+      // 快照里带着离开时那几页的条目（还有分类/精选/置顶）：直接铺上，
+      // 返回时就不用再等一轮 0.5–1.1s 的接口（这是"返回慢"的主因）。
+      // 老版本快照没有这些字段，退回按页重拉，行为与以前一致。
+      const cached = Array.isArray(snapshot.rows) && snapshot.rows.length > 0
+      if (snapshot.size) size.value = Number(snapshot.size) || size.value
+      if (cached) {
+        rows.value = snapshot.rows
+        total.value = Number(snapshot.total) || total.value
+        if (snapshot.facets && typeof snapshot.facets === 'object') Object.assign(facets, snapshot.facets)
+        if (Array.isArray(snapshot.featured)) featured.value = snapshot.featured
+        if (Array.isArray(snapshot.pinned)) pinned.value = snapshot.pinned
+      } else {
+        // 按离开前的页窗口把这几页重新拉回来（一页 24 条，几页也就几个请求）
+        const pageNums = []
+        for (let n = winFrom; n <= winTo; n += 1) pageNums.push(n)
+        const pageResults = await Promise.all(pageNums.map((n) => request({
+          url: '/tool/web/posts',
+          method: 'get',
+          silent: true,
+          headers: ownerHeaders(),
+          params: {
+            source: SOURCE,
+            page: n,
+            size: size.value,
+            q: q.value || undefined,
+            category: category.value || undefined,
+            tag: tag.value || undefined,
+            tags: tagsSelected.value.length ? tagsSelected.value.join(',') : undefined,
+            dateFrom: dateBounds().from,
+            dateTo: dateBounds().to,
+            videoType: dateBounds().videoType,
+            minVideos: dateBounds().minVideos, orientation: orientation.value || undefined
+          }
+        }).catch(() => null)))
+        const collected = []
+        for (const res of pageResults) {
+          const data = unwrap(res) || {}
+          const list = Array.isArray(data.rows) ? data.rows : []
+          const seen = new Set(collected.map((r) => String(r.id)))
+          collected.push(...list.filter((r) => !seen.has(String(r.id))))
+          total.value = Number(data.total) || total.value
         }
-        const ok = el && typeof anchor.top === 'number'
-          ? Math.abs(Math.round(el.getBoundingClientRect().top) - anchor.top) <= 2
-          : Math.abs(window.scrollY - targetY) <= 2
-        if (ok || Date.now() - t0 > 1200) resolve()
-        else requestAnimationFrame(tick)
+        rows.value = collected
       }
-      tick()
-    })
-    if (window.__mrDebugRestore) {
-      console.log('[restore]', JSON.stringify({ targetY, y: Math.round(window.scrollY), h: document.documentElement.scrollHeight, cards: rows.value.length }))
+      page.value = winTo
+      pageStart.value = winFrom
+      if (!cached) {
+        // ★ 先等精选/置顶/分类这些异步区块渲染完再滚：
+        //   它们没渲染时文档矮，scrollTo 会被钳到中途（先看到图一的位置），
+        //   等区块出现文档变高，再补一次滚动就"跳"到图二 —— 用户看到的两次跳跃就是这么来的。
+        await widgetLoads
+      }
+      await nextTick()
+      const targetY = Number(snapshot.scrollY) || 0
+      // 命中快照缓存时文档一两帧就到位，给 240ms 足够；没有缓存时区块还在长，留原来的 1200ms。
+      await alignListAnchor(snapshot.anchor || null, targetY, cached ? 240 : 1200)
+      if (window.__mrDebugRestore) {
+        console.log('[restore]', JSON.stringify({ targetY, y: Math.round(window.scrollY), h: document.documentElement.scrollHeight, cards: rows.value.length, cached }))
+      }
+    } finally {
+      // 无论如何都要揭幕：复位以前只写在正常路径上，元素缺失或中途抛错就会永久停在骨架屏
+      // （数据其实都在 DOM 里，只是整页 opacity:0 且不可点）。
+      restoring.value = false
     }
-    restoring.value = false
     // 清掉 URL 上的 restore/focus 参数用 history.replaceState，而不是 router.replace：
     // router.replace 会触发一次导航，路由的 scrollBehavior 立刻把页面顶回 0（刚恢复的位置就没了）
     try {
