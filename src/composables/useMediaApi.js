@@ -955,6 +955,32 @@ export function itemThumbUrl(item) {
   return ''
 }
 
+/* --------------------------------------------- 作品（一个源站帖子 = 一个作品，含 N 段） */
+/* 契约：GET /api/media/works?keyword=&limit=60&offset=0 → { total, rows:[…] }
+        GET /api/media/work/{id} → { id, postId, sourceId, title, coverPath, segCount, totalDur,
+                                     state, blocks[], segments:[{seq,videoId,relPath,dur,w,h,poster,streamUrl}], tags[] }
+   数据由「在每日大赛里收藏一条」时自动写入，空库就是 total=0。
+   silent：作品页自己渲染加载 / 空 / 失败三态，失败时不弹全局 ElMessage 抢焦点。 */
+
+/** 作品列表（标题关键词 + 分页） 后端：GET /api/media/works */
+export function listWorks(options) {
+  const opt = options || {}
+  return mediaRequest({
+    url: '/works',
+    params: {
+      keyword: opt.keyword == null ? '' : String(opt.keyword),
+      limit: opt.limit == null ? 60 : opt.limit,
+      offset: opt.offset == null ? 0 : opt.offset
+    },
+    silent: true
+  })
+}
+
+/** 单个作品（封面 / 正文 blocks / 标签 / 逐段的 /api/media/file Range 地址） 后端：GET /api/media/work/{id} */
+export function getWork(id, options) {
+  return mediaRequest({ url: '/work/' + encodeURIComponent(String(id == null ? '' : id)), silent: true })
+}
+
 const mediaApi = {
   // 数据层
   getIndex,
@@ -1013,6 +1039,9 @@ const mediaApi = {
   deletePlaylist,
   addPlaylistVideos,
   removePlaylistVideo,
+  // 作品（每日大赛收藏时自动生成的帖子级条目，含 N 段）
+  listWorks,
+  getWork,
   // URL 构造
   videoThumbUrl,
   spriteUrl,

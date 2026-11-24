@@ -198,6 +198,8 @@ const NAV_GROUPS = [
     items: [
       // P4.3：/media 只做精确匹配（exact），否则它会把 /media/photos、/media/persons 一起点亮
       { to: '/media', label: '视频库', icon: VideoPlay, exact: true, online: true },
+      // 作品（2026-11-24）：一个源站帖子 = 一个作品，含多段视频 + 图文描述；数据来自 media_work
+      { to: '/media/works', label: '作品', icon: List, also: ['/media/work/'], online: true },
       { to: '/media/photos', label: '图片站', icon: Picture, online: true },
       // 人物墙（P3-B）：/media/person/:id 也走这条高亮（P4.3 起由 also 显式声明，不再靠 /media 前缀兜底）
       { to: '/media/persons', label: '人物', icon: UserFilled, also: ['/media/person'], online: true },

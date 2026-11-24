@@ -80,8 +80,8 @@
             <p class="md-meta">{{ row.category }} · {{ row.publishedAt }} · 源站 id {{ row.sourceId }}</p>
           </template>
 
-          <!-- 本地归档进度：archiveState 缺省（老数据）时整块不渲染 -->
-          <p v-if="archiveText && !standalone" class="md-arch" :class="'md-arch-' + archiveState">{{ archiveText }}</p>
+          <!-- 保存到视频站的进度徽标：mediaState 为 none/缺省时整块不渲染 -->
+          <p v-if="mediaText && !standalone" class="md-arch" :class="'md-arch-' + mediaState">{{ mediaText }}</p>
 
           <div class="md-content">
             <template v-for="(item, i) in layout" :key="i">
@@ -909,22 +909,27 @@ const videoCount = computed(() => {
 })
 
 /**
- * 每个视频的播放地址。
- * 已入库的直接用本地 mp4；没入库的逐条走代理（i=序号），源站签名过期也不影响我们。
+ * 每个视频的播放地址：保存完成且段数对得上时用后端给的本地文件，
+ * 否则逐条走代理（i=序号），源站签名过期也不影响我们。
  */
+/** 整组本地文件：只有 streams 段数与帖子段数完全一致才采用（部分失败时后端只给前几段） */
+const mediaFiles = computed(() => {
+  const n = videoCount.value
+  const w = row.value && row.value.mediaWork
+  const files = w ? w.streams : null
+  return Array.isArray(files) && files.length === n ? files : null
+})
+
 const videoUrls = computed(() => {
   const id = row.value && row.value.id
   const n = videoCount.value
   if (!id || n < 1) return []
-  // 归档完成：后端按段序给出真实存在的 mp4（第 i 项就是第 i 段），段数对得上才整组采用
-  const files = row.value.videoFiles
-  if (Array.isArray(files) && files.length === n) return files
-  // 已入库的本地文件只有第一段（video.mp4）；多段时必须继续走代理，否则帖子里只剩 1 个视频
-  if (row.value.videoFile && n === 1) return [row.value.videoFile]
+  // 保存完成：后端按段序给出真实存在的本地文件（第 i 项就是第 i 段）
+  if (mediaFiles.value) return mediaFiles.value.slice()
+  // 否则逐条走代理（i=序号），源站签名过期也不影响我们
   return Array.from({ length: n }, (_, i) => '/api/tool/web/hls/' + id + '/playlist.m3u8?i=' + i)
 })
 
-/** 每段视频的源适配器：HLS 清单失效重试全在适配器内部 */
 /** 每段视频各自的宽高比（metadata 到达后才知道）。多段帖里各段画幅可能不同，
     共用一份比例会让第 2 段以后出现黑边 */
 const videoRatios = ref({})
@@ -1025,62 +1030,56 @@ function onMeta(i, e) {
   }
 }
 
-/** 本地 mp4 直连（nginx 的 /web/... 支持 Range）；query 不影响判断，其余仍走 HLS 代理清单 */
-function isLocalMp4(url) {
-  const s = String(url || '')
-  const cut = s.search(/[?#]/)
-  return /\.mp4$/i.test(cut >= 0 ? s.slice(0, cut) : s)
-}
-
-const playerSources = computed(() => videoUrls.value.map((u) => (isLocalMp4(u) ? fileSource(u) : hlsSource(u))))
-
-/** 本地归档状态：老数据没有该字段 → none（不显示徽标） */
-const archiveState = computed(() => {
-  const s = String((row.value && row.value.archiveState) || '')
-  return ['pending', 'running', 'done', 'partial', 'failed'].indexOf(s) >= 0 ? s : 'none'
+/** 播放源：整组本地文件走 fileSource（/api/media/file 支持 Range 206），否则每段走 HLS 代理清单 */
+const playerSources = computed(() => {
+  const files = mediaFiles.value
+  if (files) return files.map((u) => fileSource(u))
+  return videoUrls.value.map((u) => hlsSource(u))
 })
 
-const archivePercent = computed(() => {
-  const n = Number(row.value && row.value.archivePercent)
+/** 保存到视频站的状态：老数据没有该字段 → none（不显示徽标） */
+const mediaState = computed(() => {
+  const s = String((row.value && row.value.mediaState) || '')
+  return ['none', 'queued', 'running', 'done', 'partial', 'failed'].indexOf(s) >= 0 ? s : 'none'
+})
+
+const mediaPercent = computed(() => {
+  const n = Number(row.value && row.value.mediaPercent)
   return Number.isFinite(n) && n > 0 ? Math.min(100, Math.round(n)) : 0
 })
 
-/** 归档徽标文案；空串 = 不渲染 */
-const archiveText = computed(() => {
-  const s = archiveState.value
-  if (s === 'pending' || s === 'running') return '归档中 ' + archivePercent.value + '%'
-  if (s === 'done') return '已本地归档'
-  if (s === 'partial' || s === 'failed') return '归档未完成'
+/** 保存徽标文案；空串 = 不渲染 */
+const mediaText = computed(() => {
+  const s = mediaState.value
+  if (s === 'queued' || s === 'running') return '保存中 ' + mediaPercent.value + '%'
+  if (s === 'done') return '已保存到视频站'
+  if (s === 'partial' || s === 'failed') return '保存未完成'
   return ''
 })
 
 /**
- * 归档进度跟拍：pending/running 时每 5 秒重取一次详情（与 ensureDetail 同一套「请求 → 覆盖 row → emit」写法），
- * 变成 done/partial/failed/none 或进度满 100 就停；已经有一个定时器时不重复开第二个。
+ * 保存进度跟拍：queued/running 时每 5 秒重取一次详情（与 ensureDetail 同一套「请求 → 覆盖 row → emit」写法），
+ * 变成 done/partial/failed/none 就停；已经有一个定时器时不重复开第二个。
+ * 每次覆盖 row 后 playback 的 url 字符串不变，播放器不会因为跟拍重启。
  */
-let archivePollTimer = null
+let mediaPollTimer = null
 
-function stopArchivePoll() {
-  if (archivePollTimer) {
-    clearInterval(archivePollTimer)
-    archivePollTimer = null
+function stopMediaPoll() {
+  if (mediaPollTimer) {
+    clearInterval(mediaPollTimer)
+    mediaPollTimer = null
   }
 }
 
-function ensureArchivePoll() {
-  const s = archiveState.value
+function ensureMediaPoll() {
+  const s = mediaState.value
   const id = row.value && row.value.id
-  if ((s !== 'pending' && s !== 'running') || !id) {
-    stopArchivePoll()
+  if ((s !== 'queued' && s !== 'running') || !id) {
+    stopMediaPoll()
     return
   }
-  if (archivePollTimer) return
-  archivePollTimer = setInterval(async () => {
-    // 进度已经满了就不用再请求：后端 running+100 与 done 之间没有额外信息
-    if (archivePercent.value >= 100) {
-      stopArchivePoll()
-      return
-    }
+  if (mediaPollTimer) return
+  mediaPollTimer = setInterval(async () => {
     try {
       const data = unwrap(await request({ url: '/tool/web/post/' + id, method: 'get', silent: true }))
       if (data && data.title) {
@@ -1090,12 +1089,13 @@ function ensureArchivePoll() {
     } catch (err) {
       /* 单拍失败不打断，下一拍再试 */
     }
-    if (archiveState.value === 'done' || archivePercent.value >= 100) stopArchivePoll()
+    // 只按状态收尾：覆盖 row 后 mediaState 已是最新值，done/partial/failed/none 一律停
+    if (mediaState.value !== 'queued' && mediaState.value !== 'running') stopMediaPoll()
   }, 5000)
 }
 
-// 归档中途打开页面、或归档在页面开着的时候结束，都由这里接管定时器
-watch([archiveState, () => (row.value && row.value.id)], ensureArchivePoll)
+// 排队中途打开页面、或保存过程在页面开着的时候结束，都由这里接管定时器
+watch([mediaState, () => (row.value && row.value.id)], ensureMediaPoll)
 
 /** 缓冲期间显示的封面：卡片封面 → 图集第一张（都没有就显示黑底） */
 const coverSrc = computed(() => {
@@ -1247,7 +1247,7 @@ function showFirstFrame(e) {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onLbKey)
-  stopArchivePoll()
+  stopMediaPoll()
   if (detailPollTimer) {
     clearInterval(detailPollTimer)
     detailPollTimer = null
@@ -1340,7 +1340,7 @@ watch(() => [props.postId, props.post], load)
 .md-tags { display: flex; gap: 6px; flex-wrap: wrap; }
 .md-tag { font-size: 11.5px; padding: 2px 9px; border-radius: 999px; background: var(--el-fill-color-light); color: var(--el-text-color-regular); }
 .md-meta { margin: 8px 0 0; font-size: 12px; color: var(--el-text-color-secondary); }
-/* 归档徽标：沿用 .md-tag 的胶囊外观；已完成那条降成低对比度小字，不抢标题 */
+/* 保存徽标：沿用 .md-tag 的胶囊外观；已完成那条降成低对比度小字，不抢标题 */
 .md-arch { display: inline-block; margin: 8px 0 0; padding: 2px 9px; border-radius: 999px; background: var(--el-fill-color-light); color: var(--el-text-color-regular); font-size: 11.5px; line-height: 1.7; }
 .md-arch-done { padding: 0; background: transparent; color: var(--el-text-color-secondary); }
 

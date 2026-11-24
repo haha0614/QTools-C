@@ -23,6 +23,7 @@ import { currentScrollY } from '@/utils/scrollLock'
 import MrdsCalendar from './mrds/MrdsCalendar.vue'
 import { reportToolVisit } from '@/api/tool.js'
 import MrdsDetail from './mrds/MrdsDetail.vue'
+import { ElMessage } from 'element-plus'
 
 const SOURCE = 'mrds'
 const router = useRouter()
@@ -1320,10 +1321,12 @@ async function toggleCardFav(row, ev) {
   favIds.value = new Set(favIds.value)
   try {
     await toggleFav(id, on)
+    ElMessage.success(on ? '已加入保存队列，进度见详情页徽标' : '已取消收藏（本地副本保留）')
   } catch (err) {
     if (on) favIds.value.delete(id)
     else favIds.value.add(id)
     favIds.value = new Set(favIds.value)
+    ElMessage.error('操作失败，请重试')
   }
 }
 
