@@ -1125,6 +1125,50 @@ function dlTime(t) {
   return p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes())
 }
 
+// 阶段文案 + 进度条宽度（浮窗与弹窗共用）：只给状态词看不出"卡在哪一步、还有多少"
+function dlPhase(r) {
+  const pct = Math.max(0, Math.min(100, Number(r.percent) || 0))
+  if (r.state === 'error' || r.state === 'failed') return { label: '失败', bar: pct, tone: 'error' }
+  if (r.state === 'done') return { label: '完成', bar: 100, tone: 'done' }
+  if (r.state === 'queued') {
+    if (r.mode === 'auto') {
+      const n = Number(r.queueAhead) || 0
+      return { label: n > 0 ? '排队中 · 前面还有 ' + n + ' 条' : '排队中 · 马上开始', bar: 0, tone: 'queue' }
+    }
+    return { label: '排队中', bar: pct, tone: 'queue' }
+  }
+  if (r.state === 'running') {
+    if (pct >= 91) return { label: '入库中 ' + pct + '% · 扫描与封面', bar: pct, tone: 'import' }
+    if (pct >= 90) return { label: '入库中 ' + pct + '% · 拷贝到媒体库', bar: pct, tone: 'import' }
+    return { label: '下载中 ' + pct + '%', bar: pct, tone: 'run' }
+  }
+  const tone = r.state === 'importing' || r.state === 'pending_import' ? 'import' : 'run'
+  return { label: dlStateText(r), bar: pct, tone }
+}
+
+// mode 语义：auto / media 都是存到媒体站，local 才是本地（auto 曾被 else 判成"本地"）
+function dlModeText(r) {
+  if (r.mode === 'auto' || r.mode === 'media') return '保存到媒体站'
+  if (r.mode === 'local') return '保存到本地'
+  return r.mode || '—'
+}
+
+function dlModeShort(r) {
+  if (r.mode === 'auto' || r.mode === 'media') return '媒体站'
+  if (r.mode === 'local') return '本地'
+  return r.mode || '—'
+}
+
+const dlRows = computed(() => dlRecords.value.map((r) => ({ r, ph: dlPhase(r) })))
+
+// 点记录 → 打开对应帖子；先把浮窗/弹窗关掉，别让它们压在新页面上
+function dlOpenPost(r) {
+  if (!r || !r.postId) return
+  dlOpen.value = false
+  dlDialog.value = false
+  router.push('/tool/mrds/post/' + encodeURIComponent(String(r.postId)))
+}
+
 
 
 async function scrollToTop() {
@@ -2064,12 +2108,28 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
         </header>
         <p v-if="!dlRecords.length" class="mr-dl-empty">还没有记录</p>
         <ul class="mr-dl-list">
-          <li v-for="r in dlRecords" :key="r.id" class="mr-dl-item">
-            <img v-if="r.cover" class="mr-dl-mini" :src="r.cover" alt="" loading="lazy" />
-            <span v-else class="mr-dl-mode" :class="r.mode">{{ r.mode === 'media' ? '媒体站' : '本地' }}</span>
-            <span class="mr-dl-title" :title="r.title">{{ r.title || ('#' + r.postId) }}</span>
-            <span class="mr-dl-state" :class="r.state">{{ dlStateText(r) }}</span>
-            <span class="mr-dl-time">{{ dlTime(r.createdAt) }}</span>
+          <li
+            v-for="row in dlRows"
+            :key="row.r.id"
+            class="mr-dl-item"
+            :title="row.r.title"
+            role="button"
+            tabindex="0"
+            @click="dlOpenPost(row.r)"
+            @keydown.enter.prevent="dlOpenPost(row.r)"
+          >
+            <img v-if="row.r.cover" class="mr-dl-mini" :src="row.r.cover" alt="" loading="lazy" />
+            <span v-else class="mr-dl-mode" :class="row.r.mode">{{ dlModeShort(row.r) }}</span>
+            <div class="mr-dl-body">
+              <div class="mr-dl-line">
+                <span class="mr-dl-title">{{ row.r.title || ('#' + row.r.postId) }}</span>
+                <span class="mr-dl-state" :class="row.r.state">{{ row.ph.label }}</span>
+                <span class="mr-dl-time">{{ dlTime(row.r.createdAt) }}</span>
+              </div>
+              <div class="mr-dl-bar" :class="row.ph.tone">
+                <i :style="{ width: row.ph.bar + '%' }"></i>
+              </div>
+            </div>
           </li>
         </ul>
       </div>
@@ -2079,18 +2139,30 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
     <el-dialog v-model="dlDialog" title="下载记录" width="720px" append-to-body align-center draggable>
       <div class="mr-dl-full">
         <p v-if="!dlRecords.length" class="mr-dl-empty">还没有记录</p>
-        <div v-for="r in dlRecords" :key="'f' + r.id" class="mr-dl-fitem">
-          <img v-if="r.cover" class="mr-dl-thumb" :src="r.cover" alt="" loading="lazy" />
+        <div
+          v-for="row in dlRows"
+          :key="'f' + row.r.id"
+          class="mr-dl-fitem"
+          role="button"
+          tabindex="0"
+          @click="dlOpenPost(row.r)"
+          @keydown.enter.prevent="dlOpenPost(row.r)"
+        >
+          <img v-if="row.r.cover" class="mr-dl-thumb" :src="row.r.cover" alt="" loading="lazy" />
           <span v-else class="mr-dl-thumb mr-dl-thumb-ph">无图</span>
           <div class="mr-dl-fmain">
-            <b :title="r.title">{{ r.title || ('#' + r.postId) }}</b>
+            <b :title="row.r.title">{{ row.r.title || ('#' + row.r.postId) }}</b>
             <span class="mr-dl-fmeta">
-              {{ r.mode === 'media' ? '保存到媒体站' : '保存到本地' }} ·
-              {{ dlStateText(r) }} · {{ dlTime(r.createdAt) }}
+              <span>{{ dlModeText(row.r) }}</span>
+              <span>{{ row.ph.label }}{{ row.r.state === 'done' && row.r.finishedAt ? ' · ' + dlTime(row.r.finishedAt) : '' }}</span>
+              <span>{{ dlTime(row.r.createdAt) }}</span>
             </span>
-            <span v-if="r.error" class="mr-dl-ferr">{{ r.error }}</span>
+            <div class="mr-dl-bar" :class="row.ph.tone">
+              <i :style="{ width: row.ph.bar + '%' }"></i>
+            </div>
+            <span v-if="row.r.error" class="mr-dl-ferr" :title="row.r.error">{{ row.r.error }}</span>
           </div>
-          <button type="button" class="mr-dl-del" title="删除这条记录" @click="dlDelete(r.id)">删除</button>
+          <button type="button" class="mr-dl-del" title="删除这条记录" @click.stop="dlDelete(row.r.id)">删除</button>
         </div>
       </div>
     </el-dialog>
@@ -2600,26 +2672,41 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
 .mr-dl-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
 .mr-dl-x { border: 0; background: transparent; color: var(--el-text-color-secondary); cursor: pointer; }
 .mr-dl-expand { margin-left: auto; margin-right: 8px; padding: 1px 8px; font-size: 11.5px; border-radius: 999px; border: 1px solid var(--el-border-color); background: transparent; color: var(--el-text-color-regular); cursor: pointer; }
-.mr-dl-fitem { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 8px; background: var(--el-fill-color-lighter); }
+.mr-dl-fitem { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 8px; background: var(--el-fill-color-lighter); cursor: pointer; }
+.mr-dl-fitem + .mr-dl-fitem { margin-top: 6px; }
+.mr-dl-fitem:hover, .mr-dl-fitem:focus-visible { background: var(--el-fill-color-dark); outline: none; }
 .mr-dl-thumb { width: 72px; height: 48px; object-fit: cover; border-radius: 10px; flex: 0 0 72px; }
 .mr-dl-thumb-ph { display: grid; place-items: center; font-size: 11px; color: var(--el-text-color-secondary); background: var(--el-fill-color-dark); }
-.mr-dl-fmain { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.mr-dl-fmain b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mr-dl-fmeta { font-size: 11.5px; color: var(--el-text-color-secondary); }
-.mr-dl-ferr { font-size: 11.5px; color: var(--el-color-danger); }
-.mr-dl-del { border: 0; background: transparent; color: var(--el-color-danger); font-size: 12px; cursor: pointer; }
+.mr-dl-fmain { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.mr-dl-fmain b { display: block; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mr-dl-fmeta { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 11.5px; color: var(--el-text-color-secondary); }
+.mr-dl-fmeta > span { white-space: nowrap; }
+.mr-dl-ferr { display: block; font-size: 11.5px; color: var(--el-color-danger); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mr-dl-del { flex: 0 0 auto; border: 0; background: transparent; color: var(--el-color-danger); font-size: 12px; cursor: pointer; white-space: nowrap; }
 .mr-dl-full { max-height: 62vh; overflow: auto; }
 .mr-dl-empty { margin: 6px 0; font-size: 12px; color: var(--el-text-color-secondary); }
 .mr-dl-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.mr-dl-item { display: grid; grid-template-columns: 46px 1fr auto; gap: 6px 8px; align-items: center; font-size: 12px; padding: 6px 8px; border-radius: 8px; background: var(--el-fill-color-lighter); }
+/* 浮窗：窄面板不换行——标题单行省略，右侧状态/时间定宽不被挤压，下面一行进度条 */
+.mr-dl-item { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 8px; align-items: center; font-size: 12px; padding: 6px 8px; border-radius: 8px; background: var(--el-fill-color-lighter); cursor: pointer; }
+.mr-dl-item:hover, .mr-dl-item:focus-visible { background: var(--el-fill-color-dark); outline: none; }
 .mr-dl-mini { width: 46px; height: 30px; object-fit: cover; border-radius: 4px; }
-.mr-dl-mode { padding: 1px 6px; border-radius: 999px; text-align: center; font-size: 11px; background: var(--el-fill-color-dark); }
-.mr-dl-mode.media { background: var(--el-color-primary-light-8); color: var(--el-color-primary); }
-.mr-dl-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mr-dl-state { grid-column: 2 / 3; font-size: 11.5px; color: var(--el-text-color-secondary); }
-.mr-dl-state.error { color: var(--el-color-danger); }
+.mr-dl-mode { justify-self: start; padding: 1px 6px; border-radius: 999px; text-align: center; font-size: 11px; background: var(--el-fill-color-dark); white-space: nowrap; }
+.mr-dl-mode.media, .mr-dl-mode.auto { background: var(--el-color-primary-light-8); color: var(--el-color-primary); }
+.mr-dl-body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.mr-dl-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.mr-dl-title { flex: 1 1 auto; min-width: 0; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mr-dl-state { flex: 0 0 auto; font-size: 11.5px; color: var(--el-text-color-secondary); white-space: nowrap; }
+.mr-dl-state.error, .mr-dl-state.failed { color: var(--el-color-danger); }
 .mr-dl-state.done { color: var(--el-color-success); }
-.mr-dl-time { grid-column: 3 / 4; grid-row: 1 / span 2; font-size: 11px; color: var(--el-text-color-secondary); white-space: nowrap; }
+.mr-dl-time { flex: 0 0 auto; font-size: 11px; color: var(--el-text-color-secondary); white-space: nowrap; }
+/* 进度条：两层 div，内层宽度 = 阶段百分比（纯 CSS，不引组件库） */
+.mr-dl-bar { height: 4px; border-radius: 2px; background: rgba(255,255,255,.12); overflow: hidden; }
+.mr-dl-bar > i { display: block; height: 100%; border-radius: 2px; background: var(--el-color-primary); transition: width .3s ease; }
+.mr-dl-bar.queue > i { background: var(--el-text-color-disabled); }
+.mr-dl-bar.run > i { background: var(--el-color-primary); }
+.mr-dl-bar.import > i { background: var(--el-color-warning); }
+.mr-dl-bar.done > i { background: var(--el-color-success); }
+.mr-dl-bar.error > i { background: var(--el-color-danger); }
 @media (max-width: 768px) {
   .mr-dl { right: 12px; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
   .mr-dl-panel { width: min(92vw, 360px); }

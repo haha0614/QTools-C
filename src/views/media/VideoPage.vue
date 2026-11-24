@@ -342,6 +342,7 @@
       :tracker="tracker"
       :markers="playerMarkers"
       @close="closePlayer"
+      @ended="onPlayerEnded"
       @prev="step(-1)"
       @next="step(1)"
       @update:quality="onQualityChange"
@@ -357,6 +358,7 @@
         <VideoMetaPanel
           :key="curVideo.id + '#' + openSeq"
           :video="curVideo"
+          :work="curWork"
           dock
           :fav="curFav"
           @toggle-fav="toggleFav(curVideo)"
@@ -375,6 +377,7 @@
           :context="ctxView"
           @pick="playFromContext"
           @close="closeMeta"
+          @open-segment="openWorkSegment"
           @updated="onMetaUpdated"
           @markers="onMetaMarkers"
           @tag-created="onTagCreated"
@@ -1334,6 +1337,8 @@ const curVideo = ref(null)
  */
 const pbCtx = ref(null)
 const openSeq = ref(0)
+/** 作品层（2026-11-24）：一个源站帖子 = 一个作品，含图文描述与多段视频；没有 workId 就是普通单片 */
+const curWork = ref(null)
 const startPos = ref(0)
 const playerRef = ref(null)
 const sidebarRef = ref(null)
@@ -2638,6 +2643,7 @@ function openPlayer(id, reuseCtx, opts) {
   playerMarkers.value = readMarkerCache(markerStorage(), v.id)
   curVideo.value = v
   openSeq.value += 1
+  loadWork(v)
   // 上下文快照：同一上下文内换片沿用原 ids（只重算 index），否则按优先级重新定
   const base = reuseCtx && Array.isArray(reuseCtx.ids) ? reuseCtx : null
   pbCtx.value = base
@@ -2669,8 +2675,56 @@ function openFromGrid(id) {
   }
 }
 
+/** 一张卡 = 一个作品：段（segSeq>0）不单独成卡，但仍留在索引里 —— 分段条按段直接打开播放器。 */
+function gridVideos(list) {
+  return (list || []).filter((v) => !v.segSeq)
+}
+
+/** 作品层：作品描述（图文 blocks）与逐段地址由 /api/media/video/{id} 的 work 字段带下来；取不到就当普通单片。 */
+function loadWork(v) {
+  curWork.value = null
+  if (!v || !v.workId) return
+  api.getVideo(v.id, { silent: true }).then((d) => {
+    if (curVideo.value === v && d && d.work) curWork.value = d.work
+  }).catch(() => {
+    /* 作品层是增强：拿不到不影响播放 */
+  })
+}
+
+/** 点分段条：把这一段当成一部片喂给播放器（id 用段自己的 videoId，续播点与标记跟着段走） */
+function openWorkSegment(seg) {
+  const w = curWork.value
+  const cur = curVideo.value
+  if (!w || !cur || !seg) return
+  curVideo.value = Object.assign({}, cur, {
+    id: seg.videoId || cur.id,
+    rel: seg.relPath || cur.rel,
+    title: w.title || cur.title,
+    dur: seg.dur == null ? cur.dur : seg.dur,
+    w: seg.w == null ? cur.w : seg.w,
+    h: seg.h == null ? cur.h : seg.h,
+    poster: seg.poster || cur.poster,
+    segSeq: seg.seq,
+    segCount: w.segCount || (Array.isArray(w.segments) ? w.segments.length : 0)
+  })
+  startPos.value = readPos(curVideo.value.id)
+  metaAtSec.value = startPos.value || 0
+  playerMarkers.value = readMarkerCache(markerStorage(), curVideo.value.id)
+  openSeq.value += 1
+}
+
+/** 一段播完：作品还有下一段就接着播（作品是一个整体，不该让人手动点） */
+function onPlayerEnded() {
+  const w = curWork.value
+  const cur = curVideo.value
+  if (!w || !cur || !Array.isArray(w.segments)) return
+  const i = w.segments.findIndex((s) => s.videoId === cur.id)
+  if (i >= 0 && i < w.segments.length - 1) openWorkSegment(w.segments[i + 1])
+}
+
 function closePlayer() {
   curVideo.value = null
+  curWork.value = null
   pbCtx.value = null
   if (state.play) {
     state.play = ''
@@ -3147,7 +3201,7 @@ async function loadIndex() {
   loading.value = true
   try {
     const idx = await api.getIndex({ silent: true })
-    videos.value = (idx && idx.videos) || []
+    videos.value = gridVideos((idx && idx.videos) || [])
     facetOrder.value = (idx && idx.facetOrder) || []
     // P6.09：可见分级交给全站状态源（当前档位若因此不可见，它会自己回落 all 并清 hash）
     setRatingOptions((idx && Array.isArray(idx.ratings)) ? idx.ratings : [])
@@ -3177,7 +3231,7 @@ async function loadIndex() {
 async function reloadForAuth() {
   try {
     const idx = await api.getIndex({ silent: true })
-    videos.value = (idx && idx.videos) || []
+    videos.value = gridVideos((idx && idx.videos) || [])
     facetOrder.value = (idx && idx.facetOrder) || []
     setRatingOptions((idx && Array.isArray(idx.ratings)) ? idx.ratings : [])
     indexStats.value = (idx && idx.stats) || null

@@ -130,21 +130,6 @@ const routes = [
         component: () => import('../views/media/PersonDetailPage.vue'),
         meta: { title: '媒体站 · 人物详情', bleed: true, online: true }
       },
-      // 作品（每日大赛收藏时自动生成的帖子级条目）：列表 + 详情。
-      // 一个作品 = 源站一个帖子，内含 N 段视频；详情页逐段渲染播放器。
-      // 同样标 bleed：列表是整幅网格、详情是左播放右正文的双栏，都贴边全宽。
-      {
-        path: 'media/works',
-        name: 'MediaWorks',
-        component: () => import('../views/media/works/WorkListPage.vue'),
-        meta: { title: '媒体站 · 作品', bleed: true, online: true }
-      },
-      {
-        path: 'media/work/:id',
-        name: 'MediaWorkDetail',
-        component: () => import('../views/media/works/WorkDetailPage.vue'),
-        meta: { title: '媒体站 · 作品详情', bleed: true, online: true }
-      },
       // 播放列表（P5.46）：独占页面取消 —— 它降级成视频库筛选条上的一个维度。
       // 旧地址保留为**重定向**（书签 / 外部链接不留死链）：跳到视频库并打开播放列表筛选下拉；
       // 带 ?playlist=<id> 的老链接把 id 一并带过去（它仍是播放器上下文的来源）。

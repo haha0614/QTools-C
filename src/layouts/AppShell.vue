@@ -28,7 +28,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 // 图标按名显式导入（本项目没有 unplugin-auto-import，模板里不能凭空出现组件名）
-import { Film, House, List, Menu, Moon, Picture, Setting, Sunny, User, UserFilled, VideoPlay } from '@element-plus/icons-vue'
+import { Film, House, Menu, Moon, Picture, Setting, Sunny, User, UserFilled, VideoPlay } from '@element-plus/icons-vue'
 import BrandMark from '@/components/BrandMark.vue'
 // P5.70：全局登录悬浮窗（全站只挂这一次）+ 它的开关单例
 import AuthLoginDialog from '@/components/AuthLoginDialog.vue'
@@ -198,8 +198,6 @@ const NAV_GROUPS = [
     items: [
       // P4.3：/media 只做精确匹配（exact），否则它会把 /media/photos、/media/persons 一起点亮
       { to: '/media', label: '视频库', icon: VideoPlay, exact: true, online: true },
-      // 作品（2026-11-24）：一个源站帖子 = 一个作品，含多段视频 + 图文描述；数据来自 media_work
-      { to: '/media/works', label: '作品', icon: List, also: ['/media/work/'], online: true },
       { to: '/media/photos', label: '图片站', icon: Picture, online: true },
       // 人物墙（P3-B）：/media/person/:id 也走这条高亮（P4.3 起由 also 显式声明，不再靠 /media 前缀兜底）
       { to: '/media/persons', label: '人物', icon: UserFilled, also: ['/media/person'], online: true },

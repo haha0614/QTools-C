@@ -82,7 +82,32 @@
            三档与其它控件完全一致：off 没有编辑入口（只有正文）、local 只写 localStorage、full 走 PUT。
            折叠规则：逻辑行 > 6 行折叠 + 「展开」（单行长文由 CSS line-clamp 视觉截断，
            组件再按 scrollHeight 复测一次真实溢出，两者任一成立就给「展开」）。 -->
-      <section class="vp-sec vp-sec-syn" data-vp-sec="synopsis">
+      <!-- 作品层（2026-11-24）：源帖正文就是作品描述，图文混排原样渲染；多段作品在这里给分段条。
+           有作品时「作品简介」整块让位 —— 那是媒体库自己那一列 synopsis，作品里有真实的源帖正文。 -->
+      <section v-if="work && workBlocks.length" class="vp-sec vp-sec-work" data-vp-sec="work">
+        <h3 class="vp-h3">
+          作品描述
+          <span class="vp-h3-local">{{ workSegText }}</span>
+        </h3>
+        <div class="vp-work">
+          <template v-for="(b, i) in workBlocks" :key="i">
+            <p v-if="b.type === 'text'" class="vp-work-p">{{ b.text }}</p>
+            <img v-else-if="b.type === 'image'" class="vp-work-img" :src="b.url" alt="" loading="lazy" />
+          </template>
+        </div>
+        <div v-if="workSegments.length > 1" class="vp-work-segs">
+          <button
+            v-for="s in workSegments"
+            :key="s.seq"
+            class="vp-mini vp-work-seg"
+            :class="{ 'is-cur': s.seq === curSegSeq }"
+            type="button"
+            :title="'播放第 ' + (s.seq + 1) + ' 段'"
+            @click="emit('open-segment', s)"
+          >第 {{ s.seq + 1 }}/{{ workSegments.length }} 段</button>
+        </div>
+      </section>
+      <section v-if="!work" class="vp-sec vp-sec-syn" data-vp-sec="synopsis">
         <h3 class="vp-h3">
           作品简介
           <span v-if="isLocal" class="vp-h3-local" :title="HINT_LOCAL">本地</span>
@@ -595,10 +620,17 @@ const props = defineProps({
    * 由页面用 playbackContext.js 的 contextLabel / contextRows 现算，面板只负责渲染与 emit('pick')。
    * null = 上下文缺失（分区显示一句说明，上/下一部分区外已禁用）。
    */
-  context: { type: Object, default: null }
+  context: { type: Object, default: null },
+  /**
+   * 作品层（2026-11-24）：一个源站帖子 = 一个作品。
+   *
+   * { id, title, segCount, blocks:[{type:'text',text}|{type:'image',url}], segments:[{seq,videoId,relPath,dur,w,h,poster}] }
+   * null = 这部片不属于任何作品（纯媒体库文件），照旧显示「作品简介」。
+   */
+  work: { type: Object, default: null }
 })
 
-const emit = defineEmits(['close', 'updated', 'tag-created', 'person-created', 'notify', 'markers', 'pick', 'toggle-fav'])
+const emit = defineEmits(['close', 'updated', 'tag-created', 'person-created', 'notify', 'markers', 'pick', 'toggle-fav', 'open-segment'])
 
 const api = useMediaApi()
 
@@ -838,6 +870,29 @@ function save(patch, optimistic, okMsg, localPatch) {
  * 注意索引条目（/api/media/index）**从不带** synopsis：那是万级行的轻量列表。
  */
 const synopsisSeed = isLocal.value ? readLocalSynopsis(props.video.id) : null
+/* ---------------------------------------------------------------- 作品层（2026-11-24）
+   一个源站帖子 = 一个作品：描述是图文混排 blocks，视频可能有多段（媒体库里是平铺的 media_video 行）。
+   有 work 时「作品简介」让位给作品描述 —— 简介属于媒体库自己的 synopsis 列，作品里有真实的源帖正文。 */
+const workBlocks = computed(() => {
+  const b = props.work && props.work.blocks
+  return Array.isArray(b) ? b : []
+})
+
+const workSegments = computed(() => {
+  const s = props.work && props.work.segments
+  return Array.isArray(s) ? s : []
+})
+
+const workSegText = computed(() => {
+  const n = workSegments.value.length
+  return n > 1 ? '共 ' + n + ' 段' : '来自每日大赛'
+})
+
+/** 当前正在播的是第几段（0 起）：面板跟着播放器换段重建，取 video.segSeq 即可 */
+const curSegSeq = computed(() => {
+  const s = props.video && props.video.segSeq
+  return typeof s === 'number' ? s : 0
+})
 const synopsisValue = ref(synopsisSeed ? synopsisSeed.synopsis : String((props.video && props.video.synopsis) || ''))
 const synopsisDraft = ref(synopsisValue.value)
 const synopsisEditing = ref(false)
@@ -2397,6 +2452,42 @@ onMounted(() => {
   font-variant-numeric: tabular-nums;
 }
 
+/* ---------------------------------------------------------------- 作品层（2026-11-24） */
+
+/* 正文逐段渲染：pre-wrap 保留原作者分段；图片按栏宽铺满，圆角与其它缩略图一致 */
+.vp-work {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vp-work-p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--fg);
+}
+
+.vp-work-img {
+  display: block;
+  width: 100%;
+  border-radius: 4px;
+}
+
+/* 分段条：第 N/M 段，当前段高亮（点击由 VideoPage 换成该段自己的 videoId 播放） */
+.vp-work-segs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.vp-work-seg.is-cur {
+  border-color: var(--accent, #6ea8fe);
+  color: var(--fg);
+}
 /* ---------------------------------------------------------------- 作品简介（P5.38） */
 
 /* 正文：多行保留（pre-wrap 是硬要求 —— 梗概的分行就是作者写的分段），

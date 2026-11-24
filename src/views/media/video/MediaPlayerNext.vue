@@ -111,7 +111,7 @@ const props = defineProps({
   tracker: { type: Object, required: true },
   markers: { type: Array, default: () => [] }
 })
-const emit = defineEmits(['close', 'prev', 'next', 'update:quality', 'save-pos', 'clear-pos', 'push-recent', 'open-meta'])
+const emit = defineEmits(['close', 'prev', 'next', 'update:quality', 'save-pos', 'clear-pos', 'push-recent', 'open-meta', 'ended'])
 
 const api = useMediaApi()
 const playerRef = ref(null)
@@ -308,6 +308,8 @@ function onEnded() {
   const dur = Number(st() && st().duration) || Number(props.video.dur) || 0
   emit('clear-pos', id)
   emit('push-recent', { id, pos: 0, dur, force: true })
+  // 2026-11-24：作品多段连播靠这个事件（VideoPage 收到后切下一段）
+  emit('ended', id)
 }
 if (narrowMq && narrowMq.addEventListener) narrowMq.addEventListener('change', onNarrowChange)
 const tick = window.setInterval(savePos, 5000)
