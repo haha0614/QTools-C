@@ -29,7 +29,7 @@ md.push('');
 md.push('## 怎么用');
 md.push('');
 md.push('- 分组按「屏障」从硬到软：**墙洞 → 门缝 → 家具 → 人 → 信号 → 无意识**。想看哪一种，直接跳那一节。');
-md.push('- 编号就是详情页路径末段，点编号能跳。');
+md.push('- 编号就是详情页路径末段；整行（编号 + 片名 + 说明）都能点，点了新窗口直接开对应帖子。');
 md.push('- 系列剧集按集序列出，按顺序看；标「AI剧」的多为 AI 生成的短剧，标「动画」的是 2D/里番，其余是实拍。');
 md.push('');
 md.push('| 组 | 条数 | 一句话 |');
@@ -44,7 +44,7 @@ data.groups.forEach((g, gi) => {
   md.push(g.lead);
   md.push('');
   g.items.forEach((it) => {
-    md.push('- [' + it.id + '](' + BASE + '/tool/mrds/post/' + it.id + ') **' + it.n + '** — ' + it.w);
+    md.push('- [' + it.id + '](' + (it.u || BASE + '/tool/mrds/post/' + it.id) + ') **' + it.n + '** — ' + it.w + (it.u ? '（源站）' : ''));
   });
   md.push('');
 });
@@ -105,14 +105,18 @@ function buildHtml(site) {
   .cnt{color:var(--dim);font-size:12px}
   .lead{color:var(--dim);font-size:13px;margin:0 0 14px;padding-left:2px}
   ul{list-style:none;margin:0;padding:0}
-  li{display:flex;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--panel);align-items:flex-start}
-  li:hover{border-color:#3a4353}
+  li{border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--panel);transition:border-color .12s,background .12s}
+  li:hover{border-color:#3a4353;background:#191e26}
   li.hide{display:none}
-  .id{font-variant-numeric:tabular-nums;font-size:12px;color:#0f1115;background:var(--dim);border-radius:6px;padding:1px 7px;text-decoration:none;flex:none;margin-top:2px;font-weight:600}
-  .id:hover{background:var(--accent);color:#fff}
-  .body{flex:1;min-width:0}
-  .name{font-weight:600}
-  .why{color:var(--dim);font-size:13px;margin-top:2px}
+  .hit{display:flex;gap:12px;padding:10px 12px;align-items:flex-start;color:inherit;text-decoration:none;cursor:pointer}
+  .hit:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:10px}
+  .id{font-variant-numeric:tabular-nums;font-size:12px;color:#0f1115;background:var(--dim);border-radius:6px;padding:1px 7px;flex:none;margin-top:2px;font-weight:600}
+  .hit:hover .id{background:var(--accent);color:#fff}
+  .body{flex:1;min-width:0;display:block}
+  .name{font-weight:600;display:block}
+  .hit:hover .name{color:var(--accent)}
+  .why{color:var(--dim);font-size:13px;margin-top:2px;display:block}
+  .src{font-size:11px;border-radius:5px;padding:0 6px;margin-left:8px;border:1px solid var(--dim);color:var(--dim);white-space:nowrap}
   .k{font-size:11px;border-radius:5px;padding:0 6px;margin-left:8px;border:1px solid currentColor;white-space:nowrap}
   .k-实拍{color:var(--ok)} .k-AI剧{color:var(--ai)} .k-动画{color:var(--anime)} .k-综艺{color:var(--show)} .k-混剪{color:var(--mix)}
   .empty{color:var(--dim);font-size:13px;padding:8px 2px}
@@ -129,7 +133,7 @@ function buildHtml(site) {
   </div>
   <div class="tools">
     <input id="q" placeholder="搜片名 / 编号 / 关键词（按 / 聚焦）">
-    <input id="base" value="${BASE}" title="站点地址，改这里所有链接跟着变">
+    <input id="base" value="${BASE}" title="站点地址：站内条目按它拼链接（默认取当前域名，站外条目不受影响）">
   </div>
   <div class="kinds">
     <button class="kb on" data-k="">全部</button>
@@ -144,21 +148,28 @@ ${data.groups.map((g, i) => `  <section id="g${i}">
     <div class="sec-h"><h2>${i + 1}. ${g.title}</h2><span class="cnt">${g.items.length} 条</span></div>
     <p class="lead">${g.lead}</p>
     <ul>
-${g.items.map((it) => `      <li data-k="${it.k}" data-s="${(it.n + ' ' + it.w + ' ' + it.id + ' ' + it.k).toLowerCase()}"><a class="id" href="${BASE}/tool/mrds/post/${it.id}" target="_blank" rel="noreferrer">${it.id}</a><div class="body"><div class="name">${it.n}<span class="k k-${it.k}">${it.k}</span></div><div class="why">${it.w}</div></div></li>`).join('\n')}
+${g.items.map((it) => `      <li data-k="${it.k}" data-s="${(it.n + ' ' + it.w + ' ' + it.id + ' ' + it.k).toLowerCase()}"><a class="hit" data-path="/tool/mrds/post/${it.id}"${it.u ? ` data-ext="${it.u}"` : ''} href="${it.u || '/tool/mrds/post/' + it.id}" target="_blank" rel="noreferrer"><span class="id">${it.id}</span><span class="body"><span class="name">${it.n}<span class="k k-${it.k}">${it.k}</span>${it.u ? '<span class="src">源站</span>' : ''}</span><span class="why">${it.w}</span></span></a></li>`).join('\n')}
     </ul>
   </section>`).join('\n')}
   <div class="foot">
-    口径：<code>tool_web_post</code> 共 58,821 条，标题正则初筛 972 条后人工复核，全部 <code>has_video=1</code>。未改库；本页是 <code>public/curation/</code> 静态页。<br>
+    口径：<code>tool_web_post</code> 共 58,821 条，标题正则初筛 972 条后人工复核，全部 <code>has_video=1</code>。未改库；本页是 <code>public/curation/</code> 静态页。整行可点：站内条目跳 <code>/tool/mrds/post/{id}</code>，只有源站链接的条目跳源站。<br>
     缺口：盲女被偷喂（仅 63211 沾边）、温柔恶作剧（12 条全是整蛊综艺）、墙头有杏第7集（354291 无片源）。
   </div>
 </main>
 <script>
   const base = document.getElementById('base');
   const q = document.getElementById('q');
+  // 站内条目按“当前打开本页的域名”拼链接：同一份静态页放到 127.0.0.1、局域网 IP、正式域名下都跳对
+  const DEF_BASE = location.protocol === 'file:' ? '${BASE}' : location.origin;
+  base.value = DEF_BASE;
   function applyBase(){
-    const b = (base.value || '').replace(/\\/+$/, '');
-    document.querySelectorAll('a.id').forEach(a => { a.href = b + '/tool/mrds/post/' + a.textContent.trim(); });
+    const b = (base.value || DEF_BASE).replace(/\\/+$/, '');
+    document.querySelectorAll('a.hit').forEach(a => {
+      if (a.dataset.ext) return;   // 站外条目固定走源站，不受这里影响
+      a.href = b + a.dataset.path;
+    });
   }
+  applyBase();
   base.addEventListener('change', applyBase);
   base.addEventListener('keydown', e => { if (e.key === 'Enter') applyBase(); });
   q.addEventListener('input', filter);
