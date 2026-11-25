@@ -1874,6 +1874,15 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
             {{ v.label }}
           </button>
         </div>
+
+        <!-- 人工复核过的情境片单；静态页，不占接口，新窗口打开以免打乱这里的滚动位置 -->
+        <a
+          class="mr-curation"
+          href="/curation/"
+          target="_blank"
+          rel="noopener"
+          title="按情境整理的专题片单：隔墙、墙洞、桌下、夫前、电话里、不知情…"
+        >隐秘在场 ↗</a>
     </template>
     <!-- 从整页返回时的骨架屏：避免"白屏一大片" -->
     <div v-if="restoring" class="mr-skel-wrap" aria-hidden="true">
@@ -2500,6 +2509,8 @@ watch(() => [q.value], () => { /* 由 onSearch 触发，避免每次输入都请
 .mr-views { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--el-border-color); border-radius: 999px; }
 .mr-view { padding: 3px 10px; border: 0; border-radius: 999px; background: transparent; color: var(--el-text-color-regular); font-size: 12.5px; cursor: pointer; }
 .mr-view.on { background: var(--el-color-primary-light-9); color: var(--el-color-primary); }
+.mr-curation { padding: 4px 11px; border-radius: 999px; border: 1px solid var(--el-color-primary); color: var(--el-color-primary); font-size: 12.5px; line-height: 1.5; text-decoration: none; white-space: nowrap; }
+.mr-curation:hover { background: var(--el-color-primary-light-9); }
 
 .mr-state { padding: 24px 0; color: var(--el-text-color-secondary); }
 .mr-err { color: var(--el-color-danger); }

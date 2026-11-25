@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>隐秘在场 · 片单</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#161a21; --line:#262c36; --fg:#e7e9ee; --dim:#8b93a3;
+    --accent:#e0577f; --chip:#1d232c; --ok:#4ea8de; --ai:#c084fc; --anime:#5eead4; --show:#fbbf24; --mix:#94a3b8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 -apple-system,"Segoe UI","Microsoft YaHei",system-ui,sans-serif}
+  header{position:sticky;top:0;z-index:9;background:rgba(15,17,21,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:14px 20px 10px}
+  .head-top{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  h1{font-size:18px;margin:0;letter-spacing:.5px}
+  .back{font-size:12.5px;color:var(--dim);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:2px 10px;white-space:nowrap}
+  .back:hover{color:var(--fg);border-color:var(--accent)}
+  .meta{color:var(--dim);font-size:12px}
+  .tools{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  input{background:var(--panel);border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:7px 10px;font:inherit;font-size:13px;outline:none}
+  input:focus{border-color:var(--accent)}
+  #q{flex:1;min-width:220px}
+  #base{width:210px;color:var(--dim)}
+  .nav{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .nav a{font-size:12px;color:var(--dim);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+  .nav a:hover{color:var(--fg);border-color:var(--accent)}
+  .kinds{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+  .kb{font:inherit;font-size:12px;background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:6px;padding:2px 9px;cursor:pointer}
+  .kb:hover{color:var(--fg);border-color:#3a4353}
+  .kb.on{background:var(--fg);color:#0f1115;border-color:var(--fg);font-weight:600}
+  main{padding:22px 20px 80px;max-width:1000px;margin:0 auto}
+  section{margin:0 0 34px}
+  .sec-h{display:flex;align-items:baseline;gap:10px;margin:0 0 4px}
+  h2{font-size:16px;margin:0}
+  .cnt{color:var(--dim);font-size:12px}
+  .lead{color:var(--dim);font-size:13px;margin:0 0 14px;padding-left:2px}
+  ul{list-style:none;margin:0;padding:0}
+  li{display:flex;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--panel);align-items:flex-start}
+  li:hover{border-color:#3a4353}
+  li.hide{display:none}
+  .id{font-variant-numeric:tabular-nums;font-size:12px;color:#0f1115;background:var(--dim);border-radius:6px;padding:1px 7px;text-decoration:none;flex:none;margin-top:2px;font-weight:600}
+  .id:hover{background:var(--accent);color:#fff}
+  .body{flex:1;min-width:0}
+  .name{font-weight:600}
+  .why{color:var(--dim);font-size:13px;margin-top:2px}
+  .k{font-size:11px;border-radius:5px;padding:0 6px;margin-left:8px;border:1px solid currentColor;white-space:nowrap}
+  .k-实拍{color:var(--ok)} .k-AI剧{color:var(--ai)} .k-动画{color:var(--anime)} .k-综艺{color:var(--show)} .k-混剪{color:var(--mix)}
+  .empty{color:var(--dim);font-size:13px;padding:8px 2px}
+  .foot{color:var(--dim);font-size:12px;border-top:1px solid var(--line);padding-top:14px}
+  .foot code{color:#c9d1e0}
+</style>
+</head>
+<body>
+<header>
+  <div class="head-top">
+    <a class="back" href="/tool/mrds">← 每日大赛</a>
+    <h1>「隐秘在场」片单</h1>
+    <span class="meta" id="meta">83 条 · 8 组 · 全部有片 · 2026-11-25</span>
+  </div>
+  <div class="tools">
+    <input id="q" placeholder="搜片名 / 编号 / 关键词（按 / 聚焦）">
+    <input id="base" value="http://127.0.0.1" title="站点地址，改这里所有链接跟着变">
+  </div>
+  <div class="kinds">
+    <button class="kb on" data-k="">全部</button>
+    <button class="kb k-AI剧" data-k="AI剧">AI剧</button>
+    <button class="kb k-实拍" data-k="实拍">实拍</button>
+    <button class="kb k-综艺" data-k="综艺">综艺</button>
+    <button class="kb k-动画" data-k="动画">动画</button>
+    <button class="kb k-混剪" data-k="混剪">混剪</button>
+  </div>
+  <nav class="nav">
+    <a href="#g0">墙与洞/一墙之隔 17</a>
+    <a href="#g1">门缝/门外/帘子 9</a>
+    <a href="#g2">桌下/桌底 9</a>
+    <a href="#g3">衣柜/床底 7</a>
+    <a href="#g4">夫目前犯（隔着“在场”） 14</a>
+    <a href="#g5">隔着电话/屏幕 12</a>
+    <a href="#g6">不知情/睡着/被骗 9</a>
+    <a href="#g7">隔壁/对面楼 6</a>
+  </nav>
+</header>
+<main>
+  <section id="g0">
+    <div class="sec-h"><h2>1. 墙与洞 / 一墙之隔</h2><span class="cnt">17 条</span></div>
+    <p class="lead">屏障被凿成通道，或者薄到只剩一层砖。这一组最接近你说的“墙上开一个洞”：《隔墙有逼》是洞，《墙头有杏》是墙。</p>
+    <ul>
+      <li data-k="AI剧" data-s="隔墙有逼 第1集：多阴村墙上洞里的治阴交易 洞是通道不是屏障，交易隔着墙谈 5906 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/5906" target="_blank" rel="noreferrer">5906</a><div class="body"><div class="name">隔墙有逼 第1集：多阴村墙上洞里的治阴交易<span class="k k-AI剧">AI剧</span></div><div class="why">洞是通道不是屏障，交易隔着墙谈</div></div></li>
+      <li data-k="AI剧" data-s="隔墙有逼 第2-3集：洞里交易与规则裂缝 开始怀疑一墙之隔的人是谁 5777 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/5777" target="_blank" rel="noreferrer">5777</a><div class="body"><div class="name">隔墙有逼 第2-3集：洞里交易与规则裂缝<span class="k k-AI剧">AI剧</span></div><div class="why">开始怀疑一墙之隔的人是谁</div></div></li>
+      <li data-k="AI剧" data-s="隔墙有逼 第4集：不再隔墙，当面沉沦 从“隔”翻到“当面”，正好是反向 3128 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/3128" target="_blank" rel="noreferrer">3128</a><div class="body"><div class="name">隔墙有逼 第4集：不再隔墙，当面沉沦<span class="k k-AI剧">AI剧</span></div><div class="why">从“隔”翻到“当面”，正好是反向</div></div></li>
+      <li data-k="AI剧" data-s="隔墙有逼 第5-6集：治阴洞被发现 屏障暴露的那一刻 594 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/594" target="_blank" rel="noreferrer">594</a><div class="body"><div class="name">隔墙有逼 第5-6集：治阴洞被发现<span class="k k-AI剧">AI剧</span></div><div class="why">屏障暴露的那一刻</div></div></li>
+      <li data-k="AI剧" data-s="隔墙有逼 第7集：纪欣茹亲身试洞 从隔墙到自己进洞 176222 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/176222" target="_blank" rel="noreferrer">176222</a><div class="body"><div class="name">隔墙有逼 第7集：纪欣茹亲身试洞<span class="k k-AI剧">AI剧</span></div><div class="why">从隔墙到自己进洞</div></div></li>
+      <li data-k="AI剧" data-s="隔墙有逼 第8集：女村长办公室墙洞 办公场景版墙洞 204178 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/204178" target="_blank" rel="noreferrer">204178</a><div class="body"><div class="name">隔墙有逼 第8集：女村长办公室墙洞<span class="k k-AI剧">AI剧</span></div><div class="why">办公场景版墙洞</div></div></li>
+      <li data-k="AI剧" data-s="墙头有杏 第1集：老公早泄，初恋来面试 一墙之隔的欲求不满是起点 588 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/588" target="_blank" rel="noreferrer">588</a><div class="body"><div class="name">墙头有杏 第1集：老公早泄，初恋来面试<span class="k k-AI剧">AI剧</span></div><div class="why">一墙之隔的欲求不满是起点</div></div></li>
+      <li data-k="AI剧" data-s="墙头有杏 第2集：寂寞人妻酒店约炮初恋 从隔壁走到酒店，距离感还在 578 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/578" target="_blank" rel="noreferrer">578</a><div class="body"><div class="name">墙头有杏 第2集：寂寞人妻酒店约炮初恋<span class="k k-AI剧">AI剧</span></div><div class="why">从隔壁走到酒店，距离感还在</div></div></li>
+      <li data-k="AI剧" data-s="墙头有杏 第3集：旧情复燃，禁忌沉沦 婚后空虚 + 旧人 152658 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/152658" target="_blank" rel="noreferrer">152658</a><div class="body"><div class="name">墙头有杏 第3集：旧情复燃，禁忌沉沦<span class="k k-AI剧">AI剧</span></div><div class="why">婚后空虚 + 旧人</div></div></li>
+      <li data-k="AI剧" data-s="墙头有杏 第4集：厕所隔间偷情 隔间是最薄的一堵墙 152642 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/152642" target="_blank" rel="noreferrer">152642</a><div class="body"><div class="name">墙头有杏 第4集：厕所隔间偷情<span class="k k-AI剧">AI剧</span></div><div class="why">隔间是最薄的一堵墙</div></div></li>
+      <li data-k="AI剧" data-s="墙头有杏 第5集：远程通话跳蛋 墙变成信号线 152637 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/152637" target="_blank" rel="noreferrer">152637</a><div class="body"><div class="name">墙头有杏 第5集：远程通话跳蛋<span class="k k-AI剧">AI剧</span></div><div class="why">墙变成信号线</div></div></li>
+      <li data-k="AI剧" data-s="墙头有杏 第6集：办公室淫乱日常 把一墙之隔搬进办公室 210786 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/210786" target="_blank" rel="noreferrer">210786</a><div class="body"><div class="name">墙头有杏 第6集：办公室淫乱日常<span class="k k-AI剧">AI剧</span></div><div class="why">把一墙之隔搬进办公室</div></div></li>
+      <li data-k="AI剧" data-s="同一屋檐下的秘密 1-6：一墙之隔的室友 自慰被撞 → 从墙后到墙前 16698 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/16698" target="_blank" rel="noreferrer">16698</a><div class="body"><div class="name">同一屋檐下的秘密 1-6：一墙之隔的室友<span class="k k-AI剧">AI剧</span></div><div class="why">自慰被撞 → 从墙后到墙前</div></div></li>
+      <li data-k="AI剧" data-s="妈妈是爸爸留给我的妻子 第3集：一墙之隔的继母 一墙之隔 + 继子，屏障换成伦理 236787 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/236787" target="_blank" rel="noreferrer">236787</a><div class="body"><div class="name">妈妈是爸爸留给我的妻子 第3集：一墙之隔的继母<span class="k k-AI剧">AI剧</span></div><div class="why">一墙之隔 + 继子，屏障换成伦理</div></div></li>
+      <li data-k="实拍" data-s="街头素人节目：活动中墙洞深喉口爆 商业化的洞（glory hole） 18374 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/18374" target="_blank" rel="noreferrer">18374</a><div class="body"><div class="name">街头素人节目：活动中墙洞深喉口爆<span class="k k-实拍">实拍</span></div><div class="why">商业化的洞（glory hole）</div></div></li>
+      <li data-k="实拍" data-s="onlyfans marochan_jp：墙洞手交 洞小到只够一只手伸过去 17066 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/17066" target="_blank" rel="noreferrer">17066</a><div class="body"><div class="name">OnlyFans marochan_jp：墙洞手交<span class="k k-实拍">实拍</span></div><div class="why">洞小到只够一只手伸过去</div></div></li>
+      <li data-k="综艺" data-s="台湾综艺 女优大挑战：隔墙口交猜人 综艺玩法：隔板只给触觉 62559 综艺"><a class="id" href="http://127.0.0.1/tool/mrds/post/62559" target="_blank" rel="noreferrer">62559</a><div class="body"><div class="name">台湾综艺 女优大挑战：隔墙口交猜人<span class="k k-综艺">综艺</span></div><div class="why">综艺玩法：隔板只给触觉</div></div></li>
+    </ul>
+  </section>
+  <section id="g1">
+    <div class="sec-h"><h2>2. 门缝 / 门外 / 帘子</h2><span class="cnt">9 条</span></div>
+    <p class="lead">比墙多一条缝：能看、能听，还留着一推就开的余量。三个视角各有味道——缝里看、门外听、帘外等。</p>
+    <ul>
+      <li data-k="AI剧" data-s="表姐表妹一起睡 第1集：夜里门缝脱衣 门缝只给一条线，剩下的靠听 3039 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/3039" target="_blank" rel="noreferrer">3039</a><div class="body"><div class="name">表姐表妹一起睡 第1集：夜里门缝脱衣<span class="k k-AI剧">AI剧</span></div><div class="why">门缝只给一条线，剩下的靠听</div></div></li>
+      <li data-k="AI剧" data-s="表姐表妹一起睡 第4集：门缝偷窥亲姐 看的人在缝外，自己在缝外自慰 152648 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/152648" target="_blank" rel="noreferrer">152648</a><div class="body"><div class="name">表姐表妹一起睡 第4集：门缝偷窥亲姐<span class="k k-AI剧">AI剧</span></div><div class="why">看的人在缝外，自己在缝外自慰</div></div></li>
+      <li data-k="实拍" data-s="捷克街头：母亲被关在门外听女儿被操 门内是女儿，门外是母亲——知情却进不去 60513 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/60513" target="_blank" rel="noreferrer">60513</a><div class="body"><div class="name">捷克街头：母亲被关在门外听女儿被操<span class="k k-实拍">实拍</span></div><div class="why">门内是女儿，门外是母亲——知情却进不去</div></div></li>
+      <li data-k="动画" data-s="回复术士 第9集：魔物娘在门外听声自慰 门外那一边的生理反应 38536 动画"><a class="id" href="http://127.0.0.1/tool/mrds/post/38536" target="_blank" rel="noreferrer">38536</a><div class="body"><div class="name">回复术士 第9集：魔物娘在门外听声自慰<span class="k k-动画">动画</span></div><div class="why">门外那一边的生理反应</div></div></li>
+      <li data-k="动画" data-s="巨乳熟女妈妈的责骂与调教 第2集：门外听声湿透 听声 → 推门 → 按楼梯 2816 动画"><a class="id" href="http://127.0.0.1/tool/mrds/post/2816" target="_blank" rel="noreferrer">2816</a><div class="body"><div class="name">巨乳熟女妈妈的责骂与调教 第2集：门外听声湿透<span class="k k-动画">动画</span></div><div class="why">听声 → 推门 → 按楼梯</div></div></li>
+      <li data-k="实拍" data-s="米菲兔：被小舅子门外偷看 门没关严，熟人就在缝外 31153 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/31153" target="_blank" rel="noreferrer">31153</a><div class="body"><div class="name">米菲兔：被小舅子门外偷看<span class="k k-实拍">实拍</span></div><div class="why">门没关严，熟人就在缝外</div></div></li>
+      <li data-k="实拍" data-s="商场母婴室：门外人来人往 薄门 + 人流，随时被推开的设定 34791 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/34791" target="_blank" rel="noreferrer">34791</a><div class="body"><div class="name">商场母婴室：门外人来人往<span class="k k-实拍">实拍</span></div><div class="why">薄门 + 人流，随时被推开的设定</div></div></li>
+      <li data-k="实拍" data-s="大头贴机帘子里直接开干 布帘一掀就开，路人差点看到 20162 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/20162" target="_blank" rel="noreferrer">20162</a><div class="body"><div class="name">大头贴机帘子里直接开干<span class="k k-实拍">实拍</span></div><div class="why">布帘一掀就开，路人差点看到</div></div></li>
+      <li data-k="实拍" data-s="台球馆公厕开票：同事就在门外 门外是认识的人，风险翻倍 14570 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/14570" target="_blank" rel="noreferrer">14570</a><div class="body"><div class="name">台球馆公厕开票：同事就在门外<span class="k k-实拍">实拍</span></div><div class="why">门外是认识的人，风险翻倍</div></div></li>
+    </ul>
+  </section>
+  <section id="g2">
+    <div class="sec-h"><h2>3. 桌下 / 桌底</h2><span class="cnt">9 条</span></div>
+    <p class="lead">你的第一个例子。桌子的妙处是上半身必须正常：桌上在吃饭、在开会、在直播，桌下在做事。</p>
+    <ul>
+      <li data-k="实拍" data-s="melodymarks：当着老妈面在桌下含住继父 桌上是一家人吃饭，桌下是含 75822 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/75822" target="_blank" rel="noreferrer">75822</a><div class="body"><div class="name">MelodyMarks：当着老妈面在桌下含住继父<span class="k k-实拍">实拍</span></div><div class="why">桌上是一家人吃饭，桌下是含</div></div></li>
+      <li data-k="实拍" data-s="黑桃夫妻：当朋友面躲桌下替老公口交 夫妻在桌下，朋友在桌上 55110 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/55110" target="_blank" rel="noreferrer">55110</a><div class="body"><div class="name">黑桃夫妻：当朋友面躲桌下替老公口交<span class="k k-实拍">实拍</span></div><div class="why">夫妻在桌下，朋友在桌上</div></div></li>
+      <li data-k="实拍" data-s="小恩雅：生物老师躲桌下给坏学生口交 课堂场景，讲台挡着 54150 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/54150" target="_blank" rel="noreferrer">54150</a><div class="body"><div class="name">小恩雅：生物老师躲桌下给坏学生口交<span class="k k-实拍">实拍</span></div><div class="why">课堂场景，讲台挡着</div></div></li>
+      <li data-k="实拍" data-s="禁忌游戏 10-11：父女桌下口交 短剧版，紧张感靠“别出声” 20614 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/20614" target="_blank" rel="noreferrer">20614</a><div class="body"><div class="name">禁忌游戏 10-11：父女桌下口交<span class="k k-实拍">实拍</span></div><div class="why">短剧版，紧张感靠“别出声”</div></div></li>
+      <li data-k="AI剧" data-s="大奉打更人 3-4：婶娘桌下偷情被撞破 桌下 + 撞破，两个要素叠一起 18364 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/18364" target="_blank" rel="noreferrer">18364</a><div class="body"><div class="name">大奉打更人 3-4：婶娘桌下偷情被撞破<span class="k k-AI剧">AI剧</span></div><div class="why">桌下 + 撞破，两个要素叠一起</div></div></li>
+      <li data-k="实拍" data-s="草莓甜筒：直播时在桌下被金主玩弄 镜头在上，手在桌下，观众不知情 35450 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/35450" target="_blank" rel="noreferrer">35450</a><div class="body"><div class="name">草莓甜筒：直播时在桌下被金主玩弄<span class="k k-实拍">实拍</span></div><div class="why">镜头在上，手在桌下，观众不知情</div></div></li>
+      <li data-k="实拍" data-s="jessical：桌下视角狂插 机位就在桌下，等于你蹲在那儿 51163 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/51163" target="_blank" rel="noreferrer">51163</a><div class="body"><div class="name">Jessical：桌下视角狂插<span class="k k-实拍">实拍</span></div><div class="why">机位就在桌下，等于你蹲在那儿</div></div></li>
+      <li data-k="动画" data-s="渐进曲＆渐慢曲 第1集：瑞穗桌下口手并用 日漫里最经典的一张桌子 14218 动画"><a class="id" href="http://127.0.0.1/tool/mrds/post/14218" target="_blank" rel="noreferrer">14218</a><div class="body"><div class="name">渐进曲＆渐慢曲 第1集：瑞穗桌下口手并用<span class="k k-动画">动画</span></div><div class="why">日漫里最经典的一张桌子</div></div></li>
+      <li data-k="实拍" data-s="洁妮：电脑桌下给男友口交 最日常的一张桌子 5007 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/5007" target="_blank" rel="noreferrer">5007</a><div class="body"><div class="name">洁妮：电脑桌下给男友口交<span class="k k-实拍">实拍</span></div><div class="why">最日常的一张桌子</div></div></li>
+    </ul>
+  </section>
+  <section id="g3">
+    <div class="sec-h"><h2>4. 衣柜 / 床底</h2><span class="cnt">7 条</span></div>
+    <p class="lead">柜门和床沿本身就是取景框。这一组多半是“丈夫在柜里”，看的人被迫成为观众。</p>
+    <ul>
+      <li data-k="实拍" data-s="衣柜视角：醉酒老婆被暴肏 整片机位就是柜缝，教科书级 58553 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/58553" target="_blank" rel="noreferrer">58553</a><div class="body"><div class="name">衣柜视角：醉酒老婆被暴肏<span class="k k-实拍">实拍</span></div><div class="why">整片机位就是柜缝，教科书级</div></div></li>
+      <li data-k="实拍" data-s="ntrwurose：把老婆送给单男，自己躲衣柜打飞机 丈夫在柜里，双重不知情 53904 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/53904" target="_blank" rel="noreferrer">53904</a><div class="body"><div class="name">ntrwurose：把老婆送给单男，自己躲衣柜打飞机<span class="k k-实拍">实拍</span></div><div class="why">丈夫在柜里，双重不知情</div></div></li>
+      <li data-k="实拍" data-s="躲在衣柜看着你老婆偷情 同题材的另一个拍法 52385 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/52385" target="_blank" rel="noreferrer">52385</a><div class="body"><div class="name">躲在衣柜看着你老婆偷情<span class="k k-实拍">实拍</span></div><div class="why">同题材的另一个拍法</div></div></li>
+      <li data-k="实拍" data-s="桥本香菜：丈夫躲衣柜偷窥妻子出轨 柜门缝里的丈夫视角 2802 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/2802" target="_blank" rel="noreferrer">2802</a><div class="body"><div class="name">桥本香菜：丈夫躲衣柜偷窥妻子出轨<span class="k k-实拍">实拍</span></div><div class="why">柜门缝里的丈夫视角</div></div></li>
+      <li data-k="实拍" data-s="寸止挑战：躲在衣柜急速撸动 把观众也塞进柜子里 42314 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/42314" target="_blank" rel="noreferrer">42314</a><div class="body"><div class="name">寸止挑战：躲在衣柜急速撸动<span class="k k-实拍">实拍</span></div><div class="why">把观众也塞进柜子里</div></div></li>
+      <li data-k="实拍" data-s="米菲兔：被邻居吃掉白浆操进衣柜 从柜外到柜内 59776 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/59776" target="_blank" rel="noreferrer">59776</a><div class="body"><div class="name">米菲兔：被邻居吃掉白浆操进衣柜<span class="k k-实拍">实拍</span></div><div class="why">从柜外到柜内</div></div></li>
+      <li data-k="动画" data-s="您喜欢亚人对吧2：无意撞见衣柜自慰 “不小心进入”的动漫版 52036 动画"><a class="id" href="http://127.0.0.1/tool/mrds/post/52036" target="_blank" rel="noreferrer">52036</a><div class="body"><div class="name">您喜欢亚人对吧2：无意撞见衣柜自慰<span class="k k-动画">动画</span></div><div class="why">“不小心进入”的动漫版</div></div></li>
+    </ul>
+  </section>
+  <section id="g4">
+    <div class="sec-h"><h2>5. 夫目前犯（隔着“在场”）</h2><span class="cnt">14 条</span></div>
+    <p class="lead">这一组屏障不是墙，是“他就在旁边”。判据是能不能听见他：打呼声、醉话、快门声。最要紧的是她不敢叫出声。</p>
+    <ul>
+      <li data-k="实拍" data-s="真实夫前目犯：灌醉她老公，在旁边狂操 全片最值钱的是“不敢叫出声” 61835 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/61835" target="_blank" rel="noreferrer">61835</a><div class="body"><div class="name">真实夫前目犯：灌醉她老公，在旁边狂操<span class="k k-实拍">实拍</span></div><div class="why">全片最值钱的是“不敢叫出声”</div></div></li>
+      <li data-k="动画" data-s="麻吕的患者是蓝领：熟睡丈夫旁边爆操人妻 夫前 + 睡着，屏障是鼾声 35219 动画"><a class="id" href="http://127.0.0.1/tool/mrds/post/35219" target="_blank" rel="noreferrer">35219</a><div class="body"><div class="name">麻吕的患者是蓝领：熟睡丈夫旁边爆操人妻<span class="k k-动画">动画</span></div><div class="why">夫前 + 睡着，屏障是鼾声</div></div></li>
+      <li data-k="实拍" data-s="当着丈夫面和单男恩爱，一边羞辱绿奴老公 语言羞辱比动作更狠 51394 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/51394" target="_blank" rel="noreferrer">51394</a><div class="body"><div class="name">当着丈夫面和单男恩爱，一边羞辱绿奴老公<span class="k k-实拍">实拍</span></div><div class="why">语言羞辱比动作更狠</div></div></li>
+      <li data-k="实拍" data-s="黑杰克：约操台中绿帽夫妻，当老公面暴力输出 他在场、还得看着 54233 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/54233" target="_blank" rel="noreferrer">54233</a><div class="body"><div class="name">黑杰克：约操台中绿帽夫妻，当老公面暴力输出<span class="k k-实拍">实拍</span></div><div class="why">他在场、还得看着</div></div></li>
+      <li data-k="实拍" data-s="luckyql777：当老公面被单男输出 同上，推特版 54211 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/54211" target="_blank" rel="noreferrer">54211</a><div class="body"><div class="name">LuckyQL777：当老公面被单男输出<span class="k k-实拍">实拍</span></div><div class="why">同上，推特版</div></div></li>
+      <li data-k="实拍" data-s="当着男友口爆黑屌，吐精液喂男友 羞辱做到顶，男友是容器 53160 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/53160" target="_blank" rel="noreferrer">53160</a><div class="body"><div class="name">当着男友口爆黑屌，吐精液喂男友<span class="k k-实拍">实拍</span></div><div class="why">羞辱做到顶，男友是容器</div></div></li>
+      <li data-k="实拍" data-s="藤井兰兰：被视频威胁，当男友面强行中出 威胁 + 在场，双重压迫 50509 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/50509" target="_blank" rel="noreferrer">50509</a><div class="body"><div class="name">藤井兰兰：被视频威胁，当男友面强行中出<span class="k k-实拍">实拍</span></div><div class="why">威胁 + 在场，双重压迫</div></div></li>
+      <li data-k="综艺" data-s="台湾综艺：十万块，当男友面被暴操 交易型，男友是同意的 61577 综艺"><a class="id" href="http://127.0.0.1/tool/mrds/post/61577" target="_blank" rel="noreferrer">61577</a><div class="body"><div class="name">台湾综艺：十万块，当男友面被暴操<span class="k k-综艺">综艺</span></div><div class="why">交易型，男友是同意的</div></div></li>
+      <li data-k="实拍" data-s="捷克街头：房东当着老公面后入娇妻 街头搭讪版，老公在旁边谈价 60934 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/60934" target="_blank" rel="noreferrer">60934</a><div class="body"><div class="name">捷克街头：房东当着老公面后入娇妻<span class="k k-实拍">实拍</span></div><div class="why">街头搭讪版，老公在旁边谈价</div></div></li>
+      <li data-k="实拍" data-s="捷克街头：拍婚纱的情侣，当老公面操他娇妻 婚纱照当天，荒诞感最强 55275 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/55275" target="_blank" rel="noreferrer">55275</a><div class="body"><div class="name">捷克街头：拍婚纱的情侣，当老公面操他娇妻<span class="k k-实拍">实拍</span></div><div class="why">婚纱照当天，荒诞感最强</div></div></li>
+      <li data-k="实拍" data-s="丝袜淫妻：当着老公面被同事后入 熟人 + 在场，社死风险 40161 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/40161" target="_blank" rel="noreferrer">40161</a><div class="body"><div class="name">丝袜淫妻：当着老公面被同事后入<span class="k k-实拍">实拍</span></div><div class="why">熟人 + 在场，社死风险</div></div></li>
+      <li data-k="实拍" data-s="rosewu：单男打桩，无能丈夫在旁撸 两个男人在同一个画面里 49398 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/49398" target="_blank" rel="noreferrer">49398</a><div class="body"><div class="name">ROSEWU：单男打桩，无能丈夫在旁撸<span class="k k-实拍">实拍</span></div><div class="why">两个男人在同一个画面里</div></div></li>
+      <li data-k="实拍" data-s="rosewu：当着丈夫面被绿主玩弄 同博主另一支，角度更正面 21714 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/21714" target="_blank" rel="noreferrer">21714</a><div class="body"><div class="name">ROSEWU：当着丈夫面被绿主玩弄<span class="k k-实拍">实拍</span></div><div class="why">同博主另一支，角度更正面</div></div></li>
+      <li data-k="AI剧" data-s="少妇白洁 37-38：白洁夫前目犯 国产经典 ip 的夫前段 152638 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/152638" target="_blank" rel="noreferrer">152638</a><div class="body"><div class="name">少妇白洁 37-38：白洁夫前目犯<span class="k k-AI剧">AI剧</span></div><div class="why">国产经典 IP 的夫前段</div></div></li>
+    </ul>
+  </section>
+  <section id="g5">
+    <div class="sec-h"><h2>6. 隔着电话 / 屏幕</h2><span class="cnt">12 条</span></div>
+    <p class="lead">屏障变成一根线：人不在场，耳朵在场。这一组最“现代”，也最容易复刻——台词比身体重要。</p>
+    <ul>
+      <li data-k="实拍" data-s="老公出差，和隔壁老王厨房偷情，边被操边打电话 墙 + 电话，两个屏障同时 63999 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/63999" target="_blank" rel="noreferrer">63999</a><div class="body"><div class="name">老公出差，和隔壁老王厨房偷情，边被操边打电话<span class="k k-实拍">实拍</span></div><div class="why">墙 + 电话，两个屏障同时</div></div></li>
+      <li data-k="实拍" data-s="在家被猛怼，边给老公打电话边被操 电话那头完全不知情 63360 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/63360" target="_blank" rel="noreferrer">63360</a><div class="body"><div class="name">在家被猛怼，边给老公打电话边被操<span class="k k-实拍">实拍</span></div><div class="why">电话那头完全不知情</div></div></li>
+      <li data-k="实拍" data-s="一边给老公打电话一边被后入 口齿要稳，是全部难度 63291 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/63291" target="_blank" rel="noreferrer">63291</a><div class="body"><div class="name">一边给老公打电话一边被后入<span class="k k-实拍">实拍</span></div><div class="why">口齿要稳，是全部难度</div></div></li>
+      <li data-k="实拍" data-s="边被操边给老公打电话：说家里来师傅修水管 台词编得越具体越色 62207 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/62207" target="_blank" rel="noreferrer">62207</a><div class="body"><div class="name">边被操边给老公打电话：说家里来师傅修水管<span class="k k-实拍">实拍</span></div><div class="why">台词编得越具体越色</div></div></li>
+      <li data-k="实拍" data-s="蒙眼被调教，边操边打电话羞辱老公 三道屏障：眼罩 + 电话 + 金主 61728 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/61728" target="_blank" rel="noreferrer">61728</a><div class="body"><div class="name">蒙眼被调教，边操边打电话羞辱老公<span class="k k-实拍">实拍</span></div><div class="why">三道屏障：眼罩 + 电话 + 金主</div></div></li>
+      <li data-k="实拍" data-s="一边打电话相亲一边吃鸡巴 相亲对象在话筒里，老实人 60406 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/60406" target="_blank" rel="noreferrer">60406</a><div class="body"><div class="name">一边打电话相亲一边吃鸡巴<span class="k k-实拍">实拍</span></div><div class="why">相亲对象在话筒里，老实人</div></div></li>
+      <li data-k="实拍" data-s="唐伯虎：一边被操一边给男友打电话忍呻吟 忍声比叫出来更刺激 60219 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/60219" target="_blank" rel="noreferrer">60219</a><div class="body"><div class="name">唐伯虎：一边被操一边给男友打电话忍呻吟<span class="k k-实拍">实拍</span></div><div class="why">忍声比叫出来更刺激</div></div></li>
+      <li data-k="实拍" data-s="汐梦瑶：做爱时给爸爸打电话 把“家人不知道”推到极限 58327 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/58327" target="_blank" rel="noreferrer">58327</a><div class="body"><div class="name">汐梦瑶：做爱时给爸爸打电话<span class="k k-实拍">实拍</span></div><div class="why">把“家人不知道”推到极限</div></div></li>
+      <li data-k="实拍" data-s="徐媛：一边吃男友肉棒一边跟妈妈打电话 反过来的方向：她瞒着妈 63632 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/63632" target="_blank" rel="noreferrer">63632</a><div class="body"><div class="name">徐媛：一边吃男友肉棒一边跟妈妈打电话<span class="k k-实拍">实拍</span></div><div class="why">反过来的方向：她瞒着妈</div></div></li>
+      <li data-k="实拍" data-s="naomii：和领导视频通话时自慰，办公室开操 屏幕版：对方看得见半张脸 63231 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/63231" target="_blank" rel="noreferrer">63231</a><div class="body"><div class="name">Naomii：和领导视频通话时自慰，办公室开操<span class="k k-实拍">实拍</span></div><div class="why">屏幕版：对方看得见半张脸</div></div></li>
+      <li data-k="混剪" data-s="pmv：废柴男友视频里看女友被操 反转——他知情，却只能隔着屏幕 75794 混剪"><a class="id" href="http://127.0.0.1/tool/mrds/post/75794" target="_blank" rel="noreferrer">75794</a><div class="body"><div class="name">PMV：废柴男友视频里看女友被操<span class="k k-混剪">混剪</span></div><div class="why">反转——他知情，却只能隔着屏幕</div></div></li>
+      <li data-k="实拍" data-s="趁妹妹在厨房打电话，按餐桌上狂操不敢出声 打电话的人是被瞒的那一个 61462 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/61462" target="_blank" rel="noreferrer">61462</a><div class="body"><div class="name">趁妹妹在厨房打电话，按餐桌上狂操不敢出声<span class="k k-实拍">实拍</span></div><div class="why">打电话的人是被瞒的那一个</div></div></li>
+    </ul>
+  </section>
+  <section id="g6">
+    <div class="sec-h"><h2>7. 不知情 / 睡着 / 被骗</h2><span class="cnt">9 条</span></div>
+    <p class="lead">第三支：不知情的人不是旁观者，是参与者。她被引导着做了，自己以为一切正常。这一组是源站上最薄的一块。</p>
+    <ul>
+      <li data-k="实拍" data-s="盲女的惊喜：园丁套路雇主的盲人女儿 全库唯一对上“盲女被引导”的条目 63211 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/63211" target="_blank" rel="noreferrer">63211</a><div class="body"><div class="name">盲女的惊喜：园丁套路雇主的盲人女儿<span class="k k-实拍">实拍</span></div><div class="why">全库唯一对上“盲女被引导”的条目</div></div></li>
+      <li data-k="实拍" data-s="丈夫骗妻子去做spa，蒙眼被单男摸遍 最贴你“恶作剧”描述：丈夫设局，她全程不知道 63679 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/63679" target="_blank" rel="noreferrer">63679</a><div class="body"><div class="name">丈夫骗妻子去做SPA，蒙眼被单男摸遍<span class="k k-实拍">实拍</span></div><div class="why">最贴你“恶作剧”描述：丈夫设局，她全程不知道</div></div></li>
+      <li data-k="实拍" data-s="不小心走进员工休息室，看到熟睡的服务生 “不小心进入”的正解 56545 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/56545" target="_blank" rel="noreferrer">56545</a><div class="body"><div class="name">不小心走进员工休息室，看到熟睡的服务生<span class="k k-实拍">实拍</span></div><div class="why">“不小心进入”的正解</div></div></li>
+      <li data-k="实拍" data-s="网吧熟睡被猥亵揉奶 公共场合睡着，旁人不知 63674 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/63674" target="_blank" rel="noreferrer">63674</a><div class="body"><div class="name">网吧熟睡被猥亵揉奶<span class="k k-实拍">实拍</span></div><div class="why">公共场合睡着，旁人不知</div></div></li>
+      <li data-k="实拍" data-s="偷吃熟睡弟弟的鸡巴 反向：睡着的是被吃的人 60881 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/60881" target="_blank" rel="noreferrer">60881</a><div class="body"><div class="name">偷吃熟睡弟弟的鸡巴<span class="k k-实拍">实拍</span></div><div class="why">反向：睡着的是被吃的人</div></div></li>
+      <li data-k="实拍" data-s="酒吧喝醉带回酒店，戴眼罩被输出 眼罩=她只能靠猜 61876 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/61876" target="_blank" rel="noreferrer">61876</a><div class="body"><div class="name">酒吧喝醉带回酒店，戴眼罩被输出<span class="k k-实拍">实拍</span></div><div class="why">眼罩=她只能靠猜</div></div></li>
+      <li data-k="AI剧" data-s="秘密教学 10-12：差点撞破她和子豪的秘密 “差点”比“撞破”更提心吊胆 341380 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/341380" target="_blank" rel="noreferrer">341380</a><div class="body"><div class="name">秘密教学 10-12：差点撞破她和子豪的秘密<span class="k k-AI剧">AI剧</span></div><div class="why">“差点”比“撞破”更提心吊胆</div></div></li>
+      <li data-k="AI剧" data-s="母上攻略 第2集：北北差点撞破 同上，家庭场景版 161014 ai剧"><a class="id" href="http://127.0.0.1/tool/mrds/post/161014" target="_blank" rel="noreferrer">161014</a><div class="body"><div class="name">母上攻略 第2集：北北差点撞破<span class="k k-AI剧">AI剧</span></div><div class="why">同上，家庭场景版</div></div></li>
+      <li data-k="实拍" data-s="客厅撞见妹妹自慰，亲哥暴插 不小心进入 → 直接参与 134039 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/134039" target="_blank" rel="noreferrer">134039</a><div class="body"><div class="name">客厅撞见妹妹自慰，亲哥暴插<span class="k k-实拍">实拍</span></div><div class="why">不小心进入 → 直接参与</div></div></li>
+    </ul>
+  </section>
+  <section id="g7">
+    <div class="sec-h"><h2>8. 隔壁 / 对面楼</h2><span class="cnt">6 条</span></div>
+    <p class="lead">屏障是距离和窗。听得到、看得见一角，就是过不去——这一组的快感全在“楼间距”上。</p>
+    <ul>
+      <li data-k="实拍" data-s="对面楼美女大白天自慰，被吃瓜群众偷拍 她在明处，不知道有镜头 62971 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/62971" target="_blank" rel="noreferrer">62971</a><div class="body"><div class="name">对面楼美女大白天自慰，被吃瓜群众偷拍<span class="k k-实拍">实拍</span></div><div class="why">她在明处，不知道有镜头</div></div></li>
+      <li data-k="实拍" data-s="楼顶赤裸爆操充气娃娃，被对面楼偷拍 荒诞版，但结构一样 63932 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/63932" target="_blank" rel="noreferrer">63932</a><div class="body"><div class="name">楼顶赤裸爆操充气娃娃，被对面楼偷拍<span class="k k-实拍">实拍</span></div><div class="why">荒诞版，但结构一样</div></div></li>
+      <li data-k="实拍" data-s="极品反差人妻偷情隔壁老王 最标准的一墙之隔邻居 61430 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/61430" target="_blank" rel="noreferrer">61430</a><div class="body"><div class="name">极品反差人妻偷情隔壁老王<span class="k k-实拍">实拍</span></div><div class="why">最标准的一墙之隔邻居</div></div></li>
+      <li data-k="实拍" data-s="和邻居在楼道偷情被操 公共楼道，随时有人开门 62829 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/62829" target="_blank" rel="noreferrer">62829</a><div class="body"><div class="name">和邻居在楼道偷情被操<span class="k k-实拍">实拍</span></div><div class="why">公共楼道，随时有人开门</div></div></li>
+      <li data-k="实拍" data-s="酒店大战，淫叫声隔壁差点听到 声音的墙 63550 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/63550" target="_blank" rel="noreferrer">63550</a><div class="body"><div class="name">酒店大战，淫叫声隔壁差点听到<span class="k k-实拍">实拍</span></div><div class="why">声音的墙</div></div></li>
+      <li data-k="实拍" data-s="饼干姐姐：浪叫声吵到邻居投诉 同一结构，代价是被敲门 257442 实拍"><a class="id" href="http://127.0.0.1/tool/mrds/post/257442" target="_blank" rel="noreferrer">257442</a><div class="body"><div class="name">饼干姐姐：浪叫声吵到邻居投诉<span class="k k-实拍">实拍</span></div><div class="why">同一结构，代价是被敲门</div></div></li>
+    </ul>
+  </section>
+  <div class="foot">
+    口径：<code>tool_web_post</code> 共 58,821 条，标题正则初筛 972 条后人工复核，全部 <code>has_video=1</code>。未改库；本页是 <code>public/curation/</code> 静态页。<br>
+    缺口：盲女被偷喂（仅 63211 沾边）、温柔恶作剧（12 条全是整蛊综艺）、墙头有杏第7集（354291 无片源）。
+  </div>
+</main>
+<script>
+  const base = document.getElementById('base');
+  const q = document.getElementById('q');
+  function applyBase(){
+    const b = (base.value || '').replace(/\/+$/, '');
+    document.querySelectorAll('a.id').forEach(a => { a.href = b + '/tool/mrds/post/' + a.textContent.trim(); });
+  }
+  base.addEventListener('change', applyBase);
+  base.addEventListener('keydown', e => { if (e.key === 'Enter') applyBase(); });
+  q.addEventListener('input', filter);
+  let kind = '';
+  document.querySelectorAll('.kb').forEach(b => b.addEventListener('click', () => {
+    kind = b.dataset.k;
+    document.querySelectorAll('.kb').forEach(x => x.classList.toggle('on', x === b));
+    filter();
+  }));
+  function filter(){
+    const v = q.value.trim().toLowerCase();
+    let shown = 0;
+    document.querySelectorAll('main section').forEach(sec => {
+      let n = 0;
+      sec.querySelectorAll('li').forEach(li => {
+        const hit = (!v || li.dataset.s.includes(v)) && (!kind || li.dataset.k === kind);
+        li.classList.toggle('hide', !hit);
+        if (hit) n++;
+      });
+      sec.style.display = n ? '' : 'none';
+      shown += n;
+      const c = sec.querySelector('.cnt');
+      if (c) c.textContent = (v || kind) ? (n + ' / ' + sec.querySelectorAll('li').length + ' 条') : (sec.querySelectorAll('li').length + ' 条');
+    });
+    document.getElementById('meta').textContent = (v || kind)
+      ? (shown + ' / 83 条 · 2026-11-25')
+      : ('83 条 · 8 组 · 全部有片 · 2026-11-25');
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === '/' && document.activeElement !== q) { e.preventDefault(); q.focus(); }
+  });
+</script>
+</body>
+</html>
