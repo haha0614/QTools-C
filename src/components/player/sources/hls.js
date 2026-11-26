@@ -40,6 +40,12 @@ export function hlsSource(url, opts = {}) {
           api.fail('源站暂时无法访问，地址可能已更换；站点每 30 分钟自动同步新地址，稍后再试')
           return
         }
+        // 后端回 410 segment_gone = 重签证明源站这一帖只有 K 段，而我们要的是第 N(>=K) 段：
+        // 第 N 段源站已经删了，重试只会拿到同一个结论，直接给用户说法。
+        if (status === 410) {
+          api.fail('这一段源站已下架，没有可播的地址（同帖其它段不受影响）')
+          return
+        }
         const isNetwork = Hls.ErrorTypes && data.type === Hls.ErrorTypes.NETWORK_ERROR
         if (isNetwork && retries < maxRetry) {
           retries += 1
