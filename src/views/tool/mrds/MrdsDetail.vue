@@ -55,6 +55,28 @@
                   @loadeddata="showFirstFrame($event)"
                 />
               </div>
+              <!-- 字幕状态区：无 / 生成中 / 成功（不显示）/ 失败；成功时字幕直接进播放器齿轮 -->
+              <div v-if="subViews[i]" class="md-sub">
+                <template v-if="subViews[i].kind === 'idle'">
+                  <button type="button" class="md-vbtn md-sub-btn" :disabled="subViews[i].busy" @click="buildSub(i)">
+                    生成双语字幕（约 20 分钟）
+                  </button>
+                  <span class="md-sub-hint">本机识别 + 翻译，生成完自动出现在齿轮「字幕」里</span>
+                </template>
+                <template v-else-if="subViews[i].kind === 'running'">
+                  <span class="md-sub-txt">字幕生成中 {{ subViews[i].progress }}%</span>
+                  <span class="md-sub-bar"><i :style="{ width: subViews[i].progress + '%' }"></i></span>
+                  <button type="button" class="md-vbtn md-sub-btn" disabled>生成中</button>
+                </template>
+                <template v-else-if="subViews[i].kind === 'warn'">
+                  <span class="md-sub-txt md-sub-err">已生成，但{{ subViews[i].err }}</span>
+                  <button type="button" class="md-vbtn md-sub-btn" :disabled="subViews[i].busy" @click="buildSub(i, true)">重新生成</button>
+                </template>
+                <template v-else>
+                  <span class="md-sub-txt md-sub-err">生成失败：{{ subViews[i].err }}</span>
+                  <button type="button" class="md-vbtn md-sub-btn" :disabled="subViews[i].busy" @click="buildSub(i)">重试</button>
+                </template>
+              </div>
             </div>
             <p v-if="playError" class="md-player-hint">{{ playError }}</p>
           </div>
@@ -309,6 +331,8 @@ import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, reactive, re
 import Player from '@/components/player/Player.vue'
 import { fileSource, hlsSource } from '@/components/player/sources/hls'
 import { downloadPlugin } from '@/components/player/plugins/download'
+import { subtitlesPlugin } from '@/components/player/plugins/subtitles'
+import { subtitleStylePlugin } from '@/components/player/plugins/subtitleStyle'
 import request from '@/utils/request'
 import { fetchUserFlags, markSeen, toggleFav } from '@/utils/webUserItem'
 import { ownerHeaders } from '@/utils/webOwner'
@@ -1030,11 +1054,164 @@ function onMeta(i, e) {
   }
 }
 
+/* ---------- 双语字幕：能力注入（T9 配合）+ 生成入口（T10） ---------- */
+
+/**
+ * 每段一个**稳定的**能力对象：hlsSource/fileSource 是引用保存 opts.capabilities
+ * （sources/hls.js:16、:84），所以之后往 subtitles 里 splice 会直接触发插件 watch，
+ * 不需要换 source 对象，也就不会重载流（交接文档 §12.1：禁止用 :key 重建播放器）。
+ * 用普通对象当索引表（不是 reactive），免得字幕变化把 playerSources 整个重算。
+ */
+let subCapsMap = {}
+function capsFor(i) {
+  if (!subCapsMap[i]) subCapsMap[i] = reactive({ subtitles: [] })
+  return subCapsMap[i]
+}
+
+/** 每段字幕的接口状态 { status, progress, err, src }；缺键 = 没有记录（按 status 0 显示） */
+const subState = reactive({})
+/** 每段"已发出 build 请求"标记，防连点 */
+const subBusy = reactive({})
+/** 每段的轮询定时器 { [i]: id }；连续失败计数 { [i]: n } */
+const subTimers = {}
+const subFails = {}
+
+/** 状态区四态：成功返回 null（不占位），其余给渲染用的轻量对象 */
+const subViews = computed(() =>
+  videoUrls.value.map((_, i) => {
+    const s = subState[i] || {}
+    const st = Number(s.status) || 0
+    // 成功但带 err（部分行没翻译成 / 翻译未配置）：仍然给提示，否则用户以为中文是播放器坏了
+    if (st === 2) return String(s.err || '') ? { kind: 'warn', err: String(s.err), busy: !!subBusy[i] } : null
+    if (st === 1) return { kind: 'running', progress: Math.max(0, Math.min(100, Number(s.progress) || 0)) }
+    if (st === 3) return { kind: 'failed', err: String(s.err || '未知错误'), busy: !!subBusy[i] }
+    return { kind: 'idle', busy: !!subBusy[i] }
+  })
+)
+
+/** 接口响应 → 本地状态 + 播放器能力；字幕成功时才把 VTT 推进 caps.subtitles */
+function applySub(i, s) {
+  if (!s || typeof s !== 'object') return
+  const status = Number(s.status) || 0
+  subState[i] = {
+    status,
+    progress: Number(s.progress) || 0,
+    err: String(s.err || ''),
+    src: String(s.src || '')
+  }
+  // 只有成功才动字幕轨；失败 / 重新生成时保留已有轨道（旧版还能看，比突然没字幕强，
+  // 换帖的清理交给 resetSubs 换新的能力对象，这里不动播放器）
+  if (status !== 2 || !s.src) return
+  const arr = capsFor(i).subtitles
+  const src = String(s.src)
+  // 同一个 src 不重复 push：否则每次刷新状态都会重建一次 <track>
+  if (!arr.length || arr[0].src !== src) {
+    arr.splice(0, arr.length, { src, label: '日本語 + 中文', lang: 'ja', default: true })
+  }
+}
+
+function stopSubPoll(i) {
+  const t = subTimers[i]
+  if (t) {
+    clearInterval(t)
+    delete subTimers[i]
+  }
+}
+function stopAllSubPolls() {
+  Object.keys(subTimers).forEach((k) => stopSubPoll(Number(k)))
+}
+
+/** 轮询单拍：只读状态，失败仅累计计数，绝不碰 source / 字幕轨 */
+async function pollSub(i) {
+  const id = row.value && row.value.id
+  if (!id) {
+    stopSubPoll(i)
+    return
+  }
+  try {
+    const r = unwrap(await request({ url: '/tool/web/subtitle/' + id + '?seg=' + i, method: 'get', silent: true }))
+    if (!row.value || row.value.id !== id) return // 期间切了帖子：这一拍作废
+    subFails[i] = 0
+    applySub(i, r)
+    if (Number(r && r.status) !== 1) stopSubPoll(i)
+  } catch (e) {
+    if (!row.value || row.value.id !== id) return
+    subFails[i] = (subFails[i] || 0) + 1
+    // 连续 20 拍（约 1 分钟）拿不到状态就停：不无限打接口，也不动播放
+    if (subFails[i] >= 20) {
+      stopSubPoll(i)
+      const cur = subState[i] || {}
+      subState[i] = {
+        status: 3,
+        progress: Number(cur.progress) || 0,
+        err: '字幕状态查询失败，请刷新页面再看',
+        src: ''
+      }
+    }
+  }
+}
+
+function startSubPoll(i) {
+  if (subTimers[i]) return
+  subFails[i] = 0
+  subTimers[i] = setInterval(() => { void pollSub(i) }, 3000)
+}
+
+/** 进页面 / 切帖子时按段拉一次状态 */
+async function loadSub(i) {
+  const id = row.value && row.value.id
+  if (!id) return
+  try {
+    const r = unwrap(await request({ url: '/tool/web/subtitle/' + id + '?seg=' + i, method: 'get', silent: true }))
+    if (!row.value || row.value.id !== id) return
+    applySub(i, r)
+    if (Number(r && r.status) === 1) startSubPoll(i)
+  } catch (e) {
+    /* 接口未就绪 / 断网：保持"没有记录"这一态，播放不受影响 */
+  }
+}
+
+/** 点「生成双语字幕」/「重试」 */
+async function buildSub(i, force) {
+  const id = row.value && row.value.id
+  if (!id || subBusy[i]) return
+  subBusy[i] = true
+  try {
+    const q = '/build?seg=' + i + (force ? '&force=1' : '')
+    const r = unwrap(await request({ url: '/tool/web/subtitle/' + id + q, method: 'post', silent: true }))
+    if (!row.value || row.value.id !== id) return
+    applySub(i, r)
+    if (Number(r && r.status) === 1) startSubPoll(i)
+    else stopSubPoll(i)
+  } catch (e) {
+    // 失败只落本地状态：source 与字幕轨都不动，播放照旧
+    subState[i] = { status: 3, progress: 0, err: '请求失败，请稍后再试', src: '' }
+  } finally {
+    subBusy[i] = false
+  }
+}
+
+/** 卸载或换帖时清干净：定时器、能力对象、状态一起重置 */
+function resetSubs() {
+  stopAllSubPolls()
+  subCapsMap = {}
+  Object.keys(subState).forEach((k) => delete subState[k])
+  Object.keys(subBusy).forEach((k) => delete subBusy[k])
+  Object.keys(subFails).forEach((k) => delete subFails[k])
+}
+
+watch([() => row.value && row.value.id, () => videoUrls.value.length], ([id]) => {
+  resetSubs()
+  if (!id) return
+  for (let i = 0; i < videoUrls.value.length; i++) void loadSub(i)
+}, { immediate: true })
+
 /** 播放源：整组本地文件走 fileSource（/api/media/file 支持 Range 206），否则每段走 HLS 代理清单 */
 const playerSources = computed(() => {
   const files = mediaFiles.value
-  if (files) return files.map((u) => fileSource(u))
-  return videoUrls.value.map((u) => hlsSource(u))
+  // capabilities 传的是稳定引用：字幕后到时就地改它，播放器不用重建
+  if (files) return files.map((u, i) => fileSource(u, { capabilities: capsFor(i) }))
+  return videoUrls.value.map((u, i) => hlsSource(u, { capabilities: capsFor(i) }))
 })
 
 /** 保存到视频站的状态：老数据没有该字段 → none（不显示徽标） */
@@ -1108,7 +1285,10 @@ const coverSrc = computed(() => {
 /** 每段视频挂哪些插件：现在只有"下载这一段"，以后画质/雪碧图/标记也在这里按需加 */
 const playerFeatures = computed(() =>
   videoUrls.value.map((_, i) => [
-    downloadPlugin({ label: '下载这一段', onClick: () => openSaveDialogFor(i) })
+    downloadPlugin({ label: '下载这一段', onClick: () => openSaveDialogFor(i) }),
+    // 字幕插件总是挂：空列表时齿轮里给「本条还没有字幕」，生成完由 caps 的 watch 补齐
+    subtitlesPlugin(),
+    subtitleStylePlugin()
   ])
 )
 
@@ -1248,6 +1428,7 @@ function showFirstFrame(e) {
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onLbKey)
   stopMediaPoll()
+  stopAllSubPolls()
   if (detailPollTimer) {
     clearInterval(detailPollTimer)
     detailPollTimer = null
@@ -1311,6 +1492,15 @@ watch(() => [props.postId, props.post], load)
   /* 尺寸变化（兜底比例 → 真实比例）时平滑过渡，不硬切 */
   transition: width .32s cubic-bezier(.22, .61, .36, 1), height .32s cubic-bezier(.22, .61, .36, 1); }
 .md-vseg { margin: 0 0 6px; font-size: 12px; color: var(--el-text-color-secondary); }
+/* 字幕状态区：在播放器下面，不盖画面；配色沿用页面按钮/次要文字 */
+.md-sub { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 6px 2px 0; font-size: 12px; color: var(--el-text-color-secondary); }
+.md-sub-btn { font-size: 12px; }
+.md-sub-btn:disabled { opacity: .6; cursor: default; }
+.md-sub-hint { font-size: 11.5px; color: var(--el-text-color-placeholder); }
+.md-sub-txt { white-space: nowrap; }
+.md-sub-err { color: var(--el-color-danger); }
+.md-sub-bar { flex: 0 0 96px; height: 4px; border-radius: 999px; background: var(--el-fill-color); overflow: hidden; }
+.md-sub-bar i { display: block; height: 100%; border-radius: 999px; background: var(--el-color-primary); transition: width .3s ease; }
 /* 圆角/裁切只在最外层 .md-player 上做一次：内层再设不同半径，
      两层之间的近黑底色就会从四角露出来（实测四个黑角） */
 .md-vitem { width: 100%; border-radius: 0; overflow: visible; background: transparent; }
