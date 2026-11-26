@@ -353,6 +353,9 @@ defineExpose({ player })
   text-align: center;
   color: #ffd479;
   text-shadow: 0 1px 3px rgba(0, 0, 0, .8);
+  /* 必须高于封面层（.qtp-cover 是 z-index:1）：重签/缓冲时封面会重新盖回来，
+     不抬层级的话提示只剩两侧黑边露出的两截（只剩"源站地址…"和"次重试)"） */
+  z-index: 2;
 }
 .qtp-hint-error { color: #ff9a9a; }
 
