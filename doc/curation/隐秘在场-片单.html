@@ -228,11 +228,11 @@
     </ul>
   </section>
   <div class="foot">
-    口径：<code>tool_web_post</code> 共 58,821 条，标题正则初筛 972 条后人工复核，全部 <code>has_video=1</code>。未改库；本页是 <code>public/curation/</code> 静态页。整行可点：站内条目跳 <code>/tool/mrds/post/{id}</code>，只有源站链接的条目跳源站。<br>
-    缺口：盲女被偷喂（仅 63211 沾边）、温柔恶作剧（12 条全是整蛊综艺）、墙头有杏第7集（354291 无片源）。
+    口径：<code>tool_web_post</code> 共 58,821 条，标题正则初筛 972 条后人工复核，全部 <code>has_video=1</code>。未改库；本页是 <code>public/curation/</code> 静态页。整行可点：站内条目跳 <code>/tool/mrds/post/{id}</code>，只有源站链接的条目跳源站。<br>缺口：盲女被偷喂（仅 63211 沾边）、温柔恶作剧（12 条全是整蛊综艺）、墙头有杏第7集（354291 无片源）。候选另见 <code>/curation/candidates.html</code>。
   </div>
 </main>
 <script>
+  const TOTAL = 86, GROUPS = 9;
   const base = document.getElementById('base');
   const q = document.getElementById('q');
   // 站内条目按“当前打开本页的域名”拼链接：同一份静态页放到 127.0.0.1、局域网 IP、正式域名下都跳对
@@ -271,8 +271,8 @@
       if (c) c.textContent = (v || kind) ? (n + ' / ' + sec.querySelectorAll('li').length + ' 条') : (sec.querySelectorAll('li').length + ' 条');
     });
     document.getElementById('meta').textContent = (v || kind)
-      ? (shown + ' / 86 条 · 2026-11-25')
-      : ('86 条 · 9 组 · 全部有片 · 2026-11-25');
+      ? (shown + ' / ' + TOTAL + ' 条 · 2026-11-25')
+      : (TOTAL + ' 条 · ' + GROUPS + ' 组 · 全部有片 · 2026-11-25');
   }
   document.addEventListener('keydown', e => {
     if (e.key === '/' && document.activeElement !== q) { e.preventDefault(); q.focus(); }

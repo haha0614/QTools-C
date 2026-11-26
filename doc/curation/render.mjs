@@ -1,78 +1,83 @@
-// 生成「隐秘在场」片单
+// 生成「隐秘在场」片单（主表 + 候选取）
 // 用法：node QTools-C/doc/curation/render.mjs
-// 输出三份：doc/curation/隐秘在场-片单.md、doc/curation/隐秘在场-片单.html（离线看）、
-//          public/curation/index.html（站内，构建后即 http://<域名>/curation/）
+// 输出：
+//   doc/curation/隐秘在场-片单.md / .html          主表（离线）
+//   doc/curation/候选-片单.md / .html              候选取（离线）
+//   public/curation/index.html                     站内主表 → /curation/
+//   public/curation/candidates.html                站内候选取 → /curation/candidates.html
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..', '..', '..');
-const dataPath = path.join(here, 'data.json');
-const outDir = here;
 const siteDir = path.join(root, 'QTools-C', 'public', 'curation');
-const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
 const BASE = 'http://127.0.0.1';
 
-const all = data.groups.flatMap((g) => g.items);
-const total = all.length;
-const kinds = [...new Set(all.map((i) => i.k))];
+const main = JSON.parse(fs.readFileSync(path.join(here, 'data.json'), 'utf8'));
+const candPath = path.join(here, 'data.candidates.json');
+const cand = fs.existsSync(candPath) ? JSON.parse(fs.readFileSync(candPath, 'utf8')) : { generated: '', groups: [] };
+
+const count = (d) => d.groups.reduce((s, g) => s + g.items.length, 0);
+const kindsOf = (d) => [...new Set(d.groups.flatMap((g) => g.items).map((i) => i.k))];
 
 // ---------- markdown ----------
-const md = [];
-md.push('# 「隐秘在场」片单');
-md.push('');
-md.push('> 口径：源站目录 `tool_web_post` 共 58,821 条（52,609 条有片），按标题正则初筛 972 条有片，人工复核后保留 ' + total + ' 条。');
-md.push('> 全部 `has_video=1`。链接格式 `' + BASE + '/tool/mrds/post/{id}`，换成你平时访问的域名即可。');
-md.push('> 生成：' + data.generated + ' · 未改库；本站入口在每日大赛工具栏右上角，地址 `/curation/`。');
-md.push('');
-md.push('## 怎么用');
-md.push('');
-md.push('- 分组按「屏障」从硬到软：**墙洞 → 门缝 → 家具 → 人 → 信号 → 无意识**。想看哪一种，直接跳那一节。');
-md.push('- 编号就是详情页路径末段；整行（编号 + 片名 + 说明）都能点，点了新窗口直接开对应帖子。');
-md.push('- 系列剧集按集序列出，按顺序看；标「AI剧」的多为 AI 生成的短剧，标「动画」的是 2D/里番，其余是实拍。');
-md.push('');
-md.push('| 组 | 条数 | 一句话 |');
-md.push('|---|---|---|');
-data.groups.forEach((g) => {
-  md.push('| ' + g.title + ' | ' + g.items.length + ' | ' + g.lead.split('。')[0] + ' |');
-});
-md.push('');
-data.groups.forEach((g, gi) => {
-  md.push('## ' + (gi + 1) + '. ' + g.title + '（' + g.items.length + '）');
+function buildMd(data, opt) {
+  const total = count(data);
+  const md = [];
+  md.push('# ' + opt.mdTitle);
   md.push('');
-  md.push(g.lead);
+  md.push('> ' + opt.mdNote);
+  md.push('> 生成：' + data.generated + ' · 未改库。');
   md.push('');
-  g.items.forEach((it) => {
-    md.push('- [' + it.id + '](' + (it.u || BASE + '/tool/mrds/post/' + it.id) + ') **' + it.n + '** — ' + it.w + (it.u ? '（源站）' : ''));
+  md.push('| 组 | 条数 | 一句话 |');
+  md.push('|---|---|---|');
+  data.groups.forEach((g) => md.push('| ' + g.title + ' | ' + g.items.length + ' | ' + g.lead.split('。')[0] + ' |'));
+  md.push('');
+  data.groups.forEach((g, gi) => {
+    md.push('## ' + (gi + 1) + '. ' + g.title + '（' + g.items.length + '）');
+    md.push('');
+    md.push(g.lead);
+    md.push('');
+    g.items.forEach((it) => {
+      md.push('- [' + it.id + '](' + (it.u || BASE + '/tool/mrds/post/' + it.id) + ') **' + it.n + '** — ' + it.w + (it.u ? '（源站）' : ''));
+    });
+    md.push('');
   });
+  md.push(opt.mdFoot || '');
   md.push('');
-});
-md.push('## 缺口（找不到的部分）');
-md.push('');
-md.push('- **盲女被偷偷喂东西**：全库只有 `63211` 一部《盲女的惊喜》沾边，而且不是“喂食”这个动作。这条路上源站基本是空的。');
-md.push('- **恶作剧 / 整蛊型的温柔欺骗**：标题命中 12 条，全是综艺整蛊，没有一条是“她以为在正常吃饭，其实被安排了”。');
-md.push('- **墙头有杏 第7集**（`354291`）没有片源，只有标题，所以没列进来。');
-md.push('- 另有 8 条是 3D/PMV 二次创作（`16867` `21207` `28198` `44752` `46163` `56158` `57275` `58754`），机制对，但不是实拍，没混进主表。');
-md.push('');
-md.push('## 想自己再捞时用这些词');
-md.push('');
-md.push('`墙洞` `隔墙` `墙头` `一墙之隔` `门缝` `门后` `门外` `帘子` `隔间` `桌下` `桌底` `衣柜` `床底` `夫前` `夫目` `当着老公` `当着丈夫` `当着男友` `旁边` `打电话` `查岗` `视频通话` `睡着` `熟睡` `蒙眼` `眼罩` `盲` `差点撞破` `撞见` `隔壁` `邻居` `对面楼` `偷窥`');
-md.push('');
-md.push('搜索框是**标题 + 标签**同时命中；标签多选是“包含任一”，点一个就够，点多了反而变宽。');
-md.push('');
+  return md.join('\n');
+}
 
-fs.writeFileSync(path.join(outDir, '隐秘在场-片单.md'), md.join('\n'), 'utf8');
+fs.writeFileSync(path.join(here, '隐秘在场-片单.md'), buildMd(main, {
+  mdTitle: '「隐秘在场」片单',
+  mdNote: '口径：源站目录 `tool_web_post` 共 58,821 条（52,609 条有片），按标题正则初筛 972 条有片，人工复核后保留 ' + count(main) + ' 条；全部 `has_video=1`。站内条目链接格式 `' + BASE + '/tool/mrds/post/{id}`，换成你平时访问的域名即可；带「（源站）」的是站外直链。',
+  mdFoot: [
+    '## 缺口（找不到的部分）',
+    '',
+    '- **盲女被偷偷喂东西**：主表里没有完全对得上的，只有 63211 一部沾边。',
+    '- **恶作剧 / 整蛊型**：主表 12 条命中全是综艺整蛊，没有“她以为在正常吃饭，其实被安排了”这种。',
+    '- 候选取里这两类各有 30 条自动分桶结果，还没人工筛：见 `候选-片单.md`。',
+  ].join('\n'),
+}), 'utf8');
+
+fs.writeFileSync(path.join(here, '候选-片单.md'), buildMd(cand, {
+  mdTitle: '「隐秘在场」候选取',
+  mdNote: '这些是外部站检索命中的候选，按关键词自动分桶，**没有人工复核**；看中哪条把编号发我，我挪进主表。',
+  mdFoot: '主表见 `隐秘在场-片单.md`。',
+}), 'utf8');
 
 // ---------- html ----------
-// site=true 时额外塞一个「返回每日大赛」的入口；离线版不需要（从哪来回哪去没有意义）
-function buildHtml(site) {
+function buildHtml(data, opt) {
+  const total = count(data);
+  const kinds = kindsOf(data);
+  const back = opt.links.map((l) => `<a class="back" href="${l.href}">${l.label}</a>`).join('\n    ');
   return `<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>隐秘在场 · 片单</title>
+<title>${opt.title}</title>
 <style>
   :root{
     --bg:#0f1115; --panel:#161a21; --line:#262c36; --fg:#e7e9ee; --dim:#8b93a3;
@@ -127,9 +132,9 @@ function buildHtml(site) {
 <body>
 <header>
   <div class="head-top">
-    ${site ? '<a class="back" href="/tool/mrds">← 每日大赛</a>' : ''}
-    <h1>「隐秘在场」片单</h1>
-    <span class="meta" id="meta">${total} 条 · ${data.groups.length} 组 · 全部有片 · ${data.generated}</span>
+    ${back}
+    <h1>${opt.heading}</h1>
+    <span class="meta" id="meta">${total} 条 · ${data.groups.length} 组 · ${opt.metaTail} · ${data.generated}</span>
   </div>
   <div class="tools">
     <input id="q" placeholder="搜片名 / 编号 / 关键词（按 / 聚焦）">
@@ -152,11 +157,11 @@ ${g.items.map((it) => `      <li data-k="${it.k}" data-s="${(it.n + ' ' + it.w +
     </ul>
   </section>`).join('\n')}
   <div class="foot">
-    口径：<code>tool_web_post</code> 共 58,821 条，标题正则初筛 972 条后人工复核，全部 <code>has_video=1</code>。未改库；本页是 <code>public/curation/</code> 静态页。整行可点：站内条目跳 <code>/tool/mrds/post/{id}</code>，只有源站链接的条目跳源站。<br>
-    缺口：盲女被偷喂（仅 63211 沾边）、温柔恶作剧（12 条全是整蛊综艺）、墙头有杏第7集（354291 无片源）。
+    ${opt.foot}
   </div>
 </main>
 <script>
+  const TOTAL = ${total}, GROUPS = ${data.groups.length};
   const base = document.getElementById('base');
   const q = document.getElementById('q');
   // 站内条目按“当前打开本页的域名”拼链接：同一份静态页放到 127.0.0.1、局域网 IP、正式域名下都跳对
@@ -195,8 +200,8 @@ ${g.items.map((it) => `      <li data-k="${it.k}" data-s="${(it.n + ' ' + it.w +
       if (c) c.textContent = (v || kind) ? (n + ' / ' + sec.querySelectorAll('li').length + ' 条') : (sec.querySelectorAll('li').length + ' 条');
     });
     document.getElementById('meta').textContent = (v || kind)
-      ? (shown + ' / ${total} 条 · ${data.generated}')
-      : ('${total} 条 · ${data.groups.length} 组 · 全部有片 · ${data.generated}');
+      ? (shown + ' / ' + TOTAL + ' 条 · ${data.generated}')
+      : (TOTAL + ' 条 · ' + GROUPS + ' 组 · ${opt.metaTail} · ${data.generated}');
   }
   document.addEventListener('keydown', e => {
     if (e.key === '/' && document.activeElement !== q) { e.preventDefault(); q.focus(); }
@@ -207,10 +212,46 @@ ${g.items.map((it) => `      <li data-k="${it.k}" data-s="${(it.n + ' ' + it.w +
 `;
 }
 
-fs.writeFileSync(path.join(outDir, '隐秘在场-片单.html'), buildHtml(false), 'utf8');
+const candTotal = count(cand);
+
+const FOOT_MAIN = '口径：<code>tool_web_post</code> 共 58,821 条，标题正则初筛 972 条后人工复核，全部 <code>has_video=1</code>。未改库；本页是 <code>public/curation/</code> 静态页。整行可点：站内条目跳 <code>/tool/mrds/post/{id}</code>，只有源站链接的条目跳源站。<br>缺口：盲女被偷喂（仅 63211 沾边）、温柔恶作剧（12 条全是整蛊综艺）、墙头有杏第7集（354291 无片源）。候选另见 <code>/curation/candidates.html</code>。';
+const FOOT_CAND = '这些是外部站检索命中的候选，按关键词自动分桶，<b>没有人工复核</b>——里面会有“眼罩当盲人”“综艺整蛊”这类噪声。看中哪条把编号发我，我挪进主表。<br>生成：<code>node QTools-C/doc/curation/render.mjs</code>。';
+
+const mainSite = buildHtml(main, {
+  title: '隐秘在场 · 片单',
+  heading: '「隐秘在场」片单',
+  metaTail: '全部有片',
+  links: [
+    { href: '/tool/mrds', label: '← 每日大赛' },
+    ...(candTotal ? [{ href: '/curation/candidates.html', label: `候选取 ${candTotal} ↗` }] : []),
+  ],
+  foot: FOOT_MAIN,
+});
+
+const candSite = buildHtml(cand, {
+  title: '隐秘在场 · 候选取',
+  heading: '「隐秘在场」候选取',
+  metaTail: '自动分桶 · 未复核',
+  links: [
+    { href: '/tool/mrds', label: '← 每日大赛' },
+    { href: '/curation/', label: '← 回片单' },
+  ],
+  foot: FOOT_CAND,
+});
+
+fs.writeFileSync(path.join(here, '隐秘在场-片单.html'), buildHtml(main, {
+  title: '隐秘在场 · 片单', heading: '「隐秘在场」片单', metaTail: '全部有片', links: [], foot: FOOT_MAIN,
+}), 'utf8');
+
+fs.writeFileSync(path.join(here, '候选-片单.html'), buildHtml(cand, {
+  title: '隐秘在场 · 候选取', heading: '「隐秘在场」候选取', metaTail: '自动分桶 · 未复核', links: [], foot: FOOT_CAND,
+}), 'utf8');
+
 fs.mkdirSync(siteDir, { recursive: true });
-fs.writeFileSync(path.join(siteDir, 'index.html'), buildHtml(true), 'utf8');
-console.log('md   ' + fs.statSync(path.join(outDir, '隐秘在场-片单.md')).size + ' bytes');
-console.log('html ' + fs.statSync(path.join(outDir, '隐秘在场-片单.html')).size + ' bytes');
-console.log('site ' + fs.statSync(path.join(siteDir, 'index.html')).size + ' bytes');
-console.log('items ' + total + ' / groups ' + data.groups.length + ' / kinds ' + kinds.join(','));
+fs.writeFileSync(path.join(siteDir, 'index.html'), mainSite, 'utf8');
+fs.writeFileSync(path.join(siteDir, 'candidates.html'), candSite, 'utf8');
+
+console.log('md    ' + fs.statSync(path.join(here, '隐秘在场-片单.md')).size + ' / ' + fs.statSync(path.join(here, '候选-片单.md')).size + ' bytes');
+console.log('html  ' + fs.statSync(path.join(here, '隐秘在场-片单.html')).size + ' / ' + fs.statSync(path.join(here, '候选-片单.html')).size + ' bytes');
+console.log('site  ' + fs.statSync(path.join(siteDir, 'index.html')).size + ' / ' + fs.statSync(path.join(siteDir, 'candidates.html')).size + ' bytes');
+console.log('items ' + count(main) + ' / ' + count(cand));
