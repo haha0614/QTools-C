@@ -196,13 +196,8 @@
     else if (btn.dataset.act === 'remove') removeRow(row);
   }, true);
 
-  fetch(API + '/api/health').then(function (r) { return r.json(); }).then(function (j) {
-    online = !!(j && j.ok);
-    if (!online) toast('编辑服务没启动：改/移出按钮点了不会有反应。启动：node QTools-C/doc/curation/server.mjs', true, 9000);
-  }).catch(function () {
-    online = false;
-    toast('编辑服务没启动（' + API + '）。启动：node QTools-C/doc/curation/server.mjs', true, 9000);
-  });
+  // 不主动探活：本页是公开页，服务没起时不该在每个访客脸上报错、也不该在控制台留连接失败。
+  // 点「改 / 移出」时自然走 /api/groups 或 /api/move，失败的那条链路会给出提示。
 
   // 供页面脚本（全量索引是动态渲染）在插入行之后登记按钮
   window.curationEdit = { onReady: function () { } };

@@ -151,19 +151,34 @@ function moveItem(body) {
   return { moved: 1 };
 }
 
+const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '::1']);
+
+// 只认本机页面：Origin 的 host 必须是 127.0.0.1 / localhost；命令行（无 Origin）照常可用。
+function corsFor(req) {
+  const o = req.headers.origin;
+  if (!o) return {};
+  try {
+    if (LOCAL_HOSTS.has(new URL(o).hostname)) return { 'Access-Control-Allow-Origin': o, Vary: 'Origin' };
+  } catch { }
+  return null;
+}
+
 function send(res, code, obj) {
   const body = JSON.stringify(obj);
   res.writeHead(code, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
     'Cache-Control': 'no-store',
+    ...(res.__cors || {}),
   });
   res.end(body);
 }
 
 const server = http.createServer((req, res) => {
+  const cors = corsFor(req);
+  if (!cors) return send(res, 403, { ok: false, error: '只接受本机页面的请求' });
+  res.__cors = cors;
   const url = new URL(req.url, 'http://127.0.0.1');
   if (req.method === 'OPTIONS') return send(res, 204, {});
   if (req.method === 'GET' && url.pathname === '/api/health') {
