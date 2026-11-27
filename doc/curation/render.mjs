@@ -18,6 +18,10 @@ const main = JSON.parse(fs.readFileSync(path.join(here, 'data.json'), 'utf8'));
 const candPath = path.join(here, 'data.candidates.json');
 const cand = fs.existsSync(candPath) ? JSON.parse(fs.readFileSync(candPath, 'utf8')) : { generated: '', groups: [] };
 
+// 全量索引页（build-index.mjs 产出）的条数，用于页头入口；没生成过就藏入口
+let fullTotal = 0;
+try { fullTotal = JSON.parse(fs.readFileSync(path.join(siteDir, 'full-data.json'), 'utf8')).total || 0; } catch { }
+
 const count = (d) => d.groups.reduce((s, g) => s + g.items.length, 0);
 const kindsOf = (d) => [...new Set(d.groups.flatMap((g) => g.items).map((i) => i.k))];
 
@@ -224,6 +228,7 @@ const mainSite = buildHtml(main, {
   links: [
     { href: '/tool/mrds', label: '← 每日大赛' },
     ...(candTotal ? [{ href: '/curation/candidates.html', label: `候选取 ${candTotal} ↗` }] : []),
+    ...(fullTotal ? [{ href: '/curation/full.html', label: `全量索引 ${fullTotal.toLocaleString()} ↗` }] : []),
   ],
   foot: FOOT_MAIN,
 });
@@ -235,6 +240,7 @@ const candSite = buildHtml(cand, {
   links: [
     { href: '/tool/mrds', label: '← 每日大赛' },
     { href: '/curation/', label: '← 回片单' },
+    ...(fullTotal ? [{ href: '/curation/full.html', label: `全量索引 ${fullTotal.toLocaleString()} ↗` }] : []),
   ],
   foot: FOOT_CAND,
 });
