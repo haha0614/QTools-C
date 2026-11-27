@@ -54,10 +54,27 @@ if (fs.existsSync(SRC_JSON)) {
 const counts = Object.fromEntries(Object.keys(THEMES).map((k) => [k, 0]));
 for (const r of rows) for (const k of r.k) counts[k]++;
 
-fs.mkdirSync(SITE, { recursive: true });
-fs.writeFileSync(path.join(SITE, 'full-data.json'), JSON.stringify({ base: BASE, total: rows.length, counts, items: rows.map((r) => [r.u, r.t, r.k]) }));
+// 「已移出」池：主页 / 候选页用「移出」按钮丢出来的条目，仍要在全量索引里看得到（也可能再搬回去）
+const POOL = path.join(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), 'data.removed.json');
+let poolItems = [];
+try {
+  const pool = JSON.parse(fs.readFileSync(POOL, 'utf8'));
+  poolItems = pool.groups.flatMap((g) => g.items.map((it) => ({ u: it.u || '', t: it.n || '(无标题)', k: ['removed'], page: 'pool', id: String(it.id || '') })));
+} catch { poolItems = []; }
+counts.removed = poolItems.length;
+const THEME_LABELS = Object.fromEntries(Object.entries(THEMES).map(([k, [label]]) => [k, label]));
+THEME_LABELS.removed = '已移出 / 不想要';
 
-const themesJs = JSON.stringify(Object.fromEntries(Object.entries(THEMES).map(([k, [label]]) => [k, label])));
+fs.mkdirSync(SITE, { recursive: true });
+fs.writeFileSync(path.join(SITE, 'themes.json'), JSON.stringify(THEME_LABELS));
+fs.writeFileSync(path.join(SITE, 'full-data.json'), JSON.stringify({
+  base: BASE,
+  total: rows.length + poolItems.length,
+  counts,
+  items: rows.map((r) => [r.u, r.t, r.k]).concat(poolItems.map((p) => [p.u, p.t, p.k, p.page, p.id])),
+}), 'utf8');
+
+const themesJs = JSON.stringify(THEME_LABELS);
 
 const html = `<!doctype html>
 <html lang="zh-CN">
@@ -65,6 +82,7 @@ const html = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>隐秘在场 · 全量索引</title>
+<link rel="stylesheet" href="edit.css">
 <style>
   :root{--bg:#0f1115;--panel:#151a21;--line:#232a35;--fg:#e6e9ef;--dim:#8b94a5;--accent:#e05a6d;--ok:#63c08a;--ai:#a78bfa;--anime:#5ec8d8;--show:#e0b05a;--mix:#8aa0c0}
   *{box-sizing:border-box}
@@ -135,7 +153,7 @@ const html = `<!doctype html>
   <div class="chips" id="chips"></div>
 </header>
 <main>
-  <div class="bar"><span id="count">—</span><span>整行可点，跳源站详情页；这里只索引标题，不做人工复核。</span></div>
+  <div class="bar"><span id="count">—</span><span>整行可点跳详情页；行尾「改」可改分类或搬到主页、候选（需本地编辑服务在跑）。这里只索引标题，不做人工复核。</span></div>
   <ul id="list"></ul>
   <button class="more" id="more" hidden>加载更多</button>
   <div class="foot">
@@ -167,17 +185,31 @@ function apply() {
 function paint() {
   const slice = items.slice(shown, shown + PAGE);
   const frag = document.createDocumentFragment();
-  for (const [u, t, ks] of slice) {
+  for (const [u, t, ks, pg, id] of slice) {
+    const page = pg || 'full';
     const li = document.createElement('li');
+    li.className = 'has-acts';
+    li.dataset.page = page;
+    li.dataset.gid = id || '';
+    li.dataset.u = u || '';
+    li.dataset.g = (ks && ks[0]) || '';
+    li.dataset.t = t;
+
     const a = document.createElement('a');
     a.className = 'row';
-    a.href = u;
+    a.href = u || ('/tool/mrds/post/' + id);
     a.target = '_blank';
     a.rel = 'noreferrer';
     a.innerHTML = '<span class="t">' + esc(t) + '</span>' +
       '<span class="tg">' + ks.map((k) => '<span class="tag">' + (THEMES[k] || k) + '</span>').join('') + '</span>' +
-      '<span class="src">源站</span>';
+      '<span class="src">' + (page === 'pool' ? '已移出' : u ? '源站' : '站内') + '</span>';
+
+    const acts = document.createElement('span');
+    acts.className = 'acts';
+    acts.innerHTML = '<button class="act" data-act="edit" title="改分类或搬到主页 / 候选">改</button>';
+
     li.appendChild(a);
+    li.appendChild(acts);
     frag.appendChild(li);
   }
   el('#list').appendChild(frag);
@@ -217,11 +249,15 @@ fetch('full-data.json? v=1'.replace(' ', ''))
       return b;
     };
     el('#chips').appendChild(mk('', '全部', d.total));
-    for (const [k, label] of Object.entries(THEMES)) el('#chips').appendChild(mk(k, label, d.counts[k]));
+    for (const [k, label] of Object.entries(THEMES)) {
+      if (k === 'removed' && !d.counts[k]) continue;
+      el('#chips').appendChild(mk(k, label, d.counts[k]));
+    }
     apply();
   })
   .catch(() => { el('#meta').textContent = '数据加载失败'; el('#list').innerHTML = '<li class="empty">full-data.json 没加载到。</li>'; });
 </script>
+<script src="edit.js"></script>
 </body>
 </html>
 `;

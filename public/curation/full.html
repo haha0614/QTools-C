@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>隐秘在场 · 全量索引</title>
+<link rel="stylesheet" href="edit.css">
 <style>
   :root{--bg:#0f1115;--panel:#151a21;--line:#232a35;--fg:#e6e9ef;--dim:#8b94a5;--accent:#e05a6d;--ok:#63c08a;--ai:#a78bfa;--anime:#5ec8d8;--show:#e0b05a;--mix:#8aa0c0}
   *{box-sizing:border-box}
@@ -74,7 +75,7 @@
   <div class="chips" id="chips"></div>
 </header>
 <main>
-  <div class="bar"><span id="count">—</span><span>整行可点，跳源站详情页；这里只索引标题，不做人工复核。</span></div>
+  <div class="bar"><span id="count">—</span><span>整行可点跳详情页；行尾「改」可改分类或搬到主页、候选（需本地编辑服务在跑）。这里只索引标题，不做人工复核。</span></div>
   <ul id="list"></ul>
   <button class="more" id="more" hidden>加载更多</button>
   <div class="foot">
@@ -83,7 +84,7 @@
   </div>
 </main>
 <script>
-const THEMES = {"wall":"墙与洞","door":"门缝 / 帘","table":"桌下","closet":"衣柜 / 床底","husband":"夫目前","phone":"电话 / 屏幕","unaware":"不知情 / 睡着","neighbor":"隔壁 / 对面","daily":"日常入侵","cleaner":"保洁 / 上门","stuck":"卡困","yoga":"体式侵入","mouth":"口部入口","blind":"盲 / 看不见","prank":"恶作剧 / 欺骗"};
+const THEMES = {"wall":"墙与洞","door":"门缝 / 帘","table":"桌下","closet":"衣柜 / 床底","husband":"夫目前","phone":"电话 / 屏幕","unaware":"不知情 / 睡着","neighbor":"隔壁 / 对面","daily":"日常入侵","cleaner":"保洁 / 上门","stuck":"卡困","yoga":"体式侵入","mouth":"口部入口","blind":"盲 / 看不见","prank":"恶作剧 / 欺骗","removed":"已移出 / 不想要"};
 const PAGE = 200;
 let data = null, items = [], active = '', q = '', shown = 0;
 
@@ -106,17 +107,31 @@ function apply() {
 function paint() {
   const slice = items.slice(shown, shown + PAGE);
   const frag = document.createDocumentFragment();
-  for (const [u, t, ks] of slice) {
+  for (const [u, t, ks, pg, id] of slice) {
+    const page = pg || 'full';
     const li = document.createElement('li');
+    li.className = 'has-acts';
+    li.dataset.page = page;
+    li.dataset.gid = id || '';
+    li.dataset.u = u || '';
+    li.dataset.g = (ks && ks[0]) || '';
+    li.dataset.t = t;
+
     const a = document.createElement('a');
     a.className = 'row';
-    a.href = u;
+    a.href = u || ('/tool/mrds/post/' + id);
     a.target = '_blank';
     a.rel = 'noreferrer';
     a.innerHTML = '<span class="t">' + esc(t) + '</span>' +
       '<span class="tg">' + ks.map((k) => '<span class="tag">' + (THEMES[k] || k) + '</span>').join('') + '</span>' +
-      '<span class="src">源站</span>';
+      '<span class="src">' + (page === 'pool' ? '已移出' : u ? '源站' : '站内') + '</span>';
+
+    const acts = document.createElement('span');
+    acts.className = 'acts';
+    acts.innerHTML = '<button class="act" data-act="edit" title="改分类或搬到主页 / 候选">改</button>';
+
     li.appendChild(a);
+    li.appendChild(acts);
     frag.appendChild(li);
   }
   el('#list').appendChild(frag);
@@ -156,10 +171,14 @@ fetch('full-data.json? v=1'.replace(' ', ''))
       return b;
     };
     el('#chips').appendChild(mk('', '全部', d.total));
-    for (const [k, label] of Object.entries(THEMES)) el('#chips').appendChild(mk(k, label, d.counts[k]));
+    for (const [k, label] of Object.entries(THEMES)) {
+      if (k === 'removed' && !d.counts[k]) continue;
+      el('#chips').appendChild(mk(k, label, d.counts[k]));
+    }
     apply();
   })
   .catch(() => { el('#meta').textContent = '数据加载失败'; el('#list').innerHTML = '<li class="empty">full-data.json 没加载到。</li>'; });
 </script>
+<script src="edit.js"></script>
 </body>
 </html>

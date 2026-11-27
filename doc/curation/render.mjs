@@ -76,12 +76,16 @@ function buildHtml(data, opt) {
   const total = count(data);
   const kinds = kindsOf(data);
   const back = opt.links.map((l) => `<a class="back" href="${l.href}">${l.label}</a>`).join('\n    ');
+  const editable = !!opt.links.length;
+  const acts = editable
+    ? '<span class="acts"><button class="act" data-act="edit" title="改分类或归属">改</button><button class="act" data-act="remove" title="移出到全量索引的「已移出」">移出</button></span>'
+    : '';
   return `<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${opt.title}</title>
+<title>${opt.title}</title>${editable ? '\n<link rel="stylesheet" href="edit.css">' : ''}
 <style>
   :root{
     --bg:#0f1115; --panel:#161a21; --line:#262c36; --fg:#e7e9ee; --dim:#8b93a3;
@@ -182,7 +186,7 @@ ${data.groups.map((g, i) => `  <section id="g${i}">
     <div class="sec-h"><h2>${i + 1}. ${g.title}</h2><span class="cnt">${g.items.length} 条</span></div>
     <p class="lead">${g.lead}</p>
     <ul>
-${g.items.map((it) => `      <li data-k="${it.k}" data-s="${(it.n + ' ' + it.w + ' ' + it.id + ' ' + it.k).toLowerCase()}"><a class="hit" data-path="/tool/mrds/post/${it.id}"${it.u ? ` data-ext="${it.u}"` : ''} href="${it.u || '/tool/mrds/post/' + it.id}" target="_blank" rel="noreferrer"><span class="id">${it.id}</span><span class="body"><span class="name">${it.n}<span class="k k-${it.k}">${it.k}</span>${it.u ? '<span class="src">源站</span>' : ''}</span><span class="why">${it.w}</span></span></a></li>`).join('\n')}
+${g.items.map((it) => `      <li data-k="${it.k}" data-s="${(it.n + ' ' + it.w + ' ' + it.id + ' ' + it.k).toLowerCase()}"${editable ? ` class="has-acts" data-page="${opt.page}" data-gid="${it.id}" data-u="${(it.u || '').replace(/"/g, '&quot;')}" data-g="${g.key}" data-t="${it.n.replace(/"/g, '&quot;')}"` : ''}><a class="hit" data-path="/tool/mrds/post/${it.id}"${it.u ? ` data-ext="${it.u}"` : ''} href="${it.u || '/tool/mrds/post/' + it.id}" target="_blank" rel="noreferrer"><span class="id">${it.id}</span><span class="body"><span class="name">${it.n}<span class="k k-${it.k}">${it.k}</span>${it.u ? '<span class="src">源站</span>' : ''}</span><span class="why">${it.w}</span></span></a>${acts}</li>`).join('\n')}
     </ul>
   </section>`).join('\n')}
   <div class="foot">
@@ -235,7 +239,7 @@ ${g.items.map((it) => `      <li data-k="${it.k}" data-s="${(it.n + ' ' + it.w +
   document.addEventListener('keydown', e => {
     if (e.key === '/' && document.activeElement !== q) { e.preventDefault(); q.focus(); }
   });
-</script>
+</script>${editable ? '\n<script src="edit.js"></script>' : ''}
 </body>
 </html>
 `;
@@ -250,6 +254,7 @@ const mainSite = buildHtml(main, {
   title: '隐秘在场 · 片单',
   heading: '「隐秘在场」片单',
   metaTail: '全部有片',
+  page: 'main',
   links: [
     { href: '/tool/mrds', label: '← 每日大赛' },
     ...(candTotal ? [{ href: '/curation/candidates.html', label: `候选取 ${candTotal} ↗` }] : []),
@@ -262,6 +267,7 @@ const candSite = buildHtml(cand, {
   title: '隐秘在场 · 候选取',
   heading: '「隐秘在场」候选取',
   metaTail: '自动分桶 · 未复核',
+  page: 'cand',
   links: [
     { href: '/tool/mrds', label: '← 每日大赛' },
     { href: '/curation/', label: '← 回片单' },
